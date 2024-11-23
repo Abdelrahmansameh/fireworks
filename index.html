@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>Firework Crafting Game</title>
-    <!-- Prevent zooming on mobile devices -->
+    <!-- Updated meta tag to prevent zooming -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <style>
         /* Base Styles */
@@ -152,7 +152,7 @@
             display: block;
         }
 
-        /* Canvas Styling */
+        /* Updated canvas styling to fill the viewport */
         canvas {
             position: fixed;
             top: 0;
@@ -160,7 +160,7 @@
             z-index: -1;
             width: 100%;
             height: 100%;
-            display: block;
+            touch-action: manipulation; /* Prevent double-tap zoom on canvas */
         }
 
         /* Styles for Components */
@@ -283,24 +283,7 @@
 
     <canvas id="gameCanvas"></canvas>
 
-    <!-- Include stats.js for performance monitoring (optional) -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/stats.js/r17/Stats.min.js"></script>
-
     <script>
-        // Utility function to convert hex color to RGB
-        function hexToRgb(hex) {
-            // Remove '#' if present
-            hex = hex.replace(/^#/, '');
-            if (hex.length === 3) {
-                hex = hex.split('').map(char => char + char).join('');
-            }
-            const bigint = parseInt(hex, 16);
-            const r = (bigint >> 16) & 255;
-            const g = (bigint >> 8) & 255;
-            const b = bigint & 255;
-            return `${r}, ${g}, ${b}`;
-        }
-
         // Global configuration
         const FIREWORK_CONFIG = {
             useStrongGlow: false,
@@ -311,49 +294,18 @@
             particleSize: 2,          // Base particle size
             glowStrength: 0.8,        // Glow intensity (0-1)
             particleDensity: 100,     // Base number of particles
-            ascentSpeed: -800,        // Adjusted ascent speed (units per second)
-            maxActiveFireworks: 10,   // Maximum active fireworks
-            maxParticles: 1000        // Maximum active particles
+            ascentSpeed: -800         // Adjusted ascent speed (units per second)
         };
 
-        // Particle Pool for Object Reuse
-        class ParticlePool {
-            constructor(maxSize) {
-                this.pool = [];
-                this.maxSize = maxSize;
-            }
-
-            acquire() {
-                return this.pool.length > 0 ? this.pool.pop() : null;
-            }
-
-            release(particle) {
-                if (this.pool.length < this.maxSize) {
-                    this.pool.push(particle);
-                }
-            }
-        }
-
-        // Firework Game Class
         class FireworkGame {
             constructor() {
-                this.isMobile = this.detectMobile();
-
-                // Adjust FIREWORK_CONFIG based on device
-                this.adjustFireworkConfig();
-
-                // Initialize Game Engine with device info
-                this.engine = new GameEngine('gameCanvas', this.update.bind(this), this.isMobile);
+                this.engine = new GameEngine('gameCanvas', this.update.bind(this));
                 this.engine.loop();
-
-                // Initialize game state
                 this.recipes = [];
                 this.currentRecipeComponents = [{
                     pattern: 'spherical',
                     color: '#ff0000',
-                    size: 1.0,
-                    trailColor: '#ff0000',    // Default trail color
-                    trailLength: 15           // Default trail length
+                    size: 1.0
                 }];
                 this.fireworkCount = parseInt(localStorage.getItem('fireworkCount')) || 0;
                 this.autoLauncherLevel = parseInt(localStorage.getItem('autoLauncherLevel')) || 0;
@@ -378,33 +330,10 @@
                     }
                 });
 
-                // Initialize performance stats (optional)
-                this.initStats();
-            }
-
-            initStats() {
-                this.stats = new Stats();
-                this.stats.showPanel(0); // 0: fps
-                document.body.appendChild(this.stats.dom);
-            }
-
-            adjustFireworkConfig() {
+                // Detect mobile device
+                this.isMobile = this.detectMobile();
                 if (this.isMobile) {
-                    // Optimized configurations for mobile devices
-                    FIREWORK_CONFIG.particleDensity = 50; // Reduced from 100
-                    FIREWORK_CONFIG.particleSize = 1.5;    // Reduced from 2
-                    FIREWORK_CONFIG.useStrongGlow = false; // Disable glow for performance
-                    FIREWORK_CONFIG.ascentSpeed = -600;    // Slightly reduced speed
-                    FIREWORK_CONFIG.gravity = 40;          // Reduced gravity effect
-                    FIREWORK_CONFIG.particleLifetime = 1.0; // Shorter lifetime
-                } else {
-                    // Default configurations for desktop
-                    FIREWORK_CONFIG.particleDensity = 100;
-                    FIREWORK_CONFIG.particleSize = 2;
-                    FIREWORK_CONFIG.useStrongGlow = false;
-                    FIREWORK_CONFIG.ascentSpeed = -800;
-                    FIREWORK_CONFIG.gravity = 50;
-                    FIREWORK_CONFIG.particleLifetime = 1.2;
+                    this.adjustForMobile();
                 }
             }
 
@@ -413,9 +342,7 @@
                     this.currentRecipeComponents.push({
                         pattern: 'spherical',
                         color: '#ff0000',
-                        size: 1.0,
-                        trailColor: '#ff0000',
-                        trailLength: 15
+                        size: 1.0
                     });
                     this.updateComponentsList();
                 });
@@ -453,16 +380,6 @@
                         this.launchFireworkAt(e.clientX, e.clientY);
                     }
                 });
-
-                // Prevent double-tap zoom on mobile
-                let lastTouchEnd = 0;
-                document.addEventListener('touchend', (e) => {
-                    const now = new Date().getTime();
-                    if (now - lastTouchEnd <= 300) {
-                        e.preventDefault();
-                    }
-                    lastTouchEnd = now;
-                }, false);
             }
 
             isClickInsideUI(event) {
@@ -509,15 +426,6 @@
                             <input type="range" class="size-select" data-index="${index}" min="0.5" max="2" step="0.1" value="${component.size}">
                             <span class="size-value">${component.size}</span>
                         </div>
-                        <div class="crafting-option">
-                            <label>Trail Color:</label>
-                            <input type="color" class="trail-color-select" data-index="${index}" value="${component.trailColor}">
-                        </div>
-                        <div class="crafting-option">
-                            <label>Trail Length (5 - 30):</label>
-                            <input type="range" class="trail-length-select" data-index="${index}" min="5" max="30" step="1" value="${component.trailLength}">
-                            <span class="trail-length-value">${component.trailLength}</span>
-                        </div>
                         <button class="remove-component" data-index="${index}">Remove Component</button>
                     `;
 
@@ -535,11 +443,6 @@
 
                     const sizeSelect = componentDiv.querySelector('.size-select');
                     const sizeValue = componentDiv.querySelector('.size-value');
-
-                    // Trail customization elements
-                    const trailColorSelect = componentDiv.querySelector('.trail-color-select');
-                    const trailLengthSelect = componentDiv.querySelector('.trail-length-select');
-                    const trailLengthValue = componentDiv.querySelector('.trail-length-value');
 
                     // Add event listeners
                     patternSelect.addEventListener('change', (e) => {
@@ -560,176 +463,140 @@
                         sizeValue.textContent = e.target.value;
                     });
 
-                    trailColorSelect.addEventListener('input', (e) => {
-                        const idx = e.target.getAttribute('data-index');
-                        this.currentRecipeComponents[idx].trailColor = e.target.value;
-                    });
-
-                    trailLengthSelect.addEventListener('input', (e) => {
-                        const idx = e.target.getAttribute('data-index');
-                        this.currentRecipeComponents[idx].trailLength = parseInt(e.target.value);
-                        trailLengthValue.textContent = e.target.value;
-                    });
-
                     const removeButton = componentDiv.querySelector('.remove-component');
                     removeButton.addEventListener('click', (e) => {
                         const idx = e.target.getAttribute('data-index');
                         this.currentRecipeComponents.splice(idx, 1);
                         this.updateComponentsList();
                     });
-                }
+                });
+            }
 
-                saveCurrentRecipe() {
-                    const recipe = {
-                        components: this.currentRecipeComponents.map(component => ({ ...component }))
-                    };
-                    this.recipes.push(recipe);
-                    localStorage.setItem('fireworkRecipes', JSON.stringify(this.recipes));
+            saveCurrentRecipe() {
+                const recipe = {
+                    components: this.currentRecipeComponents.map(component => ({ ...component }))
+                };
+                this.recipes.push(recipe);
+                localStorage.setItem('fireworkRecipes', JSON.stringify(this.recipes));
+                this.updateRecipeList();
+            }
+
+            eraseAllRecipes() {
+                this.recipes = [];
+                localStorage.removeItem('fireworkRecipes');
+                this.updateRecipeList();
+            }
+
+            loadRecipes() {
+                const saved = localStorage.getItem('fireworkRecipes');
+                if (saved) {
+                    this.recipes = JSON.parse(saved);
                     this.updateRecipeList();
                 }
+            }
 
-                eraseAllRecipes() {
-                    this.recipes = [];
-                    localStorage.removeItem('fireworkRecipes');
-                    this.updateRecipeList();
-                }
+            updateRecipeList() {
+                const list = document.getElementById('recipe-list');
+                list.innerHTML = this.recipes.map((recipe, index) => `
+                    <div class="recipe-card" onclick="game.selectRecipe(${index})" style="cursor: pointer; padding: 10px; border: 1px solid #34495e; border-radius: 5px; margin-bottom: 10px; background: #2a2f3a;">
+                        ${recipe.components.map((component, cIndex) => `
+                            <div>
+                                <strong>Component ${cIndex + 1}:</strong><br>
+                                Pattern: ${component.pattern}<br>
+                                Size: ${component.size}<br>
+                                <div class="color-preview" style="background-color: ${component.color};"></div>
+                            </div>
+                        `).join('')}
+                    </div>
+                `).join('');
+            }
 
-                loadRecipes() {
-                    const saved = localStorage.getItem('fireworkRecipes');
-                    if (saved) {
-                        this.recipes = JSON.parse(saved);
-                        this.updateRecipeList();
-                    }
-                }
+            selectRecipe(index) {
+                this.currentRecipeComponents = this.recipes[index].components.map(component => ({ ...component }));
+                this.updateComponentsList();
+            }
 
-                updateRecipeList() {
-                    const list = document.getElementById('recipe-list');
-                    list.innerHTML = this.recipes.map((recipe, index) => `
-                        <div class="recipe-card" onclick="game.selectRecipe(${index})" style="cursor: pointer; padding: 10px; border: 1px solid #34495e; border-radius: 5px; margin-bottom: 10px; background: #2a2f3a;">
-                            ${recipe.components.map((component, cIndex) => `
-                                <div>
-                                    <strong>Component ${cIndex + 1}:</strong><br>
-                                    Pattern: ${component.pattern}<br>
-                                    Size: ${component.size}<br>
-                                    Trail Color: <span style="display:inline-block;width:15px;height:15px;background-color:${component.trailColor};border:1px solid #fff;"></span><br>
-                                    Trail Length: ${component.trailLength}<br>
-                                    <div class="color-preview" style="background-color: ${component.color};"></div>
-                                </div>
-                            `).join('')}
-                        </div>
-                    `).join('');
-                }
+            launchFireworkAt(x, y) {
+                // Adjust x based on canvas position
+                const rect = this.engine.canvas.getBoundingClientRect();
+                const adjustedX = x - rect.left;
+                // y is handled by the engine's ascent
+                this.engine.launch(adjustedX, this.currentRecipeComponents);
+                this.fireworkCount++;
+                this.sparkles++;
+                this.saveProgress();
+                this.updateUI();
+            }
 
-                selectRecipe(index) {
-                    this.currentRecipeComponents = this.recipes[index].components.map(component => ({ ...component }));
-                    this.updateComponentsList();
-                }
-
-                launchFireworkAt(x, y) {
-                    // Adjust x based on canvas position and devicePixelRatio
-                    const rect = this.engine.canvas.getBoundingClientRect();
-                    const dpr = window.devicePixelRatio || 1;
-                    const scaleX = this.engine.canvas.width / rect.width;
-                    const scaleY = this.engine.canvas.height / rect.height;
-                    const adjustedX = (x - rect.left) * scaleX;
-                    // Firework should always start at the bottom, so set y to canvas height in game coordinates
-                    this.engine.launch(adjustedX, this.currentRecipeComponents);
-                    this.fireworkCount++;
-                    this.sparkles++;
+            buyAutoLauncher() {
+                if (this.sparkles >= this.autoLauncherCost) {
+                    this.sparkles -= this.autoLauncherCost;
+                    this.autoLauncherLevel++;
+                    this.autoSparkleRate = this.autoLauncherLevel;
+                    this.autoLauncherCost = Math.floor(this.autoLauncherCost * 1.5);
                     this.saveProgress();
                     this.updateUI();
                 }
+            }
 
-                buyAutoLauncher() {
-                    if (this.sparkles >= this.autoLauncherCost) {
-                        this.sparkles -= this.autoLauncherCost;
-                        this.autoLauncherLevel++;
-                        this.autoSparkleRate = this.autoLauncherLevel;
-                        this.autoLauncherCost = Math.floor(this.autoLauncherCost * 1.5);
-                        this.saveProgress();
-                        this.updateUI();
-                    }
-                }
+            resetGame() {
+                // Reset all relevant game data
+                this.fireworkCount = 0;
+                this.autoLauncherLevel = 0;
+                this.autoLauncherCost = 10;
+                this.autoSparkleRate = 0;
+                this.sparkles = 0;
+                this.recipes = [];
+                this.currentRecipeComponents = [{
+                    pattern: 'spherical',
+                    color: '#ff0000',
+                    size: 1.0
+                }];
+                localStorage.clear();
+                this.updateUI();
+                this.updateComponentsList();
+                this.updateRecipeList();
+            }
 
-                resetGame() {
-                    // Reset all relevant game data
-                    this.fireworkCount = 0;
-                    this.autoLauncherLevel = 0;
-                    this.autoLauncherCost = 10;
-                    this.autoSparkleRate = 0;
-                    this.sparkles = 0;
-                    this.recipes = [];
-                    this.currentRecipeComponents = [{
-                        pattern: 'spherical',
-                        color: '#ff0000',
-                        size: 1.0,
-                        trailColor: '#ff0000',
-                        trailLength: 15
-                    }];
-                    localStorage.clear();
-                    this.updateUI();
-                    this.updateComponentsList();
-                    this.updateRecipeList();
-                }
-
-                update(deltaTime) {
-                    if (this.autoSparkleRate > 0) {
-                        this.autoLaunchAccumulator += this.autoSparkleRate * deltaTime;
-                        const numLaunches = Math.floor(this.autoLaunchAccumulator);
-                        if (numLaunches > 0) {
-                            for (let i = 0; i < numLaunches; i++) {
-                                const launchX = Math.random() * this.engine.canvas.width / (window.devicePixelRatio || 1);
-                                this.engine.launch(launchX, this.currentRecipeComponents);
-                                this.fireworkCount++;
-                                this.sparkles++;
-                            }
-                            this.autoLaunchAccumulator -= numLaunches;
-                            this.saveProgress();
-                            this.updateUI();
+            update(deltaTime) {
+                if (this.autoSparkleRate > 0) {
+                    this.autoLaunchAccumulator += this.autoSparkleRate * deltaTime;
+                    const numLaunches = Math.floor(this.autoLaunchAccumulator);
+                    if (numLaunches > 0) {
+                        for (let i = 0; i < numLaunches; i++) {
+                            const launchX = Math.random() * this.engine.canvas.width;
+                            this.launchFireworkAt(launchX, 0); // y is handled by the engine
                         }
+                        this.autoLaunchAccumulator -= numLaunches;
                     }
                 }
+            }
 
-                saveProgress() {
-                    localStorage.setItem('fireworkCount', this.fireworkCount);
-                    localStorage.setItem('autoLauncherLevel', this.autoLauncherLevel);
-                    localStorage.setItem('autoLauncherCost', this.autoLauncherCost);
-                    localStorage.setItem('autoSparkleRate', this.autoSparkleRate);
-                    localStorage.setItem('sparkles', this.sparkles);
-                    localStorage.setItem('fireworkRecipes', JSON.stringify(this.recipes));
-                }
+            saveProgress() {
+                localStorage.setItem('fireworkCount', this.fireworkCount);
+                localStorage.setItem('autoLauncherLevel', this.autoLauncherLevel);
+                localStorage.setItem('autoLauncherCost', this.autoLauncherCost);
+                localStorage.setItem('autoSparkleRate', this.autoSparkleRate);
+                localStorage.setItem('sparkles', this.sparkles);
+                localStorage.setItem('fireworkRecipes', JSON.stringify(this.recipes));
+            }
 
-                updateUI() {
-                    document.getElementById('firework-count').textContent = this.fireworkCount;
-                    document.getElementById('auto-launcher-level').textContent = this.autoLauncherLevel;
-                    document.getElementById('auto-launcher-cost').textContent = this.autoLauncherCost;
-                    document.getElementById('auto-sparkle-rate').textContent = this.autoSparkleRate;
-                }
+            updateUI() {
+                document.getElementById('firework-count').textContent = this.fireworkCount;
+                document.getElementById('auto-launcher-level').textContent = this.autoLauncherLevel;
+                document.getElementById('auto-launcher-cost').textContent = this.autoLauncherCost;
+                document.getElementById('auto-sparkle-rate').textContent = this.autoSparkleRate;
+            }
 
-                toggleTab(tab) {
-                    const contentId = tab + '-content';
-                    const tabElement = document.getElementById(tab + '-tab');
-                    const contentElement = document.getElementById(contentId);
+            toggleTab(tab) {
+                const contentId = tab + '-content';
+                const tabElement = document.getElementById(tab + '-tab');
+                const contentElement = document.getElementById(contentId);
 
-                    if (contentElement.classList.contains('active')) {
-                        contentElement.classList.remove('active');
-                        tabElement.classList.remove('active');
-                    } else {
-                        // Hide all tabs
-                        document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
-                        document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
-
-                        // Show selected tab
-                        contentElement.classList.add('active');
-                        tabElement.classList.add('active');
-                    }
-                }
-
-                showTab(tab) {
-                    const contentId = tab + '-content';
-                    const tabElement = document.getElementById(tab + '-tab');
-                    const contentElement = document.getElementById(contentId);
-
+                if (contentElement.classList.contains('active')) {
+                    contentElement.classList.remove('active');
+                    tabElement.classList.remove('active');
+                } else {
                     // Hide all tabs
                     document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
                     document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
@@ -738,297 +605,314 @@
                     contentElement.classList.add('active');
                     tabElement.classList.add('active');
                 }
+            }
 
-                detectMobile() {
-                    return ('ontouchstart' in window) || navigator.maxTouchPoints > 0 || navigator.userAgent.includes('Mobi');
+            showTab(tab) {
+                const contentId = tab + '-content';
+                const tabElement = document.getElementById(tab + '-tab');
+                const contentElement = document.getElementById(contentId);
+
+                // Hide all tabs
+                document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+                document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
+
+                // Show selected tab
+                contentElement.classList.add('active');
+                tabElement.classList.add('active');
+            }
+
+            detectMobile() {
+                return ('ontouchstart' in window) || navigator.maxTouchPoints > 0 || navigator.userAgent.includes('Mobi');
+            }
+
+            adjustForMobile() {
+                // Adjust UI for mobile devices
+                const gameContainer = document.querySelector('.game-container');
+                gameContainer.style.position = 'relative';
+                gameContainer.style.top = '0';
+                gameContainer.style.left = '0';
+                gameContainer.style.maxWidth = '100%';
+                gameContainer.style.width = '100%';
+                gameContainer.style.height = 'auto';
+                gameContainer.style.overflowY = 'auto';
+
+                // Increase button sizes for touch
+                const buttons = document.querySelectorAll('button');
+                buttons.forEach(button => {
+                    button.style.padding = '12px';
+                    button.style.fontSize = '1em';
+                });
+
+                // Adjust canvas size
+                this.engine.resizeCanvasForMobile();
+            }
+        }
+
+        class GameEngine {
+            constructor(canvasId, onUpdate) {
+                this.canvas = document.getElementById(canvasId);
+                this.ctx = this.canvas.getContext('2d');
+                this.particles = [];
+                this.fireworks = [];
+                this.lastTime = Date.now();
+                this.isPaused = false;
+                this.resize();
+                window.addEventListener('resize', () => this.resize());
+
+                this.onUpdate = onUpdate; // Callback for the game's update method
+            }
+
+            resize() {
+                // Updated resize method to get accurate canvas dimensions
+                this.canvas.width = this.canvas.clientWidth;
+                this.canvas.height = this.canvas.clientHeight;
+            }
+
+            resizeCanvasForMobile() {
+                // Adjust canvas size for mobile devices
+                this.canvas.width = this.canvas.clientWidth;
+                this.canvas.height = this.canvas.clientHeight;
+            }
+
+            pause() {
+                this.isPaused = true;
+            }
+
+            resume() {
+                if (this.isPaused) {
+                    this.isPaused = false;
+                    this.lastTime = Date.now(); // Reset lastTime to prevent jump in animation
                 }
             }
 
-            // Game Engine Class
-            class GameEngine {
-                constructor(canvasId, onUpdate, isMobile) {
-                    this.canvas = document.getElementById(canvasId);
-                    this.ctx = this.canvas.getContext('2d');
-                    this.particles = [];
-                    this.fireworks = [];
-                    this.lastTime = Date.now();
-                    this.isPaused = false;
-                    this.isMobile = isMobile;
-                    this.frameDuration = this.isMobile ? 1000 / 30 : 1000 / 60; // 30 FPS for mobile, 60 for desktop
-                    this.accumulator = 0;
-
-                    // Initialize particle pool
-                    this.particlePool = new ParticlePool(FIREWORK_CONFIG.maxParticles);
-
-                    this.resize(); // Initial resize
-                    window.addEventListener('resize', () => this.resize());
-
-                    // Bind onUpdate callback
-                    this.onUpdate = onUpdate;
+            applyGlow(color) {
+                if (FIREWORK_CONFIG.useStrongGlow) {
+                    this.ctx.shadowColor = color;
+                    this.ctx.shadowBlur = 15;
+                    this.ctx.shadowOffsetX = 0;
+                    this.ctx.shadowOffsetY = 0;
                 }
+            }
 
-                resize() {
-                    // Reset transform to prevent cumulative scaling
-                    this.ctx.setTransform(1, 0, 0, 1, 0, 0);
-
-                    // Adjust canvas size based on devicePixelRatio for crisp rendering
-                    const dpr = window.devicePixelRatio || 1;
-                    const rect = this.canvas.getBoundingClientRect();
-                    this.canvas.width = rect.width * dpr;
-                    this.canvas.height = rect.height * dpr;
-                    this.ctx.scale(dpr, dpr);
+            clearGlow() {
+                if (FIREWORK_CONFIG.useStrongGlow) {
+                    this.ctx.shadowColor = 'transparent';
+                    this.ctx.shadowBlur = 0;
                 }
+            }
 
-                resizeCanvasForMobile() {
-                    this.resize();
-                }
+            launch(x, components) {
+                const firework = {
+                    x: x,
+                    y: this.canvas.height,
+                    targetY: this.canvas.height * 0.3,
+                    velocity: FIREWORK_CONFIG.ascentSpeed, // Adjusted ascent speed
+                    components: components.map(component => ({ ...component })),
+                    trail: []
+                };
+                this.fireworks.push(firework);
+            }
 
-                pause() {
-                    this.isPaused = true;
-                }
+            explode(firework) {
+                firework.components.forEach(component => {
+                    const particles = this.createPattern(
+                        firework.x,
+                        firework.y,
+                        component
+                    );
+                    this.particles.push(...particles);
+                });
+            }
 
-                resume() {
-                    if (this.isPaused) {
-                        this.isPaused = false;
-                        this.lastTime = Date.now(); // Reset lastTime to prevent jump in animation
-                    }
-                }
+            createPattern(x, y, recipe) {
+                const particles = [];
+                const particleCount = Math.floor(FIREWORK_CONFIG.particleDensity * recipe.size);
+                const speed = FIREWORK_CONFIG.baseSpeed * recipe.size;
 
-                launch(x, components) {
-                    if (this.fireworks.length >= FIREWORK_CONFIG.maxActiveFireworks) return;
-                    const firework = {
-                        x: x,
-                        y: this.canvas.height / (window.devicePixelRatio || 1), // Start at bottom
-                        targetY: this.canvas.height / (window.devicePixelRatio || 1) * 0.3,
-                        velocity: FIREWORK_CONFIG.ascentSpeed, 
-                        components: components.map(component => ({ ...component })),
-                        trail: []
-                    };
-                    this.fireworks.push(firework);
-                }
+                switch (recipe.pattern) {
+                    case 'spherical':
+                        for (let i = 0; i < particleCount; i++) {
+                            const angle = (i / particleCount) * Math.PI * 2;
+                            particles.push(this.createParticle(x, y, angle, speed * (0.8 + Math.random() * 0.4), recipe));
+                        }
+                        break;
 
-                explode(firework) {
-                    firework.components.forEach(component => {
-                        const particles = this.createPattern(
-                            firework.x,
-                            firework.y,
-                            component
-                        );
-                        this.particles.push(...particles);
-                    });
-                }
+                    case 'willow':
+                        for (let i = 0; i < particleCount; i++) {
+                            const angle = (i / particleCount) * Math.PI * 2;
+                            const particle = this.createParticle(x, y, angle, speed * 1.2, recipe);
+                            particle.gravity = FIREWORK_CONFIG.gravity * 2;
+                            particles.push(particle);
+                        }
+                        break;
 
-                createPattern(x, y, recipe) {
-                    const particles = [];
-                    const desiredParticles = Math.floor(FIREWORK_CONFIG.particleDensity * recipe.size);
-                    const availableParticles = FIREWORK_CONFIG.maxParticles - this.particles.length;
-                    const particleCount = Math.min(desiredParticles, availableParticles);
-
-                    const speed = FIREWORK_CONFIG.baseSpeed * recipe.size;
-
-                    switch (recipe.pattern) {
-                        case 'spherical':
-                            for (let i = 0; i < particleCount; i++) {
-                                const angle = (i / particleCount) * Math.PI * 2;
-                                particles.push(this.createParticle(x, y, angle, speed * (0.8 + Math.random() * 0.4), recipe));
-                            }
-                            break;
-
-                        case 'willow':
-                            for (let i = 0; i < particleCount; i++) {
-                                // Introduce variability for a willowy effect
-                                const angle = (i / particleCount) * Math.PI * 2;
-                                // Add a slight downward bias to the angle
-                                const downwardBias = Math.PI / 6; // 30 degrees
-                                const biasedAngle = angle + (Math.random() - 0.5) * downwardBias;
-                                const particle = this.createParticle(x, y, biasedAngle, speed * 1.2, recipe);
-                                particle.gravity = FIREWORK_CONFIG.gravity * 2;
+                    case 'palm':
+                        const branches = 8;
+                        for (let branch = 0; branch < branches; branch++) {
+                            const baseAngle = (branch / branches) * Math.PI * 2;
+                            for (let i = 0; i < particleCount / branches; i++) {
+                                const angle = baseAngle + (Math.random() - 0.5) * 0.3;
+                                const particle = this.createParticle(x, y, angle, speed * (1.5 + i / particleCount), recipe);
+                                particle.gravity = FIREWORK_CONFIG.gravity * 0.5;
                                 particles.push(particle);
                             }
-                            break;
+                        }
+                        break;
 
-                        case 'palm':
-                            const branches = 8;
-                            for (let branch = 0; branch < branches; branch++) {
-                                const baseAngle = (branch / branches) * Math.PI * 2;
-                                for (let i = 0; i < particleCount / branches; i++) {
-                                    const angle = baseAngle + (Math.random() - 0.5) * 0.3;
-                                    const particle = this.createParticle(x, y, angle, speed * (1.5 + i / particleCount), recipe);
-                                    particle.gravity = FIREWORK_CONFIG.gravity * 0.5;
-                                    particles.push(particle);
-                                }
-                            }
-                            break;
-
-                        case 'ring':
-                            const ringRadius = speed * 0.2;
-                            for (let i = 0; i < particleCount; i++) {
-                                const angle = (i / particleCount) * Math.PI * 2;
-                                const particle = this.createParticle(
-                                    x + Math.cos(angle) * ringRadius,
-                                    y + Math.sin(angle) * ringRadius,
-                                    angle,
-                                    speed * 0.5,
-                                    recipe
-                                );
-                                particle.gravity = FIREWORK_CONFIG.gravity * 0.7;
-                                particles.push(particle);
-                            }
-                            break;
-                    }
-
-                    return particles;
+                    case 'ring':
+                        const ringRadius = speed * 0.2;
+                        for (let i = 0; i < particleCount; i++) {
+                            const angle = (i / particleCount) * Math.PI * 2;
+                            const particle = this.createParticle(
+                                x + Math.cos(angle) * ringRadius,
+                                y + Math.sin(angle) * ringRadius,
+                                angle,
+                                speed * 0.5,
+                                recipe
+                            );
+                            particle.gravity = FIREWORK_CONFIG.gravity * 0.7;
+                            particles.push(particle);
+                        }
+                        break;
                 }
 
-                createParticle(x, y, angle, speed, recipe) {
-                    let particle = this.particlePool.acquire();
-                    if (!particle) {
-                        particle = {}; // Create a new particle if pool is empty
-                    }
-                    particle.x = x;
-                    particle.y = y;
-                    particle.velocity = {
+                return particles;
+            }
+
+            createParticle(x, y, angle, speed, recipe) {
+                return {
+                    x: x,
+                    y: y,
+                    velocity: {
                         x: Math.cos(angle) * speed,
                         y: Math.sin(angle) * speed
-                    };
-                    particle.color = recipe.color;
-                    particle.alpha = 1;
-                    particle.life = FIREWORK_CONFIG.particleLifetime + Math.random() * 0.3;
-                    particle.maxLife = FIREWORK_CONFIG.particleLifetime + Math.random() * 0.3;
-                    particle.gravity = recipe.gravity || FIREWORK_CONFIG.gravity;
-                    particle.trail = [];
+                    },
+                    color: recipe.color,
+                    alpha: 1,
+                    life: FIREWORK_CONFIG.particleLifetime + Math.random() * 0.3,
+                    maxLife: FIREWORK_CONFIG.particleLifetime + Math.random() * 0.3,
+                    gravity: FIREWORK_CONFIG.gravity,
+                    trail: []
+                };
+            }
 
-                    // Trail customization
-                    particle.trailColor = recipe.trailColor || recipe.color;
-                    particle.trailLength = recipe.trailLength || FIREWORK_CONFIG.trailLength;
+            update() {
+                const currentTime = Date.now();
+                const deltaTime = (currentTime - this.lastTime) / 1000; // Convert to seconds
+                this.lastTime = currentTime;
 
-                    return particle;
-                }
+                // Update fireworks
+                this.fireworks = this.fireworks.filter(firework => {
+                    firework.y += firework.velocity * deltaTime;
+                    firework.trail.unshift({ x: firework.x, y: firework.y, alpha: 1 });
+                    if (firework.trail.length > FIREWORK_CONFIG.trailLength) {
+                        firework.trail.pop();
+                    }
 
-                update() {
-                    const currentTime = Date.now();
-                    const deltaTime = (currentTime - this.lastTime) / 1000; // Convert to seconds
-                    this.lastTime = currentTime;
+                    if (firework.y <= firework.targetY) {
+                        this.explode(firework);
+                        return false;
+                    }
+                    return true;
+                });
 
-                    // Update fireworks
-                    this.fireworks = this.fireworks.filter(firework => {
-                        firework.y += firework.velocity * deltaTime;
-                        firework.trail.unshift({ x: firework.x, y: firework.y, alpha: 1 });
-                        if (firework.trail.length > firework.components[0].trailLength) { // Assuming uniform trail length
-                            firework.trail.pop();
-                        }
+                // Update particles
+                this.particles = this.particles.filter(particle => {
+                    particle.x += particle.velocity.x * deltaTime;
+                    particle.y += particle.velocity.y * deltaTime;
+                    particle.velocity.y += particle.gravity * deltaTime;
 
-                        if (firework.y <= firework.targetY) {
-                            this.explode(firework);
-                            return false;
-                        }
-                        return true;
-                    });
-
-                    // Update particles
-                    this.particles = this.particles.filter(particle => {
-                        particle.x += particle.velocity.x * deltaTime;
-                        particle.y += particle.velocity.y * deltaTime;
-                        particle.velocity.y += particle.gravity * deltaTime;
-
-                        // Update trail
+                    // Update trail
+                    if (FIREWORK_CONFIG.useStrongGlow) {
                         particle.trail.unshift({ x: particle.x, y: particle.y });
-                        if (particle.trail.length > particle.trailLength) {
-                            particle.trail.pop();
-                        }
-
-                        // Update alpha based on life
-                        particle.alpha = (particle.life / particle.maxLife) *
-                            FIREWORK_CONFIG.glowStrength;
-                        particle.life -= deltaTime;
-
-                        // Remove particle if life has expired
-                        if (particle.life <= 0) {
-                            this.particlePool.release(particle);
-                            return false;
-                        }
-                        return true;
-                    });
-
-                    // Call the game's update method for auto-launching
-                    if (this.onUpdate) {
-                        this.onUpdate(deltaTime);
-                    }
-                }
-
-                render() {
-                    // Clear with full black based on client dimensions
-                    const dpr = window.devicePixelRatio || 1;
-                    this.ctx.fillStyle = '#000000';
-                    this.ctx.fillRect(0, 0, this.canvas.clientWidth, this.canvas.clientHeight);
-
-                    // Draw fireworks and particles
-                    this.ctx.save(); // Save the current state
-
-                    // Disable shadow blur if not using strong glow
-                    if (!FIREWORK_CONFIG.useStrongGlow) {
-                        this.ctx.shadowBlur = 0;
+                        if (particle.trail.length > 5) particle.trail.pop();
                     }
 
-                    // Draw Fireworks
-                    this.fireworks.forEach(firework => {
-                        // Draw trail
-                        firework.trail.forEach(point => {
-                            this.ctx.fillStyle = `rgba(255, 220, 180, ${point.alpha * 0.5})`;
-                            this.ctx.beginPath();
-                            this.ctx.arc(point.x, point.y, 2, 0, Math.PI * 2);
-                            this.ctx.fill();
-                        });
+                    // Update alpha based on life
+                    particle.alpha = (particle.life / particle.maxLife) *
+                        FIREWORK_CONFIG.glowStrength;
+                    particle.life -= deltaTime;
 
-                        // Draw firework core
-                        this.ctx.fillStyle = '#ffffff';
-                        this.ctx.beginPath();
-                        this.ctx.arc(firework.x, firework.y, 3, 0, Math.PI * 2);
-                        this.ctx.fill();
-                    });
+                    return particle.life > 0;
+                });
 
-                    // Draw Particles
-                    this.particles.forEach(particle => {
-                        this.ctx.globalAlpha = particle.alpha;
-                        this.ctx.fillStyle = particle.color;
-                        this.ctx.beginPath();
-                        this.ctx.arc(particle.x, particle.y, FIREWORK_CONFIG.particleSize, 0, Math.PI * 2);
-                        this.ctx.fill();
-
-                        // Draw trails with custom trail color
-                        if (particle.trail.length > 0) {
-                            this.ctx.strokeStyle = `rgba(${hexToRgb(particle.trailColor)}, ${particle.alpha * 0.5})`;
-                            this.ctx.lineWidth = 1;
-                            this.ctx.beginPath();
-                            this.ctx.moveTo(particle.trail[0].x, particle.trail[0].y);
-                            for (let i = 1; i < particle.trail.length; i++) {
-                                this.ctx.lineTo(particle.trail[i].x, particle.trail[i].y);
-                            }
-                            this.ctx.stroke();
-                        }
-                    });
-
-                    this.ctx.globalAlpha = 1; // Reset alpha
-                    this.ctx.restore(); // Restore the state
-                }
-
-                loop() {
-                    if (!this.isPaused) {
-                        this.stats && this.stats.begin(); // Start stats monitoring
-
-                        this.update();
-                        this.render();
-
-                        this.stats && this.stats.end(); // End stats monitoring
-                    }
-                    requestAnimationFrame(() => this.loop());
+                // Call the game's update method for auto-launching
+                if (this.onUpdate) {
+                    this.onUpdate(deltaTime);
                 }
             }
 
-            // Initialize game when DOM is loaded
-            document.addEventListener('DOMContentLoaded', () => {
-                window.game = new FireworkGame();
-            });
-        </script>
-    </body>
+            render() {
+                // Clear with full black
+                this.ctx.fillStyle = '#000000';
+                this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+
+                // Draw fireworks
+                this.fireworks.forEach(firework => {
+                    // Draw trail
+                    firework.trail.forEach((point, index) => {
+                        const alpha = 1 - (index / FIREWORK_CONFIG.trailLength);
+                        this.ctx.fillStyle = `rgba(255, 220, 180, ${alpha * 0.5})`;
+                        this.applyGlow('#ffffff');
+                        this.ctx.beginPath();
+                        this.ctx.arc(point.x, point.y, 2, 0, Math.PI * 2);
+                        this.ctx.fill();
+                    });
+
+                    // Draw firework
+                    this.applyGlow('#ffffff');
+                    this.ctx.fillStyle = '#ffffff';
+                    this.ctx.beginPath();
+                    this.ctx.arc(firework.x, firework.y, 3, 0, Math.PI * 2);
+                    this.ctx.fill();
+                });
+
+                // Draw particles
+                this.particles.forEach(particle => {
+                    this.ctx.globalAlpha = particle.alpha;
+
+                    if (FIREWORK_CONFIG.useStrongGlow) {
+                        // Draw particle trails for strong glow
+                        particle.trail.forEach((point, index) => {
+                            const trailAlpha = particle.alpha * (1 - index / 5);
+                            this.ctx.globalAlpha = trailAlpha;
+                            this.applyGlow(particle.color);
+                            this.ctx.fillStyle = particle.color;
+                            this.ctx.beginPath();
+                            this.ctx.arc(point.x, point.y,
+                                FIREWORK_CONFIG.particleSize * 0.75,
+                                0, Math.PI * 2);
+                            this.ctx.fill();
+                        });
+                    }
+
+                    // Draw main particle
+                    this.applyGlow(particle.color);
+                    this.ctx.fillStyle = particle.color;
+                    this.ctx.beginPath();
+                    this.ctx.arc(particle.x, particle.y,
+                        FIREWORK_CONFIG.particleSize,
+                        0, Math.PI * 2);
+                    this.ctx.fill();
+                    this.clearGlow();
+                });
+
+                this.ctx.globalAlpha = 1;
+            }
+
+            loop() {
+                if (!this.isPaused) {
+                    this.update();
+                    this.render();
+                }
+                requestAnimationFrame(() => this.loop());
+            }
+        }
+
+        // Initialize game when DOM is loaded
+        document.addEventListener('DOMContentLoaded', () => {
+            window.game = new FireworkGame();
+        });
+    </script>
+</body>
 </html>
