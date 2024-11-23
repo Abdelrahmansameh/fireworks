@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>Firework Crafting Game</title>
-    <!-- Updated meta tag to prevent zooming -->
+    <!-- Meta tag to prevent zooming and ensure proper scaling on mobile devices -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <style>
         /* Base Styles */
@@ -102,6 +102,7 @@
             background: #2e3f57;
             border-radius: 10px;
             margin-right: 5px;
+            user-select: none;
         }
 
         .tab:hover {
@@ -152,7 +153,7 @@
             display: block;
         }
 
-        /* Updated canvas styling to fill the viewport */
+        /* Canvas styling to fill the viewport */
         canvas {
             position: fixed;
             top: 0;
@@ -286,7 +287,7 @@
     <script>
         // Global configuration
         const FIREWORK_CONFIG = {
-            useStrongGlow: false,
+            useStrongGlow: false, // Consider setting to true on desktops for better visuals
             particleLifetime: 1.2,    // Base lifetime in seconds
             baseSpeed: 200,           // Adjusted to units per second
             gravity: 50,              // Adjusted to units per second squared
@@ -315,10 +316,11 @@
 
                 this.autoLaunchAccumulator = 0; // For staggered launches
 
+                this.isMobile = this.detectMobile();
+                this.adjustConfigurations();
                 this.bindEvents();
                 this.loadRecipes();
                 this.updateUI();
-
                 this.updateComponentsList();
 
                 // Handle page visibility change
@@ -329,11 +331,22 @@
                         this.engine.resume();
                     }
                 });
+            }
 
-                // Detect mobile device
-                this.isMobile = this.detectMobile();
+            // Adjust FIREWORK_CONFIG based on device type for performance optimization
+            adjustConfigurations() {
                 if (this.isMobile) {
-                    this.adjustForMobile();
+                    // Optimize for mobile: reduce particle density and trail length
+                    FIREWORK_CONFIG.particleDensity = 80; // Reduced from 100
+                    FIREWORK_CONFIG.trailLength = 10;      // Reduced from 15
+                    FIREWORK_CONFIG.particleLifetime = 1.0; // Slight reduction
+                    FIREWORK_CONFIG.glowStrength = 0.6;    // Reduced glow for performance
+                } else {
+                    // Desktop configurations (can be kept as default or enhanced)
+                    FIREWORK_CONFIG.particleDensity = 100;
+                    FIREWORK_CONFIG.trailLength = 15;
+                    FIREWORK_CONFIG.particleLifetime = 1.2;
+                    FIREWORK_CONFIG.glowStrength = 0.8;
                 }
             }
 
@@ -624,28 +637,6 @@
             detectMobile() {
                 return ('ontouchstart' in window) || navigator.maxTouchPoints > 0 || navigator.userAgent.includes('Mobi');
             }
-
-            adjustForMobile() {
-                // Adjust UI for mobile devices
-                const gameContainer = document.querySelector('.game-container');
-                gameContainer.style.position = 'relative';
-                gameContainer.style.top = '0';
-                gameContainer.style.left = '0';
-                gameContainer.style.maxWidth = '100%';
-                gameContainer.style.width = '100%';
-                gameContainer.style.height = 'auto';
-                gameContainer.style.overflowY = 'auto';
-
-                // Increase button sizes for touch
-                const buttons = document.querySelectorAll('button');
-                buttons.forEach(button => {
-                    button.style.padding = '12px';
-                    button.style.fontSize = '1em';
-                });
-
-                // Adjust canvas size
-                this.engine.resizeCanvasForMobile();
-            }
         }
 
         class GameEngine {
@@ -654,7 +645,7 @@
                 this.ctx = this.canvas.getContext('2d');
                 this.particles = [];
                 this.fireworks = [];
-                this.lastTime = Date.now();
+                this.lastTime = performance.now();
                 this.isPaused = false;
                 this.resize();
                 window.addEventListener('resize', () => this.resize());
@@ -663,15 +654,10 @@
             }
 
             resize() {
-                // Updated resize method to get accurate canvas dimensions
-                this.canvas.width = this.canvas.clientWidth;
-                this.canvas.height = this.canvas.clientHeight;
-            }
-
-            resizeCanvasForMobile() {
-                // Adjust canvas size for mobile devices
-                this.canvas.width = this.canvas.clientWidth;
-                this.canvas.height = this.canvas.clientHeight;
+                // Ensure the canvas size matches the display size
+                this.canvas.width = window.innerWidth;
+                this.canvas.height = window.innerHeight;
+                // No scaling is applied to maintain consistency
             }
 
             pause() {
@@ -681,7 +667,7 @@
             resume() {
                 if (this.isPaused) {
                     this.isPaused = false;
-                    this.lastTime = Date.now(); // Reset lastTime to prevent jump in animation
+                    this.lastTime = performance.now(); // Reset lastTime to prevent jump in animation
                 }
             }
 
@@ -704,9 +690,9 @@
             launch(x, components) {
                 const firework = {
                     x: x,
-                    y: this.canvas.height,
-                    targetY: this.canvas.height * 0.3,
-                    velocity: FIREWORK_CONFIG.ascentSpeed, // Adjusted ascent speed
+                    y: this.canvas.height, // Start from the bottom of the canvas
+                    targetY: this.canvas.height * 0.3, // Target height for explosion
+                    velocity: FIREWORK_CONFIG.ascentSpeed, // Negative for upward movement
                     components: components.map(component => ({ ...component })),
                     trail: []
                 };
@@ -797,7 +783,7 @@
             }
 
             update() {
-                const currentTime = Date.now();
+                const currentTime = performance.now();
                 const deltaTime = (currentTime - this.lastTime) / 1000; // Convert to seconds
                 this.lastTime = currentTime;
 
@@ -809,11 +795,12 @@
                         firework.trail.pop();
                     }
 
+                    // Check if the firework has reached the target height
                     if (firework.y <= firework.targetY) {
                         this.explode(firework);
-                        return false;
+                        return false; // Remove the firework from the active list
                     }
-                    return true;
+                    return true; // Keep the firework active
                 });
 
                 // Update particles
@@ -822,18 +809,18 @@
                     particle.y += particle.velocity.y * deltaTime;
                     particle.velocity.y += particle.gravity * deltaTime;
 
-                    // Update trail
+                    // Update trail if strong glow is enabled
                     if (FIREWORK_CONFIG.useStrongGlow) {
                         particle.trail.unshift({ x: particle.x, y: particle.y });
                         if (particle.trail.length > 5) particle.trail.pop();
                     }
 
-                    // Update alpha based on life
+                    // Update alpha based on remaining life
                     particle.alpha = (particle.life / particle.maxLife) *
                         FIREWORK_CONFIG.glowStrength;
                     particle.life -= deltaTime;
 
-                    return particle.life > 0;
+                    return particle.life > 0; // Keep particle alive if life remains
                 });
 
                 // Call the game's update method for auto-launching
@@ -843,7 +830,7 @@
             }
 
             render() {
-                // Clear with full black
+                // Clear the canvas with full black
                 this.ctx.fillStyle = '#000000';
                 this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
@@ -897,7 +884,7 @@
                     this.clearGlow();
                 });
 
-                this.ctx.globalAlpha = 1;
+                this.ctx.globalAlpha = 1; // Reset alpha
             }
 
             loop() {
