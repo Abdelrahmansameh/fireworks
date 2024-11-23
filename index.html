@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <title>Firework Crafting Game</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Updated meta tag to prevent zooming -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <style>
         /* Base Styles */
         body {
@@ -12,6 +13,8 @@
             font-family: Arial, sans-serif;
             background-color: #000000;
             color: white;
+            /* Prevent double-tap zoom */
+            touch-action: manipulation;
         }
 
         .game-container {
@@ -149,11 +152,15 @@
             display: block;
         }
 
+        /* Updated canvas styling to fill the viewport */
         canvas {
             position: fixed;
             top: 0;
             left: 0;
             z-index: -1;
+            width: 100%;
+            height: 100%;
+            touch-action: manipulation; /* Prevent double-tap zoom on canvas */
         }
 
         /* Styles for Components */
@@ -366,41 +373,36 @@
 
                 this.showTab('crafting');
 
-                // Launch firework on canvas click
+                // Launch firework on canvas click or touch
                 document.addEventListener('click', (e) => {
                     if (!this.isClickInsideUI(e)) {
-                        const coords = this.getEventCoordinates(e);
-                        this.launchFireworkAt(coords.x);
+                        this.launchFireworkAt(e.clientX, e.clientY);
                     }
                 });
 
-                // Handle touch events for mobile
                 document.addEventListener('touchstart', (e) => {
                     if (!this.isClickInsideUI(e)) {
-                        const coords = this.getEventCoordinates(e);
-                        this.launchFireworkAt(coords.x);
+                        const touch = e.touches[0];
+                        this.launchFireworkAt(touch.clientX, touch.clientY);
                     }
                 });
-            }
 
-            getEventCoordinates(event) {
-                const rect = this.engine.canvas.getBoundingClientRect();
-                let x, y;
-                if (event.touches && event.touches.length) {
-                    x = event.touches[0].clientX - rect.left;
-                    y = event.touches[0].clientY - rect.top;
-                } else {
-                    x = event.clientX - rect.left;
-                    y = event.clientY - rect.top;
-                }
-                return { x, y };
+                // Prevent double-tap zoom
+                let lastTouchEnd = 0;
+                document.addEventListener('touchend', (e) => {
+                    const now = new Date().getTime();
+                    if (now - lastTouchEnd <= 300) {
+                        e.preventDefault();
+                    }
+                    lastTouchEnd = now;
+                }, false);
             }
 
             isClickInsideUI(event) {
                 const ui = document.querySelector('.game-container');
                 const rect = ui.getBoundingClientRect();
                 let x, y;
-                if (event.touches && event.touches.length) {
+                if (event.touches && event.touches.length > 0) {
                     x = event.touches[0].clientX;
                     y = event.touches[0].clientY;
                 } else {
@@ -518,13 +520,13 @@
             updateRecipeList() {
                 const list = document.getElementById('recipe-list');
                 list.innerHTML = this.recipes.map((recipe, index) => `
-                    <div class="recipe-card" onclick="game.selectRecipe(${index})">
+                    <div class="recipe-card" onclick="game.selectRecipe(${index})" style="cursor: pointer; padding: 10px; border: 1px solid #34495e; border-radius: 5px; margin-bottom: 10px; background: #2a2f3a;">
                         ${recipe.components.map((component, cIndex) => `
                             <div>
                                 <strong>Component ${cIndex + 1}:</strong><br>
                                 Pattern: ${component.pattern}<br>
                                 Size: ${component.size}<br>
-                                <div class="color-preview" style="background-color: ${component.color}"></div>
+                                <div class="color-preview" style="background-color: ${component.color};"></div>
                             </div>
                         `).join('')}
                     </div>
@@ -536,9 +538,12 @@
                 this.updateComponentsList();
             }
 
-            launchFireworkAt(x) {
-                // Launch all components as a single firework
-                this.engine.launch(x, this.currentRecipeComponents);
+            launchFireworkAt(x, y) {
+                // Adjust x based on canvas position
+                const rect = this.engine.canvas.getBoundingClientRect();
+                const adjustedX = x - rect.left;
+                // y is handled by the engine's ascent
+                this.engine.launch(adjustedX, this.currentRecipeComponents);
                 this.fireworkCount++;
                 this.sparkles++;
                 this.saveProgress();
@@ -557,7 +562,7 @@
             }
 
             resetGame() {
-                // Reset variables
+                // Reset all relevant game data
                 this.fireworkCount = 0;
                 this.autoLauncherLevel = 0;
                 this.autoLauncherCost = 10;
@@ -569,12 +574,7 @@
                     color: '#ff0000',
                     size: 1.0
                 }];
-                this.autoLaunchAccumulator = 0;
-
-                // Clear localStorage
                 localStorage.clear();
-
-                // Update UI
                 this.updateUI();
                 this.updateComponentsList();
                 this.updateRecipeList();
@@ -586,7 +586,8 @@
                     const numLaunches = Math.floor(this.autoLaunchAccumulator);
                     if (numLaunches > 0) {
                         for (let i = 0; i < numLaunches; i++) {
-                            this.launchFireworkAt(Math.random() * window.innerWidth);
+                            const launchX = Math.random() * this.engine.canvas.width;
+                            this.launchFireworkAt(launchX, 0); // y is handled by the engine
                         }
                         this.autoLaunchAccumulator -= numLaunches;
                     }
@@ -684,14 +685,15 @@
             }
 
             resize() {
-                this.canvas.width = window.innerWidth;
-                this.canvas.height = window.innerHeight;
+                // Updated resize method to get accurate canvas dimensions
+                this.canvas.width = this.canvas.clientWidth;
+                this.canvas.height = this.canvas.clientHeight;
             }
 
             resizeCanvasForMobile() {
                 // Adjust canvas size for mobile devices
-                this.canvas.width = window.innerWidth;
-                this.canvas.height = window.innerHeight * 0.8; // Leave some space for UI
+                this.canvas.width = this.canvas.clientWidth;
+                this.canvas.height = this.canvas.clientHeight;
             }
 
             pause() {
