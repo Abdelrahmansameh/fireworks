@@ -288,13 +288,13 @@
         const FIREWORK_CONFIG = {
             useStrongGlow: false,
             particleLifetime: 1.2,    // Base lifetime in seconds
-            baseSpeed: 2,             // Base particle speed
-            gravity: 0.05,            // Reduced gravity effect
+            baseSpeed: 200,           // Adjusted to units per second
+            gravity: 50,              // Adjusted to units per second squared
             trailLength: 15,          // Launch trail length
             particleSize: 2,          // Base particle size
             glowStrength: 0.8,        // Glow intensity (0-1)
             particleDensity: 100,     // Base number of particles
-            ascentSpeed: -8           // Ascent speed of the firework
+            ascentSpeed: -800         // Adjusted ascent speed (units per second)
         };
 
         class FireworkGame {
@@ -760,7 +760,7 @@
                         break;
 
                     case 'ring':
-                        const ringRadius = speed * 2;
+                        const ringRadius = speed * 0.2;
                         for (let i = 0; i < particleCount; i++) {
                             const angle = (i / particleCount) * Math.PI * 2;
                             const particle = this.createParticle(
@@ -798,12 +798,12 @@
 
             update() {
                 const currentTime = Date.now();
-                const deltaTime = (currentTime - this.lastTime) / 1000;
+                const deltaTime = (currentTime - this.lastTime) / 1000; // Convert to seconds
                 this.lastTime = currentTime;
 
                 // Update fireworks
                 this.fireworks = this.fireworks.filter(firework => {
-                    firework.y += firework.velocity;
+                    firework.y += firework.velocity * deltaTime;
                     firework.trail.unshift({ x: firework.x, y: firework.y, alpha: 1 });
                     if (firework.trail.length > FIREWORK_CONFIG.trailLength) {
                         firework.trail.pop();
@@ -818,9 +818,9 @@
 
                 // Update particles
                 this.particles = this.particles.filter(particle => {
-                    particle.x += particle.velocity.x;
-                    particle.y += particle.velocity.y;
-                    particle.velocity.y += particle.gravity;
+                    particle.x += particle.velocity.x * deltaTime;
+                    particle.y += particle.velocity.y * deltaTime;
+                    particle.velocity.y += particle.gravity * deltaTime;
 
                     // Update trail
                     if (FIREWORK_CONFIG.useStrongGlow) {
