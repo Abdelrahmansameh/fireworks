@@ -373,42 +373,20 @@
 
                 this.showTab('crafting');
 
-                // Launch firework on canvas click or touch
-                document.addEventListener('click', (e) => {
+                // Use pointerdown event to handle both mouse and touch input
+                document.addEventListener('pointerdown', (e) => {
                     if (!this.isClickInsideUI(e)) {
+                        e.preventDefault(); // Prevent any default behavior
                         this.launchFireworkAt(e.clientX, e.clientY);
                     }
                 });
-
-                document.addEventListener('touchstart', (e) => {
-                    if (!this.isClickInsideUI(e)) {
-                        const touch = e.touches[0];
-                        this.launchFireworkAt(touch.clientX, touch.clientY);
-                    }
-                });
-
-                // Prevent double-tap zoom
-                let lastTouchEnd = 0;
-                document.addEventListener('touchend', (e) => {
-                    const now = new Date().getTime();
-                    if (now - lastTouchEnd <= 300) {
-                        e.preventDefault();
-                    }
-                    lastTouchEnd = now;
-                }, false);
             }
 
             isClickInsideUI(event) {
                 const ui = document.querySelector('.game-container');
                 const rect = ui.getBoundingClientRect();
-                let x, y;
-                if (event.touches && event.touches.length > 0) {
-                    x = event.touches[0].clientX;
-                    y = event.touches[0].clientY;
-                } else {
-                    x = event.clientX;
-                    y = event.clientY;
-                }
+                let x = event.clientX;
+                let y = event.clientY;
                 return x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom;
             }
 
