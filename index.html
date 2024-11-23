@@ -628,10 +628,11 @@
                 launchFireworkAt(x, y) {
                     // Adjust x based on canvas position and devicePixelRatio
                     const rect = this.engine.canvas.getBoundingClientRect();
+                    const dpr = window.devicePixelRatio || 1;
                     const scaleX = this.engine.canvas.width / rect.width;
                     const scaleY = this.engine.canvas.height / rect.height;
                     const adjustedX = (x - rect.left) * scaleX;
-                    // Firework should always start at the bottom, so set y to canvas height
+                    // Firework should always start at the bottom, so set y to canvas height in game coordinates
                     this.engine.launch(adjustedX, this.currentRecipeComponents);
                     this.fireworkCount++;
                     this.sparkles++;
@@ -677,7 +678,7 @@
                         const numLaunches = Math.floor(this.autoLaunchAccumulator);
                         if (numLaunches > 0) {
                             for (let i = 0; i < numLaunches; i++) {
-                                const launchX = Math.random() * this.engine.canvas.width;
+                                const launchX = Math.random() * this.engine.canvas.width / (window.devicePixelRatio || 1);
                                 this.engine.launch(launchX, this.currentRecipeComponents);
                                 this.fireworkCount++;
                                 this.sparkles++;
@@ -758,9 +759,18 @@
 
                     // Initialize particle pool
                     this.particlePool = new ParticlePool(FIREWORK_CONFIG.maxParticles);
+
+                    this.resize(); // Initial resize
+                    window.addEventListener('resize', () => this.resize());
+
+                    // Bind onUpdate callback
+                    this.onUpdate = onUpdate;
                 }
 
                 resize() {
+                    // Reset transform to prevent cumulative scaling
+                    this.ctx.setTransform(1, 0, 0, 1, 0, 0);
+
                     // Adjust canvas size based on devicePixelRatio for crisp rendering
                     const dpr = window.devicePixelRatio || 1;
                     const rect = this.canvas.getBoundingClientRect();
@@ -932,6 +942,7 @@
                             FIREWORK_CONFIG.glowStrength;
                         particle.life -= deltaTime;
 
+                        // Remove particle if life has expired
                         if (particle.life <= 0) {
                             this.particlePool.release(particle);
                             return false;
@@ -946,9 +957,10 @@
                 }
 
                 render() {
-                    // Clear with full black
+                    // Clear with full black based on client dimensions
+                    const dpr = window.devicePixelRatio || 1;
                     this.ctx.fillStyle = '#000000';
-                    this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+                    this.ctx.fillRect(0, 0, this.canvas.clientWidth, this.canvas.clientHeight);
 
                     // Draw fireworks and particles
                     this.ctx.save(); // Save the current state
@@ -1002,8 +1014,12 @@
 
                 loop() {
                     if (!this.isPaused) {
+                        this.stats && this.stats.begin(); // Start stats monitoring
+
                         this.update();
                         this.render();
+
+                        this.stats && this.stats.end(); // End stats monitoring
                     }
                     requestAnimationFrame(() => this.loop());
                 }
