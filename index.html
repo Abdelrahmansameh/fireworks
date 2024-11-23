@@ -28,13 +28,13 @@
             padding: 15px;
             box-sizing: border-box;
             max-width: 300px;
-            background: #0a0e15;
+            background: rgba(10, 14, 21, 0.9);
             border-radius: 10px;
             z-index: 1000; /* Ensure UI is above canvas */
         }
 
         .panel {
-            background: #1a1f2a;
+            background: rgba(26, 31, 42, 0.95);
             padding: 10px;
             border-radius: 10px;
             border: 1px solid rgba(255, 255, 255, 0.1);
@@ -122,7 +122,8 @@
             color: #45a29e;
         }
 
-        .firework-counter {
+        .firework-counter,
+        .sparkles-counter {
             font-size: 1.1em;
             margin-top: 10px;
             text-align: center;
@@ -270,6 +271,10 @@
                     Total Fireworks Launched: <span id="firework-count">0</span>
                 </div>
 
+                <div class="sparkles-counter">
+                    Total Sparkles: <span id="sparkles-count">0</span>
+                </div>
+
                 <div class="auto-launcher">
                     <h3>Auto-Launcher (Level <span id="auto-launcher-level">0</span>)</h3>
                     <p>Cost: <span id="auto-launcher-cost">10</span> sparkles</p>
@@ -287,7 +292,7 @@
     <script>
         // Global configuration
         const FIREWORK_CONFIG = {
-            useStrongGlow: false, // Consider setting to true on desktops for better visuals
+            useStrongGlow: false, // Set to true on desktops for enhanced visuals
             particleLifetime: 1.2,    // Base lifetime in seconds
             baseSpeed: 200,           // Adjusted to units per second
             gravity: 50,              // Adjusted to units per second squared
@@ -297,6 +302,28 @@
             particleDensity: 100,     // Base number of particles
             ascentSpeed: -800         // Adjusted ascent speed (units per second)
         };
+
+        // Coordinate Transformation API
+        const CoordinateAPI = (() => {
+            let dpr = window.devicePixelRatio || 1;
+            let logicalWidth = window.innerWidth;
+            let logicalHeight = window.innerHeight;
+
+            return {
+                setScale: (newDpr, newLogicalWidth, newLogicalHeight) => {
+                    dpr = newDpr;
+                    logicalWidth = newLogicalWidth;
+                    logicalHeight = newLogicalHeight;
+                },
+                toLogicalX: (x) => x, // Direct mapping since context is scaled
+                toLogicalY: (y) => y,
+                toPhysicalX: (x) => x * dpr,
+                toPhysicalY: (y) => y * dpr,
+                getLogicalWidth: () => logicalWidth,
+                getLogicalHeight: () => logicalHeight,
+                getDPR: () => dpr
+            };
+        })();
 
         class FireworkGame {
             constructor() {
@@ -390,7 +417,15 @@
                 document.addEventListener('pointerdown', (e) => {
                     if (!this.isClickInsideUI(e)) {
                         e.preventDefault(); // Prevent any default behavior
-                        this.launchFireworkAt(e.clientX, e.clientY);
+                        const rect = this.engine.canvas.getBoundingClientRect();
+                        const x = e.clientX - rect.left;
+                        const y = e.clientY - rect.top;
+
+                        // Ensure x is within canvas bounds
+                        if (x >= 0 && x <= rect.width && y >= 0 && y <= rect.height) {
+                            const logicalX = x; // Direct mapping since CoordinateAPI.toLogicalX(x) = x
+                            this.launchFireworkAt(logicalX);
+                        }
                     }
                 });
             }
@@ -529,12 +564,9 @@
                 this.updateComponentsList();
             }
 
-            launchFireworkAt(x, y) {
-                // Adjust x based on canvas position
-                const rect = this.engine.canvas.getBoundingClientRect();
-                const adjustedX = x - rect.left;
-                // y is handled by the engine's ascent
-                this.engine.launch(adjustedX, this.currentRecipeComponents);
+            launchFireworkAt(logicalX) {
+                // Firework is always launched from the bottom; y is handled internally
+                this.engine.launch(logicalX, this.currentRecipeComponents);
                 this.fireworkCount++;
                 this.sparkles++;
                 this.saveProgress();
@@ -577,8 +609,8 @@
                     const numLaunches = Math.floor(this.autoLaunchAccumulator);
                     if (numLaunches > 0) {
                         for (let i = 0; i < numLaunches; i++) {
-                            const launchX = Math.random() * this.engine.canvas.width;
-                            this.launchFireworkAt(launchX, 0); // y is handled by the engine
+                            const launchX = Math.random() * CoordinateAPI.getLogicalWidth();
+                            this.launchFireworkAt(launchX);
                         }
                         this.autoLaunchAccumulator -= numLaunches;
                     }
@@ -599,6 +631,7 @@
                 document.getElementById('auto-launcher-level').textContent = this.autoLauncherLevel;
                 document.getElementById('auto-launcher-cost').textContent = this.autoLauncherCost;
                 document.getElementById('auto-sparkle-rate').textContent = this.autoSparkleRate;
+                document.getElementById('sparkles-count').textContent = this.sparkles; // Update sparkles counter
             }
 
             toggleTab(tab) {
@@ -647,17 +680,40 @@
                 this.fireworks = [];
                 this.lastTime = performance.now();
                 this.isPaused = false;
-                this.resize();
+                this.onUpdate = onUpdate; // Callback for the game's update method
+
+                this.resize(); // Initial resize
                 window.addEventListener('resize', () => this.resize());
 
-                this.onUpdate = onUpdate; // Callback for the game's update method
+                // Debounce resize events to prevent performance issues
+                let resizeTimeout;
+                window.addEventListener('resize', () => {
+                    clearTimeout(resizeTimeout);
+                    resizeTimeout = setTimeout(() => this.resize(), 100);
+                });
             }
 
             resize() {
-                // Ensure the canvas size matches the display size
-                this.canvas.width = window.innerWidth;
-                this.canvas.height = window.innerHeight;
-                // No scaling is applied to maintain consistency
+                const dpr = window.devicePixelRatio || 1;
+                const logicalWidth = window.innerWidth;
+                const logicalHeight = window.innerHeight;
+
+                // Update the CoordinateAPI with the current scale and dimensions
+                CoordinateAPI.setScale(dpr, logicalWidth, logicalHeight);
+
+                // Set the physical canvas size
+                this.canvas.width = logicalWidth * dpr;
+                this.canvas.height = logicalHeight * dpr;
+
+                // Set the CSS display size
+                this.canvas.style.width = `${logicalWidth}px`;
+                this.canvas.style.height = `${logicalHeight}px`;
+
+                // Reset the transformation matrix before scaling
+                this.ctx.setTransform(1, 0, 0, 1, 0, 0);
+
+                // Scale the context to map logical coordinates to physical pixels
+                this.ctx.scale(dpr, dpr);
             }
 
             pause() {
@@ -689,9 +745,9 @@
 
             launch(x, components) {
                 const firework = {
-                    x: x,
-                    y: this.canvas.height, // Start from the bottom of the canvas
-                    targetY: this.canvas.height * 0.3, // Target height for explosion
+                    x: x, // Logical X coordinate
+                    y: CoordinateAPI.getLogicalHeight(), // Start from the bottom (logical height)
+                    targetY: CoordinateAPI.getLogicalHeight() * 0.3, // Target height for explosion
                     velocity: FIREWORK_CONFIG.ascentSpeed, // Negative for upward movement
                     components: components.map(component => ({ ...component })),
                     trail: []
@@ -832,7 +888,7 @@
             render() {
                 // Clear the canvas with full black
                 this.ctx.fillStyle = '#000000';
-                this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+                this.ctx.fillRect(0, 0, CoordinateAPI.getLogicalWidth(), CoordinateAPI.getLogicalHeight());
 
                 // Draw fireworks
                 this.fireworks.forEach(firework => {
