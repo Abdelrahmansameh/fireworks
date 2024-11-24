@@ -236,6 +236,32 @@
                 font-size: 1em;
             }
         }
+
+        /* Notification Styles */
+        .notification {
+            display: none;
+            background-color: #e74c3c;
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 10px;
+            text-align: center;
+        }
+
+        .notification.show {
+            display: block;
+            animation: fadein 0.5s, fadeout 0.5s 2.5s;
+        }
+
+        @keyframes fadein {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes fadeout {
+            from { opacity: 1; }
+            to { opacity: 0; }
+        }
     </style>
 </head>
 <body>
@@ -283,6 +309,9 @@
                 </div>
 
                 <button id="reset-game">Reset Everything</button>
+
+                <!-- Notification Area -->
+                <div id="notification" class="notification"></div>
             </div>
         </div>
     </div>
@@ -293,9 +322,8 @@
         // Global configuration
         const FIREWORK_CONFIG = {
             useStrongGlow: false, // Set to true on desktops for enhanced visuals
-            particleLifetime: 1.2,    // Base lifetime in seconds
             baseSpeed: 200,           // Adjusted to units per second
-            gravity: 50,              // Adjusted to units per second squared
+            gravity: 100,             // Increased gravity for more descent
             trailLength: 15,          // Launch trail length
             particleSize: 2,          // Base particle size
             glowStrength: 0.8,        // Glow intensity (0-1)
@@ -328,12 +356,12 @@
         class FireworkGame {
             constructor() {
                 this.engine = new GameEngine('gameCanvas', this.update.bind(this));
-                this.engine.loop();
                 this.recipes = [];
                 this.currentRecipeComponents = [{
                     pattern: 'spherical',
                     color: '#ff0000',
-                    size: 1.0
+                    size: 1.0,
+                    lifetime: 1.2 // Default lifetime in seconds
                 }];
                 this.fireworkCount = parseInt(localStorage.getItem('fireworkCount')) || 0;
                 this.autoLauncherLevel = parseInt(localStorage.getItem('autoLauncherLevel')) || 0;
@@ -349,6 +377,10 @@
                 this.loadRecipes();
                 this.updateUI();
                 this.updateComponentsList();
+                this.updateRecipeList();
+
+                // Start the rendering loop
+                this.engine.loop();
 
                 // Handle page visibility change
                 document.addEventListener('visibilitychange', () => {
@@ -364,15 +396,15 @@
             adjustConfigurations() {
                 if (this.isMobile) {
                     // Optimize for mobile: reduce particle density and trail length
-                    FIREWORK_CONFIG.particleDensity = 80; // Reduced from 100
-                    FIREWORK_CONFIG.trailLength = 10;      // Reduced from 15
-                    FIREWORK_CONFIG.particleLifetime = 1.0; // Slight reduction
-                    FIREWORK_CONFIG.glowStrength = 0.6;    // Reduced glow for performance
+                    FIREWORK_CONFIG.particleDensity = 50; // Further reduced for better performance
+                    FIREWORK_CONFIG.trailLength = 8;      // Further reduced
+                    FIREWORK_CONFIG.gravity = 100;         // Increased gravity for smoother descent
+                    FIREWORK_CONFIG.glowStrength = 0.5;    // Further reduced glow for performance
                 } else {
-                    // Desktop configurations (can be kept as default or enhanced)
+                    // Desktop configurations
                     FIREWORK_CONFIG.particleDensity = 100;
                     FIREWORK_CONFIG.trailLength = 15;
-                    FIREWORK_CONFIG.particleLifetime = 1.2;
+                    FIREWORK_CONFIG.gravity = 100;         // Adjusted gravity
                     FIREWORK_CONFIG.glowStrength = 0.8;
                 }
             }
@@ -382,7 +414,8 @@
                     this.currentRecipeComponents.push({
                         pattern: 'spherical',
                         color: '#ff0000',
-                        size: 1.0
+                        size: 1.0,
+                        lifetime: 1.2 // Default lifetime
                     });
                     this.updateComponentsList();
                 });
@@ -421,7 +454,7 @@
                         const x = e.clientX - rect.left;
                         const y = e.clientY - rect.top;
 
-                        // Ensure x is within canvas bounds
+                        // Ensure x and y are within canvas bounds
                         if (x >= 0 && x <= rect.width && y >= 0 && y <= rect.height) {
                             const logicalX = x; // Direct mapping since CoordinateAPI.toLogicalX(x) = x
                             this.launchFireworkAt(logicalX);
@@ -442,6 +475,7 @@
                 const componentsList = document.getElementById('components-list');
                 componentsList.innerHTML = '';
 
+                // Corrected the typo by removing the extra 'this'
                 this.currentRecipeComponents.forEach((component, index) => {
                     const componentDiv = document.createElement('div');
                     componentDiv.classList.add('component');
@@ -455,6 +489,9 @@
                                 <option value="willow">Willow</option>
                                 <option value="palm">Palm</option>
                                 <option value="ring">Ring</option>
+                                <option value="star">Star</option>
+                                <option value="heart">Heart</option>
+                                <option value="burst">Burst</option>
                             </select>
                         </div>
                         <div class="crafting-option">
@@ -474,6 +511,11 @@
                             <input type="range" class="size-select" data-index="${index}" min="0.5" max="2" step="0.1" value="${component.size}">
                             <span class="size-value">${component.size}</span>
                         </div>
+                        <div class="crafting-option">
+                            <label>Lifetime (0.5 - 3 seconds):</label>
+                            <input type="range" class="lifetime-select" data-index="${index}" min="0.5" max="3" step="0.1" value="${component.lifetime}">
+                            <span class="lifetime-value">${component.lifetime}</span>
+                        </div>
                         <button class="remove-component" data-index="${index}">Remove Component</button>
                     `;
 
@@ -491,6 +533,9 @@
 
                     const sizeSelect = componentDiv.querySelector('.size-select');
                     const sizeValue = componentDiv.querySelector('.size-value');
+
+                    const lifetimeSelect = componentDiv.querySelector('.lifetime-select');
+                    const lifetimeValue = componentDiv.querySelector('.lifetime-value');
 
                     // Add event listeners
                     patternSelect.addEventListener('change', (e) => {
@@ -511,14 +556,21 @@
                         sizeValue.textContent = e.target.value;
                     });
 
+                    lifetimeSelect.addEventListener('input', (e) => {
+                        const idx = e.target.getAttribute('data-index');
+                        this.currentRecipeComponents[idx].lifetime = parseFloat(e.target.value);
+                        lifetimeValue.textContent = e.target.value;
+                    });
+
                     const removeButton = componentDiv.querySelector('.remove-component');
                     removeButton.addEventListener('click', (e) => {
                         const idx = e.target.getAttribute('data-index');
                         this.currentRecipeComponents.splice(idx, 1);
                         this.updateComponentsList();
                     });
-                });
-            }
+                }); // <-- Properly closed the forEach loop with ')'
+
+            } // <-- Properly closed the updateComponentsList() method
 
             saveCurrentRecipe() {
                 const recipe = {
@@ -552,6 +604,7 @@
                                 <strong>Component ${cIndex + 1}:</strong><br>
                                 Pattern: ${component.pattern}<br>
                                 Size: ${component.size}<br>
+                                Lifetime: ${component.lifetime} s<br>
                                 <div class="color-preview" style="background-color: ${component.color};"></div>
                             </div>
                         `).join('')}
@@ -581,6 +634,8 @@
                     this.autoLauncherCost = Math.floor(this.autoLauncherCost * 1.5);
                     this.saveProgress();
                     this.updateUI();
+                } else {
+                    this.showNotification("Not enough sparkles to buy this upgrade!");
                 }
             }
 
@@ -595,7 +650,8 @@
                 this.currentRecipeComponents = [{
                     pattern: 'spherical',
                     color: '#ff0000',
-                    size: 1.0
+                    size: 1.0,
+                    lifetime: 1.2
                 }];
                 localStorage.clear();
                 this.updateUI();
@@ -670,6 +726,16 @@
             detectMobile() {
                 return ('ontouchstart' in window) || navigator.maxTouchPoints > 0 || navigator.userAgent.includes('Mobi');
             }
+
+            showNotification(message) {
+                const notification = document.getElementById('notification');
+                notification.textContent = message;
+                notification.classList.add('show');
+                // Hide after 3 seconds
+                setTimeout(() => {
+                    notification.classList.remove('show');
+                }, 3000);
+            }
         }
 
         class GameEngine {
@@ -683,7 +749,6 @@
                 this.onUpdate = onUpdate; // Callback for the game's update method
 
                 this.resize(); // Initial resize
-                window.addEventListener('resize', () => this.resize());
 
                 // Debounce resize events to prevent performance issues
                 let resizeTimeout;
@@ -744,6 +809,7 @@
             }
 
             launch(x, components) {
+                // Firework is always launched from the bottom; y is handled internally
                 const firework = {
                     x: x, // Logical X coordinate
                     y: CoordinateAPI.getLogicalHeight(), // Start from the bottom (logical height)
@@ -768,7 +834,7 @@
 
             createPattern(x, y, recipe) {
                 const particles = [];
-                const particleCount = Math.floor(FIREWORK_CONFIG.particleDensity * recipe.size);
+                let particleCount = Math.floor(FIREWORK_CONFIG.particleDensity * recipe.size);
                 const speed = FIREWORK_CONFIG.baseSpeed * recipe.size;
 
                 switch (recipe.pattern) {
@@ -780,11 +846,24 @@
                         break;
 
                     case 'willow':
+                        // Enhanced Willow Pattern: Faster descent and slight increased spread
+                        const emissionAngle = 15 * (Math.PI / 180); // 15 degrees in radians
                         for (let i = 0; i < particleCount; i++) {
-                            const angle = (i / particleCount) * Math.PI * 2;
-                            const particle = this.createParticle(x, y, angle, speed * 1.2, recipe);
-                            particle.gravity = FIREWORK_CONFIG.gravity * 2;
-                            particles.push(particle);
+                            // Emit particles within a narrower vertical cone
+                            const angleOffset = (Math.random() - 0.5) * emissionAngle;
+                            const angle = (-Math.PI / 2) + angleOffset; // Centered upwards
+
+                            // Slight horizontal drift
+                            const horizontalDrift = (Math.random() - 0.5) * 100; // Pixels per second
+
+                            const initialSpeed = speed * (0.7 + Math.random() * 0.3); // Slight variation in speed
+
+                            const particle = this.createParticle(x, y, angle, initialSpeed, recipe);
+                            if (particle) {
+                                particle.velocity.x += horizontalDrift / 1000; // Convert to per second
+                                particle.gravity = FIREWORK_CONFIG.gravity * 3; // Increased gravity for faster descent
+                                particles.push(particle);
+                            }
                         }
                         break;
 
@@ -795,8 +874,10 @@
                             for (let i = 0; i < particleCount / branches; i++) {
                                 const angle = baseAngle + (Math.random() - 0.5) * 0.3;
                                 const particle = this.createParticle(x, y, angle, speed * (1.5 + i / particleCount), recipe);
-                                particle.gravity = FIREWORK_CONFIG.gravity * 0.5;
-                                particles.push(particle);
+                                if (particle) {
+                                    particle.gravity = FIREWORK_CONFIG.gravity * 0.5;
+                                    particles.push(particle);
+                                }
                             }
                         }
                         break;
@@ -812,28 +893,91 @@
                                 speed * 0.5,
                                 recipe
                             );
-                            particle.gravity = FIREWORK_CONFIG.gravity * 0.7;
-                            particles.push(particle);
+                            if (particle) {
+                                particle.gravity = FIREWORK_CONFIG.gravity * 0.7;
+                                particles.push(particle);
+                            }
                         }
                         break;
+
+                    case 'star':
+                        // Star Pattern: Particles emit in a 5-pointed star shape
+                        const starPoints = 5;
+                        const totalStarParticles = starPoints * 2; // Outer and inner points
+                        const starInnerRadius = speed * 0.05; // Reduced to make it less spread out
+                        const starOuterRadius = speed * 0.1; // Reduced to make it less spread out
+
+                        for (let i = 0; i < totalStarParticles; i++) {
+                            const angle = (i / totalStarParticles) * Math.PI * 2;
+                            // Alternate between outer and inner radius
+                            const radius = (i % 2 === 0) ? starOuterRadius : starInnerRadius;
+                            const particle = this.createParticle(x, y, angle, speed, recipe, radius);
+                            if (particle) {
+                                particle.gravity = FIREWORK_CONFIG.gravity * 1.0;
+                                particles.push(particle);
+                            }
+                        }
+                        break;
+						
+                        case 'heart':
+                            // Heart Pattern: Particles emit forming a compact and correctly oriented heart shape
+                            const heartScale = 0.5; // Adjusted scaling factor for compactness
+                            for (let i = 0; i < particleCount; i++) {
+                                const t = (i / particleCount) * Math.PI * 2;
+                                // Parametric equations for a heart shape
+                                const xOffset = heartScale * (16* Math.pow(Math.sin(t), 3));
+                                const yOffset = heartScale * (10 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t));
+
+                                // Invert yOffset to correct orientation (since canvas y-axis is downward)
+                                const invertedYOffset = -yOffset;
+
+                                const angle = Math.atan2(invertedYOffset, xOffset);
+                                const speedFactor = 0.2; // Fixed slower speed for delicate heart
+                                const particle = this.createParticle(x + xOffset, y + invertedYOffset, angle, speed * speedFactor, recipe);
+                                if (particle) {
+                                    particle.gravity = FIREWORK_CONFIG.gravity * 0.7; // Slightly reduced gravity for smoother motion
+                                    particles.push(particle);
+                                }
+                            }
+                            break;
+
+                    case 'burst':
+                        // Burst Pattern: Particles emit in a sudden, explosive burst
+                        for (let i = 0; i < particleCount; i++) {
+                            const angle = (i / particleCount) * Math.PI * 2;
+                            const burstSpeed = speed * (1.0 + Math.random() * 0.5);
+                            const particle = this.createParticle(x, y, angle, burstSpeed, recipe);
+                            if (particle) {
+                                particle.gravity = FIREWORK_CONFIG.gravity * 0.8;
+                                particles.push(particle);
+                            }
+                        }
+                        break;
+
+                    default:
+                        console.warn(`Unknown pattern type: ${recipe.pattern}`);
                 }
 
                 return particles;
             }
 
-            createParticle(x, y, angle, speed, recipe) {
+            createParticle(x, y, angle, speed, recipe, customRadius = null) {
+                const finalSpeed = speed; // Use provided speed
+                const finalX = customRadius ? x + Math.cos(angle) * customRadius : x;
+                const finalY = customRadius ? y + Math.sin(angle) * customRadius : y;
+
                 return {
-                    x: x,
-                    y: y,
+                    x: finalX,
+                    y: finalY,
                     velocity: {
-                        x: Math.cos(angle) * speed,
-                        y: Math.sin(angle) * speed
+                        x: Math.cos(angle) * finalSpeed,
+                        y: Math.sin(angle) * finalSpeed
                     },
                     color: recipe.color,
                     alpha: 1,
-                    life: FIREWORK_CONFIG.particleLifetime + Math.random() * 0.3,
-                    maxLife: FIREWORK_CONFIG.particleLifetime + Math.random() * 0.3,
-                    gravity: FIREWORK_CONFIG.gravity,
+                    life: recipe.lifetime, // Use lifetime from recipe
+                    maxLife: recipe.lifetime,
+                    gravity: recipe.gravity || FIREWORK_CONFIG.gravity, // Use recipe-specific gravity if provided
                     trail: []
                 };
             }
