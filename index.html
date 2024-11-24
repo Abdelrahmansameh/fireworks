@@ -371,7 +371,7 @@
         const FIREWORK_CONFIG = {
             baseSpeed: 20,           // Adjusted base speed
             gravity: 9.81,            // Realistic gravity
-            particleSize: 1.5,        // Base particle size
+            particleSize:1.0,        // Base particle size
             particleDensity: 100,     // Base number of particles
             ascentSpeed: 60,          // Speed of the firework rocket ascent
             trailLength: 10,          // Length of the rocket trail
@@ -389,6 +389,126 @@
                 default: 9.81
             }
         };
+
+
+		class InstancedParticleSystem {
+			constructor(scene, maxParticles = 10000) {
+				this.scene = scene;
+				this.maxParticles = maxParticles;
+				this.activeParticles = 0;
+				
+				// Create instanced mesh
+				const particleGeometry = new THREE.SphereGeometry(1, 3, 3); // Base size of 1 for scaling
+				const particleMaterial = new THREE.MeshBasicMaterial({
+					color: 0xffffff,
+					transparent: true,
+					blending: THREE.AdditiveBlending
+				});
+
+				this.instancedMesh = new THREE.InstancedMesh(
+					particleGeometry,
+					particleMaterial,
+					maxParticles
+				);
+				
+				        this.instancedMesh.instanceColor = new THREE.InstancedBufferAttribute(
+            new Float32Array(maxParticles * 3),
+            3
+        );
+		
+				// Initialize arrays for particle properties
+				this.positions = new Array(maxParticles).fill(null).map(() => new THREE.Vector3());
+				this.velocities = new Array(maxParticles).fill(null).map(() => new THREE.Vector3());
+				this.colors = new Array(maxParticles).fill(null).map(() => new THREE.Color());
+				this.scales = new Float32Array(maxParticles);
+				this.lifetimes = new Float32Array(maxParticles);
+				this.gravities = new Float32Array(maxParticles);
+				this.initialLifetimes = new Float32Array(maxParticles);
+				this.alphas = new Float32Array(maxParticles).fill(1.0);
+
+				// Reusable objects to avoid allocations
+				this.matrix = new THREE.Matrix4();
+				
+				scene.add(this.instancedMesh);
+			}
+
+			addParticle(position, velocity, color, scale, lifetime, gravity) {
+				if (this.activeParticles >= this.maxParticles) return -1;
+				
+				const index = this.activeParticles++;
+				
+				this.positions[index].copy(position);
+				this.velocities[index].copy(velocity);
+				this.colors[index].copy(color);
+				this.scales[index] = scale;
+				this.lifetimes[index] = lifetime;
+				this.initialLifetimes[index] = lifetime;
+				this.gravities[index] = gravity;
+				this.alphas[index] = 1.0;
+
+				this.updateParticleTransform(index);
+				
+				return index;
+			}
+
+			updateParticleTransform(index) {
+				this.matrix.makeTranslation(
+					this.positions[index].x,
+					this.positions[index].y,
+					this.positions[index].z
+				);
+				
+				const scale = this.scales[index];
+				this.matrix.scale(new THREE.Vector3(scale, scale, scale));
+				
+				this.instancedMesh.setMatrixAt(index, this.matrix);
+				
+				const color = this.colors[index].clone();
+				color.multiplyScalar(this.alphas[index]);
+				this.instancedMesh.setColorAt(index, color);
+			}
+
+			update(delta) {
+				let currentIndex = 0;
+				
+				for (let i = 0; i < this.activeParticles; i++) {
+					// Only decrease lifetime by delta time
+					this.lifetimes[i] -= delta;
+					
+					if (this.lifetimes[i] <= 0) continue;
+					
+					// Update physics
+					this.velocities[i].y -= this.gravities[i] * delta;
+					this.positions[i].addScaledVector(this.velocities[i], delta);
+					
+					// If particle is still alive, update its transform
+					if (currentIndex !== i) {
+						// Move particle data to new position in arrays
+						this.positions[currentIndex].copy(this.positions[i]);
+						this.velocities[currentIndex].copy(this.velocities[i]);
+						this.colors[currentIndex].copy(this.colors[i]);
+						this.scales[currentIndex] = this.scales[i];
+						this.lifetimes[currentIndex] = this.lifetimes[i];
+						this.initialLifetimes[currentIndex] = this.initialLifetimes[i];
+						this.gravities[currentIndex] = this.gravities[i];
+					}
+					
+					// Calculate alpha based on remaining lifetime
+					const normalizedLifetime = this.lifetimes[currentIndex] / this.initialLifetimes[currentIndex];
+					this.alphas[currentIndex] = normalizedLifetime * normalizedLifetime; // quadratic fade out
+					
+					// Update transform and color with proper alpha
+					this.updateParticleTransform(currentIndex);
+					
+					currentIndex++;
+				}
+				
+				this.activeParticles = currentIndex;
+				this.instancedMesh.count = this.activeParticles;
+				this.instancedMesh.instanceMatrix.needsUpdate = true;
+				this.instancedMesh.instanceColor.needsUpdate = true;
+			}
+		}
 
         class FireworkGame {
             constructor() {
@@ -414,6 +534,8 @@
 
                 // Initialize THREE.js first
                 this.initThreeJS();
+
+				this.particleSystem = new InstancedParticleSystem(this.scene, 50000);
 
                 // Now you can create auto-launcher meshes
                 this.autoLaunchers.forEach(launcher => {
@@ -497,7 +619,7 @@
                     this.currentRecipeComponents.push({
                         pattern: 'spherical',
                         color: '#ff0000',
-                        size: 1.0,
+                        size: 0.5,
                         lifetime: 1.2
                     });
                     this.updateComponentsList();
@@ -646,6 +768,9 @@
             }
 
             update(deltaTime) {
+			
+				this.particleSystem.update(deltaTime);
+
                 // Update auto-launchers
                 this.autoLaunchers.forEach(launcher => {
                     launcher.accumulator += deltaTime;
@@ -728,7 +853,7 @@
             }
 
             launch(x, y, components, trailEffect) {
-                const firework = new Firework(x, y, components, this.scene, this.camera, trailEffect);
+                const firework = new Firework(x, y, components, this.scene, this.camera, trailEffect, this.particleSystem);
                 this.fireworks.push(firework);
             }
 
@@ -834,8 +959,8 @@
                             <input type="color" class="color-input" data-index="${index}" value="${component.color}">
                         </div>
                         <div class="crafting-option">
-                            <label>Shell Size (0.1 - 1):</label>
-                            <input type="range" class="size-select" data-index="${index}" min="0.1" max="1" step="0.1" value="${component.size}">
+                            <label>Shell Size (0.3 - 0.7):</label>
+                            <input type="range" class="size-select" data-index="${index}" min="0.3" max="0.7" step="0.05" value="${component.size}">
                             <span class="size-value">${component.size}</span>
                         </div>
                         <div class="crafting-option">
@@ -1000,454 +1125,424 @@
             }
         }
 
-        class Firework {
-            constructor(x, y, components, scene, camera, trailEffect) {
-                this.scene = scene;
-                this.camera = camera;
-                this.rocket = this.createRocket(x, y);
-                this.components = components;
-                this.trailEffect = trailEffect;
-                this.trailParticles = [];
-                this.exploded = false;
-                this.alive = true;
+class Firework {
+    constructor(x, y, components, scene, camera, trailEffect, particleSystem) {
+        this.scene = scene;
+        this.camera = camera;
+        this.components = components;
+        this.trailEffect = trailEffect;
+        this.particleSystem = particleSystem;
+        this.exploded = false;
+        this.alive = true;
+        this.particles = new Set(); // Store particle indices
 
-                // Calculate explosion height based on percentages
-                const distance = this.camera.position.z - this.rocket.position.z;
-                const vFOV = this.camera.fov * Math.PI / 180; // Convert to radians
-                const viewHeight = 2 * Math.tan(vFOV / 2) * distance;
+        // Create rocket
+        this.rocket = this.createRocket(x, y);
+        this.trailParticles = [];
 
-                const minY = -viewHeight / 2 + FIREWORK_CONFIG.minExplosionHeightPercent * viewHeight;
-                const maxY = -viewHeight / 2 + FIREWORK_CONFIG.maxExplosionHeightPercent * viewHeight;
+        // Calculate explosion height
+        const distance = this.camera.position.z - this.rocket.position.z;
+        const vFOV = this.camera.fov * Math.PI / 180;
+        const viewHeight = 2 * Math.tan(vFOV / 2) * distance;
 
-                this.targetY = minY + Math.random() * (maxY - minY);
+        const minY = -viewHeight / 2 + FIREWORK_CONFIG.minExplosionHeightPercent * viewHeight;
+        const maxY = -viewHeight / 2 + FIREWORK_CONFIG.maxExplosionHeightPercent * viewHeight;
+
+        this.targetY = minY + Math.random() * (maxY - minY);
+    }
+
+    createRocket(x, y) {
+        const geometry = new THREE.SphereGeometry(FIREWORK_CONFIG.rocketSize, 8, 8);
+        const material = new THREE.MeshBasicMaterial({ color: 0xffffff });
+        const rocket = new THREE.Mesh(geometry, material);
+        rocket.position.set(x, y, 0);
+        this.scene.add(rocket);
+        return rocket;
+    }
+
+    update(delta) {
+        if (!this.exploded) {
+            // Pre-explosion update (rocket ascending)
+            this.rocket.position.y += FIREWORK_CONFIG.ascentSpeed * delta;
+            this.createTrailParticle(this.rocket.position.x, this.rocket.position.y);
+            
+            // Update trail particles
+            this.updateTrailParticles(delta);
+
+            if (this.rocket.position.y >= this.targetY) {
+                this.explode();
             }
-
-            createRocket(x, y) {
-                const geometry = new THREE.SphereGeometry(FIREWORK_CONFIG.rocketSize, 8, 8);
-                const material = new THREE.MeshBasicMaterial({ color: 0xffffff });
-                const rocket = new THREE.Mesh(geometry, material);
-                rocket.position.set(x, y, 0);
-                this.scene.add(rocket);
-                return rocket;
-            }
-
-            update(delta) {
-				if (!this.exploded) {
-					// Pre-explosion update (rocket ascending)
-					this.rocket.position.y += FIREWORK_CONFIG.ascentSpeed * delta;
-					this.createTrailParticle(this.rocket.position.x, this.rocket.position.y);
-
-					// Update only trail particles with trail effects
-					const now = Date.now();
-					this.trailParticles.forEach((particle, index) => {
-						const age = (now - particle.createdAt) / 500;
-						
-						if (age >= 1) return;
-
-						switch (this.trailEffect) {
-							case 'sparkle':
-								particle.mesh.material.size = (0.3 + Math.random() * 0.3) * (1 - age);
-								particle.mesh.material.opacity = Math.random()* (1 - age);
-								break;
-
-							case 'rainbow':
-								const hue = ((now * 0.001) + index * 0.1) % 1;
-								particle.color.setHSL(hue, 1, 0.5);
-								particle.mesh.material.color = particle.color;
-								particle.mesh.material.opacity = particle.initialOpacity * (1 - age);
-								break;
-
-							case 'comet':
-								particle.scale = Math.max(0.2, particle.scale * 0.95);
-								particle.mesh.scale.set(particle.scale, particle.scale, particle.scale);
-								particle.mesh.material.opacity = particle.initialOpacity * (1 - age);
-								particle.mesh.position.y += delta * 2;
-								break;
-
-							case 'fade':
-							default:
-								particle.mesh.material.opacity = particle.initialOpacity * (1 - age);
-								break;
-						}
-					});
-
-					// Clean up old trail particles
-					for (let i = this.trailParticles.length - 1; i >= 0; i--) {
-						const particle = this.trailParticles[i];
-						if (Date.now() - particle.createdAt > 500) {
-							this.scene.remove(particle.mesh);
-							this.trailParticles.splice(i, 1);
-						}
-					}
-
-					if (this.rocket.position.y >= this.targetY) {
-						this.explode();
-					}
-				} else {
-					// Post-explosion update (explosion particles)
-					this.alive = false;
-					this.particleGroups.forEach(group => {
-						const positions = group.particleSystem.geometry.attributes.position.array;
-
-						for (let i = 0; i < group.velocities.length; i++) {
-							if (group.lifetimes[i] > 0) {
-								group.velocities[i].y -= group.gravities[i] * delta;
-								positions[i * 3] += group.velocities[i].x * delta;
-								positions[i * 3 + 1] += group.velocities[i].y * delta;
-								group.lifetimes[i] -= delta;
-								this.alive = true;
-							}
-						}
-
-						group.particleSystem.geometry.attributes.position.needsUpdate = true;
-						const alpha = Math.max(Math.min(group.lifetimes[0] / group.initialLifetime, 1), 0);
-						group.particleSystem.material.opacity = alpha;
-
-						if (!this.alive) {
-							this.scene.remove(group.particleSystem);
-						}
-					});
-				}
-            }
-
-            updateTrailEffect(group, delta) {
-                switch (this.trailEffect) {
-                    case 'sparkle':
-                        group.particleSystem.material.size = FIREWORK_CONFIG.particleSize * 
-                            (1 + Math.random() * Math.sin(Date.now() * 0.01));
-                        break;
-                    case 'rainbow':
-                        const hue = (Date.now() * 0.001) % 1;
-                        group.particleSystem.material.color.setHSL(hue, 1, 0.5);
-                        break;
-                    case 'comet':
-                        const positions = group.particleSystem.geometry.attributes.position.array;
-                        for (let i = 0; i < group.velocities.length; i++) {
-                            if (group.lifetimes[i] > 0) {
-                                const trail = new THREE.Vector3(
-                                    positions[i * 3] - group.velocities[i].x * delta * 2,
-                                    positions[i * 3 + 1] - group.velocities[i].y * delta * 2,
-                                    0
-                                );
-                                this.createTrailParticle(trail.x, trail.y);
-                            }
-                        }
-                        break;
+        } else {
+            // After explosion, just check if particles are still alive
+            this.alive = this.particles.size > 0;
+            
+            // Clear dead particles from our set
+            for (const index of this.particles) {
+                if (this.particleSystem.lifetimes[index] <= 0) {
+                    this.particles.delete(index);
                 }
-            }
-
-			createTrailParticle(x, y) {
-                let material;
-                switch (this.trailEffect) {
-                    case 'sparkle':
-                        material = new THREE.PointsMaterial({
-                            color: 0xffffff,
-                            size: 0.3 + Math.random() * 0.3,
-                            transparent: true,
-                            opacity: 0.8,
-                            blending: THREE.AdditiveBlending
-                        });
-                        const geometry = new THREE.BufferGeometry();
-                        const positions = new Float32Array([x, y, 0]);
-                        geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-                        const particle = new THREE.Points(geometry, material);
-                        this.scene.add(particle);
-                        this.trailParticles.push({
-                            mesh: particle,
-                            createdAt: Date.now(),
-                            initialOpacity: 0.8
-                        });
-                        break;
-
-                    case 'rainbow':
-                        const hue = (Date.now() * 0.001) % 1;
-                        const color = new THREE.Color();
-                        color.setHSL(hue, 1, 0.5);
-                        material = new THREE.MeshBasicMaterial({
-                            color: color,
-                            transparent: true,
-                            opacity: 0.8,
-                            blending: THREE.AdditiveBlending
-                        });
-                        const sphere = new THREE.SphereGeometry(0.2, 4, 4);
-                        const mesh = new THREE.Mesh(sphere, material);
-                        mesh.position.set(x, y, 0);
-                        this.scene.add(mesh);
-                        this.trailParticles.push({
-                            mesh: mesh,
-                            createdAt: Date.now(),
-                            initialOpacity: 0.8,
-                            color: color.clone()
-                        });
-                        break;
-
-                    case 'comet':
-                        material = new THREE.MeshBasicMaterial({
-                            color: 0xffaa00,
-                            transparent: true,
-                            opacity: 0.8,
-                            blending: THREE.AdditiveBlending
-                        });
-                        const cometGeometry = new THREE.SphereGeometry(0.3, 4, 4);
-                        const cometMesh = new THREE.Mesh(cometGeometry, material);
-                        cometMesh.position.set(x, y, 0);
-                        this.scene.add(cometMesh);
-                        this.trailParticles.push({
-                            mesh: cometMesh,
-                            createdAt: Date.now(),
-                            initialOpacity: 0.8,
-                            scale: 1.0
-                        });
-                        break;
-
-                    case 'fade':
-                    default:
-                        material = new THREE.MeshBasicMaterial({
-                            color: 0xffffff,
-                            transparent: true,
-                            opacity: 0.8,
-                            blending: THREE.AdditiveBlending
-                        });
-                        const defaultGeometry = new THREE.SphereGeometry(0.2, 4, 4);
-                        const defaultMesh = new THREE.Mesh(defaultGeometry, material);
-                        defaultMesh.position.set(x, y, 0);
-                        this.scene.add(defaultMesh);
-                        this.trailParticles.push({
-                            mesh: defaultMesh,
-                            createdAt: Date.now(),
-                            initialOpacity: 0.8
-                        });
-                        break;
-                }
-            }
-
-            explode() {
-                // Remove rocket and trail particles
-                this.scene.remove(this.rocket);
-				this.trailParticles.forEach(particle => {
-					if (particle.mesh) {
-						this.scene.remove(particle.mesh);
-					}
-				});
-				this.trailParticles = [];
-
-                // Create explosion particles
-                this.particleGroups = [];
-
-                this.components.forEach(component => {
-                    const particles = this.createParticles(this.rocket.position.x, this.rocket.position.y, component);
-                    this.particleGroups.push(particles);
-                });
-
-                this.exploded = true;
-            }
-
-            createParticles(x, y, recipe) {
-                const particleCount = Math.floor(FIREWORK_CONFIG.particleDensity * recipe.size);
-                const speed = FIREWORK_CONFIG.baseSpeed * recipe.size;
-
-                // Initialize arrays
-                const positions = new Float32Array(particleCount * 3);
-                const velocities = new Array(particleCount);
-                const gravities = new Float32Array(particleCount);
-                const lifetimes = new Float32Array(particleCount);
-
-                // Create geometry and material
-                const geometry = new THREE.BufferGeometry();
-                const color = new THREE.Color(recipe.color);
-
-                const material = new THREE.PointsMaterial({
-                    color: color,
-                    size: FIREWORK_CONFIG.particleSize * recipe.size,
-                    blending: THREE.AdditiveBlending,
-                    transparent: true,
-                    depthWrite: false
-                });
-
-                let i = 0; // Index for positions and velocities arrays
-
-                const gravity = FIREWORK_CONFIG.patternGravities[recipe.pattern] || FIREWORK_CONFIG.patternGravities.default;
-				switch (recipe.pattern) {
-					case 'spherical':
-						for (i = 0; i < particleCount; i++) {
-							const angle = (i / particleCount) * Math.PI * 2;
-							const magnitude = speed * (0.8 + Math.random() * 0.4); // Slight randomness
-							const vx = Math.cos(angle) * magnitude;
-							const vy = Math.sin(angle) * magnitude;
-
-							positions[i * 3] = x;
-							positions[i * 3 + 1] = y;
-							positions[i * 3 + 2] = 0;
-
-							velocities[i] = new THREE.Vector3(vx, vy, 0);
-							gravities[i] = gravity * (0.9 + Math.random() * 0.2);
-							lifetimes[i] = recipe.lifetime;
-						}
-						break;
-
-					case 'ring':
-						for (i = 0; i < particleCount; i++) {
-							const angle = (i / particleCount) * Math.PI * 2;
-							const magnitude = speed ; 
-							const vx = Math.cos(angle) * magnitude;
-							const vy = Math.sin(angle) * magnitude;
-
-							positions[i * 3] = x;
-							positions[i * 3 + 1] = y;
-							positions[i * 3 + 2] = 0;
-
-							velocities[i] = new THREE.Vector3(vx, vy, 0);
-							gravities[i] = gravity;
-							lifetimes[i] = recipe.lifetime;
-						}
-						break;
-
-					case 'heart':
-						const heartScale = 1;
-						for (i = 0; i < particleCount; i++) {
-							const t = (i / particleCount) * Math.PI * 2;
-							const xOffset = heartScale * (16 * Math.pow(Math.sin(t), 3));
-							const yOffset = heartScale * (13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t));
-							const angle = Math.atan2(yOffset, xOffset);
-							const magnitude = speed * Math.sqrt(xOffset * xOffset + yOffset * yOffset) * 0.05;
-							const vx = Math.cos(angle) * magnitude;
-							const vy = Math.sin(angle) * magnitude;
-
-							positions[i * 3] = x;
-							positions[i * 3 + 1] = y;
-							positions[i * 3 + 2] = 0;
-
-							velocities[i] = new THREE.Vector3(vx, vy, 0);
-							gravities[i] = gravity * (0.95 + Math.random() * 0.1);
-							lifetimes[i] = recipe.lifetime;
-						}
-						break;
-
-					case 'star':
-						const spikes = 5;
-						const outerRadius = speed;
-						const innerRadius = speed * 0.5;
-						const pointsPerStar = spikes * 2;
-						
-						for (i = 0; i < particleCount; i++) {
-							const starPoint = i % pointsPerStar;
-							const starCopy = Math.floor(i / pointsPerStar);
-							
-							const radius = (starPoint % 2 === 0) ? outerRadius : innerRadius;
-							const angle = (starPoint / pointsPerStar) * Math.PI * 2;
-							
-							const radiusVariation = 1 + (Math.random() * 0.2 - 0.1) * (starCopy > 0 ? 1 : 0);
-							const angleVariation = (Math.random() * 0.1 - 0.05) * (starCopy > 0 ? 1 : 0);
-							
-							const vx = Math.cos(angle + angleVariation) * radius * radiusVariation;
-							const vy = Math.sin(angle + angleVariation) * radius * radiusVariation;
-
-							positions[i * 3] = x;
-							positions[i * 3 + 1] = y;
-							positions[i * 3 + 2] = 0;
-
-							velocities[i] = new THREE.Vector3(vx, vy, 0);
-							gravities[i] = gravity * (0.95 + Math.random() * 0.1);
-							lifetimes[i] = recipe.lifetime;
-						}
-						break;
-
-					case 'burst':
-						for (i = 0; i < particleCount; i++) {
-							const angle = Math.random() * Math.PI * 2;
-							const magnitude = speed * Math.random();
-							const vx = Math.cos(angle) * magnitude;
-							const vy = Math.sin(angle) * magnitude;
-
-							positions[i * 3] = x;
-							positions[i * 3 + 1] = y;
-							positions[i * 3 + 2] = 0;
-
-							velocities[i] = new THREE.Vector3(vx, vy, 0);
-							gravities[i] = gravity * (0.9 + Math.random() * 0.2);
-							lifetimes[i] = recipe.lifetime;
-						}
-						break;
-
-					case 'willow':
-						const emissionAngle = 0.5; 
-						for (i = 0; i < particleCount; i++) {
-							const angleOffset = (Math.random() - 0.5) * emissionAngle;
-							const angle = (-Math.PI / 2) + angleOffset;
-							const horizontalDrift = (Math.random() - 0.5) * 10; 
-							const initialSpeed = speed * (0.7 + Math.random() * 0.3);
-							
-							// Fixed velocity calculations to maintain central origin
-							const vx = Math.cos(angle) * initialSpeed + horizontalDrift;
-							const vy = Math.sin(angle) * initialSpeed;
-
-							positions[i * 3] = x;
-							positions[i * 3 + 1] = y;
-							positions[i * 3 + 2] = 0;
-
-							velocities[i] = new THREE.Vector3(vx, vy, 0);
-							gravities[i] = gravity * (0.9 + Math.random() * 0.2);
-							lifetimes[i] = recipe.lifetime;
-						}
-						break;
-					
-					case 'palm':
-						const branches = 8;
-						for (i = 0; i < particleCount; i++) {
-							const branch = i % branches;
-							const particleInBranch = Math.floor(i / branches);
-							const particlesPerBranch = Math.floor(particleCount / branches);
-							
-							const baseAngle = (branch / branches) * Math.PI * 2;
-							const angleSpread = 0.3 * (particleInBranch / particlesPerBranch); // Wider spread at branch tips
-							const angle = baseAngle + (Math.random() - 0.5) * angleSpread;
-							
-							const magnitude = speed * (1.2 + particleInBranch / particlesPerBranch);
-							const vx = Math.cos(angle) * magnitude;
-							const vy = Math.sin(angle) * magnitude;
-
-							positions[i * 3] = x;
-							positions[i * 3 + 1] = y;
-							positions[i * 3 + 2] = 0;
-
-							velocities[i] = new THREE.Vector3(vx, vy, 0);
-							gravities[i] = gravity;
-							lifetimes[i] = recipe.lifetime;
-						}
-						break;
-
-					default:
-						for (i = 0; i < particleCount; i++) {
-							const angle = Math.random() * Math.PI * 2;
-							const magnitude = speed;
-							const vx = Math.cos(angle) * magnitude;
-							const vy = Math.sin(angle) * magnitude;
-
-							positions[i * 3] = x;
-							positions[i * 3 + 1] = y;
-							positions[i * 3 + 2] = 0;
-
-							velocities[i] = new THREE.Vector3(vx, vy, 0);
-							gravities[i] = FIREWORK_CONFIG.gravity;
-							lifetimes[i] = recipe.lifetime;
-						}
-					}
-
-                // Set position attribute
-                geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-
-                const particleSystem = new THREE.Points(geometry, material);
-                this.scene.add(particleSystem);
-
-                return {
-                    particleSystem: particleSystem,
-                    velocities: velocities,
-                    gravities: gravities,
-                    lifetimes: lifetimes,
-                    initialLifetime: recipe.lifetime
-                };
             }
         }
+    }
+
+    createTrailParticle(x, y) {
+        let material;
+        switch (this.trailEffect) {
+            case 'sparkle':
+                material = new THREE.PointsMaterial({
+                    color: 0xffffff,
+                    size: 0.3 + Math.random() * 0.3,
+                    transparent: true,
+                    opacity: 0.8,
+                    blending: THREE.AdditiveBlending
+                });
+                const geometry = new THREE.BufferGeometry();
+                const positions = new Float32Array([x, y, 0]);
+                geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+                const particle = new THREE.Points(geometry, material);
+                this.scene.add(particle);
+                this.trailParticles.push({
+                    mesh: particle,
+                    createdAt: Date.now(),
+                    initialOpacity: 0.8
+                });
+                break;
+
+            case 'rainbow':
+                const hue = (Date.now() * 0.001) % 1;
+                const color = new THREE.Color();
+                color.setHSL(hue, 1, 0.5);
+                material = new THREE.MeshBasicMaterial({
+                    color: color,
+                    transparent: true,
+                    opacity: 0.8,
+                    blending: THREE.AdditiveBlending
+                });
+                const sphere = new THREE.SphereGeometry(0.2, 4, 4);
+                const mesh = new THREE.Mesh(sphere, material);
+                mesh.position.set(x, y, 0);
+                this.scene.add(mesh);
+                this.trailParticles.push({
+                    mesh: mesh,
+                    createdAt: Date.now(),
+                    initialOpacity: 0.8,
+                    color: color.clone()
+                });
+                break;
+
+            case 'comet':
+                material = new THREE.MeshBasicMaterial({
+                    color: 0xffaa00,
+                    transparent: true,
+                    opacity: 0.8,
+                    blending: THREE.AdditiveBlending
+                });
+                const cometGeometry = new THREE.SphereGeometry(0.3, 4, 4);
+                const cometMesh = new THREE.Mesh(cometGeometry, material);
+                cometMesh.position.set(x, y, 0);
+                this.scene.add(cometMesh);
+                this.trailParticles.push({
+                    mesh: cometMesh,
+                    createdAt: Date.now(),
+                    initialOpacity: 0.8,
+                    scale: 1.0
+                });
+                break;
+
+            case 'fade':
+            default:
+                material = new THREE.MeshBasicMaterial({
+                    color: 0xffffff,
+                    transparent: true,
+                    opacity: 0.8,
+                    blending: THREE.AdditiveBlending
+                });
+                const defaultGeometry = new THREE.SphereGeometry(0.2, 4, 4);
+                const defaultMesh = new THREE.Mesh(defaultGeometry, material);
+                defaultMesh.position.set(x, y, 0);
+                this.scene.add(defaultMesh);
+                this.trailParticles.push({
+                    mesh: defaultMesh,
+                    createdAt: Date.now(),
+                    initialOpacity: 0.8
+                });
+                break;
+        }
+    }
+
+    updateTrailParticles(delta) {
+        const now = Date.now();
+        this.trailParticles.forEach((particle, index) => {
+            const age = (now - particle.createdAt) / 500;
+            
+            if (age >= 1) return;
+
+            switch (this.trailEffect) {
+                case 'sparkle':
+                    particle.mesh.material.size = (0.3 + Math.random() * 0.3) * (1 - age);
+                    particle.mesh.material.opacity = particle.initialOpacity * (1 - age);
+                    break;
+
+                case 'rainbow':
+                    const hue = ((now * 0.001) + index * 0.1) % 1;
+                    particle.color.setHSL(hue, 1, 0.5);
+                    particle.mesh.material.color = particle.color;
+                    particle.mesh.material.opacity = particle.initialOpacity * (1 - age);
+                    break;
+
+                case 'comet':
+                    particle.scale = Math.max(0.2, particle.scale * 0.95);
+                    particle.mesh.scale.set(particle.scale, particle.scale, particle.scale);
+                    particle.mesh.material.opacity = particle.initialOpacity * (1 - age);
+                    particle.mesh.position.y += delta * 2;
+                    break;
+
+                case 'fade':
+                default:
+                    particle.mesh.material.opacity = particle.initialOpacity * (1 - age);
+                    break;
+            }
+        });
+
+        // Clean up old trail particles
+        for (let i = this.trailParticles.length - 1; i >= 0; i--) {
+            const particle = this.trailParticles[i];
+            if (Date.now() - particle.createdAt > 500) {
+                this.scene.remove(particle.mesh);
+                this.trailParticles.splice(i, 1);
+            }
+        }
+    }
+
+    explode() {
+        // Remove rocket and trails
+        this.scene.remove(this.rocket);
+        this.trailParticles.forEach(particle => {
+            if (particle.mesh) {
+                this.scene.remove(particle.mesh);
+            }
+        });
+        this.trailParticles = [];
+
+        // Create explosion particles
+        this.components.forEach(component => {
+            const particleCount = Math.floor(FIREWORK_CONFIG.particleDensity * component.size);
+            const pattern = component.pattern;
+            const gravity = FIREWORK_CONFIG.patternGravities[pattern] || FIREWORK_CONFIG.patternGravities.default;
+            const speed = FIREWORK_CONFIG.baseSpeed * component.size;
+            const color = new THREE.Color(component.color);
+            const size = FIREWORK_CONFIG.particleSize * component.size;
+            const rocketPos = this.rocket.position;
+            const velocity = new THREE.Vector3();
+
+            switch (pattern) {
+                case 'spherical':
+                    for (let i = 0; i < particleCount; i++) {
+                        const angle = (i / particleCount) * Math.PI * 2;
+                        const magnitude = speed * (0.8 + Math.random() * 0.4);
+                        velocity.set(
+                            Math.cos(angle) * magnitude,
+                            Math.sin(angle) * magnitude,
+                            0
+                        );
+                        
+                        const index = this.particleSystem.addParticle(
+                            rocketPos.clone(),
+                            velocity.clone(),
+                            color,
+                            size,
+                            component.lifetime,
+                            gravity
+                        );
+                        if (index !== -1) this.particles.add(index);
+                    }
+                    break;
+
+                case 'ring':
+                    for (let i = 0; i < particleCount; i++) {
+                        const angle = (i / particleCount) * Math.PI * 2;
+                        const magnitude = speed;
+                        velocity.set(
+                            Math.cos(angle) * magnitude,
+                            Math.sin(angle) * magnitude,
+                            0
+                        );
+                        
+                        const index = this.particleSystem.addParticle(
+                            rocketPos.clone(),
+                            velocity.clone(),
+                            color,
+                            size,
+                            component.lifetime,
+                            gravity
+                        );
+                        if (index !== -1) this.particles.add(index);
+                    }
+                    break;
+
+                case 'heart':
+                    const heartScale = 1;
+                    for (let i = 0; i < particleCount; i++) {
+                        const t = (i / particleCount) * Math.PI * 2;
+                        const xOffset = heartScale * (16 * Math.pow(Math.sin(t), 3));
+                        const yOffset = heartScale * (13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t));
+                        const angle = Math.atan2(yOffset, xOffset);
+                        const magnitude = speed * Math.sqrt(xOffset * xOffset + yOffset * yOffset) * 0.05;
+                        velocity.set(
+                            Math.cos(angle) * magnitude,
+                            Math.sin(angle) * magnitude,
+                            0
+                        );
+                        
+                        const index = this.particleSystem.addParticle(
+                            rocketPos.clone(),
+                            velocity.clone(),
+                            color,
+                            size,
+                            component.lifetime,
+                            gravity
+                        );
+                        if (index !== -1) this.particles.add(index);
+                    }
+                    break;
+
+                case 'willow':
+                    const emissionAngle = 0.5;
+                    for (let i = 0; i < particleCount; i++) {
+                        const angleOffset = (Math.random() - 0.5) * emissionAngle;
+                        const angle = (-Math.PI / 2) + angleOffset;
+                        const horizontalDrift = (Math.random() - 0.5) * 2;
+                        const initialSpeed = speed * (0.7 + Math.random() * 0.3);
+                        velocity.set(
+                            Math.cos(angle) * initialSpeed + horizontalDrift,
+                            Math.sin(angle) * initialSpeed,
+                            0
+                        );
+                        
+                        const index = this.particleSystem.addParticle(
+                            rocketPos.clone(),
+                            velocity.clone(),
+                            color,
+                            size,
+                            component.lifetime,
+                            gravity
+                        );
+                        if (index !== -1) this.particles.add(index);
+                    }
+                    break;
+
+                case 'palm':
+                    const branches = 8;
+                    const particlesPerBranch = Math.floor(particleCount / branches);
+                    for (let i = 0; i < particleCount; i++) {
+                        const branch = i % branches;
+                        const particleInBranch = Math.floor(i / branches);
+                        
+                        const baseAngle = (branch / branches) * Math.PI * 2;
+                        const angleSpread = 0.3 * (particleInBranch / particlesPerBranch);
+                        const angle = baseAngle + (Math.random() - 0.5) * angleSpread;
+                        
+                        const magnitude = speed * (1.2 + particleInBranch / particlesPerBranch);
+                        velocity.set(
+                            Math.cos(angle) * magnitude,
+                            Math.sin(angle) * magnitude,
+                            0
+                        );
+                        
+                        const index = this.particleSystem.addParticle(
+                            rocketPos.clone(),
+                            velocity.clone(),
+                            color,
+                            size,
+                            component.lifetime,
+                            gravity
+                        );
+                        if (index !== -1) this.particles.add(index);
+                    }
+                    break;
+
+                case 'burst':
+                    for (let i = 0; i < particleCount; i++) {
+                        const angle = Math.random() * Math.PI * 2;
+                        const magnitude = speed * Math.random();
+                        velocity.set(
+                            Math.cos(angle) * magnitude,
+                            Math.sin(angle) * magnitude,
+                            0
+                        );
+                        
+                        const index = this.particleSystem.addParticle(
+                            rocketPos.clone(),
+                            velocity.clone(),
+                            color,
+                            size,
+                            component.lifetime,
+                            gravity
+                        );
+                        if (index !== -1) this.particles.add(index);
+                    }
+                    break;
+
+                case 'star':
+                    const spikes = 5;
+                    const outerRadius = speed;
+                    const innerRadius = speed * 0.5;
+                    const pointsPerStar = spikes * 2;
+                    
+                    for (let i = 0; i < particleCount; i++) {
+                        const starPoint = i % pointsPerStar;
+                        const starCopy = Math.floor(i / pointsPerStar);
+                        
+                        const radius = (starPoint % 2 === 0) ? outerRadius : innerRadius;
+                        const angle = (starPoint / pointsPerStar) * Math.PI * 2;
+                        
+                        const radiusVariation = 1 + (Math.random() * 0.2 - 0.1) * (starCopy > 0 ? 1 : 0);
+                        const angleVariation = (Math.random() * 0.1 - 0.05) * (starCopy > 0 ? 1 : 0);
+                        
+				velocity.set(
+											Math.cos(angle + angleVariation) * radius * radiusVariation,
+											Math.sin(angle + angleVariation) * radius * radiusVariation,
+											0
+										);
+										
+										const index = this.particleSystem.addParticle(
+											rocketPos.clone(),
+											velocity.clone(),
+											color,
+											size,
+											component.lifetime,
+											gravity
+										);
+										if (index !== -1) this.particles.add(index);
+									}
+									break;
+
+								default:
+									for (let i = 0; i < particleCount; i++) {
+										const angle = Math.random() * Math.PI * 2;
+										const magnitude = speed;
+										velocity.set(
+											Math.cos(angle) * magnitude,
+											Math.sin(angle) * magnitude,
+											0
+										);
+										
+										const index = this.particleSystem.addParticle(
+											rocketPos.clone(),
+											velocity.clone(),
+											color,
+											size,
+											component.lifetime,
+											gravity
+										);
+										if (index !== -1) this.particles.add(index);
+									}
+							}
+						});
+
+						this.exploded = true;
+					}
+				}
 
         // Initialize game when DOM is loaded
         document.addEventListener('DOMContentLoaded', () => {
