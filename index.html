@@ -180,13 +180,11 @@
             background: #e74c3c;
         }
 
-        /* Styles to Make Crafting Tab Scrollable */
         #crafting-content {
-            max-height: 80vh; /* Adjust the height as needed */
+            max-height: 80vh;
             overflow-y: auto;
         }
 
-        /* Optional: Customize scrollbar */
         #crafting-content::-webkit-scrollbar {
             width: 8px;
         }
@@ -230,7 +228,6 @@
             }
         }
 
-        /* Notification Styles */
         .notification {
             display: none;
             background-color: #e74c3c;
@@ -256,7 +253,6 @@
             to { opacity: 0; }
         }
 
-        /* Reset Confirmation Styles */
         .reset-confirmation {
             background-color: rgba(26, 31, 42, 0.95);
             padding: 15px;
@@ -370,7 +366,6 @@
     </div>
     <div id="overlay" class="overlay" style="display: none;"></div>
 
-    <!-- Include your script at the end -->
     <script>
         // Global configuration
         const FIREWORK_CONFIG = {
@@ -404,7 +399,7 @@
 				this.activeParticles = 0;
 				
 				// Create instanced mesh
-				const particleGeometry = new THREE.SphereGeometry(1, 3, 3); // Base size of 1 for scaling
+				const particleGeometry = new THREE.SphereGeometry(1, 3, 3); 
 				const particleMaterial = new THREE.MeshBasicMaterial({
 					color: 0xffffff,
 					transparent: true,
@@ -478,7 +473,6 @@
 				let currentIndex = 0;
 				
 				for (let i = 0; i < this.activeParticles; i++) {
-					// Only decrease lifetime by delta time
 					this.lifetimes[i] -= delta;
 					
 					if (this.lifetimes[i] <= 0) continue;
@@ -526,7 +520,7 @@
 
                 this.recipes = [];
                 this.currentRecipeComponents = [];
-                this.currentTrailEffect = 'fade'; // Default trail effect for the recipe
+                this.currentTrailEffect = 'fade'; 
                 this.fireworkCount = parseInt(localStorage.getItem('fireworkCount')) || 0;
                 this.autoLauncherLevel = parseInt(localStorage.getItem('autoLauncherLevel')) || 0;
                 this.autoLauncherCost = parseInt(localStorage.getItem('autoLauncherCost')) || 10;
@@ -534,18 +528,16 @@
 
                 // Load auto-launchers
                 this.autoLaunchers = JSON.parse(localStorage.getItem('autoLaunchers')) || [];
-                // Initialize accumulators for each launcher and create their meshes
+		    
                 this.isMobile = this.detectMobile();
                 this.adjustConfigurations();
 
-                // Initialize THREE.js first
                 this.initThreeJS();
 				
-				this.initBackgroundColor();
+		this.initBackgroundColor();
 
-				this.particleSystem = new InstancedParticleSystem(this.scene, 50000);
+		this.particleSystem = new InstancedParticleSystem(this.scene, 50000);
 
-                // Now you can create auto-launcher meshes
                 this.autoLaunchers.forEach(launcher => {
                     if (!launcher.accumulator) {
                         launcher.accumulator = Math.random() * 5;
@@ -553,7 +545,6 @@
                     this.createAutoLauncherMesh(launcher);
                 });
 
-                // Now you can bind events
                 this.bindEvents();
 
                 this.loadRecipes();
@@ -565,7 +556,6 @@
                 // Start the rendering loop
                 this.animate();
 				
-                // Handle page visibility change
                 document.addEventListener('visibilitychange', () => {
                     if (document.visibilityState === 'hidden') {
                         this.pause();
@@ -619,7 +609,6 @@
             }
 
             adjustConfigurations() {
-                // Adjust configurations if needed
             }
 
             bindEvents() {
@@ -718,7 +707,7 @@
 
             getViewBounds() {
                 const distance = this.camera.position.z;
-                const vFOV = this.camera.fov * Math.PI / 180; // Convert to radians
+                const vFOV = this.camera.fov * Math.PI / 180;
                 const viewHeight = 2 * Math.tan(vFOV / 2) * distance;
                 const viewWidth = viewHeight * this.camera.aspect;
 
@@ -779,7 +768,6 @@
 			
 				this.particleSystem.update(deltaTime);
 
-                // Update auto-launchers
                 this.autoLaunchers.forEach(launcher => {
                     launcher.accumulator += deltaTime;
                     if (launcher.accumulator >= 5) { // Every 5 seconds
@@ -792,7 +780,6 @@
             }
 
 			initBackgroundColor() {
-				// Load saved background color or use default black
 				const savedColor = localStorage.getItem('backgroundColor') || '#000000';
 				
 				// Wait for DOM to be ready before accessing the element
@@ -825,9 +812,7 @@
                 localStorage.setItem('sparkles', this.sparkles);
                 localStorage.setItem('fireworkRecipes', JSON.stringify(this.recipes));
                 localStorage.setItem('currentTrailEffect', this.currentTrailEffect);
-                // Save auto-launchers positions
                 localStorage.setItem('autoLaunchers', JSON.stringify(this.autoLaunchers.map(launcher => ({ xPercent: launcher.xPercent, accumulator: launcher.accumulator }))));
-                // Save current recipe components
                 localStorage.setItem('currentRecipeComponents', JSON.stringify(this.currentRecipeComponents));
 				localStorage.setItem('backgroundColor', document.getElementById('background-color').value);
             }
@@ -880,7 +865,7 @@
                     return;
                 }
                 const bounds = this.getViewBounds();
-                const y = bounds.minY; // Bottom of the screen
+                const y = bounds.minY; 
                 this.launch(x, y, this.currentRecipeComponents, this.currentTrailEffect);
                 this.fireworkCount++;
                 this.sparkles++;
@@ -917,7 +902,6 @@
             }
 			
 			createAutoLauncherMesh(launcher) {
-				// Change from BoxGeometry to PlaneGeometry
 				const geometry = new THREE.PlaneGeometry(5, 10);
 				const material = new THREE.MeshBasicMaterial({ 
 					color: 0xffffff,
@@ -935,7 +919,6 @@
 			}
 
             resetGame() {
-                // Reset all relevant game data
                 this.fireworkCount = 0;
                 this.autoLauncherLevel = 0;
                 this.autoLauncherCost = 10;
@@ -948,7 +931,6 @@
                     size: 0.5,
                     lifetime: 1.2
                 }];
-                // Remove auto-launchers from scene
                 this.autoLaunchers.forEach(launcher => {
                     if (launcher.mesh) {
                         this.scene.remove(launcher.mesh);
@@ -961,8 +943,8 @@
                 this.updateRecipeList();
                 this.showNotification("Game has been reset.");
 				
-				this.renderer.setClearColor(new THREE.Color('#000000'));
-				document.getElementById('background-color').value = '#000000';
+		this.renderer.setClearColor(new THREE.Color('#000000'));
+		document.getElementById('background-color').value = '#000000';
     
             }
 
@@ -996,7 +978,7 @@
                                 <option value="burst">Burst</option>
                                 <option value="palm">Palm</option>
                                 <option value="willow">Willow</option>
-								<option value="helix">Helix</option>
+				<option value="helix">Helix</option>
                             </select>
                         </div>
                         <div class="crafting-option">
@@ -1015,7 +997,7 @@
                         </div>
                         <button class="remove-component" data-index="${index}">Remove Component</button>
                     `;
-					componentsList.appendChild(componentDiv);
+	            componentsList.appendChild(componentDiv);
 
                     // Set the values of the selects
                     const patternSelect = componentDiv.querySelector('.pattern-select');
@@ -1030,7 +1012,6 @@
                     const lifetimeSelect = componentDiv.querySelector('.lifetime-select');
                     const lifetimeValue = componentDiv.querySelector('.lifetime-value');
 
-                    // Add event listeners
                     patternSelect.addEventListener('change', (e) => {
                         const idx = e.target.getAttribute('data-index');
                         this.currentRecipeComponents[idx].pattern = e.target.value;
@@ -1179,8 +1160,8 @@ class Firework {
         this.particleSystem = particleSystem;
         this.exploded = false;
         this.alive = true;
-        this.particles = new Set(); // Store particle indices
-
+        this.particles = new Set(); 
+	    
         // Create rocket
         this.rocket = this.createRocket(x, y);
         this.trailParticles = [];
@@ -1541,115 +1522,115 @@ class Firework {
                         let radius = (starPoint % 2 === 0) ? outerRadius : innerRadius;
                         let angle = (starPoint / pointsPerStar) * Math.PI * 2;
                         
-						// wtf ??? this somehow works ???? make the outer edges more dense :') 
-						if (i  > pointsPerStar && (starPoint % 2 === 0))
-						{
-							radius = outerRadius *  1 + (Math.random() * 0.2 - 0.1) * (starCopy > 0 ? 1 : 0);
-						}
+			// wtf ??? this somehow works ???? make the outer edges more dense :') 
+			if (i  > pointsPerStar && (starPoint % 2 === 0))
+			{
+				radius = outerRadius *  1 + (Math.random() * 0.2 - 0.1) * (starCopy > 0 ? 1 : 0);
+			}
 						
                         const radiusVariation = 1 + (Math.random() * 0.2 - 0.1) * (starCopy > 0 ? 1 : 0);
                         const angleVariation = (Math.random() * 0.1 - 0.05) * (starCopy > 0 ? 1 : 0);
                         
-					velocity.set(
-							Math.cos(angle + angleVariation) * radius * radiusVariation,
-							Math.sin(angle + angleVariation) * radius * radiusVariation,
-							0
-						);
-						
-						const index = this.particleSystem.addParticle(
-							rocketPos.clone(),
-							velocity.clone(),
-							color,
-							size,
-							component.lifetime,
-							gravity
-						);
-						if (index !== -1) this.particles.add(index);
-					}
-				break;
+			velocity.set(
+					Math.cos(angle + angleVariation) * radius * radiusVariation,
+					Math.sin(angle + angleVariation) * radius * radiusVariation,
+					0
+				);
+				
+				const index = this.particleSystem.addParticle(
+					rocketPos.clone(),
+					velocity.clone(),
+					color,
+					size,
+					component.lifetime,
+					gravity
+				);
+				if (index !== -1) this.particles.add(index);
+			}
+		break;
 
-				case 'helix':
-					    // Configuration for helix pattern
-					const helixRadius = .2;              // Base radius of the helix
-					const riseSpeed = speed * 0.5;      // How fast particles go up
-					const rotationSpeed = 1;            // How fast the helix rotates
-					const particlesPerStream = 100;     // Particles per helix stream
-					const verticalSpacing = 0.05;        // Reduced from 0.2 to make it more compact
-					const spreadFactor = 0.05;          // How much random spread to add
+		case 'helix':
+			    // Configuration for helix pattern
+			const helixRadius = .2;              // Base radius of the helix
+			const riseSpeed = speed * 0.5;      // How fast particles go up
+			const rotationSpeed = 1;            // How fast the helix rotates
+			const particlesPerStream = 100;     // Particles per helix stream
+			const verticalSpacing = 0.05;        // Reduced from 0.2 to make it more compact
+			const spreadFactor = 0.05;          // How much random spread to add
+			
+			// Create the two intertwining helices
+			for (let stream = 0; stream < 2; stream++) {
+				const streamOffset = stream * Math.PI; // Offset second stream by 180 degrees
+				
+				for (let i = 0; i < particlesPerStream; i++) {
+					const t = (i / particlesPerStream) * Math.PI * 2;
+					const angle = t + streamOffset;
 					
-					// Create the two intertwining helices
-					for (let stream = 0; stream < 2; stream++) {
-						const streamOffset = stream * Math.PI; // Offset second stream by 180 degrees
-						
-						for (let i = 0; i < particlesPerStream; i++) {
-							const t = (i / particlesPerStream) * Math.PI * 2;
-							const angle = t + streamOffset;
-							
-							// Add some randomness to the position
-							const randomSpread = (Math.random() - 0.5) * spreadFactor;
-							
-							const offset = new THREE.Vector3(
-								Math.cos(angle) * helixRadius * (1 + randomSpread),
-								-i * verticalSpacing,  // More compact vertical spacing
-								Math.sin(angle) * helixRadius * (1 + randomSpread)
-							);
-							
-							velocity.set(
-								-Math.sin(angle) * rotationSpeed,
-								riseSpeed * (1 + randomSpread), // Slight variation in rise speed
-								Math.cos(angle) * rotationSpeed
-							);
-							
-							const particleColor = color.clone();
-							if (stream === 1) {
-								const hsl = {};
-								particleColor.getHSL(hsl);
-								// Add 0.5 (180 degrees) to hue for complementary color
-								// Use modulo 1 to wrap around the color wheel
-								hsl.h = (hsl.h + 0.5) % 1;
-								// Keep same saturation and lightness
-								particleColor.setHSL(hsl.h, hsl.s, hsl.l);
-							}
-							
-							const index = this.particleSystem.addParticle(
-								rocketPos.clone().add(offset),
-								velocity,
-								particleColor,
-								size * 0.8,
-								component.lifetime * 0.8, // Slightly shorter lifetime
-								gravity * 0.2
-							);
-							
-							if (index !== -1) this.particles.add(index);
-						}
+					// Add some randomness to the position
+					const randomSpread = (Math.random() - 0.5) * spreadFactor;
+					
+					const offset = new THREE.Vector3(
+						Math.cos(angle) * helixRadius * (1 + randomSpread),
+						-i * verticalSpacing,  // More compact vertical spacing
+						Math.sin(angle) * helixRadius * (1 + randomSpread)
+					);
+					
+					velocity.set(
+						-Math.sin(angle) * rotationSpeed,
+						riseSpeed * (1 + randomSpread), // Slight variation in rise speed
+						Math.cos(angle) * rotationSpeed
+					);
+					
+					const particleColor = color.clone();
+					if (stream === 1) {
+						const hsl = {};
+						particleColor.getHSL(hsl);
+						// Add 0.5 (180 degrees) to hue for complementary color
+						// Use modulo 1 to wrap around the color wheel
+						hsl.h = (hsl.h + 0.5) % 1;
+						// Keep same saturation and lightness
+						particleColor.setHSL(hsl.h, hsl.s, hsl.l);
 					}
-				break;
-				default:
-					for (let i = 0; i < particleCount; i++) {
-						const angle = Math.random() * Math.PI * 2;
-						const magnitude = speed;
-						velocity.set(
-							Math.cos(angle) * magnitude,
-							Math.sin(angle) * magnitude,
-							0
-						);
-						
-						const index = this.particleSystem.addParticle(
-							rocketPos.clone(),
-							velocity.clone(),
-							color,
-							size,
-							component.lifetime,
-							gravity
-						);
-						if (index !== -1) this.particles.add(index);
-					}
-							}
-						});
-
-						this.exploded = true;
-					}
+					
+					const index = this.particleSystem.addParticle(
+						rocketPos.clone().add(offset),
+						velocity,
+						particleColor,
+						size * 0.8,
+						component.lifetime * 0.8, // Slightly shorter lifetime
+						gravity * 0.2
+					);
+					
+					if (index !== -1) this.particles.add(index);
 				}
+			}
+			break;
+			default:
+				for (let i = 0; i < particleCount; i++) {
+					const angle = Math.random() * Math.PI * 2;
+					const magnitude = speed;
+					velocity.set(
+						Math.cos(angle) * magnitude,
+						Math.sin(angle) * magnitude,
+						0
+					);
+					
+					const index = this.particleSystem.addParticle(
+						rocketPos.clone(),
+						velocity.clone(),
+						color,
+						size,
+						component.lifetime,
+						gravity
+					);
+					if (index !== -1) this.particles.add(index);
+				}
+						}
+					});
+	
+					this.exploded = true;
+				}
+			}
 
         // Initialize game when DOM is loaded
         document.addEventListener('DOMContentLoaded', () => {
