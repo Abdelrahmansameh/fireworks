@@ -327,6 +327,11 @@
                     <h3>Saved Recipes</h3>
                     <div id="recipe-list"></div>
                 </div>
+				
+				<div class="crafting-option" style="margin-top: 20px; border-top: 1px solid #34495e; padding-top: 20px;">
+					<label>Background Color:</label>
+					<input type="color" id="background-color" value="#000000">
+				</div>
             </div>
         </div>
 
@@ -534,6 +539,8 @@
 
                 // Initialize THREE.js first
                 this.initThreeJS();
+				
+				this.initBackgroundColor();
 
 				this.particleSystem = new InstancedParticleSystem(this.scene, 50000);
 
@@ -556,7 +563,7 @@
 
                 // Start the rendering loop
                 this.animate();
-
+				
                 // Handle page visibility change
                 document.addEventListener('visibilitychange', () => {
                     if (document.visibilityState === 'hidden') {
@@ -783,6 +790,33 @@
                 });
             }
 
+			initBackgroundColor() {
+				// Load saved background color or use default black
+				const savedColor = localStorage.getItem('backgroundColor') || '#000000';
+				
+				// Wait for DOM to be ready before accessing the element
+				const initColorPicker = () => {
+					const colorPicker = document.getElementById('background-color');
+					if (colorPicker) {
+						colorPicker.value = savedColor;
+						this.renderer.setClearColor(new THREE.Color(savedColor));
+						
+						// Add event listener
+						colorPicker.addEventListener('input', (e) => {
+							const color = e.target.value;
+							this.renderer.setClearColor(new THREE.Color(color));
+							localStorage.setItem('backgroundColor', color);
+						});
+					} else {
+						// If element not found, try again in 100ms
+						setTimeout(initColorPicker, 100);
+					}
+				};
+
+				initColorPicker();
+			}
+
+
             saveProgress() {
                 localStorage.setItem('fireworkCount', this.fireworkCount);
                 localStorage.setItem('autoLauncherLevel', this.autoLauncherLevel);
@@ -794,6 +828,7 @@
                 localStorage.setItem('autoLaunchers', JSON.stringify(this.autoLaunchers.map(launcher => ({ xPercent: launcher.xPercent, accumulator: launcher.accumulator }))));
                 // Save current recipe components
                 localStorage.setItem('currentRecipeComponents', JSON.stringify(this.currentRecipeComponents));
+				localStorage.setItem('backgroundColor', document.getElementById('background-color').value);
             }
 
             showNotification(message) {
@@ -924,6 +959,10 @@
                 this.updateComponentsList();
                 this.updateRecipeList();
                 this.showNotification("Game has been reset.");
+				
+				this.renderer.setClearColor(new THREE.Color('#000000'));
+				document.getElementById('background-color').value = '#000000';
+    
             }
 
             showResetConfirmation() {
