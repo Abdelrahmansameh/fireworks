@@ -1271,7 +1271,7 @@
 					case 'spherical':
 						for (i = 0; i < particleCount; i++) {
 							const angle = (i / particleCount) * Math.PI * 2;
-							const magnitude = speed * (0.8 + Math.random() * 0.4);
+							const magnitude = speed * (0.8 + Math.random() * 0.4); // Slight randomness
 							const vx = Math.cos(angle) * magnitude;
 							const vy = Math.sin(angle) * magnitude;
 
@@ -1280,7 +1280,7 @@
 							positions[i * 3 + 2] = 0;
 
 							velocities[i] = new THREE.Vector3(vx, vy, 0);
-							gravities[i] = gravity;
+							gravities[i] = gravity * (0.9 + Math.random() * 0.2);
 							lifetimes[i] = recipe.lifetime;
 						}
 						break;
@@ -1288,7 +1288,7 @@
 					case 'ring':
 						for (i = 0; i < particleCount; i++) {
 							const angle = (i / particleCount) * Math.PI * 2;
-							const magnitude = speed ;  // Slight randomness
+							const magnitude = speed ; 
 							const vx = Math.cos(angle) * magnitude;
 							const vy = Math.sin(angle) * magnitude;
 
@@ -1318,7 +1318,7 @@
 							positions[i * 3 + 2] = 0;
 
 							velocities[i] = new THREE.Vector3(vx, vy, 0);
-							gravities[i] = gravity;
+							gravities[i] = gravity * (0.95 + Math.random() * 0.1);
 							lifetimes[i] = recipe.lifetime;
 						}
 						break;
@@ -1347,7 +1347,7 @@
 							positions[i * 3 + 2] = 0;
 
 							velocities[i] = new THREE.Vector3(vx, vy, 0);
-							gravities[i] = gravity;
+							gravities[i] = gravity * (0.95 + Math.random() * 0.1);
 							lifetimes[i] = recipe.lifetime;
 						}
 						break;
@@ -1364,19 +1364,21 @@
 							positions[i * 3 + 2] = 0;
 
 							velocities[i] = new THREE.Vector3(vx, vy, 0);
-							gravities[i] = gravity;
+							gravities[i] = gravity * (0.9 + Math.random() * 0.2);
 							lifetimes[i] = recipe.lifetime;
 						}
 						break;
 
 					case 'willow':
-						const emissionAngle = 0.261799; // 15 degrees in radians
+						const emissionAngle = 0.5; 
 						for (i = 0; i < particleCount; i++) {
 							const angleOffset = (Math.random() - 0.5) * emissionAngle;
 							const angle = (-Math.PI / 2) + angleOffset;
-							const horizontalDrift = (Math.random() - 0.5) * 500;
+							const horizontalDrift = (Math.random() - 0.5) * 10; 
 							const initialSpeed = speed * (0.7 + Math.random() * 0.3);
-							const vx = Math.cos(angle) * initialSpeed + horizontalDrift / 1000;
+							
+							// Fixed velocity calculations to maintain central origin
+							const vx = Math.cos(angle) * initialSpeed + horizontalDrift;
 							const vy = Math.sin(angle) * initialSpeed;
 
 							positions[i * 3] = x;
@@ -1384,11 +1386,11 @@
 							positions[i * 3 + 2] = 0;
 
 							velocities[i] = new THREE.Vector3(vx, vy, 0);
-							gravities[i] = gravity;
+							gravities[i] = gravity * (0.9 + Math.random() * 0.2);
 							lifetimes[i] = recipe.lifetime;
 						}
 						break;
-
+					
 					case 'palm':
 						const branches = 8;
 						for (i = 0; i < particleCount; i++) {
