@@ -253,6 +253,42 @@
             from { opacity: 1; }
             to { opacity: 0; }
         }
+
+        /* Reset Confirmation Styles */
+        .reset-confirmation {
+            background-color: rgba(26, 31, 42, 0.95);
+            padding: 15px;
+            border: 1px solid #34495e;
+            border-radius: 10px;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 2000;
+            text-align: center;
+            max-width: 300px;
+            width: 90%;
+        }
+
+        .reset-confirmation h3 {
+            margin-top: 0;
+            color: #e74c3c;
+        }
+
+        .reset-confirmation button {
+            width: 45%;
+            margin: 5px;
+        }
+
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1500;
+        }
     </style>
 </head>
 <body>
@@ -306,6 +342,15 @@
         </div>
     </div>
 
+    <!-- Reset Confirmation Dialog -->
+    <div id="reset-confirmation" class="reset-confirmation" style="display: none;">
+        <h3>Confirm Reset</h3>
+        <p>Are you sure you want to reset the game? All progress will be lost.</p>
+        <button id="confirm-reset">Yes</button>
+        <button id="cancel-reset">No</button>
+    </div>
+    <div id="overlay" class="overlay" style="display: none;"></div>
+
     <canvas id="gameCanvas"></canvas>
 
     <script>
@@ -353,6 +398,7 @@
                 this.autoLauncherCost = parseInt(localStorage.getItem('autoLauncherCost')) || 10;
                 this.sparkles = parseInt(localStorage.getItem('sparkles')) || 0;
 
+                // Load auto-launchers
                 this.autoLaunchers = JSON.parse(localStorage.getItem('autoLaunchers')) || [];
                 // Initialize accumulators for each launcher
                 this.autoLaunchers.forEach(launcher => {
@@ -428,7 +474,16 @@
                 });
 
                 document.getElementById('reset-game').addEventListener('click', () => {
+                    this.showResetConfirmation();
+                });
+
+                document.getElementById('confirm-reset').addEventListener('click', () => {
                     this.resetGame();
+                    this.hideResetConfirmation();
+                });
+
+                document.getElementById('cancel-reset').addEventListener('click', () => {
+                    this.hideResetConfirmation();
                 });
 
                 document.getElementById('crafting-tab').addEventListener('click', () => {
@@ -703,27 +758,35 @@
             }
 
             resetGame() {
-                if (confirm("Are you sure you want to reset the game? All progress will be lost.")) {
-                    // Reset all relevant game data
-                    this.fireworkCount = 0;
-                    this.autoLauncherLevel = 0;
-                    this.autoLauncherCost = 10;
-                    this.sparkles = 0;
-                    this.recipes = [];
-                    this.currentRecipeComponents = [{
-                        pattern: 'spherical',
-                        color: '#ff0000',
-                        size: 1.0,
-                        lifetime: 1.2,
-                        trailEffect: 'fade'
-                    }];
-                    this.autoLaunchers = [];
-                    localStorage.clear();
-                    this.updateUI();
-                    this.updateComponentsList();
-                    this.updateRecipeList();
-                    this.showNotification("Game has been reset.");
-                }
+                // Reset all relevant game data
+                this.fireworkCount = 0;
+                this.autoLauncherLevel = 0;
+                this.autoLauncherCost = 10;
+                this.sparkles = 0;
+                this.recipes = [];
+                this.currentRecipeComponents = [{
+                    pattern: 'spherical',
+                    color: '#ff0000',
+                    size: 1.0,
+                    lifetime: 1.2,
+                    trailEffect: 'fade'
+                }];
+                this.autoLaunchers = [];
+                localStorage.clear();
+                this.updateUI();
+                this.updateComponentsList();
+                this.updateRecipeList();
+                this.showNotification("Game has been reset.");
+            }
+
+            showResetConfirmation() {
+                document.getElementById('reset-confirmation').style.display = 'block';
+                document.getElementById('overlay').style.display = 'block';
+            }
+
+            hideResetConfirmation() {
+                document.getElementById('reset-confirmation').style.display = 'none';
+                document.getElementById('overlay').style.display = 'none';
             }
 
             update(deltaTime) {
@@ -917,7 +980,43 @@
                         }
                         break;
 
-                        case 'willow':
+                    case 'ring':
+                        for (let i = 0; i < particleCount; i++) {
+                            const angle = (i / particleCount) * Math.PI * 2;
+                            particles.push(this.createParticle(x, y, angle, speed, recipe));
+                        }
+                        break;
+
+                    case 'heart':
+                        for (let i = 0; i < particleCount; i++) {
+                            const t = (i / particleCount) * Math.PI * 2;
+                            const xOffset = 16 * Math.pow(Math.sin(t), 3);
+                            const yOffset = - (13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t));
+                            const angle = Math.atan2(yOffset, xOffset);
+                            const magnitude = Math.sqrt(xOffset * xOffset + yOffset * yOffset);
+                            particles.push(this.createParticle(x, y, angle, speed * magnitude * 0.05, recipe));
+                        }
+                        break;
+
+                    case 'star':
+                        const spikes = 5;
+                        const outerRadius = speed;
+                        const innerRadius = speed * 0.5;
+                        for (let i = 0; i < spikes * 2; i++) {
+                            const radius = (i % 2 === 0) ? outerRadius : innerRadius;
+                            const angle = (i / (spikes * 2)) * Math.PI * 2;
+                            particles.push(this.createParticle(x, y, angle, radius, recipe));
+                        }
+                        break;
+
+                    case 'burst':
+                        for (let i = 0; i < particleCount; i++) {
+                            const angle = Math.random() * Math.PI * 2;
+                            particles.push(this.createParticle(x, y, angle, speed * Math.random(), recipe));
+                        }
+                        break;
+
+                  case 'willow':
                             // Enhanced Willow Pattern: Faster descent and slight increased spread
                             const emissionAngle = 15 * (Math.PI / 180); // 15 degrees in radians
                             for (let i = 0; i < particleCount; i++) {
@@ -954,79 +1053,6 @@
                             }
                             break;
 
-                        case 'ring':
-                            const ringRadius = speed * 0.2;
-                            for (let i = 0; i < particleCount; i++) {
-                                const angle = (i / particleCount) * Math.PI * 2;
-                                const particle = this.createParticle(
-                                    x + Math.cos(angle) * ringRadius,
-                                    y + Math.sin(angle) * ringRadius,
-                                    angle,
-                                    speed * 0.5,
-                                    recipe
-                                );
-                                if (particle) {
-                                    particle.gravity = FIREWORK_CONFIG.gravity * 0.7;
-                                    particles.push(particle);
-                                }
-                            }
-                            break;
-
-                        case 'star':
-                            // Star Pattern: Particles emit in a 5-pointed star shape
-                            const starPoints = 5;
-                            const totalStarParticles = starPoints * 2; // Outer and inner points
-                            const starInnerRadius = speed * 0.05; // Reduced to make it less spread out
-                            const starOuterRadius = speed * 0.1; // Reduced to make it less spread out
-
-                            for (let i = 0; i < totalStarParticles; i++) {
-                                const angle = (i / totalStarParticles) * Math.PI * 2;
-                                // Alternate between outer and inner radius
-                                const radius = (i % 2 === 0) ? starOuterRadius : starInnerRadius;
-                                const particle = this.createParticle(x, y, angle, speed, recipe, radius);
-                                if (particle) {
-                                    particle.gravity = FIREWORK_CONFIG.gravity * 1.0;
-                                    particles.push(particle);
-                                }
-                            }
-                            break;
-
-                        case 'heart':
-                            // Heart Pattern: Particles emit forming a compact and correctly oriented heart shape
-                            const heartScale = 0.7; // Adjusted scaling factor for compactness
-                            for (let i = 0; i < particleCount; i++) {
-                                const t = (i / particleCount) * Math.PI * 2;
-                                // Parametric equations for a heart shape
-                                const xOffset = heartScale * (16 * Math.pow(Math.sin(t), 3));
-                                const yOffset = heartScale * (13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t));
-
-                                // Invert yOffset to correct orientation (since canvas y-axis is downward)
-                                const invertedYOffset = -yOffset;
-
-                                const angle = Math.atan2(invertedYOffset, xOffset);
-                                const speedFactor = 0.2; // Fixed slower speed for delicate heart
-                                const particle = this.createParticle(x + xOffset, y + invertedYOffset, angle, speed * speedFactor, recipe);
-                                if (particle) {
-                                    particle.gravity = FIREWORK_CONFIG.gravity * 1.2; // Slightly reduced gravity for smoother motion
-                                    particles.push(particle);
-                                }
-                            }
-                            break;
-
-                        case 'burst':
-                            // Burst Pattern: Particles emit in a sudden, explosive burst
-                            for (let i = 0; i < particleCount; i++) {
-                                const angle = (i / particleCount) * Math.PI * 2;
-                                const burstSpeed = speed * (1.0 + Math.random() * 0.5);
-                                const particle = this.createParticle(x, y, angle, burstSpeed, recipe);
-                                if (particle) {
-                                    particle.gravity = FIREWORK_CONFIG.gravity * 0.8;
-                                    particles.push(particle);
-                                }
-                            }
-                            break;
-                    // Additional cases for other patterns (omitted for brevity)
-
                     default:
                         console.warn(`Unknown pattern type: ${recipe.pattern}`);
                 }
@@ -1034,8 +1060,8 @@
                 return particles;
             }
 
-            createParticle(x, y, angle, speed, recipe) {
-                return {
+            createParticle(x, y, angle, speed, recipe, isWillow = false) {
+                const particle = {
                     x: x,
                     y: y,
                     velocity: {
@@ -1049,6 +1075,15 @@
                     gravity: FIREWORK_CONFIG.gravity,
                     trail: [] // For individual particle trails, if needed
                 };
+
+                if (isWillow) {
+                    // Modify particle for willow effect
+                    particle.gravity *= 0.2;
+                    particle.velocity.x *= 0.5;
+                    particle.velocity.y *= 0.5;
+                }
+
+                return particle;
             }
 
             update(deltaTime) {
