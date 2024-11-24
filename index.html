@@ -510,8 +510,20 @@
 			}
 		}
 
+
+		// Add debug display
+
         class FireworkGame {
             constructor() {
+			
+				this.debugInfo = {
+						activeFireworks: 0,
+						totalParticles: 0,
+						gpuMemory: 0
+					};
+
+
+				
                 this.scene = null;
                 this.camera = null;
                 this.renderer = null;
@@ -576,6 +588,20 @@
                 );
                 this.camera.position.z = 100;
 
+const div = document.createElement('div');
+				div.style.position = 'fixed';
+				div.style.top = '10px';
+				div.style.right = '10px';
+				div.style.backgroundColor = 'rgba(0,0,0,0.7)';
+				div.style.color = 'white';
+				div.style.padding = '10px';
+				div.style.fontFamily = 'monospace';
+				div.style.fontSize = '12px';
+				div.style.zIndex = '1000';
+				document.body.appendChild(div);
+				this.debugDiv = div;
+		
+		
                 this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
                 this.renderer.setPixelRatio(window.devicePixelRatio);
                 this.renderer.setSize(window.innerWidth, window.innerHeight);
@@ -852,6 +878,31 @@
                         }
                     }
 
+					// Update debug info
+					this.debugInfo.activeFireworks = this.fireworks.length;
+					this.debugInfo.totalParticles = this.particleSystem.activeParticles;
+					
+					// Try to estimate GPU memory usage
+					this.debugInfo.gpuMemory = (
+						(this.particleSystem.instancedMesh.geometry.attributes.position.array.length * 4) +
+						(this.particleSystem.instancedMesh.instanceMatrix.array.length * 4) +
+						(this.particleSystem.instancedMesh.instanceColor.array.length * 4)
+					) / (1024 * 1024);  // Convert to MB
+
+					// Update debug display
+					this.debugDiv.innerHTML = `
+						Active Fireworks: ${this.debugInfo.activeFireworks}<br>
+						Active Particles: ${this.debugInfo.totalParticles}<br>
+						Est. GPU Memory: ${this.debugInfo.gpuMemory.toFixed(2)}MB<br>
+					`;
+
+					// Existing update code
+					for (let i = this.fireworks.length - 1; i >= 0; i--) {
+						this.fireworks[i].update(delta);
+						if (!this.fireworks[i].alive) {
+							this.fireworks.splice(i, 1);
+						}
+					}
                     // Update game logic
                     this.update(delta);
 
