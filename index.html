@@ -1352,7 +1352,7 @@ class Firework {
                             color,
                             size,
                             component.lifetime,
-                            gravity
+                            gravity * (0.8 + Math.random() * 0.4)
                         );
                         if (index !== -1) this.particles.add(index);
                     }
@@ -1374,7 +1374,7 @@ class Firework {
                             color,
                             size,
                             component.lifetime,
-                            gravity
+                            gravity * (0.8 + Math.random() * 0.2)
                         );
                         if (index !== -1) this.particles.add(index);
                     }
@@ -1400,7 +1400,7 @@ class Firework {
                             color,
                             size,
                             component.lifetime,
-                            gravity
+                            gravity * (0.8 + Math.random() * 0.2)
                         );
                         if (index !== -1) this.particles.add(index);
                     }
@@ -1425,7 +1425,7 @@ class Firework {
                             color,
                             size,
                             component.lifetime,
-                            gravity
+                            gravity * (0.8 + Math.random() * 0.2)
                         );
                         if (index !== -1) this.particles.add(index);
                     }
@@ -1493,50 +1493,56 @@ class Firework {
                         const starPoint = i % pointsPerStar;
                         const starCopy = Math.floor(i / pointsPerStar);
                         
-                        const radius = (starPoint % 2 === 0) ? outerRadius : innerRadius;
-                        const angle = (starPoint / pointsPerStar) * Math.PI * 2;
+                        let radius = (starPoint % 2 === 0) ? outerRadius : innerRadius;
+                        let angle = (starPoint / pointsPerStar) * Math.PI * 2;
                         
+						// wtf ??? this somehow works ???? make the outer edges more dense :') 
+						if (i  > pointsPerStar && (starPoint % 2 === 0))
+						{
+							radius = outerRadius *  1 + (Math.random() * 0.2 - 0.1) * (starCopy > 0 ? 1 : 0);
+						}
+						
                         const radiusVariation = 1 + (Math.random() * 0.2 - 0.1) * (starCopy > 0 ? 1 : 0);
                         const angleVariation = (Math.random() * 0.1 - 0.05) * (starCopy > 0 ? 1 : 0);
                         
-				velocity.set(
-											Math.cos(angle + angleVariation) * radius * radiusVariation,
-											Math.sin(angle + angleVariation) * radius * radiusVariation,
-											0
-										);
-										
-										const index = this.particleSystem.addParticle(
-											rocketPos.clone(),
-											velocity.clone(),
-											color,
-											size,
-											component.lifetime,
-											gravity
-										);
-										if (index !== -1) this.particles.add(index);
-									}
+					velocity.set(
+							Math.cos(angle + angleVariation) * radius * radiusVariation,
+							Math.sin(angle + angleVariation) * radius * radiusVariation,
+							0
+						);
+						
+						const index = this.particleSystem.addParticle(
+							rocketPos.clone(),
+							velocity.clone(),
+							color,
+							size,
+							component.lifetime,
+							gravity
+						);
+						if (index !== -1) this.particles.add(index);
+					}
 									break;
 
-								default:
-									for (let i = 0; i < particleCount; i++) {
-										const angle = Math.random() * Math.PI * 2;
-										const magnitude = speed;
-										velocity.set(
-											Math.cos(angle) * magnitude,
-											Math.sin(angle) * magnitude,
-											0
-										);
-										
-										const index = this.particleSystem.addParticle(
-											rocketPos.clone(),
-											velocity.clone(),
-											color,
-											size,
-											component.lifetime,
-											gravity
-										);
-										if (index !== -1) this.particles.add(index);
-									}
+				default:
+					for (let i = 0; i < particleCount; i++) {
+						const angle = Math.random() * Math.PI * 2;
+						const magnitude = speed;
+						velocity.set(
+							Math.cos(angle) * magnitude,
+							Math.sin(angle) * magnitude,
+							0
+						);
+						
+						const index = this.particleSystem.addParticle(
+							rocketPos.clone(),
+							velocity.clone(),
+							color,
+							size,
+							component.lifetime,
+							gravity
+						);
+						if (index !== -1) this.particles.add(index);
+					}
 							}
 						});
 
