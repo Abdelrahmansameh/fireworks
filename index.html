@@ -879,20 +879,24 @@
                     this.showNotification("Not enough sparkles to buy this upgrade!");
                 }
             }
+			
+			createAutoLauncherMesh(launcher) {
+				// Change from BoxGeometry to PlaneGeometry
+				const geometry = new THREE.PlaneGeometry(5, 10);
+				const material = new THREE.MeshBasicMaterial({ 
+					color: 0xffffff,
+					side: THREE.DoubleSide // Makes the plane visible from both sides
+				});
+				const launcherMesh = new THREE.Mesh(geometry, material);
+				const bounds = this.getViewBounds();
+				const x = bounds.minX + launcher.xPercent * (bounds.maxX - bounds.minX);
+				const y = bounds.minY + 5; // Adjust Y position to stay visible
+				launcherMesh.position.set(x, y, 0);
+				this.scene.add(launcherMesh);
 
-            createAutoLauncherMesh(launcher) {
-                const geometry = new THREE.BoxGeometry(5, 10, 5);
-                const material = new THREE.MeshBasicMaterial({ color: 0xffffff });
-                const launcherMesh = new THREE.Mesh(geometry, material);
-                const bounds = this.getViewBounds();
-                const x = bounds.minX + launcher.xPercent * (bounds.maxX - bounds.minX);
-                const y = bounds.minY + 5; // Adjust Y position to stay visible
-                launcherMesh.position.set(x, y, 0); // Place just above bottom of the screen
-                this.scene.add(launcherMesh);
-
-                // Store the mesh reference in the launcher object
-                launcher.mesh = launcherMesh;
-            }
+				// Store the mesh reference in the launcher object
+				launcher.mesh = launcherMesh;
+			}
 
             resetGame() {
                 // Reset all relevant game data
