@@ -976,8 +976,8 @@
                             // Star Pattern: Particles emit in a 5-pointed star shape
                             const starPoints = 5;
                             const totalStarParticles = starPoints * 2; // Outer and inner points
-                            const starInnerRadius = speed * 0.2; // Reduced to make it less spread out
-                            const starOuterRadius = speed * 0.4; // Reduced to make it less spread out
+                            const starInnerRadius = speed * 0.05; // Reduced to make it less spread out
+                            const starOuterRadius = speed * 0.1; // Reduced to make it less spread out
 
                             for (let i = 0; i < totalStarParticles; i++) {
                                 const angle = (i / totalStarParticles) * Math.PI * 2;
@@ -993,7 +993,7 @@
 
                         case 'heart':
                             // Heart Pattern: Particles emit forming a compact and correctly oriented heart shape
-                            const heartScale = 15; // Adjusted scaling factor for compactness
+                            const heartScale = 0.7; // Adjusted scaling factor for compactness
                             for (let i = 0; i < particleCount; i++) {
                                 const t = (i / particleCount) * Math.PI * 2;
                                 // Parametric equations for a heart shape
