@@ -386,7 +386,7 @@
                 burst: 9.81,
                 palm: 5.0,
                 willow: 3.0,
-				helix:3.0,
+                helix:3.0,
                 default: 9.81
             }
         };
@@ -491,6 +491,7 @@
 						this.lifetimes[currentIndex] = this.lifetimes[i];
 						this.initialLifetimes[currentIndex] = this.initialLifetimes[i];
 						this.gravities[currentIndex] = this.gravities[i];
+						this.alphas[currentIndex] = this.alphas[i];
 					}
 					
 					// Calculate alpha based on remaining lifetime
@@ -508,6 +509,13 @@
 				this.instancedMesh.instanceMatrix.needsUpdate = true;
 				this.instancedMesh.instanceColor.needsUpdate = true;
 			}
+
+            // Dispose method to clean up resources
+            dispose() {
+                this.scene.remove(this.instancedMesh);
+                this.instancedMesh.geometry.dispose();
+                this.instancedMesh.material.dispose();
+            }
 		}
 
 
@@ -546,9 +554,9 @@
 
                 this.initThreeJS();
 				
-		this.initBackgroundColor();
+				this.initBackgroundColor();
 
-		this.particleSystem = new InstancedParticleSystem(this.scene, 50000);
+				this.particleSystem = new InstancedParticleSystem(this.scene, 50000);
 
                 this.autoLaunchers.forEach(launcher => {
                     if (!launcher.accumulator) {
@@ -588,7 +596,7 @@
                 );
                 this.camera.position.z = 100;
 
-const div = document.createElement('div');
+                const div = document.createElement('div');
 				div.style.position = 'fixed';
 				div.style.top = '10px';
 				div.style.right = '10px';
@@ -613,7 +621,7 @@ const div = document.createElement('div');
                 this.clock = new THREE.Clock();
 
                 window.addEventListener('resize', this.onWindowResize.bind(this), false);
-				}
+            }
 
             onWindowResize() {
                 this.camera.aspect = window.innerWidth / window.innerHeight;
@@ -638,7 +646,8 @@ const div = document.createElement('div');
             }
 
             bindEvents() {
-                document.getElementById('add-component').addEventListener('click', () => {
+                // Store references to event handlers for potential removal
+                this.addComponentHandler = () => {
                     this.currentRecipeComponents.push({
                         pattern: 'spherical',
                         color: '#ff0000',
@@ -647,50 +656,60 @@ const div = document.createElement('div');
                     });
                     this.updateComponentsList();
                     this.saveCurrentRecipeComponents();
-                });
+                };
+                document.getElementById('add-component').addEventListener('click', this.addComponentHandler);
 
-                document.getElementById('save-recipe').addEventListener('click', () => {
+                this.saveRecipeHandler = () => {
                     this.saveCurrentRecipe();
-                });
+                };
+                document.getElementById('save-recipe').addEventListener('click', this.saveRecipeHandler);
 
-                document.getElementById('erase-recipes').addEventListener('click', () => {
+                this.eraseRecipesHandler = () => {
                     this.eraseAllRecipes();
-                });
+                };
+                document.getElementById('erase-recipes').addEventListener('click', this.eraseRecipesHandler);
 
-                document.getElementById('buy-auto-launcher').addEventListener('click', () => {
+                this.buyAutoLauncherHandler = () => {
                     this.buyAutoLauncher();
-                });
+                };
+                document.getElementById('buy-auto-launcher').addEventListener('click', this.buyAutoLauncherHandler);
 
-                document.getElementById('reset-game').addEventListener('click', () => {
+                this.resetGameHandler = () => {
                     this.showResetConfirmation();
-                });
+                };
+                document.getElementById('reset-game').addEventListener('click', this.resetGameHandler);
 
-                document.getElementById('confirm-reset').addEventListener('click', () => {
+                this.confirmResetHandler = () => {
                     this.resetGame();
                     this.hideResetConfirmation();
-                });
+                };
+                document.getElementById('confirm-reset').addEventListener('click', this.confirmResetHandler);
 
-                document.getElementById('cancel-reset').addEventListener('click', () => {
+                this.cancelResetHandler = () => {
                     this.hideResetConfirmation();
-                });
+                };
+                document.getElementById('cancel-reset').addEventListener('click', this.cancelResetHandler);
 
-                document.getElementById('crafting-tab').addEventListener('click', () => {
+                this.craftingTabHandler = () => {
                     this.toggleTab('crafting');
-                });
+                };
+                document.getElementById('crafting-tab').addEventListener('click', this.craftingTabHandler);
 
-                document.getElementById('incremental-tab').addEventListener('click', () => {
+                this.incrementalTabHandler = () => {
                     this.toggleTab('incremental');
-                });
+                };
+                document.getElementById('incremental-tab').addEventListener('click', this.incrementalTabHandler);
 
-                document.getElementById('recipe-trail-effect').addEventListener('change', (e) => {
+                this.trailEffectChangeHandler = (e) => {
                     this.currentTrailEffect = e.target.value;
                     this.saveCurrentRecipeComponents();
-                });
+                };
+                document.getElementById('recipe-trail-effect').addEventListener('change', this.trailEffectChangeHandler);
 
                 this.showTab('crafting');
 
                 // Use pointerdown event to handle both mouse and touch input
-                this.renderer.domElement.addEventListener('pointerdown', (e) => {
+                this.pointerDownHandler = (e) => {
                     if (!this.isClickInsideUI(e)) {
                         e.preventDefault(); // Prevent any default behavior
                         const x = e.clientX;
@@ -699,7 +718,8 @@ const div = document.createElement('div');
                         const worldPos = this.screenToWorld(x, y);
                         this.launchFireworkAt(worldPos.x);
                     }
-                });
+                };
+                this.renderer.domElement.addEventListener('pointerdown', this.pointerDownHandler);
             }
 
             isClickInsideUI(event) {
@@ -896,13 +916,6 @@ const div = document.createElement('div');
 						Est. GPU Memory: ${this.debugInfo.gpuMemory.toFixed(2)}MB<br>
 					`;
 
-					// Existing update code
-					for (let i = this.fireworks.length - 1; i >= 0; i--) {
-						this.fireworks[i].update(delta);
-						if (!this.fireworks[i].alive) {
-							this.fireworks.splice(i, 1);
-						}
-					}
                     // Update game logic
                     this.update(delta);
 
@@ -985,18 +998,35 @@ const div = document.createElement('div');
                 this.autoLaunchers.forEach(launcher => {
                     if (launcher.mesh) {
                         this.scene.remove(launcher.mesh);
+                        if (launcher.mesh.geometry) launcher.mesh.geometry.dispose();
+                        if (launcher.mesh.material) {
+                            if (launcher.mesh.material.map) launcher.mesh.material.map.dispose();
+                            launcher.mesh.material.dispose();
+                        }
                     }
                 });
                 this.autoLaunchers = [];
+
+                // Dispose of particle system
+                if (this.particleSystem) {
+                    this.particleSystem.dispose();
+                    this.particleSystem = new InstancedParticleSystem(this.scene, 50000); // Reinitialize
+                }
+
+                // Reset fireworks
+                this.fireworks.forEach(firework => {
+                    firework.dispose();
+                });
+                this.fireworks = [];
+
                 localStorage.clear();
                 this.updateUI();
                 this.updateComponentsList();
                 this.updateRecipeList();
                 this.showNotification("Game has been reset.");
 				
-		this.renderer.setClearColor(new THREE.Color('#000000'));
-		document.getElementById('background-color').value = '#000000';
-    
+				this.renderer.setClearColor(new THREE.Color('#000000'));
+				document.getElementById('background-color').value = '#000000';
             }
 
             showResetConfirmation() {
@@ -1029,7 +1059,7 @@ const div = document.createElement('div');
                                 <option value="burst">Burst</option>
                                 <option value="palm">Palm</option>
                                 <option value="willow">Willow</option>
-				<option value="helix">Helix</option>
+								<option value="helix">Helix</option>
                             </select>
                         </div>
                         <div class="crafting-option">
@@ -1200,6 +1230,36 @@ const div = document.createElement('div');
                 this.saveCurrentRecipeComponents();
                 this.showNotification(`Loaded Recipe ${index + 1}`);
             }
+			
+			// Cleanup method to remove event listeners and dispose resources
+			cleanup() {
+				// Remove event listeners
+				document.getElementById('add-component').removeEventListener('click', this.addComponentHandler);
+				document.getElementById('save-recipe').removeEventListener('click', this.saveRecipeHandler);
+				document.getElementById('erase-recipes').removeEventListener('click', this.eraseRecipesHandler);
+				document.getElementById('buy-auto-launcher').removeEventListener('click', this.buyAutoLauncherHandler);
+				document.getElementById('reset-game').removeEventListener('click', this.resetGameHandler);
+				document.getElementById('confirm-reset').removeEventListener('click', this.confirmResetHandler);
+				document.getElementById('cancel-reset').removeEventListener('click', this.cancelResetHandler);
+				document.getElementById('crafting-tab').removeEventListener('click', this.craftingTabHandler);
+				document.getElementById('incremental-tab').removeEventListener('click', this.incrementalTabHandler);
+				document.getElementById('recipe-trail-effect').removeEventListener('change', this.trailEffectChangeHandler);
+				this.renderer.domElement.removeEventListener('pointerdown', this.pointerDownHandler);
+				
+				// Dispose Three.js renderer
+				if (this.renderer) {
+					this.renderer.dispose();
+					this.scene = null;
+					this.camera = null;
+					this.renderer = null;
+				}
+
+				// Dispose of particle system
+				if (this.particleSystem) {
+					this.particleSystem.dispose();
+					this.particleSystem = null;
+				}
+			}
         }
 
 class Firework {
@@ -1212,7 +1272,7 @@ class Firework {
         this.exploded = false;
         this.alive = true;
         this.particles = new Set(); 
-	    
+        
         // Create rocket
         this.rocket = this.createRocket(x, y);
         this.trailParticles = [];
@@ -1386,17 +1446,32 @@ class Firework {
             const particle = this.trailParticles[i];
             if (Date.now() - particle.createdAt > 500) {
                 this.scene.remove(particle.mesh);
+                if (particle.mesh.geometry) particle.mesh.geometry.dispose();
+                if (particle.mesh.material) {
+                    if (particle.mesh.material.map) particle.mesh.material.map.dispose();
+                    particle.mesh.material.dispose();
+                }
                 this.trailParticles.splice(i, 1);
             }
         }
     }
 
     explode() {
-        // Remove rocket and trails
+        // Remove and dispose of the rocket
         this.scene.remove(this.rocket);
+        if (this.rocket.geometry) this.rocket.geometry.dispose();
+        if (this.rocket.material) this.rocket.material.dispose();
+
+        // Remove and dispose of trail particles
         this.trailParticles.forEach(particle => {
             if (particle.mesh) {
                 this.scene.remove(particle.mesh);
+                if (particle.mesh.geometry) particle.mesh.geometry.dispose();
+                if (particle.mesh.material) {
+                    // If material has a texture or map, dispose of them first
+                    if (particle.mesh.material.map) particle.mesh.material.map.dispose();
+                    particle.mesh.material.dispose();
+                }
             }
         });
         this.trailParticles = [];
@@ -1409,7 +1484,7 @@ class Firework {
             const speed = FIREWORK_CONFIG.baseSpeed * component.size;
             const color = new THREE.Color(component.color);
             const size = FIREWORK_CONFIG.particleSize * component.size;
-            const rocketPos = this.rocket.position;
+            const rocketPos = this.rocket.position.clone();
             const velocity = new THREE.Vector3();
 
             switch (pattern) {
@@ -1598,7 +1673,7 @@ class Firework {
 				);
 				if (index !== -1) this.particles.add(index);
 			}
-		break;
+			break;
 
 		case 'helix':
 			    // Configuration for helix pattern
@@ -1645,7 +1720,7 @@ class Firework {
 					
 					const index = this.particleSystem.addParticle(
 						rocketPos.clone().add(offset),
-						velocity,
+						velocity.clone(),
 						particleColor,
 						size * 0.8,
 						component.lifetime * 0.8, // Slightly shorter lifetime
@@ -1678,15 +1753,50 @@ class Firework {
 				}
 						}
 					});
-	
+
 					this.exploded = true;
 				}
-			}
+			
+			
 
-        // Initialize game when DOM is loaded
-        document.addEventListener('DOMContentLoaded', () => {
-            window.game = new FireworkGame();
+    // Dispose method to clean up resources
+    dispose() {
+        // Remove rocket if it exists
+        if (this.rocket) {
+            this.scene.remove(this.rocket);
+            if (this.rocket.geometry) this.rocket.geometry.dispose();
+            if (this.rocket.material) this.rocket.material.dispose();
+            this.rocket = null;
+        }
+
+        // Remove and dispose of trail particles
+        this.trailParticles.forEach(particle => {
+            if (particle.mesh) {
+                this.scene.remove(particle.mesh);
+                if (particle.mesh.geometry) particle.mesh.geometry.dispose();
+                if (particle.mesh.material) {
+                    if (particle.mesh.material.map) particle.mesh.material.map.dispose();
+                    particle.mesh.material.dispose();
+                }
+            }
         });
+        this.trailParticles = [];
+
+        // Dispose of explosion particles
+        this.particles.forEach(index => {
+            // Assuming particles are managed by InstancedParticleSystem and will be disposed there
+            // If any individual particles have unique resources, dispose them here
+        });
+        this.particles.clear();
+
+        this.alive = false;
+    }
+}
+
+// Initialize game when DOM is loaded
+document.addEventListener('DOMContentLoaded', () => {
+    window.game = new FireworkGame();
+});
     </script>
 </body>
 </html>
