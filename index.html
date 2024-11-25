@@ -216,14 +216,46 @@
             background: #3b4f6b;
         }
 
-        /* Flex Layout for Pattern and Shape Selection */
-        .flex-row {
+        /* Styles for Launcher List */
+        #launcher-list {
             display: flex;
+            flex-direction: column;
             gap: 10px;
+            max-height: 60vh;
+            overflow-y: auto;
         }
 
-        .flex-item {
-            flex: 1;
+        #launcher-list::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        #launcher-list::-webkit-scrollbar-thumb {
+            background: #2e3f57;
+            border-radius: 4px;
+        }
+
+        #launcher-list::-webkit-scrollbar-thumb:hover {
+            background: #3b4f6b;
+        }
+
+        /* Styles for Individual Launcher Cards */
+        .launcher-card {
+            background: #2a2f3a;
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #34495e;
+            cursor: pointer;
+            transition: background 0.3s, transform 0.3s;
+        }
+
+        .launcher-card:hover {
+            background: #1a1f2a;
+            transform: translateY(-2px);
+        }
+
+        .launcher-card h3 {
+            margin-top: 0;
+            color: #45a29e;
         }
 
         /* Adjustments for Mobile Compatibility */
@@ -322,6 +354,18 @@
             z-index: 1500;
             display: none;
         }
+
+        .launcher-card h3 {
+            margin-top: 0;
+            color: #45a29e;
+        }
+		
+		.launcher-card.selected {
+			border: 3px solid #45a29e; 
+			background: #1a1f2a;        
+			transform: scale(1.02);      
+			box-shadow: 0 4px 8px rgba(69, 162, 158, 0.5); 
+		}
     </style>
 </head>
 <body>
@@ -331,10 +375,11 @@
         <div class="tabs">
             <div class="tab active" id="crafting-tab">Crafting</div>
             <div class="tab" id="incremental-tab">Incremental</div>
+            <div class="tab" id="auto-launcher-tab">Auto-Launchers</div>
         </div>
 
         <div class="tab-content active" id="crafting-content">
-            <div class="panel">
+            <div class="panel scrollable-panel">
                 <h2 class="panel-title">Firework Crafting</h2>
 
                 <div class="crafting-option">
@@ -367,7 +412,7 @@
         </div>
 
         <div class="tab-content" id="incremental-content">
-            <div class="panel">
+            <div class="panel scrollable-panel">
                 <h2 class="panel-title">Firework Factory</h2>
 
                 <div class="firework-counter">
@@ -388,6 +433,14 @@
 
                 <!-- Notification Area -->
                 <div id="notification" class="notification"></div>
+            </div>
+        </div>
+
+        <!-- New Auto-Launchers Tab Content -->
+        <div class="tab-content" id="auto-launcher-content">
+            <div class="panel scrollable-panel">
+                <h2 class="panel-title">Manage Auto-Launchers</h2>
+                <div id="launcher-list"></div>
             </div>
         </div>
     </div>
@@ -691,15 +744,14 @@
 
         class FireworkGame {
             constructor() {
-			
-				this.debugInfo = {
-						activeFireworks: 0,
-						totalParticles: 0,
-						gpuMemory: 0
-					};
+            
+                this.debugInfo = {
+                        activeFireworks: 0,
+                        totalParticles: 0,
+                        gpuMemory: 0
+                    };
 
-
-				
+                
                 this.scene = null;
                 this.camera = null;
                 this.renderer = null;
@@ -716,15 +768,22 @@
 
                 // Load auto-launchers
                 this.autoLaunchers = JSON.parse(localStorage.getItem('autoLaunchers')) || [];
-		    
+                    
+				const savedSelectedIndex = parseInt(localStorage.getItem('selectedLauncherIndex'));
+				if (!isNaN(savedSelectedIndex) && savedSelectedIndex < this.autoLaunchers.length) {
+					this.selectedLauncherIndex = savedSelectedIndex;
+					this.selectLauncher(this.selectedLauncherIndex);
+				}
+
+
                 this.isMobile = this.detectMobile();
                 this.adjustConfigurations();
 
                 this.initThreeJS();
-				
-				this.initBackgroundColor();
+                
+                this.initBackgroundColor();
 
-				this.particleSystem = new InstancedParticleSystem(this.scene, 50000);
+                this.particleSystem = new InstancedParticleSystem(this.scene, 50000);
 
                 this.autoLaunchers.forEach(launcher => {
                     if (!launcher.accumulator) {
@@ -740,10 +799,20 @@
                 this.updateUI();
                 this.updateComponentsList();
                 this.updateRecipeList();
+                this.updateLauncherList();
 
                 // Start the rendering loop
                 this.animate();
-				
+                
+				console.log('Progress loaded:', {
+					fireworkCount: this.fireworkCount,
+					autoLauncherLevel: this.autoLauncherLevel,
+					autoLauncherCost: this.autoLauncherCost,
+					sparkles: this.sparkles,
+					recipes: this.recipes,
+					autoLaunchers: this.autoLaunchers
+				});
+	
                 document.addEventListener('visibilitychange', () => {
                     if (document.visibilityState === 'hidden') {
                         this.pause();
@@ -765,18 +834,18 @@
                 this.camera.position.z = 100;
 
                 const div = document.createElement('div');
-				div.style.position = 'fixed';
-				div.style.top = '10px';
-				div.style.right = '10px';
-				div.style.backgroundColor = 'rgba(0,0,0,0.7)';
-				div.style.color = 'white';
-				div.style.padding = '10px';
-				div.style.fontFamily = 'monospace';
-				div.style.fontSize = '12px';
-				div.style.zIndex = '1000';
-				//document.body.appendChild(div);
-				this.debugDiv = div;
-    
+                div.style.position = 'fixed';
+                div.style.top = '10px';
+                div.style.right = '10px';
+                div.style.backgroundColor = 'rgba(0,0,0,0.7)';
+                div.style.color = 'white';
+                div.style.padding = '10px';
+                div.style.fontFamily = 'monospace';
+                div.style.fontSize = '12px';
+                div.style.zIndex = '1000';
+                //document.body.appendChild(div);
+                this.debugDiv = div;
+        
 
                 this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
                 this.renderer.setPixelRatio(window.devicePixelRatio);
@@ -871,13 +940,20 @@
                 };
                 document.getElementById('incremental-tab').addEventListener('click', this.incrementalTabHandler);
 
+                // Handler for Auto-Launchers tab
+                this.autoLauncherTabHandler = () => {
+                    this.toggleTab('auto-launcher');
+                    this.updateLauncherList(); // Update the launcher list when the tab is shown
+                };
+                document.getElementById('auto-launcher-tab').addEventListener('click', this.autoLauncherTabHandler);
+
                 this.trailEffectChangeHandler = (e) => {
                     this.currentTrailEffect = e.target.value;
                     this.saveCurrentRecipeComponents();
                 };
                 document.getElementById('recipe-trail-effect').addEventListener('change', this.trailEffectChangeHandler);
 
-                this.showTab('crafting');
+                //this.showTab('crafting');
 
                 // Use pointerdown event to handle both mouse and touch input
                 this.pointerDownHandler = (e) => {
@@ -887,7 +963,7 @@
                         const y = e.clientY;
 
                         const worldPos = this.screenToWorld(x, y);
-                        this.launchFireworkAt(worldPos.x);
+                        this.handlePointerClick(worldPos, e);
                     }
                 };
                 this.renderer.domElement.addEventListener('pointerdown', this.pointerDownHandler);
@@ -985,6 +1061,11 @@
                 // Show selected tab
                 contentElement.classList.add('active');
                 tabElement.classList.add('active');
+
+                // Additional actions when showing specific tabs
+                if (tab === 'auto-launcher') {
+                    this.updateLauncherList();
+                }
             }
 
             toggleTab(tab) {
@@ -1005,7 +1086,7 @@
                     tabElement.classList.add('active');
                 }
             }
-
+			
             updateUI() {
                 document.getElementById('firework-count').textContent = this.fireworkCount;
                 document.getElementById('auto-launcher-level').textContent = this.autoLauncherLevel;
@@ -1015,44 +1096,51 @@
             }
 
             update(deltaTime) {
-			
-				this.particleSystem.update(deltaTime);
+            
+                this.particleSystem.update(deltaTime);
 
                 this.autoLaunchers.forEach(launcher => {
                     launcher.accumulator += deltaTime;
                     if (launcher.accumulator >= 5) { // Every 5 seconds
                         const bounds = this.getViewBounds();
                         const x = bounds.minX + launcher.xPercent * (bounds.maxX - bounds.minX);
-                        this.launchFireworkAt(x);
+                        // Use the assigned recipe if available
+                        let recipe = this.recipes[launcher.assignedRecipeIndex];
+                        if (recipe) {
+                            this.launch(x, bounds.minY, recipe.components, recipe.trailEffect);
+                        } else {
+                            // Fallback to default recipe
+                            this.launch(x, bounds.minY, this.currentRecipeComponents, this.currentTrailEffect);
+                        }
                         launcher.accumulator -= 5; // Reset accumulator
                     }
                 });
             }
 
-			initBackgroundColor() {
-				const savedColor = localStorage.getItem('backgroundColor') || '#000000';
-				
-				// Wait for DOM to be ready before accessing the element
-				const initColorPicker = () => {
-					const colorPicker = document.getElementById('background-color');
-					if (colorPicker) {
-						colorPicker.value = savedColor;
-						this.renderer.setClearColor(new THREE.Color(savedColor));
-						
-						// Add event listener
-						colorPicker.addEventListener('input', (e) => {
-							const color = e.target.value;
-							this.renderer.setClearColor(new THREE.Color(color));
-							localStorage.setItem('backgroundColor', color);
-						});
-					} else {
-						// If element not found, try again in 100ms
-						setTimeout(initColorPicker, 100);
-					}
-				};
+            initBackgroundColor() {
+                const savedColor = localStorage.getItem('backgroundColor') || '#000000';
+                
+                // Wait for DOM to be ready before accessing the element
+                const initColorPicker = () => {
+                    const colorPicker = document.getElementById('background-color');
+                    if (colorPicker) {
+                        colorPicker.value = savedColor;
+                        this.renderer.setClearColor(new THREE.Color(savedColor));
+                        
+                        // Add event listener
+                        colorPicker.addEventListener('input', (e) => {
+                            const color = e.target.value;
+                            this.renderer.setClearColor(new THREE.Color(color));
+                            localStorage.setItem('backgroundColor', color);
+                        });
+                    } else {
+                        // If element not found, try again in 100ms
+                        setTimeout(initColorPicker, 100);
+                    }
+                };
 
-				initColorPicker();
-			}
+                initColorPicker();
+            }
 
 
             saveProgress() {
@@ -1062,9 +1150,22 @@
                 localStorage.setItem('sparkles', this.sparkles);
                 localStorage.setItem('fireworkRecipes', JSON.stringify(this.recipes));
                 localStorage.setItem('currentTrailEffect', this.currentTrailEffect);
-                localStorage.setItem('autoLaunchers', JSON.stringify(this.autoLaunchers.map(launcher => ({ xPercent: launcher.xPercent, accumulator: launcher.accumulator }))));
+                localStorage.setItem('autoLaunchers', JSON.stringify(this.autoLaunchers.map(launcher => ({
+                    xPercent: launcher.xPercent,
+                    accumulator: launcher.accumulator,
+                    assignedRecipeIndex: launcher.assignedRecipeIndex || null
+                }))));
                 localStorage.setItem('currentRecipeComponents', JSON.stringify(this.currentRecipeComponents));
-				localStorage.setItem('backgroundColor', document.getElementById('background-color').value);
+                localStorage.setItem('backgroundColor', document.getElementById('background-color').value);
+				
+				    console.log('Progress saved:', {
+        fireworkCount: this.fireworkCount,
+        autoLauncherLevel: this.autoLauncherLevel,
+        autoLauncherCost: this.autoLauncherCost,
+        sparkles: this.sparkles,
+        recipes: this.recipes,
+        autoLaunchers: this.autoLaunchers
+    });
             }
 
             showNotification(message) {
@@ -1102,23 +1203,23 @@
                         }
                     }
 
-					// Update debug info
-					this.debugInfo.activeFireworks = this.fireworks.length;
-					this.debugInfo.totalParticles = Object.values(this.particleSystem.activeCounts).reduce((a, b) => a + b, 0);
-					
-					// Try to estimate GPU memory usage
-					this.debugInfo.gpuMemory = (
-						(FIREWORK_CONFIG.supportedShapes.length * this.particleSystem.meshes[FIREWORK_CONFIG.supportedShapes[0]].geometry.attributes.position.array.length * 4) +
-						(this.particleSystem.meshes[FIREWORK_CONFIG.supportedShapes[0]].instanceMatrix.array.length * 4) +
-						(this.particleSystem.meshes[FIREWORK_CONFIG.supportedShapes[0]].instanceColor.array.length * 4)
-					) / (1024 * 1024);  // Convert to MB
+                    // Update debug info
+                    this.debugInfo.activeFireworks = this.fireworks.length;
+                    this.debugInfo.totalParticles = Object.values(this.particleSystem.activeCounts).reduce((a, b) => a + b, 0);
+                    
+                    // Try to estimate GPU memory usage
+                    this.debugInfo.gpuMemory = (
+                        (FIREWORK_CONFIG.supportedShapes.length * this.particleSystem.meshes[FIREWORK_CONFIG.supportedShapes[0]].geometry.attributes.position.array.length * 4) +
+                        (this.particleSystem.meshes[FIREWORK_CONFIG.supportedShapes[0]].instanceMatrix.array.length * 4) +
+                        (this.particleSystem.meshes[FIREWORK_CONFIG.supportedShapes[0]].instanceColor.array.length * 4)
+                    ) / (1024 * 1024);  // Convert to MB
 
-					// Update debug display
-					this.debugDiv.innerHTML = `
-						Active Fireworks: ${this.debugInfo.activeFireworks}<br>
-						Active Particles: ${this.debugInfo.totalParticles}<br>
-						Est. GPU Memory: ${this.debugInfo.gpuMemory.toFixed(2)}MB<br>
-					`;
+                    // Update debug display
+                    this.debugDiv.innerHTML = `
+                        Active Fireworks: ${this.debugInfo.activeFireworks}<br>
+                        Active Particles: ${this.debugInfo.totalParticles}<br>
+                        Est. GPU Memory: ${this.debugInfo.gpuMemory.toFixed(2)}MB<br>
+                    `;
 
                     // Update game logic
                     this.update(delta);
@@ -1156,7 +1257,8 @@
                     const accumulator = Math.random() * 5;
                     const launcher = {
                         xPercent: xPercent,
-                        accumulator: accumulator
+                        accumulator: accumulator,
+                        assignedRecipeIndex: null
                     };
                     // Create visual representation of the auto-launcher
                     this.createAutoLauncherMesh(launcher);
@@ -1164,27 +1266,28 @@
                     this.saveProgress();
                     this.updateUI();
                     this.showNotification("Auto-Launcher purchased!");
+                    this.updateLauncherList();
                 } else {
                     this.showNotification("Not enough sparkles to buy this upgrade!");
                 }
             }
-		
-			createAutoLauncherMesh(launcher) {
-				const geometry = new THREE.PlaneGeometry(5, 10);
-				const material = new THREE.MeshBasicMaterial({ 
-					color: 0xffffff,
-					side: THREE.DoubleSide // Makes the plane visible from both sides
-				});
-				const launcherMesh = new THREE.Mesh(geometry, material);
-				const bounds = this.getViewBounds();
-				const x = bounds.minX + launcher.xPercent * (bounds.maxX - bounds.minX);
-				const y = bounds.minY + 5; // Adjust Y position to stay visible
-				launcherMesh.position.set(x, y, 0);
-				this.scene.add(launcherMesh);
+        
+            createAutoLauncherMesh(launcher) {
+                const geometry = new THREE.PlaneGeometry(5, 10);
+                const material = new THREE.MeshBasicMaterial({ 
+                    color: 0xffffff,
+                    side: THREE.DoubleSide // Makes the plane visible from both sides
+                });
+                const launcherMesh = new THREE.Mesh(geometry, material);
+                const bounds = this.getViewBounds();
+                const x = bounds.minX + launcher.xPercent * (bounds.maxX - bounds.minX);
+                const y = bounds.minY + 5; // Adjust Y position to stay visible
+                launcherMesh.position.set(x, y, 0);
+                this.scene.add(launcherMesh);
 
-				// Store the mesh reference in the launcher object
-				launcher.mesh = launcherMesh;
-			}
+                // Store the mesh reference in the launcher object
+                launcher.mesh = launcherMesh;
+            }
 
             resetGame() {
                 this.fireworkCount = 0;
@@ -1229,10 +1332,11 @@
                 this.updateUI();
                 this.updateComponentsList();
                 this.updateRecipeList();
+                this.updateLauncherList();
                 this.showNotification("Game has been reset.");
-				
-				this.renderer.setClearColor(new THREE.Color('#000000'));
-				document.getElementById('background-color').value = '#000000';
+                
+                this.renderer.setClearColor(new THREE.Color('#000000'));
+                document.getElementById('background-color').value = '#000000';
             }
 
             eraseAllRecipes() {
@@ -1240,14 +1344,6 @@
                 localStorage.removeItem('fireworkRecipes');
                 this.updateRecipeList();
                 this.showNotification("All recipes have been erased.");
-            }
-
-            showResetConfirmation() {
-                // Deprecated: Using generic confirmation instead
-            }
-
-            hideResetConfirmation() {
-                // Deprecated: Using generic confirmation instead
             }
 
             updateComponentsList() {
@@ -1266,7 +1362,7 @@
                                 <select class="pattern-select" data-index="${index}">
                                     <option value="spherical">Spherical</option>
                                     <option value="ring">Ring</option>
-									<option value="heart">Heart</option>
+                                    <option value="heart">Heart</option>
                                     <option value="burst">Burst</option>
                                     <option value="palm">Palm</option>
                                     <option value="willow">Willow</option>
@@ -1306,7 +1402,7 @@
                         </div>
                         <button class="remove-component" data-index="${index}">Remove Component</button>
                     `;
-					componentsList.appendChild(componentDiv);
+                    componentsList.appendChild(componentDiv);
 
                     // Set the values of the selects
                     const patternSelect = componentDiv.querySelector('.pattern-select');
@@ -1509,34 +1605,138 @@
                 this.saveCurrentRecipeComponents();
                 this.showNotification(`Loaded Recipe ${index + 1}`);
             }
-		
-			// Cleanup method to remove event listeners and dispose resources
-			cleanup() {
-				// Remove event listeners
-				document.getElementById('add-component').removeEventListener('click', this.addComponentHandler);
-				document.getElementById('save-recipe').removeEventListener('click', this.saveRecipeHandler);
-				document.getElementById('erase-recipes').removeEventListener('click', this.eraseRecipesHandler);
-				document.getElementById('buy-auto-launcher').removeEventListener('click', this.buyAutoLauncherHandler);
-				document.getElementById('reset-game').removeEventListener('click', this.resetGameHandler);
-				document.getElementById('crafting-tab').removeEventListener('click', this.craftingTabHandler);
-				document.getElementById('incremental-tab').removeEventListener('click', this.incrementalTabHandler);
-				document.getElementById('recipe-trail-effect').removeEventListener('change', this.trailEffectChangeHandler);
-				this.renderer.domElement.removeEventListener('pointerdown', this.pointerDownHandler);
-				
-				// Dispose Three.js renderer
-				if (this.renderer) {
-					this.renderer.dispose();
-					this.scene = null;
-					this.camera = null;
-					this.renderer = null;
+
+			updateLauncherList() {
+				const launcherList = document.getElementById('launcher-list');
+				launcherList.innerHTML = ''; // Clear existing content
+
+				if (this.autoLaunchers.length === 0) {
+					launcherList.innerHTML = "<p>No auto-launchers owned yet.</p>";
+					return;
 				}
 
-				// Dispose of particle system
-				if (this.particleSystem) {
-					this.particleSystem.dispose();
-					this.particleSystem = null;
+				this.autoLaunchers.forEach((launcher, index) => {
+					const launcherDiv = document.createElement('div');
+					launcherDiv.classList.add('launcher-card');
+
+					// **Add 'selected' class if this is the selected launcher**
+					if (index === this.selectedLauncherIndex) {
+						launcherDiv.classList.add('selected');
+					}
+
+					launcherDiv.innerHTML = `
+						<h3>Auto-Launcher ${index + 1}</h3>
+						<div class="crafting-option">
+							<label>Assign Recipe:</label>
+							<select class="recipe-select" data-index="${index}">
+								<option value="">-- Select a Recipe --</option>
+								${this.recipes.map((recipe, rIndex) => `
+									<option value="${rIndex}" ${launcher.assignedRecipeIndex === rIndex ? 'selected' : ''}>Recipe ${rIndex + 1}</option>
+								`).join('')}
+							</select>
+						</div>
+					`;
+					launcherList.appendChild(launcherDiv);
+
+					// Event Listener for Recipe Assignment
+					const recipeSelect = launcherDiv.querySelector('.recipe-select');
+					recipeSelect.addEventListener('change', (e) => {
+						const idx = e.target.getAttribute('data-index');
+						const selectedRecipeIndex = parseInt(e.target.value);
+						if (!isNaN(selectedRecipeIndex)) {
+							this.autoLaunchers[idx].assignedRecipeIndex = selectedRecipeIndex;
+						} else {
+							this.autoLaunchers[idx].assignedRecipeIndex = null;
+						}
+						this.saveProgress();
+					});
+
+					// **Add Click Event Listener for Highlighting**
+					launcherDiv.addEventListener('click', () => {
+						this.selectLauncher(index);
+					});
+				});
+			}
+			
+			selectLauncher(selectedIndex) {
+				// Deselect all launchers
+				const launcherCards = document.querySelectorAll('.launcher-card');
+				launcherCards.forEach((card, index) => {
+					if (index === selectedIndex) {
+						card.classList.add('selected');
+					} else {
+						card.classList.remove('selected');
+					}
+				});
+
+				// Optionally, store the selected launcher index for further use
+				this.selectedLauncherIndex = selectedIndex;
+
+				// Save the selected launcher if needed
+				// For example, to remember selection across sessions
+				localStorage.setItem('selectedLauncherIndex', selectedIndex);
+			}
+
+			handlePointerClick(worldPos, event) {
+				const raycaster = new THREE.Raycaster();
+				const mouse = new THREE.Vector2();
+				mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+				mouse.y = - (event.clientY / window.innerHeight) * 2 + 1;
+				raycaster.setFromCamera(mouse, this.camera);
+
+				// Collect all auto-launcher meshes
+				const launcherMeshes = this.autoLaunchers.map(launcher => launcher.mesh);
+
+				const intersects = raycaster.intersectObjects(launcherMeshes);
+				if (intersects.length > 0) {
+					const clickedMesh = intersects[0].object;
+					const launcherIndex = this.autoLaunchers.findIndex(launcher => launcher.mesh === clickedMesh);
+					if (launcherIndex !== -1) {
+						this.selectLauncher(launcherIndex); 
+						this.showTab('auto-launcher');
+						setTimeout(() => {
+							// Scroll to the corresponding launcher card
+							const launcherList = document.getElementById('launcher-list');
+							const launcherCards = launcherList.getElementsByClassName('launcher-card');
+							if (launcherCards[launcherIndex]) {
+								launcherCards[launcherIndex].scrollIntoView({ behavior: 'smooth' });
+							}
+						}, 100);
+					}
+				} else {
+					// If not clicking on an auto-launcher, launch a firework
+					this.launchFireworkAt(worldPos.x);
 				}
 			}
+        
+            // Cleanup method to remove event listeners and dispose resources
+            cleanup() {
+                // Remove event listeners
+                document.getElementById('add-component').removeEventListener('click', this.addComponentHandler);
+                document.getElementById('save-recipe').removeEventListener('click', this.saveRecipeHandler);
+                document.getElementById('erase-recipes').removeEventListener('click', this.eraseRecipesHandler);
+                document.getElementById('buy-auto-launcher').removeEventListener('click', this.buyAutoLauncherHandler);
+                document.getElementById('reset-game').removeEventListener('click', this.resetGameHandler);
+                document.getElementById('crafting-tab').removeEventListener('click', this.craftingTabHandler);
+                document.getElementById('incremental-tab').removeEventListener('click', this.incrementalTabHandler);
+                document.getElementById('auto-launcher-tab').removeEventListener('click', this.autoLauncherTabHandler);
+                document.getElementById('recipe-trail-effect').removeEventListener('change', this.trailEffectChangeHandler);
+                this.renderer.domElement.removeEventListener('pointerdown', this.pointerDownHandler);
+                
+                // Dispose Three.js renderer
+                if (this.renderer) {
+                    this.renderer.dispose();
+                    this.scene = null;
+                    this.camera = null;
+                    this.renderer = null;
+                }
+
+                // Dispose of particle system
+                if (this.particleSystem) {
+                    this.particleSystem.dispose();
+                    this.particleSystem = null;
+                }
+            }
         }
 
    class Firework {
@@ -2098,10 +2298,10 @@
     }
 
 
-    // Initialize game when DOM is loaded
-    document.addEventListener('DOMContentLoaded', () => {
-        window.game = new FireworkGame();
-    });
+        // Initialize game when DOM is loaded
+        document.addEventListener('DOMContentLoaded', () => {
+            window.game = new FireworkGame();
+        });
     </script>
 </body>
 </html>
