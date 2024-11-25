@@ -521,8 +521,8 @@
 
 			createCrystalDropletGeometry() {
 				const shape = new THREE.Shape();
-				const width = 1;
-				const height = 2;
+				const width = 3;
+				const height = 10;
 				const curvature = 0.5;
 
 				shape.moveTo(0, 0);
@@ -574,17 +574,36 @@
 			}
 
 			updateParticleTransform(shape, index) {
-				this.matrix.makeTranslation(
-					this.positions[shape][index].x,
-					this.positions[shape][index].y,
-					this.positions[shape][index].z
-				);
-
+				// Clone the current position
+				const position = this.positions[shape][index].clone();
+				
+				// Clone and normalize the velocity to get the direction
+				const velocity = this.velocities[shape][index].clone().normalize();
+				
+				// Calculate the target direction towards the explosion center
+				// Assuming the explosion center is where the particle was spawned
+				const targetDir = velocity.clone().multiplyScalar(-1); // Direction towards center
+				
+				// Define the default "front" direction of the mesh (assumed to be +Y)
+				const defaultFront = new THREE.Vector3(0, 1, 0);
+				
+				// Calculate the quaternion that rotates defaultFront to targetDir
+				const quaternion = new THREE.Quaternion().setFromUnitVectors(defaultFront, targetDir);
+				
+				// Create a rotation matrix from the quaternion
+				this.matrix.makeRotationFromQuaternion(quaternion);
+				
+				// Apply scaling
 				const scale = this.scales[shape][index];
 				this.matrix.scale(new THREE.Vector3(scale, scale, scale));
-
+				
+				// Apply translation (position)
+				this.matrix.setPosition(position.x, position.y, position.z);
+				
+				// Update the instance matrix with the new transformation
 				this.meshes[shape].setMatrixAt(index, this.matrix);
-
+				
+				// Update the color with alpha
 				this.tempData[shape].color.copy(this.colors[shape][index]);
 				this.tempData[shape].color.multiplyScalar(this.alphas[shape][index]);
 				this.meshes[shape].setColorAt(index, this.tempData[shape].color);
