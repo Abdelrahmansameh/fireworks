@@ -285,7 +285,8 @@
             to { opacity: 0; }
         }
 
-        .reset-confirmation {
+        /* Generic Confirmation Dialog */
+        .confirmation-dialog {
             background-color: rgba(26, 31, 42, 0.95);
             padding: 15px;
             border: 1px solid #34495e;
@@ -298,14 +299,15 @@
             text-align: center;
             max-width: 300px;
             width: 90%;
+            display: none;
         }
 
-        .reset-confirmation h3 {
+        .confirmation-dialog h3 {
             margin-top: 0;
             color: #e74c3c;
         }
 
-        .reset-confirmation button {
+        .confirmation-dialog button {
             width: 45%;
             margin: 5px;
         }
@@ -318,6 +320,7 @@
             height: 100%;
             background: rgba(0, 0, 0, 0.5);
             z-index: 1500;
+            display: none;
         }
     </style>
 </head>
@@ -389,14 +392,14 @@
         </div>
     </div>
 
-    <!-- Reset Confirmation Dialog -->
-    <div id="reset-confirmation" class="reset-confirmation" style="display: none;">
-        <h3>Confirm Reset</h3>
-        <p>Are you sure you want to reset the game? All progress will be lost.</p>
-        <button id="confirm-reset">Yes</button>
-        <button id="cancel-reset">No</button>
+    <!-- Generic Confirmation Dialog -->
+    <div id="confirmation-dialog" class="confirmation-dialog">
+        <h3 id="confirmation-title">Confirm</h3>
+        <p id="confirmation-message">Are you sure?</p>
+        <button id="confirm-action">Yes</button>
+        <button id="cancel-action">No</button>
     </div>
-    <div id="overlay" class="overlay" style="display: none;"></div>
+    <div id="overlay" class="overlay"></div>
 
     <script>
         // Global configuration
@@ -413,7 +416,7 @@
             patternGravities: {       // Different gravity per pattern
                 spherical: 9.81,
                 ring: 8.0,
-				heart: 6.0,
+                heart: 6.0,
                 star: 7.0,
                 burst: 9.81,
                 palm: 5.0,
@@ -424,267 +427,267 @@
         };
 
 
-class InstancedParticleSystem {
-    constructor(scene, maxParticles = 10000) {
-        this.scene = scene;
-        this.maxParticles = maxParticles;
-        this.meshes = {}; // Key: shape, Value: InstancedMesh
-        this.activeCounts = {}; // Key: shape, Value: active particle count
+        class InstancedParticleSystem {
+            constructor(scene, maxParticles = 10000) {
+                this.scene = scene;
+                this.maxParticles = maxParticles;
+                this.meshes = {}; // Key: shape, Value: InstancedMesh
+                this.activeCounts = {}; // Key: shape, Value: active particle count
 
-        // Define geometries for supported shapes
-        const geometries = {
-            sphere: new THREE.SphereGeometry(1, 8, 8),
-            star: this.createStarGeometry(),
-            ring: new THREE.RingGeometry(0.5, 1, 8),
-            crystalDroplet: this.createCrystalDropletGeometry(),
-            sliceBurst: this.createSliceBurstGeometry()
-        };
+                // Define geometries for supported shapes
+                const geometries = {
+                    sphere: new THREE.SphereGeometry(1, 8, 8),
+                    star: this.createStarGeometry(),
+                    ring: new THREE.RingGeometry(0.5, 1, 8),
+                    crystalDroplet: this.createCrystalDropletGeometry(),
+                    sliceBurst: this.createSliceBurstGeometry()
+                };
 
-        // Create an InstancedMesh for each shape
-        FIREWORK_CONFIG.supportedShapes.forEach(shape => {
-            const geometry = geometries[shape];
-            const material = new THREE.MeshBasicMaterial({
-                color: 0xffffff,
-                transparent: true,
-                blending: THREE.AdditiveBlending,
-                side: THREE.DoubleSide
-            });
+                // Create an InstancedMesh for each shape
+                FIREWORK_CONFIG.supportedShapes.forEach(shape => {
+                    const geometry = geometries[shape];
+                    const material = new THREE.MeshBasicMaterial({
+                        color: 0xffffff,
+                        transparent: true,
+                        blending: THREE.AdditiveBlending,
+                        side: THREE.DoubleSide
+                    });
 
-            const instancedMesh = new THREE.InstancedMesh(
-                geometry,
-                material,
-                maxParticles
-            );
-
-            instancedMesh.instanceColor = new THREE.InstancedBufferAttribute(
-                new Float32Array(maxParticles * 3),
-                3
-            );
-
-            this.meshes[shape] = instancedMesh;
-            this.activeCounts[shape] = 0;
-            scene.add(instancedMesh);
-        });
-
-        // Initialize arrays for particle properties
-        this.positions = {}; // Key: shape, Value: Array of Vector3
-        this.velocities = {}; // Key: shape, Value: Array of Vector3
-        this.colors = {}; // Key: shape, Value: Array of Color
-        this.scales = {}; // Key: shape, Value: Float32Array
-        this.lifetimes = {}; // Key: shape, Value: Float32Array
-        this.initialLifetimes = {}; // Key: shape, Value: Float32Array
-        this.gravities = {}; // Key: shape, Value: Float32Array
-        this.alphas = {}; // Key: shape, Value: Float32Array
-
-        // **Add Rotation Storage**
-        this.rotations = {}; // Key: shape, Value: Array of Quaternions
-
-        FIREWORK_CONFIG.supportedShapes.forEach(shape => {
-            this.positions[shape] = new Array(maxParticles).fill(null).map(() => new THREE.Vector3());
-            this.velocities[shape] = new Array(maxParticles).fill(null).map(() => new THREE.Vector3());
-            this.colors[shape] = new Array(maxParticles).fill(null).map(() => new THREE.Color());
-            this.scales[shape] = new Float32Array(maxParticles);
-            this.lifetimes[shape] = new Float32Array(maxParticles);
-            this.initialLifetimes[shape] = new Float32Array(maxParticles);
-            this.gravities[shape] = new Float32Array(maxParticles);
-            this.alphas[shape] = new Float32Array(maxParticles).fill(1.0);
-
-            // Initialize rotation quaternions for each particle
-            this.rotations[shape] = new Array(maxParticles).fill(null).map(() => new THREE.Quaternion());
-        });
-
-        // Reusable objects to avoid allocations
-        this.matrix = new THREE.Matrix4();
-
-        // Placeholder for temporary storage during updates
-        this.tempData = {};
-        FIREWORK_CONFIG.supportedShapes.forEach(shape => {
-            this.tempData[shape] = {
-                matrix: new THREE.Matrix4(),
-                color: new THREE.Color()
-            };
-        });
-    }
-
-    createStarGeometry() {
-        const shape = new THREE.Shape();
-        const outerRadius = 2;
-        const innerRadius = 1;
-        const spikes = 5;
-        const step = Math.PI / spikes;
-
-        shape.moveTo(outerRadius, 0);
-        for (let i = 0; i < spikes * 2; i++) {
-            const radius = (i % 2 === 0) ? outerRadius : innerRadius;
-            const angle = i * step;
-            shape.lineTo(radius * Math.cos(angle), radius * Math.sin(angle));
-        }
-        shape.closePath();
-
-        const geometry = new THREE.ShapeGeometry(shape);
-        return geometry;
-    }
-
-    createCrystalDropletGeometry() {
-        const shape = new THREE.Shape();
-        const width = 2;
-        const height = 5;
-        const curvature = 0.5;
-
-        shape.moveTo(0, 0);
-        shape.bezierCurveTo(width / 2, height / 2, width / 2, height, 0, height);
-        shape.bezierCurveTo(-width / 2, height, -width / 2, height / 2, 0, 0);
-        shape.closePath();
-
-        const geometry = new THREE.ShapeGeometry(shape);
-        return geometry;
-    }
-
-	createSliceBurstGeometry(base = 1, height = 5) {
-		const shape = new THREE.Shape();
-
-		shape.moveTo(-base / 2, 0);      
-		shape.lineTo(base / 2, 0);       
-		shape.lineTo(0, -height);          
-		shape.closePath();                
-
-		const geometry = new THREE.ShapeGeometry(shape);
-		return geometry;
-	}
-	
-    addParticle(position, velocity, color, scale, lifetime, gravity, shape = 'sphere') {
-        if (!FIREWORK_CONFIG.supportedShapes.includes(shape)) {
-            shape = 'sphere'; // Fallback to sphere if unsupported
-        }
-
-        const mesh = this.meshes[shape];
-        const activeCount = this.activeCounts[shape];
-
-        if (activeCount >= this.maxParticles) return -1;
-
-        const index = activeCount;
-
-        this.positions[shape][index].copy(position);
-        this.velocities[shape][index].copy(velocity);
-        this.colors[shape][index].copy(color);
-        this.scales[shape][index] = scale;
-        this.lifetimes[shape][index] = lifetime;
-        this.initialLifetimes[shape][index] = lifetime;
-        this.gravities[shape][index] = gravity;
-        this.alphas[shape][index] = 1.0;
-
-        // **Calculate and Store Rotation**
-        const normalizedVelocity = velocity.clone().normalize();
-        const targetDir = normalizedVelocity.clone().multiplyScalar(-1); // Direction towards explosion center
-        const defaultFront = new THREE.Vector3(0, 1, 0); // Assuming +Y is the front
-        const quaternion = new THREE.Quaternion().setFromUnitVectors(defaultFront, targetDir);
-        this.rotations[shape][index].copy(quaternion);
-
-        this.updateParticleTransform(shape, index);
-
-        this.activeCounts[shape]++;
-        return index;
-    }
-
-    updateParticleTransform(shape, index) {
-        // Clone the current position
-        const position = this.positions[shape][index].clone();
-
-        // Retrieve the stored rotation quaternion
-        const quaternion = this.rotations[shape][index].clone();
-
-        // Create a rotation matrix from the quaternion
-        this.matrix.makeRotationFromQuaternion(quaternion);
-
-        // Apply scaling
-        const scale = this.scales[shape][index];
-        this.matrix.scale(new THREE.Vector3(scale, scale, scale));
-
-        // Apply translation (position)
-        this.matrix.setPosition(position.x, position.y, position.z);
-
-        // Update the instance matrix with the new transformation
-        this.meshes[shape].setMatrixAt(index, this.matrix);
-
-        // Update the color with alpha
-        this.tempData[shape].color.copy(this.colors[shape][index]);
-        this.tempData[shape].color.multiplyScalar(this.alphas[shape][index]);
-        this.meshes[shape].setColorAt(index, this.tempData[shape].color);
-    }
-
-    update(delta) {
-        FIREWORK_CONFIG.supportedShapes.forEach(shape => {
-            let nextFreeIndex = 0;
-            const activeCount = this.activeCounts[shape];
-
-            // Process all currently active particles
-            for (let i = 0; i < activeCount; i++) {
-                this.lifetimes[shape][i] -= delta;
-
-                // Only move particle to next free slot if it's still alive
-                if (this.lifetimes[shape][i] > 0) {
-                    if (i !== nextFreeIndex) {
-                        // Move particle data to next free slot
-                        this.positions[shape][nextFreeIndex].copy(this.positions[shape][i]);
-                        this.velocities[shape][nextFreeIndex].copy(this.velocities[shape][i]);
-                        this.colors[shape][nextFreeIndex].copy(this.colors[shape][i]);
-                        this.scales[shape][nextFreeIndex] = this.scales[shape][i];
-                        this.lifetimes[shape][nextFreeIndex] = this.lifetimes[shape][i];
-                        this.initialLifetimes[shape][nextFreeIndex] = this.initialLifetimes[shape][i];
-                        this.gravities[shape][nextFreeIndex] = this.gravities[shape][i];
-                        this.alphas[shape][nextFreeIndex] = this.alphas[shape][i];
-
-                        // **Copy Rotation**
-                        this.rotations[shape][nextFreeIndex].copy(this.rotations[shape][i]);
-
-                        // Update rotation in the stored quaternion
-                    }
-
-                    // Update physics for the particle
-                    this.velocities[shape][nextFreeIndex].y -= this.gravities[shape][nextFreeIndex] * delta;
-                    this.positions[shape][nextFreeIndex].addScaledVector(
-                        this.velocities[shape][nextFreeIndex],
-                        delta
+                    const instancedMesh = new THREE.InstancedMesh(
+                        geometry,
+                        material,
+                        maxParticles
                     );
 
-                    // Calculate alpha based on remaining lifetime
-                    const normalizedLifetime = this.lifetimes[shape][nextFreeIndex] /
-                        this.initialLifetimes[shape][nextFreeIndex];
-                    this.alphas[shape][nextFreeIndex] = Math.pow(normalizedLifetime, 3);
+                    instancedMesh.instanceColor = new THREE.InstancedBufferAttribute(
+                        new Float32Array(maxParticles * 3),
+                        3
+                    );
 
-                    // **Apply Stored Rotation**
-                    this.updateParticleTransform(shape, nextFreeIndex);
-                    nextFreeIndex++;
+                    this.meshes[shape] = instancedMesh;
+                    this.activeCounts[shape] = 0;
+                    scene.add(instancedMesh);
+                });
+
+                // Initialize arrays for particle properties
+                this.positions = {}; // Key: shape, Value: Array of Vector3
+                this.velocities = {}; // Key: shape, Value: Array of Vector3
+                this.colors = {}; // Key: shape, Value: Array of Color
+                this.scales = {}; // Key: shape, Value: Float32Array
+                this.lifetimes = {}; // Key: shape, Value: Float32Array
+                this.initialLifetimes = {}; // Key: shape, Value: Float32Array
+                this.gravities = {}; // Key: shape, Value: Float32Array
+                this.alphas = {}; // Key: shape, Value: Float32Array
+
+                // **Add Rotation Storage**
+                this.rotations = {}; // Key: shape, Value: Array of Quaternions
+
+                FIREWORK_CONFIG.supportedShapes.forEach(shape => {
+                    this.positions[shape] = new Array(maxParticles).fill(null).map(() => new THREE.Vector3());
+                    this.velocities[shape] = new Array(maxParticles).fill(null).map(() => new THREE.Vector3());
+                    this.colors[shape] = new Array(maxParticles).fill(null).map(() => new THREE.Color());
+                    this.scales[shape] = new Float32Array(maxParticles);
+                    this.lifetimes[shape] = new Float32Array(maxParticles);
+                    this.initialLifetimes[shape] = new Float32Array(maxParticles);
+                    this.gravities[shape] = new Float32Array(maxParticles);
+                    this.alphas[shape] = new Float32Array(maxParticles).fill(1.0);
+
+                    // Initialize rotation quaternions for each particle
+                    this.rotations[shape] = new Array(maxParticles).fill(null).map(() => new THREE.Quaternion());
+                });
+
+                // Reusable objects to avoid allocations
+                this.matrix = new THREE.Matrix4();
+
+                // Placeholder for temporary storage during updates
+                this.tempData = {};
+                FIREWORK_CONFIG.supportedShapes.forEach(shape => {
+                    this.tempData[shape] = {
+                        matrix: new THREE.Matrix4(),
+                        color: new THREE.Color()
+                    };
+                });
+            }
+
+            createStarGeometry() {
+                const shape = new THREE.Shape();
+                const outerRadius = 2;
+                const innerRadius = 1;
+                const spikes = 5;
+                const step = Math.PI / spikes;
+
+                shape.moveTo(outerRadius, 0);
+                for (let i = 0; i < spikes * 2; i++) {
+                    const radius = (i % 2 === 0) ? outerRadius : innerRadius;
+                    const angle = i * step;
+                    shape.lineTo(radius * Math.cos(angle), radius * Math.sin(angle));
                 }
+                shape.closePath();
+
+                const geometry = new THREE.ShapeGeometry(shape);
+                return geometry;
             }
 
-            // Update active count and mesh properties
-            this.activeCounts[shape] = nextFreeIndex;
-            this.meshes[shape].count = nextFreeIndex;
+            createCrystalDropletGeometry() {
+                const shape = new THREE.Shape();
+                const width = 2;
+                const height = 5;
+                const curvature = 0.5;
 
-            // Ensure updates are properly flagged
-            if (this.meshes[shape].instanceMatrix) {
-                this.meshes[shape].instanceMatrix.needsUpdate = true;
+                shape.moveTo(0, 0);
+                shape.bezierCurveTo(width / 2, height / 2, width / 2, height, 0, height);
+                shape.bezierCurveTo(-width / 2, height, -width / 2, height / 2, 0, 0);
+                shape.closePath();
+
+                const geometry = new THREE.ShapeGeometry(shape);
+                return geometry;
             }
-            if (this.meshes[shape].instanceColor) {
-                this.meshes[shape].instanceColor.needsUpdate = true;
+
+            createSliceBurstGeometry(base = 1, height = 5) {
+                const shape = new THREE.Shape();
+
+                shape.moveTo(-base / 2, 0);      
+                shape.lineTo(base / 2, 0);       
+                shape.lineTo(0, -height);          
+                shape.closePath();                
+
+                const geometry = new THREE.ShapeGeometry(shape);
+                return geometry;
             }
-        });
-    }
+            
+            addParticle(position, velocity, color, scale, lifetime, gravity, shape = 'sphere') {
+                if (!FIREWORK_CONFIG.supportedShapes.includes(shape)) {
+                    shape = 'sphere'; // Fallback to sphere if unsupported
+                }
 
-    // Dispose method to clean up resources
-    dispose() {
-        FIREWORK_CONFIG.supportedShapes.forEach(shape => {
-            this.scene.remove(this.meshes[shape]);
-            this.meshes[shape].geometry.dispose();
-            this.meshes[shape].material.dispose();
-            this.rotations[shape] = null; // Clear rotation data
-        });
-    }
-}
+                const mesh = this.meshes[shape];
+                const activeCount = this.activeCounts[shape];
+
+                if (activeCount >= this.maxParticles) return -1;
+
+                const index = activeCount;
+
+                this.positions[shape][index].copy(position);
+                this.velocities[shape][index].copy(velocity);
+                this.colors[shape][index].copy(color);
+                this.scales[shape][index] = scale;
+                this.lifetimes[shape][index] = lifetime;
+                this.initialLifetimes[shape][index] = lifetime;
+                this.gravities[shape][index] = gravity;
+                this.alphas[shape][index] = 1.0;
+
+                // **Calculate and Store Rotation**
+                const normalizedVelocity = velocity.clone().normalize();
+                const targetDir = normalizedVelocity.clone().multiplyScalar(-1); // Direction towards explosion center
+                const defaultFront = new THREE.Vector3(0, 1, 0); // Assuming +Y is the front
+                const quaternion = new THREE.Quaternion().setFromUnitVectors(defaultFront, targetDir);
+                this.rotations[shape][index].copy(quaternion);
+
+                this.updateParticleTransform(shape, index);
+
+                this.activeCounts[shape]++;
+                return index;
+            }
+
+            updateParticleTransform(shape, index) {
+                // Clone the current position
+                const position = this.positions[shape][index].clone();
+
+                // Retrieve the stored rotation quaternion
+                const quaternion = this.rotations[shape][index].clone();
+
+                // Create a rotation matrix from the quaternion
+                this.matrix.makeRotationFromQuaternion(quaternion);
+
+                // Apply scaling
+                const scale = this.scales[shape][index];
+                this.matrix.scale(new THREE.Vector3(scale, scale, scale));
+
+                // Apply translation (position)
+                this.matrix.setPosition(position.x, position.y, position.z);
+
+                // Update the instance matrix with the new transformation
+                this.meshes[shape].setMatrixAt(index, this.matrix);
+
+                // Update the color with alpha
+                this.tempData[shape].color.copy(this.colors[shape][index]);
+                this.tempData[shape].color.multiplyScalar(this.alphas[shape][index]);
+                this.meshes[shape].setColorAt(index, this.tempData[shape].color);
+            }
+
+            update(delta) {
+                FIREWORK_CONFIG.supportedShapes.forEach(shape => {
+                    let nextFreeIndex = 0;
+                    const activeCount = this.activeCounts[shape];
+
+                    // Process all currently active particles
+                    for (let i = 0; i < activeCount; i++) {
+                        this.lifetimes[shape][i] -= delta;
+
+                        // Only move particle to next free slot if it's still alive
+                        if (this.lifetimes[shape][i] > 0) {
+                            if (i !== nextFreeIndex) {
+                                // Move particle data to next free slot
+                                this.positions[shape][nextFreeIndex].copy(this.positions[shape][i]);
+                                this.velocities[shape][nextFreeIndex].copy(this.velocities[shape][i]);
+                                this.colors[shape][nextFreeIndex].copy(this.colors[shape][i]);
+                                this.scales[shape][nextFreeIndex] = this.scales[shape][i];
+                                this.lifetimes[shape][nextFreeIndex] = this.lifetimes[shape][i];
+                                this.initialLifetimes[shape][nextFreeIndex] = this.initialLifetimes[shape][i];
+                                this.gravities[shape][nextFreeIndex] = this.gravities[shape][i];
+                                this.alphas[shape][nextFreeIndex] = this.alphas[shape][i];
+
+                                // **Copy Rotation**
+                                this.rotations[shape][nextFreeIndex].copy(this.rotations[shape][i]);
+
+                                // Update rotation in the stored quaternion
+                            }
+
+                            // Update physics for the particle
+                            this.velocities[shape][nextFreeIndex].y -= this.gravities[shape][nextFreeIndex] * delta;
+                            this.positions[shape][nextFreeIndex].addScaledVector(
+                                this.velocities[shape][nextFreeIndex],
+                                delta
+                            );
+
+                            // Calculate alpha based on remaining lifetime
+                            const normalizedLifetime = this.lifetimes[shape][nextFreeIndex] /
+                                this.initialLifetimes[shape][nextFreeIndex];
+                            this.alphas[shape][nextFreeIndex] = Math.pow(normalizedLifetime, 3);
+
+                            // **Apply Stored Rotation**
+                            this.updateParticleTransform(shape, nextFreeIndex);
+                            nextFreeIndex++;
+                        }
+                    }
+
+                    // Update active count and mesh properties
+                    this.activeCounts[shape] = nextFreeIndex;
+                    this.meshes[shape].count = nextFreeIndex;
+
+                    // Ensure updates are properly flagged
+                    if (this.meshes[shape].instanceMatrix) {
+                        this.meshes[shape].instanceMatrix.needsUpdate = true;
+                    }
+                    if (this.meshes[shape].instanceColor) {
+                        this.meshes[shape].instanceColor.needsUpdate = true;
+                    }
+                });
+            }
+
+            // Dispose method to clean up resources
+            dispose() {
+                FIREWORK_CONFIG.supportedShapes.forEach(shape => {
+                    this.scene.remove(this.meshes[shape]);
+                    this.meshes[shape].geometry.dispose();
+                    this.meshes[shape].material.dispose();
+                    this.rotations[shape] = null; // Clear rotation data
+                });
+            }
+        }
 
 
-		// Add debug display
+        // Add debug display
 
         class FireworkGame {
             constructor() {
@@ -832,7 +835,13 @@ class InstancedParticleSystem {
                 document.getElementById('save-recipe').addEventListener('click', this.saveRecipeHandler);
 
                 this.eraseRecipesHandler = () => {
-                    this.eraseAllRecipes();
+                    this.showConfirmation(
+                        "Confirm Erase Recipes",
+                        "Are you sure you want to erase all saved recipes?",
+                        () => {
+                            this.eraseAllRecipes();
+                        }
+                    );
                 };
                 document.getElementById('erase-recipes').addEventListener('click', this.eraseRecipesHandler);
 
@@ -842,20 +851,15 @@ class InstancedParticleSystem {
                 document.getElementById('buy-auto-launcher').addEventListener('click', this.buyAutoLauncherHandler);
 
                 this.resetGameHandler = () => {
-                    this.showResetConfirmation();
+                    this.showConfirmation(
+                        "Confirm Reset",
+                        "Are you sure you want to reset the game? All progress will be lost.",
+                        () => {
+                            this.resetGame();
+                        }
+                    );
                 };
                 document.getElementById('reset-game').addEventListener('click', this.resetGameHandler);
-
-                this.confirmResetHandler = () => {
-                    this.resetGame();
-                    this.hideResetConfirmation();
-                };
-                document.getElementById('confirm-reset').addEventListener('click', this.confirmResetHandler);
-
-                this.cancelResetHandler = () => {
-                    this.hideResetConfirmation();
-                };
-                document.getElementById('cancel-reset').addEventListener('click', this.cancelResetHandler);
 
                 this.craftingTabHandler = () => {
                     this.toggleTab('crafting');
@@ -889,8 +893,41 @@ class InstancedParticleSystem {
                 this.renderer.domElement.addEventListener('pointerdown', this.pointerDownHandler);
             }
 
+            showConfirmation(title, message, onConfirm) {
+                const confirmationDialog = document.getElementById('confirmation-dialog');
+                const confirmationTitle = document.getElementById('confirmation-title');
+                const confirmationMessage = document.getElementById('confirmation-message');
+                const confirmAction = document.getElementById('confirm-action');
+                const cancelAction = document.getElementById('cancel-action');
+                const overlay = document.getElementById('overlay');
+
+                confirmationTitle.textContent = title;
+                confirmationMessage.textContent = message;
+
+                confirmationDialog.style.display = 'block';
+                overlay.style.display = 'block';
+
+                // Define handlers
+                const confirmHandler = () => {
+                    onConfirm();
+                    hide();
+                };
+                const cancelHandler = () => {
+                    hide();
+                };
+                const hide = () => {
+                    confirmationDialog.style.display = 'none';
+                    overlay.style.display = 'none';
+                    confirmAction.removeEventListener('click', confirmHandler);
+                    cancelAction.removeEventListener('click', cancelHandler);
+                };
+
+                confirmAction.addEventListener('click', confirmHandler);
+                cancelAction.addEventListener('click', cancelHandler);
+            }
+
             isClickInsideUI(event) {
-                const uiElements = document.querySelectorAll('.game-ui, .reset-confirmation, .overlay');
+                const uiElements = document.querySelectorAll('.game-ui, .confirmation-dialog, .overlay');
                 for (let ui of uiElements) {
                     const rect = ui.getBoundingClientRect();
                     let x = event.clientX;
@@ -1198,14 +1235,19 @@ class InstancedParticleSystem {
 				document.getElementById('background-color').value = '#000000';
             }
 
+            eraseAllRecipes() {
+                this.recipes = [];
+                localStorage.removeItem('fireworkRecipes');
+                this.updateRecipeList();
+                this.showNotification("All recipes have been erased.");
+            }
+
             showResetConfirmation() {
-                document.getElementById('reset-confirmation').style.display = 'block';
-                document.getElementById('overlay').style.display = 'block';
+                // Deprecated: Using generic confirmation instead
             }
 
             hideResetConfirmation() {
-                document.getElementById('reset-confirmation').style.display = 'none';
-                document.getElementById('overlay').style.display = 'none';
+                // Deprecated: Using generic confirmation instead
             }
 
             updateComponentsList() {
@@ -1383,15 +1425,6 @@ class InstancedParticleSystem {
                 this.showNotification("Recipe saved successfully!");
             }
 
-            eraseAllRecipes() {
-                if (confirm("Are you sure you want to erase all saved recipes?")) {
-                    this.recipes = [];
-                    localStorage.removeItem('fireworkRecipes');
-                    this.updateRecipeList();
-                    this.showNotification("All recipes have been erased.");
-                }
-            }
-
             loadRecipes() {
                 const saved = localStorage.getItem('fireworkRecipes');
                 if (saved) {
@@ -1485,8 +1518,6 @@ class InstancedParticleSystem {
 				document.getElementById('erase-recipes').removeEventListener('click', this.eraseRecipesHandler);
 				document.getElementById('buy-auto-launcher').removeEventListener('click', this.buyAutoLauncherHandler);
 				document.getElementById('reset-game').removeEventListener('click', this.resetGameHandler);
-				document.getElementById('confirm-reset').removeEventListener('click', this.confirmResetHandler);
-				document.getElementById('cancel-reset').removeEventListener('click', this.cancelResetHandler);
 				document.getElementById('crafting-tab').removeEventListener('click', this.craftingTabHandler);
 				document.getElementById('incremental-tab').removeEventListener('click', this.incrementalTabHandler);
 				document.getElementById('recipe-trail-effect').removeEventListener('change', this.trailEffectChangeHandler);
@@ -1720,7 +1751,7 @@ class InstancedParticleSystem {
 			}
 
 
-		explode() {
+	explode() {
         // Remove and dispose of the rocket
         this.scene.remove(this.rocket);
         if (this.rocket.geometry) this.rocket.geometry.dispose();
@@ -1879,7 +1910,7 @@ class InstancedParticleSystem {
                         }
                         break;
 
-                case 'heart':
+               case 'heart':
                     const heartScale = spread;
                     for (let i = 0; i < particleCount; i++) {
                         const t = (i / particleCount) * Math.PI * 2;
@@ -1905,6 +1936,7 @@ class InstancedParticleSystem {
                         if (index !== -1) this.particles[shape].add(index);
                     }
                     break;
+
 
                     case 'helix':
                             // Configuration for helix pattern
@@ -2028,44 +2060,42 @@ class InstancedParticleSystem {
                         }
 			}
         });
-
-        this.exploded = true;
-    }
-
-    // Dispose method to clean up resources
-    dispose() {
-        // Remove rocket if it exists
-        if (this.rocket) {
-            this.scene.remove(this.rocket);
-            if (this.rocket.geometry) this.rocket.geometry.dispose();
-            if (this.rocket.material) this.rocket.material.dispose();
-            this.rocket = null;
-        }
-
-        // Remove and dispose of trail particles
-        this.trailParticles.forEach(particle => {
-            if (particle.mesh) {
-                this.scene.remove(particle.mesh);
-                if (particle.mesh.geometry) particle.mesh.geometry.dispose();
-                if (particle.mesh.material) {
-                    if (particle.mesh.material.map) particle.mesh.material.map.dispose();
-                    particle.mesh.material.dispose();
-                }
-            }
-        });
-        this.trailParticles = [];
-
-        // Dispose of explosion particles
-        FIREWORK_CONFIG.supportedShapes.forEach(shape => {
-            this.particles[shape].forEach(index => {
-                // No individual disposal needed as particles are managed by InstancedParticleSystem
-            });
-            this.particles[shape].clear();
-        });
-
-        this.alive = false;
-    }
+		        this.exploded = true;
 }
+        // Dispose method to clean up resources
+        dispose() {
+            // Remove rocket if it exists
+            if (this.rocket) {
+                this.scene.remove(this.rocket);
+                if (this.rocket.geometry) this.rocket.geometry.dispose();
+                if (this.rocket.material) this.rocket.material.dispose();
+                this.rocket = null;
+            }
+
+            // Remove and dispose of trail particles
+            this.trailParticles.forEach(particle => {
+                if (particle.mesh) {
+                    this.scene.remove(particle.mesh);
+                    if (particle.mesh.geometry) particle.mesh.geometry.dispose();
+                    if (particle.mesh.material) {
+                        if (particle.mesh.material.map) particle.mesh.material.map.dispose();
+                        particle.mesh.material.dispose();
+                    }
+                }
+            });
+            this.trailParticles = [];
+
+            // Dispose of explosion particles
+            FIREWORK_CONFIG.supportedShapes.forEach(shape => {
+                this.particles[shape].forEach(index => {
+                    // No individual disposal needed as particles are managed by InstancedParticleSystem
+                });
+                this.particles[shape].clear();
+            });
+
+            this.alive = false;
+        }
+    }
 
 
     // Initialize game when DOM is loaded
