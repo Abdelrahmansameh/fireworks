@@ -30,7 +30,7 @@
 
         .game-ui {
             position: absolute;
-            top: 10px;
+            top: 60px; /* Increased from 10px to make room for sparkles counter */
             left: 10px;
             display: grid;
             grid-template-columns: 1fr;
@@ -53,7 +53,7 @@
         }
 
         .crafting-option {
-            margin: 10px 0;
+            margin: 5px 0;
         }
 
         .crafting-option label {
@@ -157,6 +157,7 @@
             display: block;
         }
 
+        /* Styles for Components */
         .component {
             border: 1px solid #34495e;
             padding: 10px;
@@ -182,7 +183,7 @@
         #components-list {
             max-height: 300px;
             overflow-y: auto;
- 	    overflow-x: hidden;	
+			overflow-x: hidden;
         }
 
         #components-list::-webkit-scrollbar {
@@ -262,7 +263,7 @@
         @media only screen and (max-width: 600px) {
             .game-ui {
                 position: absolute;
-                top: 10px;
+                top: 60px; /* Space for sparkles counter */
                 left: 10px;
                 max-width: 90%;
                 width: auto;
@@ -270,6 +271,7 @@
                 border-radius: 10px;
                 padding: 10px;
                 overflow-y: auto;
+                max-height: calc(100vh - 80px); /* Prevent overflow, account for sparkles counter */
             }
 
             .tabs {
@@ -289,6 +291,17 @@
 
             .flex-row {
                 flex-direction: column;
+            }
+            
+            .sparkles-counter {
+                position: fixed;
+                top: 10px;
+                left: 10px;
+                right: 10px;
+                width: auto;
+                margin: 0;
+                text-align: center;
+                z-index: 1001;
             }
         }
 
@@ -366,10 +379,28 @@
 			transform: scale(1.02);      
 			box-shadow: 0 4px 8px rgba(69, 162, 158, 0.5); 
 		}
+
+        .sparkles-counter {
+            position: fixed;
+            top: 10px;
+            left: 10px; /* Changed from right to left */
+            right: 10px;
+            font-size: 1.1em;
+            text-align: center;
+            padding: 8px;
+            background: #0a0e15;
+            border-radius: 10px;
+            border: 1px solid #25344a;
+            z-index: 1001; /* Increased z-index to ensure it's above other elements */
+        }
     </style>
 </head>
 <body>
     <div id="game-container"></div>
+
+    <div class="sparkles-counter">
+        Total Sparkles: <span id="sparkles-count">0</span>
+    </div>
 
     <div class="game-ui">
         <div class="tabs">
@@ -417,10 +448,6 @@
 
                 <div class="firework-counter">
                     Total Fireworks Launched: <span id="firework-count">0</span>
-                </div>
-
-                <div class="sparkles-counter">
-                    Total Sparkles: <span id="sparkles-count">0</span>
                 </div>
 
                 <div class="auto-launcher">
@@ -1107,10 +1134,10 @@
                         // Use the assigned recipe if available
                         let recipe = this.recipes[launcher.assignedRecipeIndex];
                         if (recipe) {
-                            this.launch(x, bounds.minY, recipe.components, recipe.trailEffect);
+                            this.launchFireworkAt(x, bounds.minY, recipe.components, recipe.trailEffect);
                         } else {
                             // Fallback to default recipe
-                            this.launch(x, bounds.minY, this.currentRecipeComponents, this.currentTrailEffect);
+                            this.launchFireworkAt(x, bounds.minY, this.currentRecipeComponents, this.currentTrailEffect);
                         }
                         launcher.accumulator -= 5; // Reset accumulator
                     }
