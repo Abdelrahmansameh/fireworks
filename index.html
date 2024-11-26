@@ -337,14 +337,20 @@
             }
         }
 
+        /* Styles for Global Notification */
         .notification {
             display: none;
+            position: fixed; /* Changed to fixed */
+            top: 20px; /* Position at the top */
+            left: 50%;
+            transform: translateX(-50%);
             background-color: #e74c3c;
             color: white;
-            padding: 10px;
+            padding: 10px 20px;
             border-radius: 5px;
-            margin-top: 10px;
             text-align: center;
+            z-index: 3000; /* Higher z-index to appear above other elements */
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
         }
 
         .notification.show {
@@ -355,20 +361,24 @@
         @keyframes fadein {
             from {
                 opacity: 0;
+                transform: translate(-50%, -10px);
             }
 
             to {
                 opacity: 1;
+                transform: translate(-50%, 0);
             }
         }
 
         @keyframes fadeout {
             from {
                 opacity: 1;
+                transform: translate(-50%, 0);
             }
 
             to {
                 opacity: 0;
+                transform: translate(-50%, -10px);
             }
         }
 
@@ -408,11 +418,6 @@
             background: rgba(0, 0, 0, 0.5);
             z-index: 1500;
             display: none;
-        }
-
-        .launcher-card h3 {
-            margin-top: 0;
-            color: #45a29e;
         }
 
         .launcher-card.selected {
@@ -508,9 +513,6 @@
                 </div>
 
                 <button id="reset-game">Reset Everything</button>
-
-                <!-- Notification Area -->
-                <div id="notification" class="notification"></div>
             </div>
         </div>
 
@@ -522,6 +524,9 @@
             </div>
         </div>
     </div>
+
+    <!-- Global Notification Area -->
+    <div id="notification" class="notification"></div>
 
     <!-- Generic Confirmation Dialog -->
     <div id="confirmation-dialog" class="confirmation-dialog">
@@ -1306,11 +1311,11 @@
                     this.renderer.render(this.scene, this.camera);
                 }
             }
-            
+
             launchFireworkAt(x, minY = null, recipeComponents = null, trailEffect = null) {
                 // Use provided components or fall back to current recipe
                 const components = recipeComponents || this.currentRecipeComponents;
-                
+
                 if (components.length === 0) {
                     this.showNotification("Add at least one component to launch a firework!");
                     return;
@@ -1318,7 +1323,7 @@
 
                 // Use provided minY or get from bounds
                 const y = minY || this.getViewBounds().minY;
-                
+
                 // Use provided trail effect or fall back to current
                 const effect = trailEffect || this.currentTrailEffect;
 
@@ -1607,15 +1612,28 @@
                     this.showNotification("Please enter a recipe name!");
                     return;
                 }
-                const recipe = {
-                    name: recipeName,
-                    components: this.currentRecipeComponents.map(component => ({ ...component })),
-                    trailEffect: this.currentTrailEffect
-                };
-                this.recipes.push(recipe);
+
+                // Check if a recipe with the same name exists
+                const existingIndex = this.recipes.findIndex(recipe => recipe.name.toLowerCase() === recipeName.toLowerCase());
+
+                if (existingIndex !== -1) {
+                    // Overwrite the existing recipe
+                    this.recipes[existingIndex].components = this.currentRecipeComponents.map(component => ({ ...component }));
+                    this.recipes[existingIndex].trailEffect = this.currentTrailEffect;
+                    this.showNotification("Recipe overwritten successfully!");
+                } else {
+                    // Add as new recipe
+                    const recipe = {
+                        name: recipeName,
+                        components: this.currentRecipeComponents.map(component => ({ ...component })),
+                        trailEffect: this.currentTrailEffect
+                    };
+                    this.recipes.push(recipe);
+                    this.showNotification("Recipe saved successfully!");
+                }
+
                 localStorage.setItem('fireworkRecipes', JSON.stringify(this.recipes));
                 this.updateRecipeList();
-                this.showNotification("Recipe saved successfully!");
                 // Optionally, clear the recipe name input after saving
                 document.getElementById('recipe-name').value = '';
             }
