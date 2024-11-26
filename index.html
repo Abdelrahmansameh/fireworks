@@ -74,7 +74,8 @@
 
         .crafting-option select,
         .crafting-option input[type="range"],
-        .crafting-option input[type="color"] {
+        .crafting-option input[type="color"],
+        .crafting-option input[type="text"] {
             width: 100%;
             padding: 5px;
             margin-bottom: 10px;
@@ -470,6 +471,11 @@
                 <!-- Components List -->
                 <div id="components-list"></div>
                 <button id="add-component">Add Component</button>
+
+                <div class="crafting-option">
+                    <label>Recipe Name:</label>
+                    <input type="text" id="recipe-name" placeholder="Enter recipe name">
+                </div>
 
                 <button id="save-recipe">Save Recipe</button>
                 <button id="erase-recipes">Erase All Recipes</button>
@@ -1299,15 +1305,23 @@
                     this.renderer.render(this.scene, this.camera);
                 }
             }
-
-            launchFireworkAt(x) {
-                if (this.currentRecipeComponents.length === 0) {
+            
+            launchFireworkAt(x, minY = null, recipeComponents = null, trailEffect = null) {
+                // Use provided components or fall back to current recipe
+                const components = recipeComponents || this.currentRecipeComponents;
+                
+                if (components.length === 0) {
                     this.showNotification("Add at least one component to launch a firework!");
                     return;
                 }
-                const bounds = this.getViewBounds();
-                const y = bounds.minY;
-                this.launch(x, y, this.currentRecipeComponents, this.currentTrailEffect);
+
+                // Use provided minY or get from bounds
+                const y = minY || this.getViewBounds().minY;
+                
+                // Use provided trail effect or fall back to current
+                const effect = trailEffect || this.currentTrailEffect;
+
+                this.launch(x, y, components, effect);
                 this.fireworkCount++;
                 this.sparkles++;
                 this.saveProgress();
