@@ -146,280 +146,183 @@
             background: #3b4f6b;
         }
 
-            .panel-title {
-                text-align: center;
-                font-size: 1.4em;
-                margin-bottom: 15px;
-                text-transform: uppercase;
-                color: #45a29e;
+        .panel-title {
+            text-align: center;
+            font-size: 1.4em;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            color: #45a29e;
+        }
+
+        .firework-counter,
+        .sparkles-counter {
+            font-size: 1.1em;
+            margin-top: 10px;
+            text-align: center;
+            padding: 8px;
+            background: #0a0e15;
+            border-radius: 10px;
+        }
+
+        .auto-launcher {
+            background: #0a0e15;
+            padding: 10px;
+            border-radius: 10px;
+            margin-top: 15px;
+            border: 1px solid #25344a;
+        }
+
+        .saved-recipes {
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 1px solid #34495e;
+        }
+
+        .tab-content {
+            display: none;
+            max-width: 400px;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Styles for Components */
+        .component {
+            border: 1px solid #34495e;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            background: #1a1f2a;
+        }
+
+        .component h3 {
+            margin-top: 0;
+            color: #45a29e;
+        }
+
+        .remove-component {
+            background: #c0392b;
+            margin-top: 10px;
+        }
+
+        .remove-component:hover {
+            background: #e74c3c;
+        }
+
+        #components-list {
+            max-height: 300px;
+            overflow-y: auto;
+            overflow-x: hidden;
+        }
+
+        #components-list::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        #components-list::-webkit-scrollbar-thumb {
+            background: #2e3f57;
+            border-radius: 4px;
+        }
+
+        #components-list::-webkit-scrollbar-thumb:hover {
+            background: #3b4f6b;
+        }
+
+        #crafting-content {
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        #crafting-content::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        #crafting-content::-webkit-scrollbar-thumb {
+            background: #2e3f57;
+            border-radius: 4px;
+        }
+
+        #crafting-content::-webkit-scrollbar-thumb:hover {
+            background: #3b4f6b;
+        }
+
+        /* Styles for Launcher List */
+        #launcher-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            max-height: 60vh;
+            overflow-y: auto;
+        }
+
+        #launcher-list::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        #launcher-list::-webkit-scrollbar-thumb {
+            background: #2e3f57;
+            border-radius: 4px;
+        }
+
+        #launcher-list::-webkit-scrollbar-thumb:hover {
+            background: #3b4f6b;
+        }
+
+        /* Styles for Individual Launcher Cards */
+        .launcher-card {
+            background: #2a2f3a;
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #34495e;
+            cursor: pointer;
+            transition: background 0.3s, transform 0.3s;
+        }
+
+        .launcher-card:hover {
+            background: #1a1f2a;
+            transform: translateY(-2px);
+        }
+
+        .launcher-card h3 {
+            margin-top: 0;
+            color: #45a29e;
+        }
+
+        /* Adjustments for Mobile Compatibility */
+        @media only screen and (max-width: 600px) {
+            .tab-bar {
+                top: 60px;
             }
 
-            .firework-counter,
-            .sparkles-counter {
-                font-size: 1.1em;
-                margin-top: 10px;
-                text-align: center;
-                padding: 8px;
-                background: #0a0e15;
+            .game-ui {
+                top: 110px;
+                left: 10px;
+                max-width: 90%;
+                width: auto;
+                margin: 0;
                 border-radius: 10px;
-            }
-
-            .auto-launcher {
-                background: #0a0e15;
                 padding: 10px;
-                border-radius: 10px;
-                margin-top: 15px;
-                border: 1px solid #25344a;
-            }
-
-            .saved-recipes {
-                margin-top: 20px;
-                padding-top: 15px;
-                border-top: 1px solid #34495e;
-            }
-
-            .tab-content {
-                display: none;
-                max-width: 400px;
-            }
-
-            .tab-content.active {
-                display: block;
-            }
-
-            /* Styles for Components */
-            .component {
-                border: 1px solid #34495e;
-                padding: 10px;
-                margin-bottom: 10px;
-                border-radius: 5px;
-                background: #1a1f2a;
-            }
-
-            .component h3 {
-                margin-top: 0;
-                color: #45a29e;
-            }
-
-            .remove-component {
-                background: #c0392b;
-                margin-top: 10px;
-            }
-
-            .remove-component:hover {
-                background: #e74c3c;
-            }
-
-            #components-list {
-                max-height: 300px;
                 overflow-y: auto;
-                overflow-x: hidden;
+                max-height: calc(100vh - 130px);
             }
 
-            #components-list::-webkit-scrollbar {
-                width: 8px;
+            .tabs {
+                flex-direction: row;
+                flex-wrap: nowrap;
             }
 
-            #components-list::-webkit-scrollbar-thumb {
-                background: #2e3f57;
-                border-radius: 4px;
+            .tab {
+                margin-right: 5px;
             }
 
-            #components-list::-webkit-scrollbar-thumb:hover {
-                background: #3b4f6b;
+            button {
+                padding: 12px;
+                font-size: 1em;
             }
 
-            #crafting-content {
-                max-height: 80vh;
-                overflow-y: auto;
-            }
-
-            #crafting-content::-webkit-scrollbar {
-                width: 8px;
-            }
-
-            #crafting-content::-webkit-scrollbar-thumb {
-                background: #2e3f57;
-                border-radius: 4px;
-            }
-
-            #crafting-content::-webkit-scrollbar-thumb:hover {
-                background: #3b4f6b;
-            }
-
-            /* Styles for Launcher List */
-            #launcher-list {
-                display: flex;
+            .flex-row {
                 flex-direction: column;
-                gap: 10px;
-                max-height: 60vh;
-                overflow-y: auto;
-            }
-
-            #launcher-list::-webkit-scrollbar {
-                width: 8px;
-            }
-
-            #launcher-list::-webkit-scrollbar-thumb {
-                background: #2e3f57;
-                border-radius: 4px;
-            }
-
-            #launcher-list::-webkit-scrollbar-thumb:hover {
-                background: #3b4f6b;
-            }
-
-            /* Styles for Individual Launcher Cards */
-            .launcher-card {
-                background: #2a2f3a;
-                padding: 10px;
-                border-radius: 5px;
-                border: 1px solid #34495e;
-                cursor: pointer;
-                transition: background 0.3s, transform 0.3s;
-            }
-
-            .launcher-card:hover {
-                background: #1a1f2a;
-                transform: translateY(-2px);
-            }
-
-            .launcher-card h3 {
-                margin-top: 0;
-                color: #45a29e;
-            }
-
-            /* Adjustments for Mobile Compatibility */
-            @media only screen and (max-width: 600px) {
-                .tab-bar {
-                    top: 60px;
-                }
-
-                .game-ui {
-                    top: 110px;
-                    left: 10px;
-                    max-width: 90%;
-                    width: auto;
-                    margin: 0;
-                    border-radius: 10px;
-                    padding: 10px;
-                    overflow-y: auto;
-                    max-height: calc(100vh - 130px);
-                }
-
-                .tabs {
-                    flex-direction: row;
-                    flex-wrap: nowrap;
-                }
-
-                .tab {
-                    margin-right: 5px;
-                }
-
-                button {
-                    padding: 12px;
-                    font-size: 1em;
-                }
-
-                .flex-row {
-                    flex-direction: column;
-                }
-
-                .sparkles-counter {
-                    position: fixed;
-                    top: 10px;
-                    left: 10px;
-                    right: 10px;
-                    width: auto;
-                    margin: 0;
-                    text-align: center;
-                    z-index: 1001;
-                }
-            }
-
-            .notification {
-                display: none;
-                background-color: #e74c3c;
-                color: white;
-                padding: 10px;
-                border-radius: 5px;
-                margin-top: 10px;
-                text-align: center;
-            }
-
-            .notification.show {
-                display: block;
-                animation: fadein 0.5s, fadeout 0.5s 2.5s;
-            }
-
-            @keyframes fadein {
-                from {
-                    opacity: 0;
-                }
-
-                to {
-                    opacity: 1;
-                }
-            }
-
-            @keyframes fadeout {
-                from {
-                    opacity: 1;
-                }
-
-                to {
-                    opacity: 0;
-                }
-            }
-
-            /* Generic Confirmation Dialog */
-            .confirmation-dialog {
-                background-color: rgba(26, 31, 42, 0.95);
-                padding: 15px;
-                border: 1px solid #34495e;
-                border-radius: 10px;
-                position: fixed;
-                top: 50%;
-                left: 50%;
-                transform: translate(-50%, -50%);
-                z-index: 2000;
-                text-align: center;
-                max-width: 300px;
-                width: 90%;
-                display: none;
-            }
-
-            .confirmation-dialog h3 {
-                margin-top: 0;
-                color: #e74c3c;
-            }
-
-            .confirmation-dialog button {
-                width: 45%;
-                margin: 5px;
-            }
-
-            .overlay {
-                position: fixed;
-                top: 0;
-                left: 0;
-                width: 100%;
-                height: 100%;
-                background: rgba(0, 0, 0, 0.5);
-                z-index: 1500;
-                display: none;
-            }
-
-            .launcher-card h3 {
-                margin-top: 0;
-                color: #45a29e;
-            }
-
-            .launcher-card.selected {
-                border: 3px solid #45a29e;
-                background: #1a1f2a;
-                transform: scale(1.02);
-                box-shadow: 0 4px 8px rgba(69, 162, 158, 0.5);
             }
 
             .sparkles-counter {
@@ -427,14 +330,111 @@
                 top: 10px;
                 left: 10px;
                 right: 10px;
-                font-size: 1.1em;
+                width: auto;
+                margin: 0;
                 text-align: center;
-                padding: 8px;
-                background: #0a0e15;
-                border-radius: 10px;
-                border: 1px solid #25344a;
                 z-index: 1001;
             }
+        }
+
+        .notification {
+            display: none;
+            background-color: #e74c3c;
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 10px;
+            text-align: center;
+        }
+
+        .notification.show {
+            display: block;
+            animation: fadein 0.5s, fadeout 0.5s 2.5s;
+        }
+
+        @keyframes fadein {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        @keyframes fadeout {
+            from {
+                opacity: 1;
+            }
+
+            to {
+                opacity: 0;
+            }
+        }
+
+        /* Generic Confirmation Dialog */
+        .confirmation-dialog {
+            background-color: rgba(26, 31, 42, 0.95);
+            padding: 15px;
+            border: 1px solid #34495e;
+            border-radius: 10px;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 2000;
+            text-align: center;
+            max-width: 300px;
+            width: 90%;
+            display: none;
+        }
+
+        .confirmation-dialog h3 {
+            margin-top: 0;
+            color: #e74c3c;
+        }
+
+        .confirmation-dialog button {
+            width: 45%;
+            margin: 5px;
+        }
+
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1500;
+            display: none;
+        }
+
+        .launcher-card h3 {
+            margin-top: 0;
+            color: #45a29e;
+        }
+
+        .launcher-card.selected {
+            border: 3px solid #45a29e;
+            background: #1a1f2a;
+            transform: scale(1.02);
+            box-shadow: 0 4px 8px rgba(69, 162, 158, 0.5);
+        }
+
+        .sparkles-counter {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            right: 10px;
+            font-size: 1.1em;
+            text-align: center;
+            padding: 8px;
+            background: #0a0e15;
+            border-radius: 10px;
+            border: 1px solid #25344a;
+            z-index: 1001;
+        }
     </style>
 </head>
 
@@ -1235,6 +1235,7 @@
                 }))));
                 localStorage.setItem('currentRecipeComponents', JSON.stringify(this.currentRecipeComponents));
                 localStorage.setItem('backgroundColor', document.getElementById('background-color').value);
+                localStorage.setItem('selectedLauncherIndex', this.selectedLauncherIndex || '');
 
                 console.log('Progress saved:', {
                     fireworkCount: this.fireworkCount,
@@ -1566,6 +1567,7 @@
             loadCurrentRecipe() {
                 const savedRecipeComponents = localStorage.getItem('currentRecipeComponents');
                 const savedTrailEffect = localStorage.getItem('currentTrailEffect');
+                const savedRecipeName = localStorage.getItem('currentRecipeName');
                 if (savedRecipeComponents) {
                     this.currentRecipeComponents = JSON.parse(savedRecipeComponents);
                     // Ensure each component has a spread and shape
@@ -1590,14 +1592,23 @@
                 if (savedTrailEffect) {
                     this.currentTrailEffect = savedTrailEffect;
                 }
+                if (savedRecipeName) {
+                    document.getElementById('recipe-name').value = savedRecipeName;
+                }
             }
 
             saveCurrentRecipe() {
+                const recipeName = document.getElementById('recipe-name').value.trim();
                 if (this.currentRecipeComponents.length === 0) {
                     this.showNotification("Add at least one component before saving!");
                     return;
                 }
+                if (!recipeName) {
+                    this.showNotification("Please enter a recipe name!");
+                    return;
+                }
                 const recipe = {
+                    name: recipeName,
                     components: this.currentRecipeComponents.map(component => ({ ...component })),
                     trailEffect: this.currentTrailEffect
                 };
@@ -1605,6 +1616,8 @@
                 localStorage.setItem('fireworkRecipes', JSON.stringify(this.recipes));
                 this.updateRecipeList();
                 this.showNotification("Recipe saved successfully!");
+                // Optionally, clear the recipe name input after saving
+                document.getElementById('recipe-name').value = '';
             }
 
             loadRecipes() {
@@ -1634,7 +1647,7 @@
                 }
                 list.innerHTML = this.recipes.map((recipe, index) => `
                     <div class="recipe-card" onclick="game.selectRecipe(${index})" style="cursor: pointer; padding: 10px; border: 1px solid #34495e; border-radius: 5px; margin-bottom: 10px; background: #2a2f3a;">
-                        <strong>Recipe ${index + 1}:</strong><br>
+                        <strong>${recipe.name}</strong><br>
                         <div>Trail Effect: ${this.getReadableTrailEffect(recipe.trailEffect)}</div>
                         ${recipe.components.map((component, cIndex) => `
                             <div>
@@ -1689,7 +1702,8 @@
                 this.updateComponentsList();
                 this.updateUI();
                 this.saveCurrentRecipeComponents();
-                this.showNotification(`Loaded Recipe ${index + 1}`);
+                document.getElementById('recipe-name').value = this.recipes[index].name;
+                this.showNotification(`Loaded Recipe "${this.recipes[index].name}"`);
             }
 
             updateLauncherList() {
@@ -1717,7 +1731,7 @@
 							<select class="recipe-select" data-index="${index}">
 								<option value="">-- Select a Recipe --</option>
 								${this.recipes.map((recipe, rIndex) => `
-									<option value="${rIndex}" ${launcher.assignedRecipeIndex === rIndex ? 'selected' : ''}>Recipe ${rIndex + 1}</option>
+									<option value="${rIndex}" ${launcher.assignedRecipeIndex === rIndex ? 'selected' : ''}>${recipe.name}</option>
 								`).join('')}
 							</select>
 						</div>
@@ -2226,12 +2240,12 @@
 
                         case 'helix':
                             // Configuration for helix pattern
-                            const helixRadius = .2;              // Base radius of the helix
+                            const helixRadius = .5;              // Base radius of the helix
                             const riseSpeed = speed * 0.5 * spread;      // How fast particles go up
                             const rotationSpeed = 1;            // How fast the helix rotates
                             const particlesPerStream = 100;     // Particles per helix stream
-                            const verticalSpacing = 0.05;        // Reduced from 0.2 to make it more compact
-                            const spreadFactor = 0.05;          // How much random spread to add
+                            const verticalSpacing = 0.1;        // Reduced from 0.2 to make it more compact
+                            const spreadFactor = 0.1;          // How much random spread to add
 
                             // Create the two intertwining helices
                             for (let stream = 0; stream < 2; stream++) {
@@ -2255,7 +2269,6 @@
                                         riseSpeed * (1 + randomSpread), // Slight variation in rise speed
                                         Math.cos(angle) * rotationSpeed
                                     );
-
                                     const particleColor = color.clone();
                                     if (stream === 1) {
                                         const hsl = {};
@@ -2268,8 +2281,8 @@
                                     }
 
                                     const index = this.particleSystem.addParticle(
-                                        rocketPos.clone().add(offset),
-                                        velocity.clone(),
+                                        rocketPos.clone(),
+                                        velocity.clone().add(offset),
                                         particleColor,
                                         size * 0.8,
                                         component.lifetime * 0.8, // Slightly shorter lifetime
