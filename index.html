@@ -43,7 +43,8 @@
 
         .game-ui {
             position: absolute;
-            top: 110px; /* Adjusted to account for smaller tab-bar height */
+            top: 110px;
+            /* Adjusted to account for smaller tab-bar height */
             left: 0;
             max-width: 400px;
             display: grid;
@@ -289,6 +290,34 @@
             color: #45a29e;
         }
 
+        /* Added Styles for Upgrade Button and Spawn Rate */
+        .launcher-details {
+            margin-top: 10px;
+        }
+
+        .launcher-details p {
+            margin: 5px 0;
+        }
+
+        .upgrade-button {
+            padding: 4px 8px;
+            /* Reduced padding */
+            font-size: 0.8em;
+            /* Smaller font size */
+            width: auto;
+            /* Allow button to shrink to content */
+            min-width: 60px;
+            /* Minimum width to maintain readability */
+            margin: 2px 0;
+            /* Reduced margins */
+            display: inline-block;
+            /* Allow button to sit inline */
+        }
+
+        .upgrade-button:hover {
+            background: #2ecc71;
+        }
+
         /* Adjustments for Mobile Compatibility */
         @media only screen and (max-width: 600px) {
             .tab-bar {
@@ -340,16 +369,21 @@
         /* Styles for Global Notification */
         .notification {
             display: none;
-            position: fixed; /* Changed to fixed */
-            top: 20px; /* Position at the top */
-            left: 50%;
-            transform: translateX(-50%);
+            position: fixed;
+            /* Keep fixed positioning */
+            top: 20px;
+            /* Position at the top */
+            right: 20px;
+            /* Position 20px from the right edge */
+            transform: translateX(0);
+            /* Remove horizontal translation */
             background-color: #e74c3c;
             color: white;
             padding: 10px 20px;
             border-radius: 5px;
             text-align: center;
-            z-index: 3000; /* Higher z-index to appear above other elements */
+            z-index: 3000;
+            /* Ensure it appears above other elements */
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
         }
 
@@ -361,24 +395,25 @@
         @keyframes fadein {
             from {
                 opacity: 0;
-                transform: translate(-50%, -10px);
+                transform: translateX(0) translateY(-10px);
+                /* Adjust vertical movement */
             }
 
             to {
                 opacity: 1;
-                transform: translate(-50%, 0);
+                transform: translateX(0) translateY(0);
             }
         }
 
         @keyframes fadeout {
             from {
                 opacity: 1;
-                transform: translate(-50%, 0);
+                transform: translateX(0) translateY(0);
             }
 
             to {
                 opacity: 0;
-                transform: translate(-50%, -10px);
+                transform: translateX(0) translateY(-10px);
             }
         }
 
@@ -439,6 +474,34 @@
             border-radius: 10px;
             border: 1px solid #25344a;
             z-index: 1001;
+        }
+
+        /* Webkit browsers (Chrome, Safari, newer Edge) */
+        ::-webkit-scrollbar {
+            width: 6px;
+            /* Width of vertical scrollbar */
+            height: 6px;
+            /* Height of horizontal scrollbar */
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.1);
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        /* Firefox */
+        * {
+            scrollbar-width: thin;
+            scrollbar-color: rgba(255, 255, 255, 0.2) rgba(0, 0, 0, 0.1);
         }
     </style>
 </head>
@@ -845,12 +908,11 @@
                 this.currentRecipeComponents = [];
                 this.currentTrailEffect = 'fade';
                 this.fireworkCount = parseInt(localStorage.getItem('fireworkCount')) || 0;
-                this.autoLauncherLevel = parseInt(localStorage.getItem('autoLauncherLevel')) || 0;
                 this.autoLauncherCost = parseInt(localStorage.getItem('autoLauncherCost')) || 10;
                 this.sparkles = parseInt(localStorage.getItem('sparkles')) || 0;
 
                 // Load auto-launchers
-                this.autoLaunchers = JSON.parse(localStorage.getItem('autoLaunchers')) || [];
+                this.autoLaunchers = JSON.parse(localStorage.getItem('autoLaunchers')) || []; // *** Updated to include upgrade data
 
                 const savedSelectedIndex = parseInt(localStorage.getItem('selectedLauncherIndex'));
                 if (!isNaN(savedSelectedIndex) && savedSelectedIndex < this.autoLaunchers.length) {
@@ -872,6 +934,12 @@
                     if (!launcher.accumulator) {
                         launcher.accumulator = Math.random() * 5;
                     }
+                    // *** Initialize level, spawnInterval, and upgradeCost if not present
+                    if (launcher.level === undefined) {
+                        launcher.level = 1;
+                        launcher.spawnInterval = 5; // Base spawn interval in seconds
+                        launcher.upgradeCost = 15; // Initial upgrade cost
+                    }
                     this.createAutoLauncherMesh(launcher);
                 });
 
@@ -884,17 +952,21 @@
                 this.updateRecipeList();
                 this.updateLauncherList();
 
+                // **Initialize Dragging State Variables**
+                this.draggingLauncher = null;
+                this.isDragging = false;
+
                 // Start the rendering loop
                 this.animate();
 
                 console.log('Progress loaded:', {
                     fireworkCount: this.fireworkCount,
-                    autoLauncherLevel: this.autoLauncherLevel,
-                    autoLauncherCost: this.autoLauncherCost,
-                    sparkles: this.sparkles,
-                    recipes: this.recipes,
-                    autoLaunchers: this.autoLaunchers
+                    autoLaunchers: this.autoLaunchers,
+                    recipes: this.recipes
                 });
+
+                const gameContainer = document.getElementById('game-container');
+                gameContainer.style.touchAction = 'none';
 
                 document.addEventListener('visibilitychange', () => {
                     if (document.visibilityState === 'hidden') {
@@ -1036,21 +1108,111 @@
                 };
                 document.getElementById('recipe-trail-effect').addEventListener('change', this.trailEffectChangeHandler);
 
-                //this.showTab('crafting');
-
                 // Use pointerdown event to handle both mouse and touch input
                 this.pointerDownHandler = (e) => {
                     if (!this.isClickInsideUI(e)) {
-                        e.preventDefault(); // Prevent any default behavior
+                        e.preventDefault();
+
+                        // Add this new line for touch handling
+                        if (e.pointerType === 'touch') {
+                            e.target.setPointerCapture(e.pointerId);
+                        }
+
                         const x = e.clientX;
                         const y = e.clientY;
+
+                        const mouse = new THREE.Vector2();
+                        mouse.x = (x / window.innerWidth) * 2 - 1;
+                        mouse.y = - (y / window.innerHeight) * 2 + 1;
+
+                        const raycaster = new THREE.Raycaster();
+                        raycaster.setFromCamera(mouse, this.camera);
+
+                        const launcherMeshes = this.autoLaunchers.map(launcher => launcher.mesh);
+                        const intersects = raycaster.intersectObjects(launcherMeshes);
+
+                        if (intersects.length > 0) {
+                            const intersectedMesh = intersects[0].object;
+                            const launcherIndex = this.autoLaunchers.findIndex(launcher => launcher.mesh === intersectedMesh);
+                            if (launcherIndex !== -1) {
+                                this.selectLauncher(launcherIndex);
+                                this.showTab('auto-launcher');
+                                setTimeout(() => {
+                                    // Scroll to the corresponding launcher card
+                                    const launcherList = document.getElementById('launcher-list');
+                                    const launcherCards = launcherList.getElementsByClassName('launcher-card');
+                                    if (launcherCards[launcherIndex]) {
+                                        launcherCards[launcherIndex].scrollIntoView({ behavior: 'smooth' });
+                                    }
+                                }, 100);
+                                this.draggingLauncher = this.autoLaunchers[launcherIndex];
+                                this.isDragging = true;
+
+                                // Change these lines to use document instead of window
+                                document.addEventListener('pointermove', this.pointerMoveHandler);
+                                document.addEventListener('pointerup', this.pointerUpHandler);
+                                // Add this new line
+                                document.addEventListener('pointercancel', this.pointerUpHandler);
+
+                                return;
+                            }
+                        }
 
                         const worldPos = this.screenToWorld(x, y);
                         this.handlePointerClick(worldPos, e);
                     }
                 };
                 this.renderer.domElement.addEventListener('pointerdown', this.pointerDownHandler);
+
+                // [No other event listeners need to be modified here]
             }
+
+            // **Add Pointer Move Handler**
+            pointerMoveHandler = (e) => {
+                if (this.isDragging && this.draggingLauncher) {
+                    e.preventDefault();
+
+                    const x = e.clientX;
+                    const y = e.clientY;
+
+                    const mouse = new THREE.Vector2();
+                    mouse.x = (x / window.innerWidth) * 2 - 1;
+                    mouse.y = - (y / window.innerHeight) * 2 + 1;
+
+                    const raycaster = new THREE.Raycaster();
+                    raycaster.setFromCamera(mouse, this.camera);
+
+                    const t = - (this.camera.position.z) / raycaster.ray.direction.z;
+                    const worldPos = new THREE.Vector3();
+                    worldPos.copy(raycaster.ray.direction).multiplyScalar(t).add(this.camera.position);
+
+                    const bounds = this.getViewBounds();
+                    const clampedX = Math.max(bounds.minX, Math.min(worldPos.x, bounds.maxX));
+
+                    this.draggingLauncher.mesh.position.x = clampedX;
+                    this.draggingLauncher.xPercent = (clampedX - bounds.minX) / (bounds.maxX - bounds.minX);
+                    this.draggingLauncher.xPercent = Math.max(0, Math.min(1, this.draggingLauncher.xPercent));
+
+                    this.saveProgress();
+                }
+            };
+            // **Add Pointer Up Handler**
+            pointerUpHandler = (e) => {
+                if (this.isDragging) {
+                    // Add this for touch handling
+                    if (e.pointerType === 'touch' && e.target) {
+                        e.target.releasePointerCapture(e.pointerId);
+                    }
+
+                    this.isDragging = false;
+                    this.draggingLauncher = null;
+
+                    // Update these to use document instead of window
+                    document.removeEventListener('pointermove', this.pointerMoveHandler);
+                    document.removeEventListener('pointerup', this.pointerUpHandler);
+                    document.removeEventListener('pointercancel', this.pointerUpHandler);
+                }
+            };
 
             showConfirmation(title, message, onConfirm) {
                 const confirmationDialog = document.getElementById('confirmation-dialog');
@@ -1172,7 +1334,7 @@
 
             updateUI() {
                 document.getElementById('firework-count').textContent = this.fireworkCount;
-                document.getElementById('auto-launcher-level').textContent = this.autoLauncherLevel;
+                document.getElementById('auto-launcher-level').textContent = this.autoLaunchers.length;
                 document.getElementById('auto-launcher-cost').textContent = this.autoLauncherCost;
                 document.getElementById('sparkles-count').textContent = this.sparkles;
                 document.getElementById('recipe-trail-effect').value = this.currentTrailEffect;
@@ -1184,7 +1346,7 @@
 
                 this.autoLaunchers.forEach(launcher => {
                     launcher.accumulator += deltaTime;
-                    if (launcher.accumulator >= 5) { // Every 5 seconds
+                    if (launcher.accumulator >= launcher.spawnInterval) { // Use per-launcher spawnInterval
                         const bounds = this.getViewBounds();
                         const x = bounds.minX + launcher.xPercent * (bounds.maxX - bounds.minX);
                         // Use the assigned recipe if available
@@ -1195,7 +1357,7 @@
                             // Fallback to default recipe
                             this.launchFireworkAt(x, bounds.minY, this.currentRecipeComponents, this.currentTrailEffect);
                         }
-                        launcher.accumulator -= 5; // Reset accumulator
+                        launcher.accumulator -= launcher.spawnInterval; // Reset accumulator based on spawnInterval
                     }
                 });
             }
@@ -1228,7 +1390,6 @@
 
             saveProgress() {
                 localStorage.setItem('fireworkCount', this.fireworkCount);
-                localStorage.setItem('autoLauncherLevel', this.autoLauncherLevel);
                 localStorage.setItem('autoLauncherCost', this.autoLauncherCost);
                 localStorage.setItem('sparkles', this.sparkles);
                 localStorage.setItem('fireworkRecipes', JSON.stringify(this.recipes));
@@ -1236,20 +1397,14 @@
                 localStorage.setItem('autoLaunchers', JSON.stringify(this.autoLaunchers.map(launcher => ({
                     xPercent: launcher.xPercent,
                     accumulator: launcher.accumulator,
-                    assignedRecipeIndex: launcher.assignedRecipeIndex || null
+                    assignedRecipeIndex: launcher.assignedRecipeIndex || null,
+                    level: launcher.level, // *** Save level
+                    spawnInterval: launcher.spawnInterval, // *** Save spawnInterval
+                    upgradeCost: launcher.upgradeCost // *** Save upgradeCost
                 }))));
                 localStorage.setItem('currentRecipeComponents', JSON.stringify(this.currentRecipeComponents));
                 localStorage.setItem('backgroundColor', document.getElementById('background-color').value);
                 localStorage.setItem('selectedLauncherIndex', this.selectedLauncherIndex || '');
-
-                console.log('Progress saved:', {
-                    fireworkCount: this.fireworkCount,
-                    autoLauncherLevel: this.autoLauncherLevel,
-                    autoLauncherCost: this.autoLauncherCost,
-                    sparkles: this.sparkles,
-                    recipes: this.recipes,
-                    autoLaunchers: this.autoLaunchers
-                });
             }
 
             showNotification(message) {
@@ -1342,15 +1497,17 @@
             buyAutoLauncher() {
                 if (this.sparkles >= this.autoLauncherCost) {
                     this.sparkles -= this.autoLauncherCost;
-                    this.autoLauncherLevel++;
                     this.autoLauncherCost = Math.floor(this.autoLauncherCost * 1.5);
-                    // Create a new auto-launcher at a random X position (percentage)
+                    // Initialize new auto-launcher with default properties
                     const xPercent = Math.random(); // Random percentage between 0 and 1
                     const accumulator = Math.random() * 5;
                     const launcher = {
                         xPercent: xPercent,
                         accumulator: accumulator,
-                        assignedRecipeIndex: null
+                        assignedRecipeIndex: null,
+                        level: 1, // *** Initialize level
+                        spawnInterval: 5, // *** Initialize spawnInterval (seconds)
+                        upgradeCost: 15 // *** Initialize upgradeCost
                     };
                     // Create visual representation of the auto-launcher
                     this.createAutoLauncherMesh(launcher);
@@ -1365,7 +1522,9 @@
             }
 
             createAutoLauncherMesh(launcher) {
-                const geometry = new THREE.PlaneGeometry(5, 10);
+                const width = 3;
+                const height = 6;
+                const geometry = new THREE.PlaneGeometry(width, height);
                 const material = new THREE.MeshBasicMaterial({
                     color: 0xffffff,
                     side: THREE.DoubleSide // Makes the plane visible from both sides
@@ -1373,7 +1532,7 @@
                 const launcherMesh = new THREE.Mesh(geometry, material);
                 const bounds = this.getViewBounds();
                 const x = bounds.minX + launcher.xPercent * (bounds.maxX - bounds.minX);
-                const y = bounds.minY + 5; // Adjust Y position to stay visible
+                const y = bounds.minY + height*0.5 ; // Adjust Y position to stay visible
                 launcherMesh.position.set(x, y, 0);
                 this.scene.add(launcherMesh);
 
@@ -1383,19 +1542,7 @@
 
             resetGame() {
                 this.fireworkCount = 0;
-                this.autoLauncherLevel = 0;
-                this.autoLauncherCost = 10;
-                this.sparkles = 0;
-                this.recipes = [];
-                this.currentTrailEffect = 'fade';
-                this.currentRecipeComponents = [{
-                    pattern: 'spherical',
-                    color: '#ff0000',
-                    size: 0.5,
-                    lifetime: 1.2,
-                    shape: 'sphere',
-                    spread: 1.0
-                }];
+                // Reset auto-launcher properties
                 this.autoLaunchers.forEach(launcher => {
                     if (launcher.mesh) {
                         this.scene.remove(launcher.mesh);
@@ -1407,6 +1554,7 @@
                     }
                 });
                 this.autoLaunchers = [];
+                this.autoLauncherCost = 10; // Reset to initial cost
 
                 // Dispose of particle system
                 if (this.particleSystem) {
@@ -1419,6 +1567,19 @@
                     firework.dispose();
                 });
                 this.fireworks = [];
+
+                this.fireworkCount = 0;
+                this.sparkles = 0;
+                this.recipes = [];
+                this.currentTrailEffect = 'fade';
+                this.currentRecipeComponents = [{
+                    pattern: 'spherical',
+                    color: '#ff0000',
+                    size: 0.5,
+                    lifetime: 1.2,
+                    shape: 'sphere',
+                    spread: 1.0
+                }];
 
                 localStorage.clear();
                 this.updateUI();
@@ -1564,19 +1725,96 @@
                 });
             }
 
-                saveCurrentRecipeComponents() {
-                    localStorage.setItem('currentRecipeComponents', JSON.stringify(this.currentRecipeComponents));
-                    localStorage.setItem('currentTrailEffect', this.currentTrailEffect);
+            saveCurrentRecipeComponents() {
+                localStorage.setItem('currentRecipeComponents', JSON.stringify(this.currentRecipeComponents));
+                localStorage.setItem('currentTrailEffect', this.currentTrailEffect);
+            }
+
+            loadCurrentRecipe() {
+                const savedRecipeComponents = localStorage.getItem('currentRecipeComponents');
+                const savedTrailEffect = localStorage.getItem('currentTrailEffect');
+                const savedRecipeName = localStorage.getItem('currentRecipeName');
+                if (savedRecipeComponents) {
+                    this.currentRecipeComponents = JSON.parse(savedRecipeComponents);
+                    // Ensure each component has a spread and shape
+                    this.currentRecipeComponents.forEach(component => {
+                        if (!component.shape || !FIREWORK_CONFIG.supportedShapes.includes(component.shape)) {
+                            component.shape = 'sphere'; // Default shape
+                        }
+                        if (typeof component.spread !== 'number') {
+                            component.spread = 1.0; // Default spread
+                        }
+                    });
+                } else {
+                    this.currentRecipeComponents = [{
+                        pattern: 'spherical',
+                        color: '#ff0000',
+                        size: 0.5,
+                        lifetime: 1.2,
+                        shape: 'sphere',
+                        spread: 1.0
+                    }];
+                }
+                if (savedTrailEffect) {
+                    this.currentTrailEffect = savedTrailEffect;
+                }
+                if (savedRecipeName) {
+                    document.getElementById('recipe-name').value = savedRecipeName;
+                }
+            }
+
+            saveCurrentRecipe() {
+                const recipeNameInput = document.getElementById('recipe-name');
+                let recipeName = recipeNameInput.value.trim();
+
+                // Assign default name if name is undefined, null, or empty
+                if (!recipeName) {
+                    this.showNotification("Please specify a recipe name");
+                    return;
                 }
 
-                loadCurrentRecipe() {
-                    const savedRecipeComponents = localStorage.getItem('currentRecipeComponents');
-                    const savedTrailEffect = localStorage.getItem('currentTrailEffect');
-                    const savedRecipeName = localStorage.getItem('currentRecipeName');
-                    if (savedRecipeComponents) {
-                        this.currentRecipeComponents = JSON.parse(savedRecipeComponents);
-                        // Ensure each component has a spread and shape
-                        this.currentRecipeComponents.forEach(component => {
+                if (this.currentRecipeComponents.length === 0) {
+                    this.showNotification("Add at least one component before saving!");
+                    return;
+                }
+
+                // Check if a recipe with the same name exists
+                const existingIndex = this.recipes.findIndex(recipe => recipe.name.toLowerCase() === recipeName.toLowerCase());
+
+                if (existingIndex !== -1) {
+                    // Overwrite the existing recipe
+                    this.recipes[existingIndex].components = this.currentRecipeComponents.map(component => ({ ...component }));
+                    this.recipes[existingIndex].trailEffect = this.currentTrailEffect;
+                    this.showNotification("Recipe overwritten successfully!");
+                } else {
+                    // Add as new recipe
+                    const recipe = {
+                        name: recipeName,
+                        components: this.currentRecipeComponents.map(component => ({ ...component })),
+                        trailEffect: this.currentTrailEffect
+                    };
+                    this.recipes.push(recipe);
+                    this.showNotification("Recipe saved successfully!");
+                }
+
+                localStorage.setItem('fireworkRecipes', JSON.stringify(this.recipes));
+                this.updateRecipeList();
+                // Optionally, clear the recipe name input after saving
+                // document.getElementById('recipe-name').value = '';
+            }
+
+            loadRecipes() {
+                const saved = localStorage.getItem('fireworkRecipes');
+                if (saved) {
+                    this.recipes = JSON.parse(saved);
+                    // Ensure each recipe has a valid name and each component has shape and spread
+                    this.recipes.forEach((recipe, index) => {
+                        // Assign default name if name is undefined, null, or empty
+                        if (!recipe.name || typeof recipe.name !== 'string' || recipe.name.trim() === '') {
+                            recipe.name = `Recipe ${index + 1}`;
+                        }
+                        // Ensure each component has a shape and spread
+                        recipe.components.forEach(component => {
                             if (!component.shape || !FIREWORK_CONFIG.supportedShapes.includes(component.shape)) {
                                 component.shape = 'sphere'; // Default shape
                             }
@@ -1584,858 +1822,821 @@
                                 component.spread = 1.0; // Default spread
                             }
                         });
-                    } else {
-                        this.currentRecipeComponents = [{
-                            pattern: 'spherical',
-                            color: '#ff0000',
-                            size: 0.5,
-                            lifetime: 1.2,
-                            shape: 'sphere',
-                            spread: 1.0
-                        }];
-                    }
-                    if (savedTrailEffect) {
-                        this.currentTrailEffect = savedTrailEffect;
-                    }
-                    if (savedRecipeName) {
-                        document.getElementById('recipe-name').value = savedRecipeName;
-                    }
-                }
-
-                saveCurrentRecipe() {
-                    const recipeNameInput = document.getElementById('recipe-name');
-                    let recipeName = recipeNameInput.value.trim();
-
-                    // Assign default name if name is undefined, null, or empty
-                    if (!recipeName) {
-                        // Find the next available Recipe number
-                        const existingRecipeNumbers = this.recipes
-                            .map(recipe => {
-                                const match = recipe.name.match(/^Recipe (\d+)$/);
-                                return match ? parseInt(match[1], 10) : null;
-                            })
-                            .filter(num => num !== null);
-                        const nextNumber = existingRecipeNumbers.length > 0 ? Math.max(...existingRecipeNumbers) + 1 : 1;
-                        recipeName = `Recipe ${nextNumber}`;
-                        recipeNameInput.value = recipeName; // Update the input field with the default name
-                    }
-
-                    if (this.currentRecipeComponents.length === 0) {
-                        this.showNotification("Add at least one component before saving!");
-                        return;
-                    }
-
-                    // Check if a recipe with the same name exists
-                    const existingIndex = this.recipes.findIndex(recipe => recipe.name.toLowerCase() === recipeName.toLowerCase());
-
-                    if (existingIndex !== -1) {
-                        // Overwrite the existing recipe
-                        this.recipes[existingIndex].components = this.currentRecipeComponents.map(component => ({ ...component }));
-                        this.recipes[existingIndex].trailEffect = this.currentTrailEffect;
-                        this.showNotification("Recipe overwritten successfully!");
-                    } else {
-                        // Add as new recipe
-                        const recipe = {
-                            name: recipeName,
-                            components: this.currentRecipeComponents.map(component => ({ ...component })),
-                            trailEffect: this.currentTrailEffect
-                        };
-                        this.recipes.push(recipe);
-                        this.showNotification("Recipe saved successfully!");
-                    }
-
-                    localStorage.setItem('fireworkRecipes', JSON.stringify(this.recipes));
+                    });
                     this.updateRecipeList();
-                    // Optionally, clear the recipe name input after saving
-                    // document.getElementById('recipe-name').value = '';
                 }
+            }
 
-                loadRecipes() {
-                    const saved = localStorage.getItem('fireworkRecipes');
-                    if (saved) {
-                        this.recipes = JSON.parse(saved);
-                        // Ensure each recipe has a valid name and each component has shape and spread
-                        this.recipes.forEach((recipe, index) => {
-                            // Assign default name if name is undefined, null, or empty
-                            if (!recipe.name || typeof recipe.name !== 'string' || recipe.name.trim() === '') {
-                                recipe.name = `Recipe ${index + 1}`;
-                            }
-                            // Ensure each component has a shape and spread
-                            recipe.components.forEach(component => {
-                                if (!component.shape || !FIREWORK_CONFIG.supportedShapes.includes(component.shape)) {
-                                    component.shape = 'sphere'; // Default shape
-                                }
-                                if (typeof component.spread !== 'number') {
-                                    component.spread = 1.0; // Default spread
-                                }
-                            });
-                        });
-                        this.updateRecipeList();
-                    }
+            updateRecipeList() {
+                const list = document.getElementById('recipe-list');
+                if (this.recipes.length === 0) {
+                    list.innerHTML = "<p>No recipes saved yet.</p>";
+                    return;
                 }
-
-                updateRecipeList() {
-                    const list = document.getElementById('recipe-list');
-                    if (this.recipes.length === 0) {
-                        list.innerHTML = "<p>No recipes saved yet.</p>";
-                        return;
-                    }
-                    list.innerHTML = this.recipes.map((recipe, index) => `
-                        <div class="recipe-card" onclick="game.selectRecipe(${index})" style="cursor: pointer; padding: 10px; border: 1px solid #34495e; border-radius: 5px; margin-bottom: 10px; background: #2a2f3a;">
-                            <strong>${recipe.name || `Recipe ${index + 1}`}</strong><br>
-                            <div>Trail Effect: ${this.getReadableTrailEffect(recipe.trailEffect)}</div>
-                            ${recipe.components.map((component, cIndex) => `
-                                <div>
-                                    <strong>Component ${cIndex + 1}:</strong><br>
-                                    Pattern: ${component.pattern}<br>
-                                    Shape: ${this.getReadableShape(component.shape)}<br>
-                                    Size: ${component.size}<br>
-                                    Lifetime: ${component.lifetime} s<br>
-                                    Spread: ${component.spread}<br>
-                                    <div class="color-preview" style="width: 20px; height: 20px; background-color: ${component.color}; border: 1px solid #fff; display: inline-block;"></div>
-                                </div>
-                            `).join('')}
-                        </div>
-                    `).join('');
-                }
-
-                getReadableTrailEffect(effect) {
-                    switch (effect) {
-                        case 'fade':
-                            return 'Fade';
-                        case 'sparkle':
-                            return 'Sparkle';
-                        case 'rainbow':
-                            return 'Rainbow Gradient';
-                        case 'comet':
-                            return 'Comet Tail';
-                        default:
-                            return 'None';
-                    }
-                }
-
-                getReadableShape(shape) {
-                    switch (shape) {
-                        case 'sphere':
-                            return 'Sphere';
-                        case 'star':
-                            return 'Star';
-                        case 'ring':
-                            return 'Ring';
-                        case 'crystalDroplet':
-                            return 'Crystal Droplet';
-                        case 'sliceBurst':
-                            return 'Slice Burst';
-                        default:
-                            return 'Sphere';
-                    }
-                }
-
-                selectRecipe(index) {
-                    this.currentRecipeComponents = this.recipes[index].components.map(component => ({ ...component }));
-                    this.currentTrailEffect = this.recipes[index].trailEffect;
-                    this.updateComponentsList();
-                    this.updateUI();
-                    this.saveCurrentRecipeComponents();
-                    document.getElementById('recipe-name').value = this.recipes[index].name;
-                    this.showNotification(`Loaded Recipe "${this.recipes[index].name}"`);
-                }
-
-                updateLauncherList() {
-                    const launcherList = document.getElementById('launcher-list');
-                    launcherList.innerHTML = ''; // Clear existing content
-
-                    if (this.autoLaunchers.length === 0) {
-                        launcherList.innerHTML = "<p>No auto-launchers owned yet.</p>";
-                        return;
-                    }
-
-                    this.autoLaunchers.forEach((launcher, index) => {
-                        const launcherDiv = document.createElement('div');
-                        launcherDiv.classList.add('launcher-card');
-
-                        // **Add 'selected' class if this is the selected launcher**
-                        if (index === this.selectedLauncherIndex) {
-                            launcherDiv.classList.add('selected');
-                        }
-
-                        launcherDiv.innerHTML = `
-                            <h3>Auto-Launcher ${index + 1}</h3>
-                            <div class="crafting-option">
-                                <label>Assign Recipe:</label>
-                                <select class="recipe-select" data-index="${index}">
-                                    <option value="">-- Select a Recipe --</option>
-                                    ${this.recipes.map((recipe, rIndex) => `
-                                        <option value="${rIndex}" ${launcher.assignedRecipeIndex === rIndex ? 'selected' : ''}>${recipe.name}</option>
-                                    `).join('')}
-                                </select>
+                list.innerHTML = this.recipes.map((recipe, index) => `
+                    <div class="recipe-card" onclick="game.selectRecipe(${index})" style="cursor: pointer; padding: 10px; border: 1px solid #34495e; border-radius: 5px; margin-bottom: 10px; background: #2a2f3a;">
+                        <strong>${recipe.name || `Recipe ${index + 1}`}</strong><br>
+                        <div>Trail Effect: ${this.getReadableTrailEffect(recipe.trailEffect)}</div>
+                        ${recipe.components.map((component, cIndex) => `
+                            <div>
+                                <strong>Component ${cIndex + 1}:</strong><br>
+                                Pattern: ${component.pattern}<br>
+                                Shape: ${this.getReadableShape(component.shape)}<br>
+                                Size: ${component.size}<br>
+                                Lifetime: ${component.lifetime} s<br>
+                                Spread: ${component.spread}<br>
+                                <div class="color-preview" style="width: 20px; height: 20px; background-color: ${component.color}; border: 1px solid #fff; display: inline-block;"></div>
                             </div>
-                        `;
-                        launcherList.appendChild(launcherDiv);
+                        `).join('')}
+                    </div>
+                `).join('');
+            }
 
-                        // Event Listener for Recipe Assignment
-                        const recipeSelect = launcherDiv.querySelector('.recipe-select');
-                        recipeSelect.addEventListener('change', (e) => {
-                            const idx = e.target.getAttribute('data-index');
-                            const selectedRecipeIndex = parseInt(e.target.value);
-                            if (!isNaN(selectedRecipeIndex)) {
-                                this.autoLaunchers[idx].assignedRecipeIndex = selectedRecipeIndex;
-                            } else {
-                                this.autoLaunchers[idx].assignedRecipeIndex = null;
-                            }
-                            this.saveProgress();
-                        });
+            getReadableTrailEffect(effect) {
+                switch (effect) {
+                    case 'fade':
+                        return 'Fade';
+                    case 'sparkle':
+                        return 'Sparkle';
+                    case 'rainbow':
+                        return 'Rainbow Gradient';
+                    case 'comet':
+                        return 'Comet Tail';
+                    default:
+                        return 'None';
+                }
+            }
 
-                        // **Add Click Event Listener for Highlighting**
-                        launcherDiv.addEventListener('click', () => {
-                            this.selectLauncher(index);
-                        });
-                    });
+            getReadableShape(shape) {
+                switch (shape) {
+                    case 'sphere':
+                        return 'Sphere';
+                    case 'star':
+                        return 'Star';
+                    case 'ring':
+                        return 'Ring';
+                    case 'crystalDroplet':
+                        return 'Crystal Droplet';
+                    case 'sliceBurst':
+                        return 'Slice Burst';
+                    default:
+                        return 'Sphere';
+                }
+            }
+
+            selectRecipe(index) {
+                this.currentRecipeComponents = this.recipes[index].components.map(component => ({ ...component }));
+                this.currentTrailEffect = this.recipes[index].trailEffect;
+                this.updateComponentsList();
+                this.updateUI();
+                this.saveCurrentRecipeComponents();
+                document.getElementById('recipe-name').value = this.recipes[index].name;
+                this.showNotification(`Loaded Recipe "${this.recipes[index].name}"`);
+            }
+
+            updateLauncherList() {
+                const launcherList = document.getElementById('launcher-list');
+                launcherList.innerHTML = ''; // Clear existing content
+
+                if (this.autoLaunchers.length === 0) {
+                    launcherList.innerHTML = "<p>No auto-launchers owned yet.</p>";
+                    return;
                 }
 
-                selectLauncher(selectedIndex) {
-                    // Deselect all launchers
-                    const launcherCards = document.querySelectorAll('.launcher-card');
-                    launcherCards.forEach((card, index) => {
-                        if (index === selectedIndex) {
-                            card.classList.add('selected');
+                this.autoLaunchers.forEach((launcher, index) => {
+                    const launcherDiv = document.createElement('div');
+                    launcherDiv.classList.add('launcher-card');
+
+                    // *** Add 'selected' class if this is the selected launcher
+                    if (index === this.selectedLauncherIndex) {
+                        launcherDiv.classList.add('selected');
+                    }
+
+                    launcherDiv.innerHTML = `
+                        <h3>Auto-Launcher ${index + 1}</h3>
+                        <div class="crafting-option">
+                            <label>Assign Recipe:</label>
+                            <select class="recipe-select" data-index="${index}">
+                                <option value="">-- Select a Recipe --</option>
+                                ${this.recipes.map((recipe, rIndex) => `
+                                    <option value="${rIndex}" ${launcher.assignedRecipeIndex === rIndex ? 'selected' : ''}>${recipe.name}</option>
+                                `).join('')}
+                            </select>
+                        </div>
+                        <div class="launcher-details">
+                            <p>Level: ${launcher.level}</p>
+                            <p>Spawn Rate: Every ${launcher.spawnInterval.toFixed(1)}s</p> <!-- *** Display spawn rate -->
+                            <p>Upgrade Cost: ${launcher.upgradeCost} sparkles</p> <!-- *** Display upgrade cost -->
+                            <button class="upgrade-button" data-index="${index}">Upgrade</button> <!-- *** Upgrade button -->
+                        </div>
+                    `;
+                    launcherList.appendChild(launcherDiv);
+
+                    // Event Listener for Recipe Assignment
+                    const recipeSelect = launcherDiv.querySelector('.recipe-select');
+                    recipeSelect.addEventListener('change', (e) => {
+                        const idx = e.target.getAttribute('data-index');
+                        const selectedRecipeIndex = parseInt(e.target.value);
+                        if (!isNaN(selectedRecipeIndex)) {
+                            this.autoLaunchers[idx].assignedRecipeIndex = selectedRecipeIndex;
                         } else {
-                            card.classList.remove('selected');
+                            this.autoLaunchers[idx].assignedRecipeIndex = null;
                         }
+                        this.saveProgress();
                     });
 
-                    // Optionally, store the selected launcher index for further use
-                    this.selectedLauncherIndex = selectedIndex;
+                    // *** Add Event Listener for Upgrade Button ***
+                    const upgradeButton = launcherDiv.querySelector('.upgrade-button');
+                    upgradeButton.addEventListener('click', (e) => {
+                        const idx = e.target.getAttribute('data-index');
+                        this.upgradeLauncher(idx);
+                    });
 
-                    // Save the selected launcher if needed
-                    // For example, to remember selection across sessions
-                    localStorage.setItem('selectedLauncherIndex', selectedIndex);
-                }
+                    // *** Add Click Event Listener for Highlighting ***
+                    launcherDiv.addEventListener('click', () => {
+                        this.selectLauncher(index);
+                    });
+                });
+            }
 
-                handlePointerClick(worldPos, event) {
-                    const raycaster = new THREE.Raycaster();
-                    const mouse = new THREE.Vector2();
-                    mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-                    mouse.y = - (event.clientY / window.innerHeight) * 2 + 1;
-                    raycaster.setFromCamera(mouse, this.camera);
-
-                    // Collect all auto-launcher meshes
-                    const launcherMeshes = this.autoLaunchers.map(launcher => launcher.mesh);
-
-                    const intersects = raycaster.intersectObjects(launcherMeshes);
-                    if (intersects.length > 0) {
-                        const clickedMesh = intersects[0].object;
-                        const launcherIndex = this.autoLaunchers.findIndex(launcher => launcher.mesh === clickedMesh);
-                        if (launcherIndex !== -1) {
-                            this.selectLauncher(launcherIndex);
-                            this.showTab('auto-launcher');
-                            setTimeout(() => {
-                                // Scroll to the corresponding launcher card
-                                const launcherList = document.getElementById('launcher-list');
-                                const launcherCards = launcherList.getElementsByClassName('launcher-card');
-                                if (launcherCards[launcherIndex]) {
-                                    launcherCards[launcherIndex].scrollIntoView({ behavior: 'smooth' });
-                                }
-                            }, 100);
-                        }
+            selectLauncher(selectedIndex) {
+                // Deselect all launchers
+                const launcherCards = document.querySelectorAll('.launcher-card');
+                launcherCards.forEach((card, index) => {
+                    if (index === selectedIndex) {
+                        card.classList.add('selected');
                     } else {
-                        // If not clicking on an auto-launcher, launch a firework
-                        this.launchFireworkAt(worldPos.x);
+                        card.classList.remove('selected');
                     }
+                });
+
+                // Optionally, store the selected launcher index for further use
+                this.selectedLauncherIndex = selectedIndex;
+
+                // Save the selected launcher if needed
+                // For example, to remember selection across sessions
+                localStorage.setItem('selectedLauncherIndex', selectedIndex);
+            }
+
+            handlePointerClick(worldPos, event) {
+                const raycaster = new THREE.Raycaster();
+                const mouse = new THREE.Vector2();
+                mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+                mouse.y = - (event.clientY / window.innerHeight) * 2 + 1;
+                raycaster.setFromCamera(mouse, this.camera);
+
+                // Collect all auto-launcher meshes
+                const launcherMeshes = this.autoLaunchers.map(launcher => launcher.mesh);
+
+                const intersects = raycaster.intersectObjects(launcherMeshes);
+                if (intersects.length > 0) {
+                    const clickedMesh = intersects[0].object;
+                    const launcherIndex = this.autoLaunchers.findIndex(launcher => launcher.mesh === clickedMesh);
+                    if (launcherIndex !== -1) {
+                        this.selectLauncher(launcherIndex);
+                        this.showTab('auto-launcher');
+                        setTimeout(() => {
+                            // Scroll to the corresponding launcher card
+                            const launcherList = document.getElementById('launcher-list');
+                            const launcherCards = launcherList.getElementsByClassName('launcher-card');
+                            if (launcherCards[launcherIndex]) {
+                                launcherCards[launcherIndex].scrollIntoView({ behavior: 'smooth' });
+                            }
+                        }, 100);
+                    }
+                } else {
+                    // If not clicking on an auto-launcher, launch a firework
+                    this.launchFireworkAt(worldPos.x);
+                }
+            }
+
+            // Cleanup method to remove event listeners and dispose resources
+            cleanup() {
+                // Remove event listeners
+                document.getElementById('add-component').removeEventListener('click', this.addComponentHandler);
+                document.getElementById('save-recipe').removeEventListener('click', this.saveRecipeHandler);
+                document.getElementById('erase-recipes').removeEventListener('click', this.eraseRecipesHandler);
+                document.getElementById('buy-auto-launcher').removeEventListener('click', this.buyAutoLauncherHandler);
+                document.getElementById('reset-game').removeEventListener('click', this.resetGameHandler);
+                document.getElementById('crafting-tab').removeEventListener('click', this.craftingTabHandler);
+                document.getElementById('incremental-tab').removeEventListener('click', this.incrementalTabHandler);
+                document.getElementById('auto-launcher-tab').removeEventListener('click', this.autoLauncherTabHandler);
+                document.getElementById('recipe-trail-effect').removeEventListener('change', this.trailEffectChangeHandler);
+                this.renderer.domElement.removeEventListener('pointerdown', this.pointerDownHandler);
+
+                if (this.isDragging) {
+                    document.removeEventListener('pointermove', this.pointerMoveHandler);
+                    document.removeEventListener('pointerup', this.pointerUpHandler);
+                    document.removeEventListener('pointercancel', this.pointerUpHandler);
+                }
+                // Dispose Three.js renderer
+                if (this.renderer) {
+                    this.renderer.dispose();
+                    this.scene = null;
+                    this.camera = null;
+                    this.renderer = null;
                 }
 
-                // Cleanup method to remove event listeners and dispose resources
-                cleanup() {
-                    // Remove event listeners
-                    document.getElementById('add-component').removeEventListener('click', this.addComponentHandler);
-                    document.getElementById('save-recipe').removeEventListener('click', this.saveRecipeHandler);
-                    document.getElementById('erase-recipes').removeEventListener('click', this.eraseRecipesHandler);
-                    document.getElementById('buy-auto-launcher').removeEventListener('click', this.buyAutoLauncherHandler);
-                    document.getElementById('reset-game').removeEventListener('click', this.resetGameHandler);
-                    document.getElementById('crafting-tab').removeEventListener('click', this.craftingTabHandler);
-                    document.getElementById('incremental-tab').removeEventListener('click', this.incrementalTabHandler);
-                    document.getElementById('auto-launcher-tab').removeEventListener('click', this.autoLauncherTabHandler);
-                    document.getElementById('recipe-trail-effect').removeEventListener('change', this.trailEffectChangeHandler);
-                    this.renderer.domElement.removeEventListener('pointerdown', this.pointerDownHandler);
+                // Dispose of particle system
+                if (this.particleSystem) {
+                    this.particleSystem.dispose();
+                    this.particleSystem = null;
+                }
+            }
 
-                    // Dispose Three.js renderer
-                    if (this.renderer) {
-                        this.renderer.dispose();
-                        this.scene = null;
-                        this.camera = null;
-                        this.renderer = null;
+            // *** New Method to Upgrade a Launcher ***
+            upgradeLauncher(index) {
+                const launcher = this.autoLaunchers[index];
+                if (!launcher) {
+                    this.showNotification("Launcher not found.");
+                    return;
+                }
+
+                if (this.sparkles >= launcher.upgradeCost) {
+                    // Deduct sparkles
+                    this.sparkles -= launcher.upgradeCost;
+
+                    // Upgrade launcher level
+                    launcher.level += 1;
+
+                    // Decrease spawnInterval (improve spawn rate)
+                    launcher.spawnInterval = Math.max(1, launcher.spawnInterval * 0.9); // Decrease by 10%, minimum 1s
+
+                    // Increase upgradeCost for next upgrade
+                    launcher.upgradeCost = Math.floor(launcher.upgradeCost * 1.5);
+
+                    this.saveProgress();
+                    this.updateUI();
+                    this.updateLauncherList();
+                    this.showNotification(`Auto-Launcher ${index + 1} upgraded to level ${launcher.level}!`);
+                } else {
+                    this.showNotification("Not enough sparkles to upgrade this launcher!");
+                }
+            }
+        }
+
+        class Firework {
+            constructor(x, y, components, scene, camera, trailEffect, particleSystem) {
+                this.scene = scene;
+                this.camera = camera;
+                this.components = components;
+                this.trailEffect = trailEffect;
+                this.particleSystem = particleSystem;
+                this.exploded = false;
+                this.alive = true;
+                this.particles = {}; // Key: shape, Value: Set of particle indices
+
+                // Initialize particle sets for each shape
+                FIREWORK_CONFIG.supportedShapes.forEach(shape => {
+                    this.particles[shape] = new Set();
+                });
+
+                // Create rocket
+                this.rocket = this.createRocket(x, y);
+                this.trailParticles = [];
+
+                // Calculate explosion height
+                const distance = this.camera.position.z - this.rocket.position.z;
+                const vFOV = this.camera.fov * Math.PI / 180;
+                const viewHeight = 2 * Math.tan(vFOV / 2) * distance;
+
+                const minY = -viewHeight / 2 + FIREWORK_CONFIG.minExplosionHeightPercent * viewHeight;
+                const maxY = -viewHeight / 2 + FIREWORK_CONFIG.maxExplosionHeightPercent * viewHeight;
+
+                this.targetY = minY + Math.random() * (maxY - minY);
+            }
+
+            createRocket(x, y) {
+                const geometry = new THREE.SphereGeometry(FIREWORK_CONFIG.rocketSize, 8, 8);
+                const material = new THREE.MeshBasicMaterial({ color: 0xffffff });
+                const rocket = new THREE.Mesh(geometry, material);
+                rocket.position.set(x, y, 0);
+                this.scene.add(rocket);
+                return rocket;
+            }
+
+            getViewBounds() {
+                const distance = this.camera.position.z;
+                const vFOV = this.camera.fov * Math.PI / 180;
+                const viewHeight = 2 * Math.tan(vFOV / 2) * distance;
+                const viewWidth = viewHeight * this.camera.aspect;
+
+                const minY = -viewHeight / 2;
+                const maxY = viewHeight / 2;
+                const minX = -viewWidth / 2;
+                const maxX = viewWidth / 2;
+
+                return { minX, maxX, minY, maxY };
+            }
+
+            update(delta) {
+                if (!this.exploded) {
+                    // Pre-explosion update (rocket ascending)
+                    this.rocket.position.y += FIREWORK_CONFIG.ascentSpeed * delta;
+                    this.createTrailParticle(this.rocket.position.x, this.rocket.position.y);
+
+                    // Update trail particles
+                    this.updateTrailParticles(delta);
+
+                    if (this.rocket.position.y >= this.targetY) {
+                        this.explode();
                     }
+                } else {
+                    // After explosion, check if particles are still alive
+                    this.alive = false;
+                    FIREWORK_CONFIG.supportedShapes.forEach(shape => {
+                        if (this.particles[shape].size > 0) {
+                            this.alive = true;
+                        }
+                    });
+                }
+            }
 
-                    // Dispose of particle system
-                    if (this.particleSystem) {
-                        this.particleSystem.dispose();
-                        this.particleSystem = null;
+            createTrailParticle(x, y) {
+                let material;
+                switch (this.trailEffect) {
+                    case 'sparkle':
+                        material = new THREE.PointsMaterial({
+                            color: 0xffffff,
+                            size: 0.3 + Math.random() * 0.3,
+                            transparent: true,
+                            opacity: 0.8,
+                            blending: THREE.AdditiveBlending
+                        });
+                        const geometry = new THREE.BufferGeometry();
+                        const positions = new Float32Array([x, y, 0]);
+                        geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+                        const particle = new THREE.Points(geometry, material);
+                        this.scene.add(particle);
+                        this.trailParticles.push({
+                            mesh: particle,
+                            createdAt: Date.now(),
+                            initialOpacity: 0.8
+                        });
+                        break;
+
+                    case 'rainbow':
+                        const hue = (Date.now() * 0.001) % 1;
+                        const color = new THREE.Color();
+                        color.setHSL(hue, 1, 0.5);
+                        material = new THREE.MeshBasicMaterial({
+                            color: color,
+                            transparent: true,
+                            opacity: 0.8,
+                            blending: THREE.AdditiveBlending
+                        });
+                        const sphere = new THREE.SphereGeometry(0.2, 4, 4);
+                        const mesh = new THREE.Mesh(sphere, material);
+                        mesh.position.set(x, y, 0);
+                        this.scene.add(mesh);
+                        this.trailParticles.push({
+                            mesh: mesh,
+                            createdAt: Date.now(),
+                            initialOpacity: 0.8,
+                            color: color.clone()
+                        });
+                        break;
+
+                    case 'comet':
+                        material = new THREE.MeshBasicMaterial({
+                            color: 0xffaa00,
+                            transparent: true,
+                            opacity: 0.8,
+                            blending: THREE.AdditiveBlending
+                        });
+                        const cometGeometry = new THREE.SphereGeometry(0.3, 4, 4);
+                        const cometMesh = new THREE.Mesh(cometGeometry, material);
+                        cometMesh.position.set(x, y, 0);
+                        this.scene.add(cometMesh);
+                        this.trailParticles.push({
+                            mesh: cometMesh,
+                            createdAt: Date.now(),
+                            initialOpacity: 0.8,
+                            scale: 1.0
+                        });
+                        break;
+
+                    case 'fade':
+                    default:
+                        material = new THREE.MeshBasicMaterial({
+                            color: 0xffffff,
+                            transparent: true,
+                            opacity: 0.8,
+                            blending: THREE.AdditiveBlending
+                        });
+                        const defaultGeometry = new THREE.SphereGeometry(0.2, 4, 4);
+                        const defaultMesh = new THREE.Mesh(defaultGeometry, material);
+                        defaultMesh.position.set(x, y, 0);
+                        this.scene.add(defaultMesh);
+                        this.trailParticles.push({
+                            mesh: defaultMesh,
+                            createdAt: Date.now(),
+                            initialOpacity: 0.8
+                        });
+                        break;
+                }
+            }
+
+            updateTrailParticles(delta) {
+                const now = Date.now();
+                this.trailParticles.forEach((particle, index) => {
+                    const age = (now - particle.createdAt) / 500;
+
+                    if (age >= 1) return;
+
+                    switch (this.trailEffect) {
+                        case 'sparkle':
+                            particle.mesh.material.size = (0.3 + Math.random() * 0.3) * (1 - age);
+                            particle.mesh.material.opacity = particle.initialOpacity * (1 - age);
+                            break;
+
+                        case 'rainbow':
+                            const hue = ((now * 0.001) + index * 0.1) % 1;
+                            particle.color.setHSL(hue, 1, 0.5);
+                            particle.mesh.material.color = particle.color;
+                            particle.mesh.material.opacity = particle.initialOpacity * (1 - age);
+                            break;
+
+                        case 'comet':
+                            particle.scale = Math.max(0.2, particle.scale * 0.95);
+                            particle.mesh.scale.set(particle.scale, particle.scale, particle.scale);
+                            particle.mesh.material.opacity = particle.initialOpacity * (1 - age);
+                            particle.mesh.position.y += delta * 2;
+                            break;
+
+                        case 'fade':
+                        default:
+                            particle.mesh.material.opacity = particle.initialOpacity * (1 - age);
+                            break;
+                    }
+                });
+
+                // Clean up old trail particles
+                for (let i = this.trailParticles.length - 1; i >= 0; i--) {
+                    const particle = this.trailParticles[i];
+                    if (Date.now() - particle.createdAt > 500) {
+                        this.scene.remove(particle.mesh);
+                        if (particle.mesh.geometry) particle.mesh.geometry.dispose();
+                        if (particle.mesh.material) {
+                            if (particle.mesh.material.map) particle.mesh.material.map.dispose();
+                            particle.mesh.material.dispose();
+                        }
+                        this.trailParticles.splice(i, 1);
                     }
                 }
             }
 
-            class Firework {
-                constructor(x, y, components, scene, camera, trailEffect, particleSystem) {
-                    this.scene = scene;
-                    this.camera = camera;
-                    this.components = components;
-                    this.trailEffect = trailEffect;
-                    this.particleSystem = particleSystem;
-                    this.exploded = false;
-                    this.alive = true;
-                    this.particles = {}; // Key: shape, Value: Set of particle indices
 
-                    // Initialize particle sets for each shape
-                    FIREWORK_CONFIG.supportedShapes.forEach(shape => {
-                        this.particles[shape] = new Set();
-                    });
+            explode() {
+                // Remove and dispose of the rocket
+                this.scene.remove(this.rocket);
+                if (this.rocket.geometry) this.rocket.geometry.dispose();
+                if (this.rocket.material) this.rocket.material.dispose();
 
-                    // Create rocket
-                    this.rocket = this.createRocket(x, y);
-                    this.trailParticles = [];
-
-                    // Calculate explosion height
-                    const distance = this.camera.position.z - this.rocket.position.z;
-                    const vFOV = this.camera.fov * Math.PI / 180;
-                    const viewHeight = 2 * Math.tan(vFOV / 2) * distance;
-
-                    const minY = -viewHeight / 2 + FIREWORK_CONFIG.minExplosionHeightPercent * viewHeight;
-                    const maxY = -viewHeight / 2 + FIREWORK_CONFIG.maxExplosionHeightPercent * viewHeight;
-
-                    this.targetY = minY + Math.random() * (maxY - minY);
-                }
-
-                createRocket(x, y) {
-                    const geometry = new THREE.SphereGeometry(FIREWORK_CONFIG.rocketSize, 8, 8);
-                    const material = new THREE.MeshBasicMaterial({ color: 0xffffff });
-                    const rocket = new THREE.Mesh(geometry, material);
-                    rocket.position.set(x, y, 0);
-                    this.scene.add(rocket);
-                    return rocket;
-                }
-
-                getViewBounds() {
-                    const distance = this.camera.position.z;
-                    const vFOV = this.camera.fov * Math.PI / 180;
-                    const viewHeight = 2 * Math.tan(vFOV / 2) * distance;
-                    const viewWidth = viewHeight * this.camera.aspect;
-
-                    const minY = -viewHeight / 2;
-                    const maxY = viewHeight / 2;
-                    const minX = -viewWidth / 2;
-                    const maxX = viewWidth / 2;
-
-                    return { minX, maxX, minY, maxY };
-                }
-
-                update(delta) {
-                    if (!this.exploded) {
-                        // Pre-explosion update (rocket ascending)
-                        this.rocket.position.y += FIREWORK_CONFIG.ascentSpeed * delta;
-                        this.createTrailParticle(this.rocket.position.x, this.rocket.position.y);
-
-                        // Update trail particles
-                        this.updateTrailParticles(delta);
-
-                        if (this.rocket.position.y >= this.targetY) {
-                            this.explode();
+                // Remove and dispose of trail particles
+                this.trailParticles.forEach(particle => {
+                    if (particle.mesh) {
+                        this.scene.remove(particle.mesh);
+                        if (particle.mesh.geometry) particle.mesh.geometry.dispose();
+                        if (particle.mesh.material) {
+                            if (particle.mesh.material.map) particle.mesh.material.map.dispose();
+                            particle.mesh.material.dispose();
                         }
-                    } else {
-                        // After explosion, check if particles are still alive
-                        this.alive = false;
-                        FIREWORK_CONFIG.supportedShapes.forEach(shape => {
-                            if (this.particles[shape].size > 0) {
-                                this.alive = true;
-                            }
-                        });
                     }
-                }
+                });
+                this.trailParticles = [];
 
-                createTrailParticle(x, y) {
-                    let material;
-                    switch (this.trailEffect) {
-                        case 'sparkle':
-                            material = new THREE.PointsMaterial({
-                                color: 0xffffff,
-                                size: 0.3 + Math.random() * 0.3,
-                                transparent: true,
-                                opacity: 0.8,
-                                blending: THREE.AdditiveBlending
-                            });
-                            const geometry = new THREE.BufferGeometry();
-                            const positions = new Float32Array([x, y, 0]);
-                            geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-                            const particle = new THREE.Points(geometry, material);
-                            this.scene.add(particle);
-                            this.trailParticles.push({
-                                mesh: particle,
-                                createdAt: Date.now(),
-                                initialOpacity: 0.8
-                            });
+                // Create explosion particles
+                this.components.forEach(component => {
+                    const particleCount = Math.floor(FIREWORK_CONFIG.particleDensity * component.size);
+                    const pattern = component.pattern;
+                    const gravity = FIREWORK_CONFIG.patternGravities[pattern] || FIREWORK_CONFIG.patternGravities.default;
+                    const speed = FIREWORK_CONFIG.baseSpeed * component.size;
+                    const color = new THREE.Color(component.color);
+                    const size = FIREWORK_CONFIG.particleSize * component.size;
+                    const rocketPos = this.rocket.position.clone();
+                    const velocity = new THREE.Vector3();
+                    const shape = component.shape;
+                    const spread = component.spread;
+
+                    switch (pattern) {
+                        case 'spherical':
+                            for (let i = 0; i < particleCount; i++) {
+                                const angle = (i / particleCount) * Math.PI * 2;
+                                const magnitude = speed * (0.8 + Math.random() * 0.4) * spread;
+                                velocity.set(
+                                    Math.cos(angle) * magnitude,
+                                    Math.sin(angle) * magnitude,
+                                    0
+                                );
+
+                                const index = this.particleSystem.addParticle(
+                                    rocketPos.clone(),
+                                    velocity.clone(),
+                                    color,
+                                    size,
+                                    component.lifetime,
+                                    gravity * (0.8 + Math.random() * 0.4),
+                                    shape
+                                );
+                                if (index !== -1) this.particles[shape].add(index);
+                            }
                             break;
 
-                        case 'rainbow':
-                            const hue = (Date.now() * 0.001) % 1;
-                            const color = new THREE.Color();
-                            color.setHSL(hue, 1, 0.5);
-                            material = new THREE.MeshBasicMaterial({
-                                color: color,
-                                transparent: true,
-                                opacity: 0.8,
-                                blending: THREE.AdditiveBlending
-                            });
-                            const sphere = new THREE.SphereGeometry(0.2, 4, 4);
-                            const mesh = new THREE.Mesh(sphere, material);
-                            mesh.position.set(x, y, 0);
-                            this.scene.add(mesh);
-                            this.trailParticles.push({
-                                mesh: mesh,
-                                createdAt: Date.now(),
-                                initialOpacity: 0.8,
-                                color: color.clone()
-                            });
+                        case 'ring':
+                            for (let i = 0; i < particleCount; i++) {
+                                const angle = (i / particleCount) * Math.PI * 2;
+                                const magnitude = speed * spread;
+                                velocity.set(
+                                    Math.cos(angle) * magnitude,
+                                    Math.sin(angle) * magnitude,
+                                    0
+                                );
+
+                                const index = this.particleSystem.addParticle(
+                                    rocketPos.clone(),
+                                    velocity.clone(),
+                                    color,
+                                    size,
+                                    component.lifetime,
+                                    gravity * (0.8 + Math.random() * 0.2),
+                                    shape
+                                );
+                                if (index !== -1) this.particles[shape].add(index);
+                            }
                             break;
 
-                        case 'comet':
-                            material = new THREE.MeshBasicMaterial({
-                                color: 0xffaa00,
-                                transparent: true,
-                                opacity: 0.8,
-                                blending: THREE.AdditiveBlending
-                            });
-                            const cometGeometry = new THREE.SphereGeometry(0.3, 4, 4);
-                            const cometMesh = new THREE.Mesh(cometGeometry, material);
-                            cometMesh.position.set(x, y, 0);
-                            this.scene.add(cometMesh);
-                            this.trailParticles.push({
-                                mesh: cometMesh,
-                                createdAt: Date.now(),
-                                initialOpacity: 0.8,
-                                scale: 1.0
-                            });
+                        case 'burst':
+                            for (let i = 0; i < particleCount; i++) {
+                                const angle = Math.random() * Math.PI * 2;
+                                const magnitude = speed * Math.random() * spread;
+                                velocity.set(
+                                    Math.cos(angle) * magnitude,
+                                    Math.sin(angle) * magnitude,
+                                    0
+                                );
+
+                                const index = this.particleSystem.addParticle(
+                                    rocketPos.clone(),
+                                    velocity.clone(),
+                                    color,
+                                    size,
+                                    component.lifetime,
+                                    gravity,
+                                    shape
+                                );
+                                if (index !== -1) this.particles[shape].add(index);
+                            }
                             break;
 
-                        case 'fade':
+                        case 'palm':
+                            const branches = 8;
+                            const particlesPerBranch = Math.floor(particleCount / branches);
+                            for (let i = 0; i < particleCount; i++) {
+                                const branch = i % branches;
+                                const particleInBranch = Math.floor(i / branches);
+
+                                const baseAngle = (branch / branches) * Math.PI * 2;
+                                const angleSpread = 0.3 * (particleInBranch / particlesPerBranch);
+                                const angle = baseAngle + (Math.random() - 0.5) * angleSpread;
+
+                                const magnitude = speed * (1.2 + particleInBranch / particlesPerBranch) * spread;
+                                velocity.set(
+                                    Math.cos(angle) * magnitude,
+                                    Math.sin(angle) * magnitude,
+                                    0
+                                );
+
+                                const index = this.particleSystem.addParticle(
+                                    rocketPos.clone(),
+                                    velocity.clone(),
+                                    color,
+                                    size,
+                                    component.lifetime,
+                                    gravity,
+                                    shape
+                                );
+                                if (index !== -1) this.particles[shape].add(index);
+                            }
+                            break;
+
+                        case 'willow':
+                            const emissionAngle = 0.5;
+                            for (let i = 0; i < particleCount; i++) {
+                                const angleOffset = (Math.random() * 1.2 - 0.5) * emissionAngle;
+                                const angle = (-Math.PI / 2) + angleOffset;
+                                const horizontalDrift = (Math.random() - 0.5) * 10;
+                                const initialSpeed = speed * (0.7 + Math.random() * 0.3) * spread;
+                                velocity.set(
+                                    Math.cos(angle) * initialSpeed + horizontalDrift,
+                                    Math.sin(angle) * initialSpeed,
+                                    0
+                                );
+
+                                const index = this.particleSystem.addParticle(
+                                    rocketPos.clone(),
+                                    velocity.clone(),
+                                    color,
+                                    size,
+                                    component.lifetime,
+                                    gravity,
+                                    shape
+                                );
+                                if (index !== -1) this.particles[shape].add(index);
+                            }
+                            break;
+
+                        case 'heart':
+                            const heartScale = spread;
+                            for (let i = 0; i < particleCount; i++) {
+                                const t = (i / particleCount) * Math.PI * 2;
+                                const xOffset = heartScale * (16 * Math.pow(Math.sin(t), 3));
+                                const yOffset = heartScale * (13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t));
+                                const angle = Math.atan2(yOffset, xOffset);
+                                const magnitude = speed * Math.sqrt(xOffset * xOffset + yOffset * yOffset) * 0.05;
+                                velocity.set(
+                                    Math.cos(angle) * magnitude,
+                                    Math.sin(angle) * magnitude,
+                                    0
+                                );
+
+                                const index = this.particleSystem.addParticle(
+                                    rocketPos.clone(),
+                                    velocity.clone(),
+                                    color,
+                                    size,
+                                    component.lifetime,
+                                    gravity * (0.8 + Math.random() * 0.2),
+                                    shape
+                                );
+                                if (index !== -1) this.particles[shape].add(index);
+                            }
+                            break;
+
+
+                        case 'helix':
+                            // Configuration for helix pattern
+                            const helixRadius = .5;              // Base radius of the helix
+                            const riseSpeed = speed * 0.5 * spread;      // How fast particles go up
+                            const rotationSpeed = 1;            // How fast the helix rotates
+                            const particlesPerStream = 100;     // Particles per helix stream
+                            const verticalSpacing = 0.1;        // Reduced from 0.2 to make it more compact
+                            const spreadFactor = 0.1;          // How much random spread to add
+
+                            // Create the two intertwining helices
+                            for (let stream = 0; stream < 2; stream++) {
+                                const streamOffset = stream * Math.PI; // Offset second stream by 180 degrees
+
+                                for (let i = 0; i < particlesPerStream; i++) {
+                                    const t = (i / particlesPerStream) * Math.PI * 2;
+                                    const angle = t + streamOffset;
+
+                                    // Add some randomness to the position
+                                    const randomSpread = (Math.random() - 0.5) * spreadFactor;
+
+                                    const offset = new THREE.Vector3(
+                                        Math.cos(angle) * helixRadius * (1 + randomSpread),
+                                        -i * verticalSpacing,  // More compact vertical spacing
+                                        Math.sin(angle) * helixRadius * (1 + randomSpread)
+                                    );
+
+                                    velocity.set(
+                                        -Math.sin(angle) * rotationSpeed,
+                                        riseSpeed * (1 + randomSpread), // Slight variation in rise speed
+                                        Math.cos(angle) * rotationSpeed
+                                    );
+                                    const particleColor = color.clone();
+                                    if (stream === 1) {
+                                        const hsl = {};
+                                        particleColor.getHSL(hsl);
+                                        // Add 0.5 (180 degrees) to hue for complementary color
+                                        // Use modulo 1 to wrap around the color wheel
+                                        hsl.h = (hsl.h + 0.5) % 1;
+                                        // Keep same saturation and lightness
+                                        particleColor.setHSL(hsl.h, hsl.s, hsl.l);
+                                    }
+
+                                    const index = this.particleSystem.addParticle(
+                                        rocketPos.clone(),
+                                        velocity.clone().add(offset),
+                                        particleColor,
+                                        size * 0.8,
+                                        component.lifetime * 0.8, // Slightly shorter lifetime
+                                        gravity * 0.2,
+                                        shape
+                                    );
+
+                                    if (index !== -1) this.particles[shape].add(index);
+                                }
+                            }
+                            break;
+
+                        case 'star':
+                            const spikes = 5;
+                            const outerRadius = speed * spread;
+                            const innerRadius = speed * 0.5 * spread;
+                            const pointsPerStar = spikes * 2;
+
+                            for (let i = 0; i < particleCount; i++) {
+                                const starPoint = i % pointsPerStar;
+                                const starCopy = Math.floor(i / pointsPerStar);
+
+                                let radius = (starPoint % 2 === 0) ? outerRadius : innerRadius;
+                                let angle = (starPoint / pointsPerStar) * Math.PI * 2;
+
+                                // Make the outer edges more dense
+                                if (i > pointsPerStar && (starPoint % 2 === 0)) {
+                                    radius = outerRadius * 1 + (Math.random() * 0.2 - 0.1) * (starCopy > 0 ? 1 : 0);
+                                }
+
+                                const radiusVariation = 1 + (Math.random() * 0.2 - 0.1) * (starCopy > 0 ? 1 : 0);
+                                const angleVariation = (Math.random() * 0.1 - 0.05) * (starCopy > 0 ? 1 : 0);
+
+                                velocity.set(
+                                    Math.cos(angle + angleVariation) * radius * radiusVariation,
+                                    Math.sin(angle + angleVariation) * radius * radiusVariation,
+                                    0
+                                );
+
+                                const index = this.particleSystem.addParticle(
+                                    rocketPos.clone(),
+                                    velocity.clone(),
+                                    color,
+                                    size,
+                                    component.lifetime,
+                                    gravity,
+                                    shape // Ensure shape is respected
+                                );
+                                if (index !== -1) this.particles[shape].add(index);
+                            }
+                            break;
+
                         default:
-                            material = new THREE.MeshBasicMaterial({
-                                color: 0xffffff,
-                                transparent: true,
-                                opacity: 0.8,
-                                blending: THREE.AdditiveBlending
-                            });
-                            const defaultGeometry = new THREE.SphereGeometry(0.2, 4, 4);
-                            const defaultMesh = new THREE.Mesh(defaultGeometry, material);
-                            defaultMesh.position.set(x, y, 0);
-                            this.scene.add(defaultMesh);
-                            this.trailParticles.push({
-                                mesh: defaultMesh,
-                                createdAt: Date.now(),
-                                initialOpacity: 0.8
-                            });
-                            break;
-                    }
-                }
+                            for (let i = 0; i < particleCount; i++) {
+                                const angle = Math.random() * Math.PI * 2;
+                                const magnitude = speed * spread;
+                                velocity.set(
+                                    Math.cos(angle) * magnitude,
+                                    Math.sin(angle) * magnitude,
+                                    0
+                                );
 
-                updateTrailParticles(delta) {
-                    const now = Date.now();
-                    this.trailParticles.forEach((particle, index) => {
-                        const age = (now - particle.createdAt) / 500;
-
-                        if (age >= 1) return;
-
-                        switch (this.trailEffect) {
-                            case 'sparkle':
-                                particle.mesh.material.size = (0.3 + Math.random() * 0.3) * (1 - age);
-                                particle.mesh.material.opacity = particle.initialOpacity * (1 - age);
-                                break;
-
-                            case 'rainbow':
-                                const hue = ((now * 0.001) + index * 0.1) % 1;
-                                particle.color.setHSL(hue, 1, 0.5);
-                                particle.mesh.material.color = particle.color;
-                                particle.mesh.material.opacity = particle.initialOpacity * (1 - age);
-                                break;
-
-                            case 'comet':
-                                particle.scale = Math.max(0.2, particle.scale * 0.95);
-                                particle.mesh.scale.set(particle.scale, particle.scale, particle.scale);
-                                particle.mesh.material.opacity = particle.initialOpacity * (1 - age);
-                                particle.mesh.position.y += delta * 2;
-                                break;
-
-                            case 'fade':
-                            default:
-                                particle.mesh.material.opacity = particle.initialOpacity * (1 - age);
-                                break;
-                        }
-                    });
-
-                    // Clean up old trail particles
-                    for (let i = this.trailParticles.length - 1; i >= 0; i--) {
-                        const particle = this.trailParticles[i];
-                        if (Date.now() - particle.createdAt > 500) {
-                            this.scene.remove(particle.mesh);
-                            if (particle.mesh.geometry) particle.mesh.geometry.dispose();
-                            if (particle.mesh.material) {
-                                if (particle.mesh.material.map) particle.mesh.material.map.dispose();
-                                particle.mesh.material.dispose();
+                                const index = this.particleSystem.addParticle(
+                                    rocketPos.clone(),
+                                    velocity.clone(),
+                                    color,
+                                    size,
+                                    component.lifetime,
+                                    gravity,
+                                    shape
+                                );
+                                if (index !== -1) this.particles[shape].add(index);
                             }
-                            this.trailParticles.splice(i, 1);
-                        }
                     }
-                }
-
-
-                explode() {
-                    // Remove and dispose of the rocket
+                });
+                this.exploded = true;
+            }
+            // Dispose method to clean up resources
+            dispose() {
+                // Remove rocket if it exists
+                if (this.rocket) {
                     this.scene.remove(this.rocket);
                     if (this.rocket.geometry) this.rocket.geometry.dispose();
                     if (this.rocket.material) this.rocket.material.dispose();
-
-                    // Remove and dispose of trail particles
-                    this.trailParticles.forEach(particle => {
-                        if (particle.mesh) {
-                            this.scene.remove(particle.mesh);
-                            if (particle.mesh.geometry) particle.mesh.geometry.dispose();
-                            if (particle.mesh.material) {
-                                if (particle.mesh.material.map) particle.mesh.material.map.dispose();
-                                particle.mesh.material.dispose();
-                            }
-                        }
-                    });
-                    this.trailParticles = [];
-
-                    // Create explosion particles
-                    this.components.forEach(component => {
-                        const particleCount = Math.floor(FIREWORK_CONFIG.particleDensity * component.size);
-                        const pattern = component.pattern;
-                        const gravity = FIREWORK_CONFIG.patternGravities[pattern] || FIREWORK_CONFIG.patternGravities.default;
-                        const speed = FIREWORK_CONFIG.baseSpeed * component.size;
-                        const color = new THREE.Color(component.color);
-                        const size = FIREWORK_CONFIG.particleSize * component.size;
-                        const rocketPos = this.rocket.position.clone();
-                        const velocity = new THREE.Vector3();
-                        const shape = component.shape;
-                        const spread = component.spread;
-
-                        switch (pattern) {
-                            case 'spherical':
-                                for (let i = 0; i < particleCount; i++) {
-                                    const angle = (i / particleCount) * Math.PI * 2;
-                                    const magnitude = speed * (0.8 + Math.random() * 0.4) * spread;
-                                    velocity.set(
-                                        Math.cos(angle) * magnitude,
-                                        Math.sin(angle) * magnitude,
-                                        0
-                                    );
-
-                                    const index = this.particleSystem.addParticle(
-                                        rocketPos.clone(),
-                                        velocity.clone(),
-                                        color,
-                                        size,
-                                        component.lifetime,
-                                        gravity * (0.8 + Math.random() * 0.4),
-                                        shape
-                                    );
-                                    if (index !== -1) this.particles[shape].add(index);
-                                }
-                                break;
-
-                            case 'ring':
-                                for (let i = 0; i < particleCount; i++) {
-                                    const angle = (i / particleCount) * Math.PI * 2;
-                                    const magnitude = speed * spread;
-                                    velocity.set(
-                                        Math.cos(angle) * magnitude,
-                                        Math.sin(angle) * magnitude,
-                                        0
-                                    );
-
-                                    const index = this.particleSystem.addParticle(
-                                        rocketPos.clone(),
-                                        velocity.clone(),
-                                        color,
-                                        size,
-                                        component.lifetime,
-                                        gravity * (0.8 + Math.random() * 0.2),
-                                        shape
-                                    );
-                                    if (index !== -1) this.particles[shape].add(index);
-                                }
-                                break;
-
-                            case 'burst':
-                                for (let i = 0; i < particleCount; i++) {
-                                    const angle = Math.random() * Math.PI * 2;
-                                    const magnitude = speed * Math.random() * spread;
-                                    velocity.set(
-                                        Math.cos(angle) * magnitude,
-                                        Math.sin(angle) * magnitude,
-                                        0
-                                    );
-
-                                    const index = this.particleSystem.addParticle(
-                                        rocketPos.clone(),
-                                        velocity.clone(),
-                                        color,
-                                        size,
-                                        component.lifetime,
-                                        gravity,
-                                        shape
-                                    );
-                                    if (index !== -1) this.particles[shape].add(index);
-                                }
-                                break;
-
-                            case 'palm':
-                                const branches = 8;
-                                const particlesPerBranch = Math.floor(particleCount / branches);
-                                for (let i = 0; i < particleCount; i++) {
-                                    const branch = i % branches;
-                                    const particleInBranch = Math.floor(i / branches);
-
-                                    const baseAngle = (branch / branches) * Math.PI * 2;
-                                    const angleSpread = 0.3 * (particleInBranch / particlesPerBranch);
-                                    const angle = baseAngle + (Math.random() - 0.5) * angleSpread;
-
-                                    const magnitude = speed * (1.2 + particleInBranch / particlesPerBranch) * spread;
-                                    velocity.set(
-                                        Math.cos(angle) * magnitude,
-                                        Math.sin(angle) * magnitude,
-                                        0
-                                    );
-
-                                    const index = this.particleSystem.addParticle(
-                                        rocketPos.clone(),
-                                        velocity.clone(),
-                                        color,
-                                        size,
-                                        component.lifetime,
-                                        gravity,
-                                        shape
-                                    );
-                                    if (index !== -1) this.particles[shape].add(index);
-                                }
-                                break;
-
-                            case 'willow':
-                                const emissionAngle = 0.5;
-                                for (let i = 0; i < particleCount; i++) {
-                                    const angleOffset = (Math.random() * 1.2 - 0.5) * emissionAngle;
-                                    const angle = (-Math.PI / 2) + angleOffset;
-                                    const horizontalDrift = (Math.random() - 0.5) * 10;
-                                    const initialSpeed = speed * (0.7 + Math.random() * 0.3) * spread;
-                                    velocity.set(
-                                        Math.cos(angle) * initialSpeed + horizontalDrift,
-                                        Math.sin(angle) * initialSpeed,
-                                        0
-                                    );
-
-                                    const index = this.particleSystem.addParticle(
-                                        rocketPos.clone(),
-                                        velocity.clone(),
-                                        color,
-                                        size,
-                                        component.lifetime,
-                                        gravity,
-                                        shape
-                                    );
-                                    if (index !== -1) this.particles[shape].add(index);
-                                }
-                                break;
-
-                            case 'heart':
-                                const heartScale = spread;
-                                for (let i = 0; i < particleCount; i++) {
-                                    const t = (i / particleCount) * Math.PI * 2;
-                                    const xOffset = heartScale * (16 * Math.pow(Math.sin(t), 3));
-                                    const yOffset = heartScale * (13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t));
-                                    const angle = Math.atan2(yOffset, xOffset);
-                                    const magnitude = speed * Math.sqrt(xOffset * xOffset + yOffset * yOffset) * 0.05;
-                                    velocity.set(
-                                        Math.cos(angle) * magnitude,
-                                        Math.sin(angle) * magnitude,
-                                        0
-                                    );
-
-                                    const index = this.particleSystem.addParticle(
-                                        rocketPos.clone(),
-                                        velocity.clone(),
-                                        color,
-                                        size,
-                                        component.lifetime,
-                                        gravity * (0.8 + Math.random() * 0.2),
-                                        shape
-                                    );
-                                    if (index !== -1) this.particles[shape].add(index);
-                                }
-                                break;
-
-
-                            case 'helix':
-                                // Configuration for helix pattern
-                                const helixRadius = .5;              // Base radius of the helix
-                                const riseSpeed = speed * 0.5 * spread;      // How fast particles go up
-                                const rotationSpeed = 1;            // How fast the helix rotates
-                                const particlesPerStream = 100;     // Particles per helix stream
-                                const verticalSpacing = 0.1;        // Reduced from 0.2 to make it more compact
-                                const spreadFactor = 0.1;          // How much random spread to add
-
-                                // Create the two intertwining helices
-                                for (let stream = 0; stream < 2; stream++) {
-                                    const streamOffset = stream * Math.PI; // Offset second stream by 180 degrees
-
-                                    for (let i = 0; i < particlesPerStream; i++) {
-                                        const t = (i / particlesPerStream) * Math.PI * 2;
-                                        const angle = t + streamOffset;
-
-                                        // Add some randomness to the position
-                                        const randomSpread = (Math.random() - 0.5) * spreadFactor;
-
-                                        const offset = new THREE.Vector3(
-                                            Math.cos(angle) * helixRadius * (1 + randomSpread),
-                                            -i * verticalSpacing,  // More compact vertical spacing
-                                            Math.sin(angle) * helixRadius * (1 + randomSpread)
-                                        );
-
-                                        velocity.set(
-                                            -Math.sin(angle) * rotationSpeed,
-                                            riseSpeed * (1 + randomSpread), // Slight variation in rise speed
-                                            Math.cos(angle) * rotationSpeed
-                                        );
-                                        const particleColor = color.clone();
-                                        if (stream === 1) {
-                                            const hsl = {};
-                                            particleColor.getHSL(hsl);
-                                            // Add 0.5 (180 degrees) to hue for complementary color
-                                            // Use modulo 1 to wrap around the color wheel
-                                            hsl.h = (hsl.h + 0.5) % 1;
-                                            // Keep same saturation and lightness
-                                            particleColor.setHSL(hsl.h, hsl.s, hsl.l);
-                                        }
-
-                                        const index = this.particleSystem.addParticle(
-                                            rocketPos.clone(),
-                                            velocity.clone().add(offset),
-                                            particleColor,
-                                            size * 0.8,
-                                            component.lifetime * 0.8, // Slightly shorter lifetime
-                                            gravity * 0.2,
-                                            shape
-                                        );
-
-                                        if (index !== -1) this.particles[shape].add(index);
-                                    }
-                                }
-                                break;
-
-                            case 'star':
-                                const spikes = 5;
-                                const outerRadius = speed * spread;
-                                const innerRadius = speed * 0.5 * spread;
-                                const pointsPerStar = spikes * 2;
-
-                                for (let i = 0; i < particleCount; i++) {
-                                    const starPoint = i % pointsPerStar;
-                                    const starCopy = Math.floor(i / pointsPerStar);
-
-                                    let radius = (starPoint % 2 === 0) ? outerRadius : innerRadius;
-                                    let angle = (starPoint / pointsPerStar) * Math.PI * 2;
-
-                                    // Make the outer edges more dense
-                                    if (i > pointsPerStar && (starPoint % 2 === 0)) {
-                                        radius = outerRadius * 1 + (Math.random() * 0.2 - 0.1) * (starCopy > 0 ? 1 : 0);
-                                    }
-
-                                    const radiusVariation = 1 + (Math.random() * 0.2 - 0.1) * (starCopy > 0 ? 1 : 0);
-                                    const angleVariation = (Math.random() * 0.1 - 0.05) * (starCopy > 0 ? 1 : 0);
-
-                                    velocity.set(
-                                        Math.cos(angle + angleVariation) * radius * radiusVariation,
-                                        Math.sin(angle + angleVariation) * radius * radiusVariation,
-                                        0
-                                    );
-
-                                    const index = this.particleSystem.addParticle(
-                                        rocketPos.clone(),
-                                        velocity.clone(),
-                                        color,
-                                        size,
-                                        component.lifetime,
-                                        gravity,
-                                        shape // Ensure shape is respected
-                                    );
-                                    if (index !== -1) this.particles[shape].add(index);
-                                }
-                                break;
-
-                            default:
-                                for (let i = 0; i < particleCount; i++) {
-                                    const angle = Math.random() * Math.PI * 2;
-                                    const magnitude = speed * spread;
-                                    velocity.set(
-                                        Math.cos(angle) * magnitude,
-                                        Math.sin(angle) * magnitude,
-                                        0
-                                    );
-
-                                    const index = this.particleSystem.addParticle(
-                                        rocketPos.clone(),
-                                        velocity.clone(),
-                                        color,
-                                        size,
-                                        component.lifetime,
-                                        gravity,
-                                        shape
-                                    );
-                                    if (index !== -1) this.particles[shape].add(index);
-                                }
-                        }
-                    });
-                    this.exploded = true;
+                    this.rocket = null;
                 }
-                // Dispose method to clean up resources
-                dispose() {
-                    // Remove rocket if it exists
-                    if (this.rocket) {
-                        this.scene.remove(this.rocket);
-                        if (this.rocket.geometry) this.rocket.geometry.dispose();
-                        if (this.rocket.material) this.rocket.material.dispose();
-                        this.rocket = null;
+
+                // Remove and dispose of trail particles
+                this.trailParticles.forEach(particle => {
+                    if (particle.mesh) {
+                        this.scene.remove(particle.mesh);
+                        if (particle.mesh.geometry) particle.mesh.geometry.dispose();
+                        if (particle.mesh.material) {
+                            if (particle.mesh.material.map) particle.mesh.material.map.dispose();
+                            particle.mesh.material.dispose();
+                        }
                     }
+                });
+                this.trailParticles = [];
 
-                    // Remove and dispose of trail particles
-                    this.trailParticles.forEach(particle => {
-                        if (particle.mesh) {
-                            this.scene.remove(particle.mesh);
-                            if (particle.mesh.geometry) particle.mesh.geometry.dispose();
-                            if (particle.mesh.material) {
-                                if (particle.mesh.material.map) particle.mesh.material.map.dispose();
-                                particle.mesh.material.dispose();
-                            }
-                        }
+                // Dispose of explosion particles
+                FIREWORK_CONFIG.supportedShapes.forEach(shape => {
+                    this.particles[shape].forEach(index => {
+                        // No individual disposal needed as particles are managed by InstancedParticleSystem
                     });
-                    this.trailParticles = [];
+                    this.particles[shape].clear();
+                });
 
-                    // Dispose of explosion particles
-                    FIREWORK_CONFIG.supportedShapes.forEach(shape => {
-                        this.particles[shape].forEach(index => {
-                            // No individual disposal needed as particles are managed by InstancedParticleSystem
-                        });
-                        this.particles[shape].clear();
-                    });
-
-                    this.alive = false;
-                }
+                this.alive = false;
             }
+        }
 
 
-            // Initialize game when DOM is loaded
-            document.addEventListener('DOMContentLoaded', () => {
-                window.game = new FireworkGame();
-            });
-        </script>
-    </body>
+        // Initialize game when DOM is loaded
+        document.addEventListener('DOMContentLoaded', () => {
+            window.game = new FireworkGame();
+        });
+    </script>
+</body>
 
 </html>
