@@ -19,6 +19,7 @@
             touch-action: manipulation;
         }
 
+
         #game-container {
             position: fixed;
             top: 0;
@@ -29,80 +30,50 @@
             z-index: 0;
         }
 
+        /* Create a container for both elements */
+        .top-bar-container {
+            position: fixed;
+            top: 10px;     
+            left: 0;
+            right: 0;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 10px;
+            padding: 0 10px;
+            z-index: 1000;
+        }
+
         .tab-bar {
-            position: absolute;
-            top: 60px;
+            position: relative;  
+            top: 0;             /* Remove fixed positioning */
             left: 0;
             padding: 8px;
             box-sizing: border-box;
             background: rgba(10, 14, 21, 0.9);
-            z-index: 1000;
             width: fit-content;
-            max-width: 100%;
+            display: flex;
+            align-items: center;
+            flex-shrink: 0;     /* Prevent tab bar from shrinking */
         }
 
-        .game-ui {
-            position: absolute;
-            top: 110px;
-            /* Adjusted to account for smaller tab-bar height */
-            left: 0;
-            max-width: 400px;
-            display: grid;
-            grid-template-columns: 1fr;
-            height: auto;
-            gap: 10px;
-            padding: 15px;
-            box-sizing: border-box;
-            background: rgba(10, 14, 21, 0.9);
-            z-index: 1000;
-        }
-
-        .panel {
-            background: rgba(26, 31, 42, 0.95);
-            padding: 10px;
-            border-radius: 10px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .crafting-option {
-            margin: 5px 0;
-        }
-
-        .crafting-option label {
-            display: block;
-            margin-bottom: 5px;
-        }
-
-        .crafting-option select,
-        .crafting-option input[type="range"],
-        .crafting-option input[type="color"],
-        .crafting-option input[type="text"] {
-            width: 100%;
-            padding: 5px;
-            margin-bottom: 10px;
-            background: #2c3e50;
-            border: 1px solid #34495e;
-            color: white;
-            border-radius: 4px;
-        }
-
-        button {
-            background: #3b4f6b;
+        .collapse-button {
+            height: 100%;
+            width: 10px;
+            /* Narrow width */
+            background: #2e3f57;
             border: none;
             color: white;
-            padding: 8px;
-            border-radius: 4px;
             cursor: pointer;
-            margin: 10px 0;
-            font-weight: bold;
-            transition: background-color 0.3s;
-            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 5px;
+            /* Space between button and tabs */
         }
 
-        button:hover {
-            background: #2e3f57;
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+        .collapse-button:hover {
+            background: #1a1f2a;
         }
 
         .tabs {
@@ -114,6 +85,15 @@
             gap: 5px;
             padding: 2px;
             flex-wrap: nowrap;
+            transition: max-width 0.3s ease;
+            /* Smooth transition */
+        }
+
+        .tabs.collapsed {
+            max-width: 0;
+            overflow: hidden;
+            opacity: 0;
+            visibility: hidden;
         }
 
         .tab {
@@ -177,15 +157,6 @@
             margin-top: 20px;
             padding-top: 15px;
             border-top: 1px solid #34495e;
-        }
-
-        .tab-content {
-            display: none;
-            max-width: 400px;
-        }
-
-        .tab-content.active {
-            display: block;
         }
 
         /* Styles for Components */
@@ -318,53 +289,6 @@
             background: #2ecc71;
         }
 
-        /* Adjustments for Mobile Compatibility */
-        @media only screen and (max-width: 600px) {
-            .tab-bar {
-                top: 60px;
-            }
-
-            .game-ui {
-                top: 110px;
-                left: 10px;
-                max-width: 90%;
-                width: auto;
-                margin: 0;
-                border-radius: 10px;
-                padding: 10px;
-                overflow-y: auto;
-                max-height: calc(100vh - 130px);
-            }
-
-            .tabs {
-                flex-direction: row;
-                flex-wrap: nowrap;
-            }
-
-            .tab {
-                margin-right: 5px;
-            }
-
-            button {
-                padding: 12px;
-                font-size: 1em;
-            }
-
-            .flex-row {
-                flex-direction: column;
-            }
-
-            .sparkles-counter {
-                position: fixed;
-                top: 10px;
-                left: 10px;
-                right: 10px;
-                width: auto;
-                margin: 0;
-                text-align: center;
-                z-index: 1001;
-            }
-        }
 
         /* Styles for Global Notification */
         .notification {
@@ -463,25 +387,23 @@
         }
 
         .sparkles-counter {
-            position: fixed;
-            top: 10px;
-            left: 10px;
-            right: 10px;
+            position: relative; 
+            margin-left: auto; 
             font-size: 1.1em;
-            text-align: center;
+            text-align: right;
             padding: 8px;
-            background: #0a0e15;
-            border-radius: 10px;
-            border: 1px solid #25344a;
-            z-index: 1001;
+            background: none;
+            border: none;
+            color: rgba(255, 255, 255, 0.8);
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+            flex-shrink: 0;
+            align-self: flex-start;
+            margin-top: 8px;
         }
 
-        /* Webkit browsers (Chrome, Safari, newer Edge) */
         ::-webkit-scrollbar {
             width: 6px;
-            /* Width of vertical scrollbar */
             height: 6px;
-            /* Height of horizontal scrollbar */
         }
 
         ::-webkit-scrollbar-track {
@@ -503,88 +425,226 @@
             scrollbar-width: thin;
             scrollbar-color: rgba(255, 255, 255, 0.2) rgba(0, 0, 0, 0.1);
         }
+
+        /* Existing styles */
+
+        /* Hide all tab content by default */
+        .tab-content {
+            position: absolute;
+            top: 110px;
+            left: 0;
+            max-width: 400px;
+            display: none;
+            /* Hide by default */
+            gap: 10px;
+            padding: 15px;
+            box-sizing: border-box;
+            background: rgba(10, 14, 21, 0.9);
+            z-index: 1000;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Optional: Smooth transition for tab content visibility */
+        .tab-content {
+            transition: opacity 0.3s ease;
+            opacity: 0;
+            height: 0;
+            overflow: hidden;
+        }
+
+        .tab-content.active {
+            opacity: 1;
+            height: auto;
+        }
+
+        /* Add these styles after the .tab-content styles */
+        button {
+            background: #3b4f6b;
+            border: none;
+            color: white;
+            padding: 4px 8px;
+            /* Reduced padding */
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px 0;
+            /* Reduced margin */
+            font-weight: bold;
+            transition: background-color 0.3s;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+        }
+
+        button:hover {
+            background: #4a6485;
+        }
+
+        .crafting-option {
+            margin: 3px 0;
+            /* Reduced margin */
+        }
+
+        .crafting-option label {
+            display: block;
+            margin-bottom: 2px;
+            /* Reduced margin */
+            font-size: 0.9em;
+            /* Slightly smaller text */
+        }
+
+        .crafting-option select,
+        .crafting-option input[type="range"],
+        .crafting-option input[type="color"],
+        .crafting-option input[type="text"] {
+            width: 100%;
+            padding: 3px;
+            /* Reduced padding */
+            margin-bottom: 5px;
+            /* Reduced margin */
+            background: #2c3e50;
+            border: 1px solid #34495e;
+            color: white;
+            border-radius: 4px;
+            height: 25px;
+            /* Consistent height for all inputs */
+        }
+
+        .crafting-option input[type="range"] {
+            -webkit-appearance: none;
+            height: 6px;
+            /* Reduced height */
+            background: #2c3e50;
+            border-radius: 3px;
+            outline: none;
+            padding: 0;
+            /* Remove padding for range input */
+        }
+
+        .crafting-option input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 14px;
+            /* Reduced size */
+            height: 14px;
+            /* Reduced size */
+            background: #45a29e;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        .crafting-option input[type="range"]::-moz-range-thumb {
+            width: 16px;
+            height: 16px;
+            background: #45a29e;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        .panel {
+            background: rgba(26, 31, 42, 0.95);
+            padding: 10px;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .scrollable-panel {
+            max-height: calc(100vh - 150px);
+            overflow-y: auto;
+            padding: 15px;
+        }
+
+        /* Add this specific style for the recipe name input */
+        #recipe-name {
+            height: 20px;
+            /* Even shorter than other inputs */
+            line-height: 20px;
+            /* Match the height for text alignment */
+            padding: 2px 5px;
+            /* Reduced padding */
+        }
     </style>
 </head>
 
 <body>
     <div id="game-container"></div>
 
-    <div class="sparkles-counter">
-        Total Sparkles: <span id="sparkles-count">0</span>
-    </div>
-
-    <div class="tab-bar">
-        <div class="tabs">
-            <div class="tab" id="crafting-tab">Crafting</div>
-            <div class="tab" id="incremental-tab">Incremental</div>
-            <div class="tab" id="auto-launcher-tab">Auto-Launchers</div>
+    <div class="top-bar-container">
+        <div class="tab-bar">
+            <button id="collapse-button" class="collapse-button">☰</button>
+            <div class="tabs">
+                <div class="tab" id="crafting-tab">Crafting</div>
+                <div class="tab" id="incremental-tab">Incremental</div>
+                <div class="tab" id="auto-launcher-tab">Auto-Launchers</div>
+            </div>
+        </div>
+        <div class="sparkles-counter">
+            Sparkles: <span id="sparkles-count">0</span>
         </div>
     </div>
 
-    <div class="game-ui">
-        <div class="tab-content" id="crafting-content">
-            <div class="panel scrollable-panel">
-                <h2 class="panel-title">Firework Crafting</h2>
+    <!-- Remove the game-ui wrapper and keep just the content divs -->
+    <div class="tab-content" id="crafting-content">
+        <div class="panel scrollable-panel">
+            <h2 class="panel-title">Firework Crafting</h2>
 
-                <div class="crafting-option">
-                    <label>Trail Effect:</label>
-                    <select id="recipe-trail-effect">
-                        <option value="fade">Fade</option>
-                        <option value="sparkle">Sparkle</option>
-                        <option value="rainbow">Rainbow Gradient</option>
-                        <option value="comet">Comet Tail</option>
-                    </select>
-                </div>
+            <div class="crafting-option">
+                <label>Trail Effect:</label>
+                <select id="recipe-trail-effect">
+                    <option value="fade">Fade</option>
+                    <option value="sparkle">Sparkle</option>
+                    <option value="rainbow">Rainbow Gradient</option>
+                    <option value="comet">Comet Tail</option>
+                </select>
+            </div>
 
-                <!-- Components List -->
-                <div id="components-list"></div>
-                <button id="add-component">Add Component</button>
+            <!-- Components List -->
+            <div id="components-list"></div>
+            <button id="add-component">Add Component</button>
 
-                <div class="crafting-option">
-                    <label>Recipe Name:</label>
-                    <input type="text" id="recipe-name" placeholder="Enter recipe name">
-                </div>
+            <div class="crafting-option">
+                <label>Recipe Name:</label>
+                <input type="text" id="recipe-name" placeholder="Enter recipe name">
+            </div>
 
-                <button id="save-recipe">Save Recipe</button>
-                <button id="erase-recipes">Erase All Recipes</button>
+            <button id="save-recipe">Save Recipe</button>
+            <button id="erase-recipes">Erase All Recipes</button>
 
-                <div class="saved-recipes">
-                    <h3>Saved Recipes</h3>
-                    <div id="recipe-list"></div>
-                </div>
+            <div class="saved-recipes">
+                <h3>Saved Recipes</h3>
+                <div id="recipe-list"></div>
+            </div>
 
-                <div class="crafting-option"
-                    style="margin-top: 20px; border-top: 1px solid #34495e; padding-top: 20px;">
-                    <label>Background Color:</label>
-                    <input type="color" id="background-color" value="#000000">
-                </div>
+            <div class="crafting-option" style="margin-top: 20px; border-top: 1px solid #34495e; padding-top: 20px;">
+                <label>Background Color:</label>
+                <input type="color" id="background-color" value="#000000">
             </div>
         </div>
+    </div>
 
-        <div class="tab-content" id="incremental-content">
-            <div class="panel scrollable-panel">
-                <h2 class="panel-title">Firework Factory</h2>
+    <div class="tab-content" id="incremental-content">
+        <div class="panel scrollable-panel">
+            <h2 class="panel-title">Firework Factory</h2>
 
-                <div class="firework-counter">
-                    Total Fireworks Launched: <span id="firework-count">0</span>
-                </div>
-
-                <div class="auto-launcher">
-                    <h3>Auto-Launchers Owned: <span id="auto-launcher-level">0</span></h3>
-                    <p>Cost: <span id="auto-launcher-cost">10</span> sparkles</p>
-                    <button id="buy-auto-launcher">Buy Auto-Launcher</button>
-                </div>
-
-                <button id="reset-game">Reset Everything</button>
+            <div class="firework-counter">
+                Total Fireworks Launched: <span id="firework-count">0</span>
             </div>
+
+            <div class="auto-launcher">
+                <h3>Auto-Launchers Owned: <span id="auto-launcher-level">0</span></h3>
+                <p>Cost: <span id="auto-launcher-cost">10</span> sparkles</p>
+                <button id="buy-auto-launcher">Buy Auto-Launcher</button>
+            </div>
+
+            <button id="reset-game">Reset Everything</button>
         </div>
+    </div>
 
-        <!-- New Auto-Launchers Tab Content -->
-        <div class="tab-content" id="auto-launcher-content">
-            <div class="panel scrollable-panel">
-                <h2 class="panel-title">Manage Auto-Launchers</h2>
-                <div id="launcher-list"></div>
-            </div>
+    <!-- New Auto-Launchers Tab Content -->
+    <div class="tab-content" id="auto-launcher-content">
+        <div class="panel scrollable-panel">
+            <h2 class="panel-title">Manage Auto-Launchers</h2>
+            <div id="launcher-list"></div>
         </div>
     </div>
 
@@ -611,7 +671,7 @@
             trailLength: 10,          // Length of the rocket trail
             rocketSize: 0.5,          // Size of the firework rocket
             minExplosionHeightPercent: 0.4, // Minimum explosion height (40% of the view)
-            maxExplosionHeightPercent: 0.9,  // Maximum explosion height (90% of the view)
+            maxExplosionHeightPercent: 0.8,  // Maximum explosion height (90% of the view)
             patternGravities: {       // Different gravity per pattern
                 spherical: 9.81,
                 ring: 8.0,
@@ -1002,10 +1062,13 @@
                 this.debugDiv = div;
 
 
-                this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+                this.renderer = new THREE.WebGLRenderer({
+                    antialias: true,
+                    alpha: true  // Enable transparency
+                });
+                this.renderer.setClearColor(0x000000, 0); // Set clear color with 0 opacity
                 this.renderer.setPixelRatio(window.devicePixelRatio);
                 this.renderer.setSize(window.innerWidth, window.innerHeight);
-                this.renderer.setClearColor(0x000000, 1);
 
                 const gameContainer = document.getElementById('game-container');
                 gameContainer.appendChild(this.renderer.domElement);
@@ -1148,10 +1211,8 @@
                                 this.draggingLauncher = this.autoLaunchers[launcherIndex];
                                 this.isDragging = true;
 
-                                // Change these lines to use document instead of window
                                 document.addEventListener('pointermove', this.pointerMoveHandler);
                                 document.addEventListener('pointerup', this.pointerUpHandler);
-                                // Add this new line
                                 document.addEventListener('pointercancel', this.pointerUpHandler);
 
                                 return;
@@ -1164,7 +1225,22 @@
                 };
                 this.renderer.domElement.addEventListener('pointerdown', this.pointerDownHandler);
 
-                // [No other event listeners need to be modified here]
+                document.getElementById('collapse-button').addEventListener('click', function () {
+                    const tabs = document.querySelector('.tabs');
+                    const activeTabContent = document.querySelector('.tab-content.active');
+
+                    if (tabs.classList.contains('collapsed')) {
+                        // Expand the tab bar
+                        tabs.classList.remove('collapsed');
+                    } else {
+                        // Collapse the tab bar
+                        tabs.classList.add('collapsed');
+                        // Deactivate the active tab content
+                        if (activeTabContent) {
+                            activeTabContent.classList.remove('active');
+                        }
+                    }
+                });
             }
 
             // **Add Pointer Move Handler**
@@ -1532,7 +1608,7 @@
                 const launcherMesh = new THREE.Mesh(geometry, material);
                 const bounds = this.getViewBounds();
                 const x = bounds.minX + launcher.xPercent * (bounds.maxX - bounds.minX);
-                const y = bounds.minY + height*0.5 ; // Adjust Y position to stay visible
+                const y = bounds.minY + height * 0.5; // Adjust Y position to stay visible
                 launcherMesh.position.set(x, y, 0);
                 this.scene.add(launcherMesh);
 
@@ -2477,42 +2553,37 @@
                         case 'helix':
                             // Configuration for helix pattern
                             const helixRadius = .5;              // Base radius of the helix
-                            const riseSpeed = speed * 0.5 * spread;      // How fast particles go up
-                            const rotationSpeed = 1;            // How fast the helix rotates
+                            const riseSpeed = speed * 0.1 * spread;      // How fast particles go up
+                            const rotationSpeed = 2;            // How fast the helix rotates
                             const particlesPerStream = 100;     // Particles per helix stream
                             const verticalSpacing = 0.1;        // Reduced from 0.2 to make it more compact
                             const spreadFactor = 0.1;          // How much random spread to add
 
-                            // Create the two intertwining helices
                             for (let stream = 0; stream < 2; stream++) {
-                                const streamOffset = stream * Math.PI; // Offset second stream by 180 degrees
+                                const streamOffset = stream * Math.PI;
 
                                 for (let i = 0; i < particlesPerStream; i++) {
                                     const t = (i / particlesPerStream) * Math.PI * 2;
                                     const angle = t + streamOffset;
 
-                                    // Add some randomness to the position
                                     const randomSpread = (Math.random() - 0.5) * spreadFactor;
 
                                     const offset = new THREE.Vector3(
                                         Math.cos(angle) * helixRadius * (1 + randomSpread),
-                                        -i * verticalSpacing,  // More compact vertical spacing
+                                        -i * verticalSpacing,
                                         Math.sin(angle) * helixRadius * (1 + randomSpread)
                                     );
 
                                     velocity.set(
                                         -Math.sin(angle) * rotationSpeed,
-                                        riseSpeed * (1 + randomSpread), // Slight variation in rise speed
+                                        riseSpeed * (1 + randomSpread),
                                         Math.cos(angle) * rotationSpeed
                                     );
                                     const particleColor = color.clone();
                                     if (stream === 1) {
                                         const hsl = {};
                                         particleColor.getHSL(hsl);
-                                        // Add 0.5 (180 degrees) to hue for complementary color
-                                        // Use modulo 1 to wrap around the color wheel
                                         hsl.h = (hsl.h + 0.5) % 1;
-                                        // Keep same saturation and lightness
                                         particleColor.setHSL(hsl.h, hsl.s, hsl.l);
                                     }
 
@@ -2520,8 +2591,8 @@
                                         rocketPos.clone(),
                                         velocity.clone().add(offset),
                                         particleColor,
-                                        size * 0.8,
-                                        component.lifetime * 0.8, // Slightly shorter lifetime
+                                        size,
+                                        component.lifetime,
                                         gravity * 0.2,
                                         shape
                                     );
@@ -2565,7 +2636,7 @@
                                     size,
                                     component.lifetime,
                                     gravity,
-                                    shape // Ensure shape is respected
+                                    shape
                                 );
                                 if (index !== -1) this.particles[shape].add(index);
                             }
@@ -2596,9 +2667,8 @@
                 });
                 this.exploded = true;
             }
-            // Dispose method to clean up resources
+
             dispose() {
-                // Remove rocket if it exists
                 if (this.rocket) {
                     this.scene.remove(this.rocket);
                     if (this.rocket.geometry) this.rocket.geometry.dispose();
@@ -2606,7 +2676,6 @@
                     this.rocket = null;
                 }
 
-                // Remove and dispose of trail particles
                 this.trailParticles.forEach(particle => {
                     if (particle.mesh) {
                         this.scene.remove(particle.mesh);
@@ -2619,10 +2688,8 @@
                 });
                 this.trailParticles = [];
 
-                // Dispose of explosion particles
                 FIREWORK_CONFIG.supportedShapes.forEach(shape => {
                     this.particles[shape].forEach(index => {
-                        // No individual disposal needed as particles are managed by InstancedParticleSystem
                     });
                     this.particles[shape].clear();
                 });
@@ -2636,6 +2703,7 @@
         document.addEventListener('DOMContentLoaded', () => {
             window.game = new FireworkGame();
         });
+
     </script>
 </body>
 
