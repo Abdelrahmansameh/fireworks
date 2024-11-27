@@ -127,7 +127,7 @@
         .sparkles-counter {
             font-size: 1.1em;
             margin-top: 10px;
-            text-align: center;
+            align-self: flex-start;
             padding: 8px;
             background: #0a0e15;
             border-radius: 10px;
@@ -638,8 +638,8 @@
     <script>
         // Global configuration
         const FIREWORK_CONFIG = {
-            baseSpeed: 10,          
-            gravity: 9.81,            
+            baseSpeed: 10,
+            gravity: 9.81,
             particleSize: 1.0,        // Base particle size
             particleDensity: 100,     // Base number of particles
             ascentSpeed: 40,          // Speed of the firework rocket ascent
@@ -1060,16 +1060,14 @@
                 this.renderer.setPixelRatio(window.devicePixelRatio);
 
                 // Update auto-launcher positions
-                if (this.autoLaunchers && this.autoLaunchers.length > 0) {
-                    const bounds = this.getViewBounds();
-                    this.autoLaunchers.forEach(launcher => {
-                        const x = bounds.minX + launcher.xPercent * (bounds.maxX - bounds.minX);
-                        const y = bounds.minY + 5; // Adjust Y position to stay visible
-                        if (launcher.mesh) {
-                            launcher.mesh.position.set(x, y, 0);
-                        }
-                    });
-                }
+                const bounds = this.getViewBounds();
+                this.autoLaunchers.forEach(launcher => {
+                    const x = bounds.minX + launcher.xPercent * (bounds.maxX - bounds.minX);
+                    const y = bounds.minY + 3; // Fixed height from bottom of screen
+                    if (launcher.mesh) {
+                        launcher.mesh.position.set(x, y, 0);
+                    }
+                });
             }
 
             adjustConfigurations() {
@@ -1582,16 +1580,15 @@
                 const geometry = new THREE.PlaneGeometry(width, height);
                 const material = new THREE.MeshBasicMaterial({
                     color: 0xffffff,
-                    side: THREE.DoubleSide // Makes the plane visible from both sides
+                    side: THREE.DoubleSide
                 });
                 const launcherMesh = new THREE.Mesh(geometry, material);
                 const bounds = this.getViewBounds();
                 const x = bounds.minX + launcher.xPercent * (bounds.maxX - bounds.minX);
-                const y = bounds.minY + height * 0.5; // Adjust Y position to stay visible
+                const y = bounds.minY + 3; // Fixed height from bottom of screen
                 launcherMesh.position.set(x, y, 0);
                 this.scene.add(launcherMesh);
 
-                // Store the mesh reference in the launcher object
                 launcher.mesh = launcherMesh;
             }
 
