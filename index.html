@@ -40,13 +40,15 @@
             flex-wrap: wrap;
             align-items: center;
             gap: 10px;
-            padding: 0 10px;
+            padding: 0;
+            border: none;
+            background: none;
             z-index: 1000;
         }
 
         .tab-bar {
-            position: relative;  
-            top: 0;             /* Remove fixed positioning */
+            position: relative;
+            top: 0;
             left: 0;
             padding: 8px;
             box-sizing: border-box;
@@ -54,7 +56,8 @@
             width: fit-content;
             display: flex;
             align-items: center;
-            flex-shrink: 0;     /* Prevent tab bar from shrinking */
+            flex-shrink: 0;
+            max-width: calc(100vw - 20px); 
         }
 
         .collapse-button {
@@ -86,7 +89,6 @@
             padding: 2px;
             flex-wrap: nowrap;
             transition: max-width 0.3s ease;
-            /* Smooth transition */
         }
 
         .tabs.collapsed {
@@ -97,7 +99,7 @@
         }
 
         .tab {
-            flex: 0 0 auto;
+            flex: 0 0 auto; 
             min-width: 120px;
             text-align: center;
             padding: 6px 15px;
@@ -114,18 +116,6 @@
             color: #45a29e;
         }
 
-        .tabs::-webkit-scrollbar {
-            height: 8px;
-        }
-
-        .tabs::-webkit-scrollbar-thumb {
-            background: #2e3f57;
-            border-radius: 4px;
-        }
-
-        .tabs::-webkit-scrollbar-thumb:hover {
-            background: #3b4f6b;
-        }
 
         .panel-title {
             text-align: center;
@@ -161,11 +151,12 @@
 
         /* Styles for Components */
         .component {
-            border: 1px solid #34495e;
-            padding: 10px;
-            margin-bottom: 10px;
-            border-radius: 5px;
-            background: #1a1f2a;
+            border: none;                  /* Remove border */
+            padding: 0;                    /* Remove padding */
+            margin-bottom: 0;              /* Remove bottom margin */
+            background: none;              /* Remove background */
+            border-radius: 0;              /* Remove border radius */
+            box-shadow: none;              /* Remove box shadow */
         }
 
         .component h3 {
@@ -173,16 +164,29 @@
             color: #45a29e;
         }
 
-        .remove-component {
-            background: #c0392b;
-            margin-top: 10px;
+        .remove-component,
+        .component button {
+            background: none;              /* Remove background */
+            border: none;                  /* Remove border */
+            padding: 0;                    /* Remove padding */
+            margin: 5px 0;                 /* Minimal margin */
+            color: #e74c3c;                /* Set text color */
+            cursor: pointer;               /* Pointer cursor on hover */
+            font-weight: bold;             /* Bold text for visibility */
+            text-shadow: none;             /* Remove text shadow */
         }
 
-        .remove-component:hover {
-            background: #e74c3c;
+        .remove-component:hover,
+        .component button:hover {
+            color: #c0392b;                /* Darker red on hover */
         }
 
         #components-list {
+            border: none;                  /* Remove border */
+            padding: 0;                    /* Remove padding */
+            background: none;              /* Remove background */
+            box-shadow: none;              /* Remove box shadow */
+            margin: 0;                     /* Remove margin */
             max-height: 300px;
             overflow-y: auto;
             overflow-x: hidden;
@@ -481,16 +485,17 @@
         }
 
         .crafting-option {
-            margin: 3px 0;
-            /* Reduced margin */
+            margin: 0;                     /* Remove margin */
+            padding: 0;                    /* Remove padding */
+            border: none;                  /* Remove border */
+            background: none;              /* Remove background */
         }
 
         .crafting-option label {
-            display: block;
-            margin-bottom: 2px;
-            /* Reduced margin */
-            font-size: 0.9em;
-            /* Slightly smaller text */
+            margin: 0 0 5px 0;             /* Minimal bottom margin */
+            font-size: 0.9em;              /* Slightly smaller text */
+            color: #ffffff;                /* Ensure text is visible */
+            display: block;                /* Ensure labels are on their own line */
         }
 
         .crafting-option select,
@@ -498,16 +503,14 @@
         .crafting-option input[type="color"],
         .crafting-option input[type="text"] {
             width: 100%;
-            padding: 3px;
-            /* Reduced padding */
-            margin-bottom: 5px;
-            /* Reduced margin */
-            background: #2c3e50;
-            border: 1px solid #34495e;
-            color: white;
-            border-radius: 4px;
-            height: 25px;
-            /* Consistent height for all inputs */
+            padding: 5px;                  /* Minimal padding for usability */
+            margin-bottom: 10px;           /* Minimal bottom margin */
+            background: #2c3e50;           /* Keep input backgrounds consistent */
+            border: none;                  /* Remove borders */
+            color: white;                  /* Ensure text is readable */
+            border-radius: 0;              /* Remove border radius */
+            height: 30px;                  /* Consistent height */
+            box-shadow: none;              /* Remove box shadow */
         }
 
         .crafting-option input[type="range"] {
