@@ -19,7 +19,6 @@
             touch-action: manipulation;
         }
 
-
         #game-container {
             position: fixed;
             top: 0;
@@ -70,7 +69,6 @@
             justify-content: center;
             margin-right: 3px;
             padding: 6px 10px;
-
         }
 
         .collapse-button:hover {
@@ -113,7 +111,6 @@
             background: #1a1f2a;
             color: #45a29e;
         }
-
 
         .panel-title {
             text-align: center;
@@ -277,7 +274,6 @@
             background: #2ecc71;
         }
 
-
         .notification {
             display: none;
             position: fixed;
@@ -422,7 +418,6 @@
             overflow-y: auto;
         }
 
-
         .tab-content.active {
             display: block;
         }
@@ -439,17 +434,14 @@
             height: auto;
         }
 
-        /* Add these styles after the .tab-content styles */
         button {
             background: #3b4f6b;
             border: none;
             color: white;
             padding: 4px 8px;
-            /* Reduced padding */
             border-radius: 4px;
             cursor: pointer;
             margin: 5px 0;
-            /* Reduced margin */
             font-weight: bold;
             transition: background-color 0.3s;
             text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
@@ -461,30 +453,23 @@
 
         .crafting-option {
             margin: 0;
-            /* Remove margin */
             padding: 0;
-            /* Remove padding */
             border: none;
-            /* Remove border */
             background: none;
-            /* Remove background */
         }
 
         .crafting-option label {
             margin: 0 0 5px 0;
-            /* Minimal bottom margin */
             font-size: 0.9em;
-            /* Slightly smaller text */
             color: #ffffff;
-            /* Ensure text is visible */
             display: block;
-            /* Ensure labels are on their own line */
         }
 
         .crafting-option select,
         .crafting-option input[type="range"],
         .crafting-option input[type="color"],
-        .crafting-option input[type="text"] {
+        .crafting-option input[type="text"],
+        textarea {
             width: 100%;
             padding: 5px;
             margin-bottom: 10px;
@@ -554,6 +539,8 @@
                 <div class="tab" id="crafting-tab">Crafting</div>
                 <div class="tab" id="incremental-tab">Incremental</div>
                 <div class="tab" id="auto-launcher-tab">Auto-Launchers</div>
+                <!-- NEW SAVE/LOAD TAB -->
+                <div class="tab" id="data-tab">Save/Load</div>
             </div>
         </div>
         <div class="sparkles-counter">
@@ -623,6 +610,19 @@
         </div>
     </div>
 
+    <!-- NEW SAVE/LOAD CONTENT TAB -->
+    <div class="tab-content" id="data-content">
+        <div class="panel scrollable-panel">
+            <h2 class="panel-title">Save / Load</h2>
+            <button id="save-progress">Save Progress</button>
+            <div class="crafting-option">
+                <label>Serialized Data (copy/paste):</label>
+                <textarea id="serialized-data" style="width:100%;height:100px;"></textarea>
+            </div>
+            <button id="load-progress">Load Progress</button>
+        </div>
+    </div>
+
     <!-- Global Notification Area -->
     <div id="notification" class="notification" role="alert" aria-live="assertive"></div>
 
@@ -646,7 +646,7 @@
             trailLength: 10,          // Length of the rocket trail
             rocketSize: 0.5,          // Size of the firework rocket
             minExplosionHeightPercent: 0.4, // Minimum explosion height (40% of the view)
-            maxExplosionHeightPercent: 0.8,  // Maximum explosion height (90% of the view)
+            maxExplosionHeightPercent: 0.8,  // Maximum explosion height (80% of the view)
             patternGravities: {       // Different gravity per pattern
                 spherical: 9.81,
                 ring: 8.0,
@@ -657,18 +657,16 @@
                 willow: 1.0,
                 helix: 3.0
             },
-            supportedShapes: ['sphere', 'star', 'ring', 'crystalDroplet', 'sliceBurst'] // Removed galaxySweep and dragonFlame
+            supportedShapes: ['sphere', 'star', 'ring', 'crystalDroplet', 'sliceBurst']
         };
-
 
         class InstancedParticleSystem {
             constructor(scene, maxParticles = 10000) {
                 this.scene = scene;
                 this.maxParticles = maxParticles;
-                this.meshes = {}; // Key: shape, Value: InstancedMesh
-                this.activeCounts = {}; // Key: shape, Value: active particle count
+                this.meshes = {};
+                this.activeCounts = {};
 
-                // Define geometries for supported shapes
                 const geometries = {
                     sphere: new THREE.SphereGeometry(1, 8, 8),
                     star: this.createStarGeometry(),
@@ -677,7 +675,6 @@
                     sliceBurst: this.createSliceBurstGeometry()
                 };
 
-                // Create an InstancedMesh for each shape
                 FIREWORK_CONFIG.supportedShapes.forEach(shape => {
                     const geometry = geometries[shape];
                     const material = new THREE.MeshBasicMaterial({
@@ -703,18 +700,15 @@
                     scene.add(instancedMesh);
                 });
 
-                // Initialize arrays for particle properties
-                this.positions = {}; // Key: shape, Value: Array of Vector3
-                this.velocities = {}; // Key: shape, Value: Array of Vector3
-                this.colors = {}; // Key: shape, Value: Array of Color
-                this.scales = {}; // Key: shape, Value: Float32Array
-                this.lifetimes = {}; // Key: shape, Value: Float32Array
-                this.initialLifetimes = {}; // Key: shape, Value: Float32Array
-                this.gravities = {}; // Key: shape, Value: Float32Array
-                this.alphas = {}; // Key: shape, Value: Float32Array
-
-                // **Add Rotation Storage**
-                this.rotations = {}; // Key: shape, Value: Array of Quaternions
+                this.positions = {};
+                this.velocities = {};
+                this.colors = {};
+                this.scales = {};
+                this.lifetimes = {};
+                this.initialLifetimes = {};
+                this.gravities = {};
+                this.alphas = {};
+                this.rotations = {};
 
                 FIREWORK_CONFIG.supportedShapes.forEach(shape => {
                     this.positions[shape] = new Array(maxParticles).fill(null).map(() => new THREE.Vector3());
@@ -725,15 +719,10 @@
                     this.initialLifetimes[shape] = new Float32Array(maxParticles);
                     this.gravities[shape] = new Float32Array(maxParticles);
                     this.alphas[shape] = new Float32Array(maxParticles).fill(1.0);
-
-                    // Initialize rotation quaternions for each particle
                     this.rotations[shape] = new Array(maxParticles).fill(null).map(() => new THREE.Quaternion());
                 });
 
-                // Reusable objects to avoid allocations
                 this.matrix = new THREE.Matrix4();
-
-                // Placeholder for temporary storage during updates
                 this.tempData = {};
                 FIREWORK_CONFIG.supportedShapes.forEach(shape => {
                     this.tempData[shape] = {
@@ -766,7 +755,6 @@
                 const shape = new THREE.Shape();
                 const width = 2;
                 const height = 5;
-                const curvature = 0.5;
 
                 shape.moveTo(0, 0);
                 shape.bezierCurveTo(width / 2, height / 2, width / 2, height, 0, height);
@@ -791,10 +779,9 @@
 
             addParticle(position, velocity, color, scale, lifetime, gravity, shape = 'sphere') {
                 if (!FIREWORK_CONFIG.supportedShapes.includes(shape)) {
-                    shape = 'sphere'; // Fallback to sphere if unsupported
+                    shape = 'sphere';
                 }
 
-                const mesh = this.meshes[shape];
                 const activeCount = this.activeCounts[shape];
 
                 if (activeCount >= this.maxParticles) return -1;
@@ -810,10 +797,9 @@
                 this.gravities[shape][index] = gravity;
                 this.alphas[shape][index] = 1.0;
 
-                // **Calculate and Store Rotation**
                 const normalizedVelocity = velocity.clone().normalize();
-                const targetDir = normalizedVelocity.clone().multiplyScalar(-1); // Direction towards explosion center
-                const defaultFront = new THREE.Vector3(0, 1, 0); // Assuming +Y is the front
+                const targetDir = normalizedVelocity.clone().multiplyScalar(-1);
+                const defaultFront = new THREE.Vector3(0, 1, 0);
                 const quaternion = new THREE.Quaternion().setFromUnitVectors(defaultFront, targetDir);
                 this.rotations[shape][index].copy(quaternion);
 
@@ -824,26 +810,18 @@
             }
 
             updateParticleTransform(shape, index) {
-                // Clone the current position
                 const position = this.positions[shape][index].clone();
-
-                // Retrieve the stored rotation quaternion
                 const quaternion = this.rotations[shape][index].clone();
 
-                // Create a rotation matrix from the quaternion
                 this.matrix.makeRotationFromQuaternion(quaternion);
 
-                // Apply scaling
                 const scale = this.scales[shape][index];
                 this.matrix.scale(new THREE.Vector3(scale, scale, scale));
 
-                // Apply translation (position)
                 this.matrix.setPosition(position.x, position.y, position.z);
 
-                // Update the instance matrix with the new transformation
                 this.meshes[shape].setMatrixAt(index, this.matrix);
 
-                // Update the color with alpha
                 this.tempData[shape].color.copy(this.colors[shape][index]);
                 this.tempData[shape].color.multiplyScalar(this.alphas[shape][index]);
                 this.meshes[shape].setColorAt(index, this.tempData[shape].color);
@@ -854,14 +832,11 @@
                     let nextFreeIndex = 0;
                     const activeCount = this.activeCounts[shape];
 
-                    // Process all currently active particles
                     for (let i = 0; i < activeCount; i++) {
                         this.lifetimes[shape][i] -= delta;
 
-                        // Only move particle to next free slot if it's still alive
                         if (this.lifetimes[shape][i] > 0) {
                             if (i !== nextFreeIndex) {
-                                // Move particle data to next free slot
                                 this.positions[shape][nextFreeIndex].copy(this.positions[shape][i]);
                                 this.velocities[shape][nextFreeIndex].copy(this.velocities[shape][i]);
                                 this.colors[shape][nextFreeIndex].copy(this.colors[shape][i]);
@@ -870,36 +845,27 @@
                                 this.initialLifetimes[shape][nextFreeIndex] = this.initialLifetimes[shape][i];
                                 this.gravities[shape][nextFreeIndex] = this.gravities[shape][i];
                                 this.alphas[shape][nextFreeIndex] = this.alphas[shape][i];
-
-                                // **Copy Rotation**
                                 this.rotations[shape][nextFreeIndex].copy(this.rotations[shape][i]);
-
-                                // Update rotation in the stored quaternion
                             }
 
-                            // Update physics for the particle
                             this.velocities[shape][nextFreeIndex].y -= this.gravities[shape][nextFreeIndex] * delta;
                             this.positions[shape][nextFreeIndex].addScaledVector(
                                 this.velocities[shape][nextFreeIndex],
                                 delta
                             );
 
-                            // Calculate alpha based on remaining lifetime
                             const normalizedLifetime = this.lifetimes[shape][nextFreeIndex] /
                                 this.initialLifetimes[shape][nextFreeIndex];
                             this.alphas[shape][nextFreeIndex] = Math.pow(normalizedLifetime, 3);
 
-                            // **Apply Stored Rotation**
                             this.updateParticleTransform(shape, nextFreeIndex);
                             nextFreeIndex++;
                         }
                     }
 
-                    // Update active count and mesh properties
                     this.activeCounts[shape] = nextFreeIndex;
                     this.meshes[shape].count = nextFreeIndex;
 
-                    // Ensure updates are properly flagged
                     if (this.meshes[shape].instanceMatrix) {
                         this.meshes[shape].instanceMatrix.needsUpdate = true;
                     }
@@ -909,19 +875,15 @@
                 });
             }
 
-            // Dispose method to clean up resources
             dispose() {
                 FIREWORK_CONFIG.supportedShapes.forEach(shape => {
                     this.scene.remove(this.meshes[shape]);
                     this.meshes[shape].geometry.dispose();
                     this.meshes[shape].material.dispose();
-                    this.rotations[shape] = null; // Clear rotation data
+                    this.rotations[shape] = null;
                 });
             }
         }
-
-
-        // Add debug display
 
         class FireworkGame {
             constructor() {
@@ -931,7 +893,6 @@
                     totalParticles: 0,
                     gpuMemory: 0
                 };
-
 
                 this.scene = null;
                 this.camera = null;
@@ -946,15 +907,13 @@
                 this.autoLauncherCost = parseInt(localStorage.getItem('autoLauncherCost')) || 10;
                 this.sparkles = parseInt(localStorage.getItem('sparkles')) || 0;
 
-                // Load auto-launchers
-                this.autoLaunchers = JSON.parse(localStorage.getItem('autoLaunchers')) || []; // *** Updated to include upgrade data
+                this.autoLaunchers = JSON.parse(localStorage.getItem('autoLaunchers')) || [];
 
                 const savedSelectedIndex = parseInt(localStorage.getItem('selectedLauncherIndex'));
                 if (!isNaN(savedSelectedIndex) && savedSelectedIndex < this.autoLaunchers.length) {
                     this.selectedLauncherIndex = savedSelectedIndex;
                     this.selectLauncher(this.selectedLauncherIndex);
                 }
-
 
                 this.isMobile = this.detectMobile();
                 this.adjustConfigurations();
@@ -969,11 +928,10 @@
                     if (!launcher.accumulator) {
                         launcher.accumulator = Math.random() * 5;
                     }
-                    // *** Initialize level, spawnInterval, and upgradeCost if not present
                     if (launcher.level === undefined) {
                         launcher.level = 1;
-                        launcher.spawnInterval = 5; // Base spawn interval in seconds
-                        launcher.upgradeCost = 15; // Initial upgrade cost
+                        launcher.spawnInterval = 5;
+                        launcher.upgradeCost = 15;
                     }
                     this.createAutoLauncherMesh(launcher);
                 });
@@ -987,18 +945,10 @@
                 this.updateRecipeList();
                 this.updateLauncherList();
 
-                // **Initialize Dragging State Variables**
                 this.draggingLauncher = null;
                 this.isDragging = false;
 
-                // Start the rendering loop
                 this.animate();
-
-                console.log('Progress loaded:', {
-                    fireworkCount: this.fireworkCount,
-                    autoLaunchers: this.autoLaunchers,
-                    recipes: this.recipes
-                });
 
                 const gameContainer = document.getElementById('game-container');
                 gameContainer.style.touchAction = 'none';
@@ -1023,25 +973,11 @@
                 );
                 this.camera.position.z = 100;
 
-                const div = document.createElement('div');
-                div.style.position = 'fixed';
-                div.style.top = '10px';
-                div.style.right = '10px';
-                div.style.backgroundColor = 'rgba(0,0,0,0.7)';
-                div.style.color = 'white';
-                div.style.padding = '10px';
-                div.style.fontFamily = 'monospace';
-                div.style.fontSize = '12px';
-                div.style.zIndex = '1000';
-                //document.body.appendChild(div);
-                this.debugDiv = div;
-
-
                 this.renderer = new THREE.WebGLRenderer({
                     antialias: true,
-                    alpha: true  // Enable transparency
+                    alpha: true
                 });
-                this.renderer.setClearColor(0x000000, 0); // Set clear color with 0 opacity
+                this.renderer.setClearColor(0x000000, 0);
                 this.renderer.setPixelRatio(window.devicePixelRatio);
                 this.renderer.setSize(window.innerWidth, window.innerHeight);
 
@@ -1059,11 +995,10 @@
                 this.renderer.setSize(window.innerWidth, window.innerHeight);
                 this.renderer.setPixelRatio(window.devicePixelRatio);
 
-                // Update auto-launcher positions
                 const bounds = this.getViewBounds();
                 this.autoLaunchers.forEach(launcher => {
                     const x = bounds.minX + launcher.xPercent * (bounds.maxX - bounds.minX);
-                    const y = bounds.minY + 3; // Fixed height from bottom of screen
+                    const y = bounds.minY + 3;
                     if (launcher.mesh) {
                         launcher.mesh.position.set(x, y, 0);
                     }
@@ -1074,15 +1009,15 @@
             }
 
             bindEvents() {
-                // Store references to event handlers for potential removal
                 this.addComponentHandler = () => {
                     this.currentRecipeComponents.push({
                         pattern: 'spherical',
                         color: '#ff0000',
                         size: 0.5,
                         lifetime: 1.2,
-                        shape: 'sphere', // Default shape
-                        spread: 1.0 // Default spread
+                        shape: 'sphere',
+                        spread: 1.0,
+                        secondaryColor: '#00ff00'
                     });
                     this.updateComponentsList();
                     this.saveCurrentRecipeComponents();
@@ -1131,12 +1066,17 @@
                 };
                 document.getElementById('incremental-tab').addEventListener('click', this.incrementalTabHandler);
 
-                // Handler for Auto-Launchers tab
                 this.autoLauncherTabHandler = () => {
                     this.toggleTab('auto-launcher');
-                    this.updateLauncherList(); // Update the launcher list when the tab is shown
+                    this.updateLauncherList();
                 };
                 document.getElementById('auto-launcher-tab').addEventListener('click', this.autoLauncherTabHandler);
+
+                // NEW: Data tab handler
+                this.dataTabHandler = () => {
+                    this.toggleTab('data');
+                };
+                document.getElementById('data-tab').addEventListener('click', this.dataTabHandler);
 
                 this.trailEffectChangeHandler = (e) => {
                     this.currentTrailEffect = e.target.value;
@@ -1144,12 +1084,9 @@
                 };
                 document.getElementById('recipe-trail-effect').addEventListener('change', this.trailEffectChangeHandler);
 
-                // Use pointerdown event to handle both mouse and touch input
                 this.pointerDownHandler = (e) => {
                     if (!this.isClickInsideUI(e)) {
                         e.preventDefault();
-
-                        // Add this new line for touch handling
                         if (e.pointerType === 'touch') {
                             e.target.setPointerCapture(e.pointerId);
                         }
@@ -1174,7 +1111,6 @@
                                 this.selectLauncher(launcherIndex);
                                 this.showTab('auto-launcher');
                                 setTimeout(() => {
-                                    // Scroll to the corresponding launcher card
                                     const launcherList = document.getElementById('launcher-list');
                                     const launcherCards = launcherList.getElementsByClassName('launcher-card');
                                     if (launcherCards[launcherIndex]) {
@@ -1203,24 +1139,47 @@
                     const activeTabContent = document.querySelector('.tab-content.active');
 
                     if (tabs.classList.contains('collapsed')) {
-                        // Expand the tab bar
                         tabs.classList.remove('collapsed');
                     } else {
-                        // Collapse the tab bar
                         tabs.classList.add('collapsed');
-                        // Deactivate the active tab content
                         if (activeTabContent) {
                             activeTabContent.classList.remove('active');
                         }
                     }
                 });
+
+                // NEW: Save/Load feature events
+                document.getElementById('save-progress').addEventListener('click', () => {
+                    const data = this.serializeGameData();
+                    const textarea = document.getElementById('serialized-data');
+                    textarea.value = data;
+                    // Copy to clipboard
+                    textarea.select();
+                    textarea.setSelectionRange(0, 99999);
+                    document.execCommand('copy');
+                    this.showNotification("Progress saved and copied to clipboard!");
+                });
+
+                document.getElementById('load-progress').addEventListener('click', () => {
+                    const textarea = document.getElementById('serialized-data');
+                    const data = textarea.value.trim();
+                    if (!data) {
+                        this.showNotification("No data provided!");
+                        return;
+                    }
+                    try {
+                        this.deserializeGameData(data);
+                        this.showNotification("Progress loaded successfully!");
+                    } catch (error) {
+                        this.showNotification("Invalid data format!");
+                        console.error(error);
+                    }
+                });
             }
 
-            // **Add Pointer Move Handler**
             pointerMoveHandler = (e) => {
                 if (this.isDragging && this.draggingLauncher) {
                     e.preventDefault();
-
                     const x = e.clientX;
                     const y = e.clientY;
 
@@ -1245,10 +1204,9 @@
                     this.saveProgress();
                 }
             };
-            // **Add Pointer Up Handler**
+
             pointerUpHandler = (e) => {
                 if (this.isDragging) {
-                    // Add this for touch handling
                     if (e.pointerType === 'touch' && e.target) {
                         e.target.releasePointerCapture(e.pointerId);
                     }
@@ -1256,7 +1214,6 @@
                     this.isDragging = false;
                     this.draggingLauncher = null;
 
-                    // Update these to use document instead of window
                     document.removeEventListener('pointermove', this.pointerMoveHandler);
                     document.removeEventListener('pointerup', this.pointerUpHandler);
                     document.removeEventListener('pointercancel', this.pointerUpHandler);
@@ -1277,7 +1234,6 @@
                 confirmationDialog.style.display = 'block';
                 overlay.style.display = 'block';
 
-                // Define handlers
                 const confirmHandler = () => {
                     onConfirm();
                     hide();
@@ -1317,7 +1273,6 @@
                 const raycaster = new THREE.Raycaster();
                 raycaster.setFromCamera(mouse, this.camera);
 
-                // Calculate the intersection point with the z = 0 plane
                 const t = - (this.camera.position.z) / raycaster.ray.direction.z;
                 const worldPos = new THREE.Vector3();
                 worldPos.copy(raycaster.ray.direction).multiplyScalar(t).add(this.camera.position);
@@ -1352,15 +1307,12 @@
                 const tabElement = document.getElementById(tab + '-tab');
                 const contentElement = document.getElementById(contentId);
 
-                // Hide all tabs
                 document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
                 document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
 
-                // Show selected tab
                 contentElement.classList.add('active');
                 tabElement.classList.add('active');
 
-                // Additional actions when showing specific tabs
                 if (tab === 'auto-launcher') {
                     this.updateLauncherList();
                 }
@@ -1375,11 +1327,8 @@
                     contentElement.classList.remove('active');
                     tabElement.classList.remove('active');
                 } else {
-                    // Hide all tabs
                     document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
                     document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
-
-                    // Show selected tab
                     contentElement.classList.add('active');
                     tabElement.classList.add('active');
                 }
@@ -1394,23 +1343,20 @@
             }
 
             update(deltaTime) {
-
                 this.particleSystem.update(deltaTime);
 
                 this.autoLaunchers.forEach(launcher => {
                     launcher.accumulator += deltaTime;
-                    if (launcher.accumulator >= launcher.spawnInterval) { // Use per-launcher spawnInterval
+                    if (launcher.accumulator >= launcher.spawnInterval) {
                         const bounds = this.getViewBounds();
                         const x = bounds.minX + launcher.xPercent * (bounds.maxX - bounds.minX);
-                        // Use the assigned recipe if available
                         let recipe = this.recipes[launcher.assignedRecipeIndex];
                         if (recipe) {
                             this.launchFireworkAt(x, bounds.minY, recipe.components, recipe.trailEffect);
                         } else {
-                            // Fallback to default recipe
                             this.launchFireworkAt(x, bounds.minY, this.currentRecipeComponents, this.currentTrailEffect);
                         }
-                        launcher.accumulator -= launcher.spawnInterval; // Reset accumulator based on spawnInterval
+                        launcher.accumulator -= launcher.spawnInterval;
                     }
                 });
             }
@@ -1418,28 +1364,24 @@
             initBackgroundColor() {
                 const savedColor = localStorage.getItem('backgroundColor') || '#000000';
 
-                // Wait for DOM to be ready before accessing the element
                 const initColorPicker = () => {
                     const colorPicker = document.getElementById('background-color');
                     if (colorPicker) {
                         colorPicker.value = savedColor;
                         this.renderer.setClearColor(new THREE.Color(savedColor));
 
-                        // Add event listener
                         colorPicker.addEventListener('input', (e) => {
                             const color = e.target.value;
                             this.renderer.setClearColor(new THREE.Color(color));
                             localStorage.setItem('backgroundColor', color);
                         });
                     } else {
-                        // If element not found, try again in 100ms
                         setTimeout(initColorPicker, 100);
                     }
                 };
 
                 initColorPicker();
             }
-
 
             saveProgress() {
                 localStorage.setItem('fireworkCount', this.fireworkCount);
@@ -1451,9 +1393,9 @@
                     xPercent: launcher.xPercent,
                     accumulator: launcher.accumulator,
                     assignedRecipeIndex: launcher.assignedRecipeIndex || null,
-                    level: launcher.level, // *** Save level
-                    spawnInterval: launcher.spawnInterval, // *** Save spawnInterval
-                    upgradeCost: launcher.upgradeCost // *** Save upgradeCost
+                    level: launcher.level,
+                    spawnInterval: launcher.spawnInterval,
+                    upgradeCost: launcher.upgradeCost
                 }))));
                 localStorage.setItem('currentRecipeComponents', JSON.stringify(this.currentRecipeComponents));
                 localStorage.setItem('backgroundColor', document.getElementById('background-color').value);
@@ -1464,7 +1406,6 @@
                 const notification = document.getElementById('notification');
                 notification.textContent = message;
                 notification.classList.add('show');
-                // Hide after 3 seconds
                 setTimeout(() => {
                     notification.classList.remove('show');
                 }, 3000);
@@ -1477,7 +1418,7 @@
             resume() {
                 if (this.isPaused) {
                     this.isPaused = false;
-                    this.clock.start(); // Restart clock
+                    this.clock.start();
                 }
             }
 
@@ -1487,7 +1428,6 @@
                 const delta = this.clock.getDelta();
 
                 if (!this.isPaused) {
-                    // Update fireworks
                     for (let i = this.fireworks.length - 1; i >= 0; i--) {
                         this.fireworks[i].update(delta);
                         if (!this.fireworks[i].alive) {
@@ -1495,25 +1435,15 @@
                         }
                     }
 
-                    // Update debug info
                     this.debugInfo.activeFireworks = this.fireworks.length;
                     this.debugInfo.totalParticles = Object.values(this.particleSystem.activeCounts).reduce((a, b) => a + b, 0);
 
-                    // Try to estimate GPU memory usage
                     this.debugInfo.gpuMemory = (
                         (FIREWORK_CONFIG.supportedShapes.length * this.particleSystem.meshes[FIREWORK_CONFIG.supportedShapes[0]].geometry.attributes.position.array.length * 4) +
                         (this.particleSystem.meshes[FIREWORK_CONFIG.supportedShapes[0]].instanceMatrix.array.length * 4) +
                         (this.particleSystem.meshes[FIREWORK_CONFIG.supportedShapes[0]].instanceColor.array.length * 4)
-                    ) / (1024 * 1024);  // Convert to MB
+                    ) / (1024 * 1024);
 
-                    // Update debug display
-                    this.debugDiv.innerHTML = `
-                        Active Fireworks: ${this.debugInfo.activeFireworks}<br>
-                        Active Particles: ${this.debugInfo.totalParticles}<br>
-                        Est. GPU Memory: ${this.debugInfo.gpuMemory.toFixed(2)}MB<br>
-                    `;
-
-                    // Update game logic
                     this.update(delta);
 
                     this.renderer.render(this.scene, this.camera);
@@ -1521,7 +1451,6 @@
             }
 
             launchFireworkAt(x, minY = null, recipeComponents = null, trailEffect = null) {
-                // Use provided components or fall back to current recipe
                 const components = recipeComponents || this.currentRecipeComponents;
 
                 if (components.length === 0) {
@@ -1529,10 +1458,7 @@
                     return;
                 }
 
-                // Use provided minY or get from bounds
                 const y = minY || this.getViewBounds().minY;
-
-                // Use provided trail effect or fall back to current
                 const effect = trailEffect || this.currentTrailEffect;
 
                 this.launch(x, y, components, effect);
@@ -1551,18 +1477,16 @@
                 if (this.sparkles >= this.autoLauncherCost) {
                     this.sparkles -= this.autoLauncherCost;
                     this.autoLauncherCost = Math.floor(this.autoLauncherCost * 1.5);
-                    // Initialize new auto-launcher with default properties
-                    const xPercent = Math.random(); // Random percentage between 0 and 1
+                    const xPercent = Math.random();
                     const accumulator = Math.random() * 5;
                     const launcher = {
                         xPercent: xPercent,
                         accumulator: accumulator,
                         assignedRecipeIndex: null,
-                        level: 1, // *** Initialize level
-                        spawnInterval: 5, // *** Initialize spawnInterval (seconds)
-                        upgradeCost: 15 // *** Initialize upgradeCost
+                        level: 1,
+                        spawnInterval: 5,
+                        upgradeCost: 15
                     };
-                    // Create visual representation of the auto-launcher
                     this.createAutoLauncherMesh(launcher);
                     this.autoLaunchers.push(launcher);
                     this.saveProgress();
@@ -1585,7 +1509,7 @@
                 const launcherMesh = new THREE.Mesh(geometry, material);
                 const bounds = this.getViewBounds();
                 const x = bounds.minX + launcher.xPercent * (bounds.maxX - bounds.minX);
-                const y = bounds.minY + 3; // Fixed height from bottom of screen
+                const y = bounds.minY + 3;
                 launcherMesh.position.set(x, y, 0);
                 this.scene.add(launcherMesh);
 
@@ -1594,7 +1518,6 @@
 
             resetGame() {
                 this.fireworkCount = 0;
-                // Reset auto-launcher properties
                 this.autoLaunchers.forEach(launcher => {
                     if (launcher.mesh) {
                         this.scene.remove(launcher.mesh);
@@ -1606,15 +1529,13 @@
                     }
                 });
                 this.autoLaunchers = [];
-                this.autoLauncherCost = 10; // Reset to initial cost
+                this.autoLauncherCost = 10;
 
-                // Dispose of particle system
                 if (this.particleSystem) {
                     this.particleSystem.dispose();
-                    this.particleSystem = new InstancedParticleSystem(this.scene, 50000); // Reinitialize
+                    this.particleSystem = new InstancedParticleSystem(this.scene, 50000);
                 }
 
-                // Reset fireworks
                 this.fireworks.forEach(firework => {
                     firework.dispose();
                 });
@@ -1630,7 +1551,8 @@
                     size: 0.5,
                     lifetime: 1.2,
                     shape: 'sphere',
-                    spread: 1.0
+                    spread: 1.0,
+                    secondaryColor: '#00ff00'
                 }];
 
                 localStorage.clear();
@@ -1656,6 +1578,9 @@
                 componentsList.innerHTML = '';
 
                 this.currentRecipeComponents.forEach((component, index) => {
+                    if (!('secondaryColor' in component)) {
+                        component.secondaryColor = '#00ff00';
+                    }
                     const componentDiv = document.createElement('div');
                     componentDiv.classList.add('component');
 
@@ -1672,7 +1597,7 @@
                                     <option value="palm">Palm</option>
                                     <option value="willow">Willow</option>
                                     <option value="helix">Helix</option>
-                                    <option value="star">Star</option> <!-- Added Star Pattern Option -->
+                                    <option value="star">Star</option>
                                 </select>
                             </div>
                             <div class="flex-item">
@@ -1689,6 +1614,10 @@
                         <div class="crafting-option">
                             <label>Primary Color:</label>
                             <input type="color" class="color-input" data-index="${index}" value="${component.color}">
+                        </div>
+                        <div class="crafting-option secondary-color-container" style="display:none;">
+                            <label>Secondary Color (Helix Only):</label>
+                            <input type="color" class="secondary-color-input" data-index="${index}" value="${component.secondaryColor}">
                         </div>
                         <div class="crafting-option">
                             <label>Shell Size (0.3 - 0.7):</label>
@@ -1709,7 +1638,6 @@
                     `;
                     componentsList.appendChild(componentDiv);
 
-                    // Set the values of the selects
                     const patternSelect = componentDiv.querySelector('.pattern-select');
                     patternSelect.value = component.pattern;
 
@@ -1717,7 +1645,8 @@
                     shapeSelect.value = component.shape;
 
                     const colorInput = componentDiv.querySelector('.color-input');
-                    colorInput.value = component.color;
+                    const secondaryColorContainer = componentDiv.querySelector('.secondary-color-container');
+                    const secondaryColorInput = componentDiv.querySelector('.secondary-color-input');
 
                     const sizeSelect = componentDiv.querySelector('.size-select');
                     const sizeValue = componentDiv.querySelector('.size-value');
@@ -1728,9 +1657,20 @@
                     const spreadSelect = componentDiv.querySelector('.spread-select');
                     const spreadValue = componentDiv.querySelector('.spread-value');
 
+                    const updateSecondaryColorVisibility = () => {
+                        if (patternSelect.value === 'helix') {
+                            secondaryColorContainer.style.display = 'block';
+                        } else {
+                            secondaryColorContainer.style.display = 'none';
+                        }
+                    };
+
+                    updateSecondaryColorVisibility();
+
                     patternSelect.addEventListener('change', (e) => {
                         const idx = e.target.getAttribute('data-index');
                         this.currentRecipeComponents[idx].pattern = e.target.value;
+                        updateSecondaryColorVisibility();
                         this.saveCurrentRecipeComponents();
                     });
 
@@ -1743,6 +1683,12 @@
                     colorInput.addEventListener('input', (e) => {
                         const idx = e.target.getAttribute('data-index');
                         this.currentRecipeComponents[idx].color = e.target.value;
+                        this.saveCurrentRecipeComponents();
+                    });
+
+                    secondaryColorInput.addEventListener('input', (e) => {
+                        const idx = e.target.getAttribute('data-index');
+                        this.currentRecipeComponents[idx].secondaryColor = e.target.value;
                         this.saveCurrentRecipeComponents();
                     });
 
@@ -1788,13 +1734,15 @@
                 const savedRecipeName = localStorage.getItem('currentRecipeName');
                 if (savedRecipeComponents) {
                     this.currentRecipeComponents = JSON.parse(savedRecipeComponents);
-                    // Ensure each component has a spread and shape
                     this.currentRecipeComponents.forEach(component => {
                         if (!component.shape || !FIREWORK_CONFIG.supportedShapes.includes(component.shape)) {
-                            component.shape = 'sphere'; // Default shape
+                            component.shape = 'sphere';
                         }
                         if (typeof component.spread !== 'number') {
-                            component.spread = 1.0; // Default spread
+                            component.spread = 1.0;
+                        }
+                        if (!('secondaryColor' in component)) {
+                            component.secondaryColor = '#00ff00';
                         }
                     });
                 } else {
@@ -1804,7 +1752,8 @@
                         size: 0.5,
                         lifetime: 1.2,
                         shape: 'sphere',
-                        spread: 1.0
+                        spread: 1.0,
+                        secondaryColor: '#00ff00'
                     }];
                 }
                 if (savedTrailEffect) {
@@ -1819,7 +1768,6 @@
                 const recipeNameInput = document.getElementById('recipe-name');
                 let recipeName = recipeNameInput.value.trim();
 
-                // Assign default name if name is undefined, null, or empty
                 if (!recipeName) {
                     this.showNotification("Please specify a recipe name");
                     return;
@@ -1830,16 +1778,13 @@
                     return;
                 }
 
-                // Check if a recipe with the same name exists
                 const existingIndex = this.recipes.findIndex(recipe => recipe.name.toLowerCase() === recipeName.toLowerCase());
 
                 if (existingIndex !== -1) {
-                    // Overwrite the existing recipe
                     this.recipes[existingIndex].components = this.currentRecipeComponents.map(component => ({ ...component }));
                     this.recipes[existingIndex].trailEffect = this.currentTrailEffect;
                     this.showNotification("Recipe overwritten successfully!");
                 } else {
-                    // Add as new recipe
                     const recipe = {
                         name: recipeName,
                         components: this.currentRecipeComponents.map(component => ({ ...component })),
@@ -1851,27 +1796,25 @@
 
                 localStorage.setItem('fireworkRecipes', JSON.stringify(this.recipes));
                 this.updateRecipeList();
-                // Optionally, clear the recipe name input after saving
-                // document.getElementById('recipe-name').value = '';
             }
 
             loadRecipes() {
                 const saved = localStorage.getItem('fireworkRecipes');
                 if (saved) {
                     this.recipes = JSON.parse(saved);
-                    // Ensure each recipe has a valid name and each component has shape and spread
                     this.recipes.forEach((recipe, index) => {
-                        // Assign default name if name is undefined, null, or empty
                         if (!recipe.name || typeof recipe.name !== 'string' || recipe.name.trim() === '') {
                             recipe.name = `Recipe ${index + 1}`;
                         }
-                        // Ensure each component has a shape and spread
                         recipe.components.forEach(component => {
                             if (!component.shape || !FIREWORK_CONFIG.supportedShapes.includes(component.shape)) {
-                                component.shape = 'sphere'; // Default shape
+                                component.shape = 'sphere';
                             }
                             if (typeof component.spread !== 'number') {
-                                component.spread = 1.0; // Default spread
+                                component.spread = 1.0;
+                            }
+                            if (!('secondaryColor' in component)) {
+                                component.secondaryColor = '#00ff00';
                             }
                         });
                     });
@@ -1897,7 +1840,8 @@
                                 Size: ${component.size}<br>
                                 Lifetime: ${component.lifetime} s<br>
                                 Spread: ${component.spread}<br>
-                                <div class="color-preview" style="width: 20px; height: 20px; background-color: ${component.color}; border: 1px solid #fff; display: inline-block;"></div>
+                                Color(s): <div class="color-preview" style="width: 20px; height: 20px; background-color: ${component.color}; border: 1px solid #fff; display: inline-block;"></div>
+                                ${component.pattern === 'helix' ? `<div class="color-preview" style="width: 20px; height: 20px; background-color: ${component.secondaryColor}; border: 1px solid #fff; display: inline-block;"></div>` : ''}
                             </div>
                         `).join('')}
                     </div>
@@ -1948,7 +1892,7 @@
 
             updateLauncherList() {
                 const launcherList = document.getElementById('launcher-list');
-                launcherList.innerHTML = ''; // Clear existing content
+                launcherList.innerHTML = '';
 
                 if (this.autoLaunchers.length === 0) {
                     launcherList.innerHTML = "<p>No auto-launchers owned yet.</p>";
@@ -1958,8 +1902,6 @@
                 this.autoLaunchers.forEach((launcher, index) => {
                     const launcherDiv = document.createElement('div');
                     launcherDiv.classList.add('launcher-card');
-
-                    // *** Add 'selected' class if this is the selected launcher
                     if (index === this.selectedLauncherIndex) {
                         launcherDiv.classList.add('selected');
                     }
@@ -1977,14 +1919,13 @@
                         </div>
                         <div class="launcher-details">
                             <p>Level: ${launcher.level}</p>
-                            <p>Spawn Rate: Every ${launcher.spawnInterval.toFixed(1)}s</p> <!-- *** Display spawn rate -->
-                            <p>Upgrade Cost: ${launcher.upgradeCost} sparkles</p> <!-- *** Display upgrade cost -->
-                            <button class="upgrade-button" data-index="${index}">Upgrade</button> <!-- *** Upgrade button -->
+                            <p>Spawn Rate: Every ${launcher.spawnInterval.toFixed(1)}s</p>
+                            <p>Upgrade Cost: ${launcher.upgradeCost} sparkles</p>
+                            <button class="upgrade-button" data-index="${index}">Upgrade</button>
                         </div>
                     `;
                     launcherList.appendChild(launcherDiv);
 
-                    // Event Listener for Recipe Assignment
                     const recipeSelect = launcherDiv.querySelector('.recipe-select');
                     recipeSelect.addEventListener('change', (e) => {
                         const idx = e.target.getAttribute('data-index');
@@ -1997,14 +1938,12 @@
                         this.saveProgress();
                     });
 
-                    // *** Add Event Listener for Upgrade Button ***
                     const upgradeButton = launcherDiv.querySelector('.upgrade-button');
                     upgradeButton.addEventListener('click', (e) => {
                         const idx = e.target.getAttribute('data-index');
                         this.upgradeLauncher(idx);
                     });
 
-                    // *** Add Click Event Listener for Highlighting ***
                     launcherDiv.addEventListener('click', () => {
                         this.selectLauncher(index);
                     });
@@ -2012,7 +1951,6 @@
             }
 
             selectLauncher(selectedIndex) {
-                // Deselect all launchers
                 const launcherCards = document.querySelectorAll('.launcher-card');
                 launcherCards.forEach((card, index) => {
                     if (index === selectedIndex) {
@@ -2021,12 +1959,7 @@
                         card.classList.remove('selected');
                     }
                 });
-
-                // Optionally, store the selected launcher index for further use
                 this.selectedLauncherIndex = selectedIndex;
-
-                // Save the selected launcher if needed
-                // For example, to remember selection across sessions
                 localStorage.setItem('selectedLauncherIndex', selectedIndex);
             }
 
@@ -2037,7 +1970,6 @@
                 mouse.y = - (event.clientY / window.innerHeight) * 2 + 1;
                 raycaster.setFromCamera(mouse, this.camera);
 
-                // Collect all auto-launcher meshes
                 const launcherMeshes = this.autoLaunchers.map(launcher => launcher.mesh);
 
                 const intersects = raycaster.intersectObjects(launcherMeshes);
@@ -2048,7 +1980,6 @@
                         this.selectLauncher(launcherIndex);
                         this.showTab('auto-launcher');
                         setTimeout(() => {
-                            // Scroll to the corresponding launcher card
                             const launcherList = document.getElementById('launcher-list');
                             const launcherCards = launcherList.getElementsByClassName('launcher-card');
                             if (launcherCards[launcherIndex]) {
@@ -2057,14 +1988,11 @@
                         }, 100);
                     }
                 } else {
-                    // If not clicking on an auto-launcher, launch a firework
                     this.launchFireworkAt(worldPos.x);
                 }
             }
 
-            // Cleanup method to remove event listeners and dispose resources
             cleanup() {
-                // Remove event listeners
                 document.getElementById('add-component').removeEventListener('click', this.addComponentHandler);
                 document.getElementById('save-recipe').removeEventListener('click', this.saveRecipeHandler);
                 document.getElementById('erase-recipes').removeEventListener('click', this.eraseRecipesHandler);
@@ -2081,7 +2009,7 @@
                     document.removeEventListener('pointerup', this.pointerUpHandler);
                     document.removeEventListener('pointercancel', this.pointerUpHandler);
                 }
-                // Dispose Three.js renderer
+
                 if (this.renderer) {
                     this.renderer.dispose();
                     this.scene = null;
@@ -2089,14 +2017,12 @@
                     this.renderer = null;
                 }
 
-                // Dispose of particle system
                 if (this.particleSystem) {
                     this.particleSystem.dispose();
                     this.particleSystem = null;
                 }
             }
 
-            // *** New Method to Upgrade a Launcher ***
             upgradeLauncher(index) {
                 const launcher = this.autoLaunchers[index];
                 if (!launcher) {
@@ -2105,16 +2031,9 @@
                 }
 
                 if (this.sparkles >= launcher.upgradeCost) {
-                    // Deduct sparkles
                     this.sparkles -= launcher.upgradeCost;
-
-                    // Upgrade launcher level
                     launcher.level += 1;
-
-                    // Decrease spawnInterval (improve spawn rate)
-                    launcher.spawnInterval = Math.max(1, launcher.spawnInterval * 0.9); // Decrease by 10%, minimum 1s
-
-                    // Increase upgradeCost for next upgrade
+                    launcher.spawnInterval = Math.max(1, launcher.spawnInterval * 0.9);
                     launcher.upgradeCost = Math.floor(launcher.upgradeCost * 1.5);
 
                     this.saveProgress();
@@ -2123,6 +2042,90 @@
                     this.showNotification(`Auto-Launcher ${index + 1} upgraded to level ${launcher.level}!`);
                 } else {
                     this.showNotification("Not enough sparkles to upgrade this launcher!");
+                }
+            }
+
+            compressGameData(jsonString) {
+                return btoa(jsonString)
+                    .replace(/\+/g, '-')
+                    .replace(/\//g, '_')
+                    .replace(/=+$/, '');
+            }
+
+            decompressGameData(compressed) {
+                while (compressed.length % 4) {
+                    compressed += '=';
+                }
+                compressed = compressed.replace(/-/g, '+').replace(/_/g, '/');
+                return atob(compressed);
+            }
+
+            serializeGameData() {
+                const data = {
+                    fireworkCount: this.fireworkCount,
+                    autoLauncherCost: this.autoLauncherCost,
+                    sparkles: this.sparkles,
+                    recipes: this.recipes,
+                    currentTrailEffect: this.currentTrailEffect,
+                    autoLaunchers: this.autoLaunchers,
+                    currentRecipeComponents: this.currentRecipeComponents,
+                    backgroundColor: localStorage.getItem('backgroundColor') || '#000000',
+                    selectedLauncherIndex: this.selectedLauncherIndex
+                };
+                return JSON.stringify(data);
+            }
+
+            deserializeGameData(jsonString) {
+                const data = JSON.parse(jsonString);
+
+                // Clear current game state
+                this.resetGame(); 
+
+                // Restore state
+                this.fireworkCount = data.fireworkCount || 0;
+                this.autoLauncherCost = data.autoLauncherCost || 10;
+                this.sparkles = data.sparkles || 0;
+                this.recipes = data.recipes || [];
+                this.currentTrailEffect = data.currentTrailEffect || 'fade';
+                this.autoLaunchers = data.autoLaunchers || [];
+                this.currentRecipeComponents = data.currentRecipeComponents || [{
+                    pattern: 'spherical', color: '#ff0000', size: 0.5, lifetime: 1.2, shape: 'sphere', spread: 1.0
+                }];
+
+                const bgColor = data.backgroundColor || '#000000';
+                this.renderer.setClearColor(new THREE.Color(bgColor));
+                localStorage.setItem('backgroundColor', bgColor);
+                document.getElementById('background-color').value = bgColor;
+
+                if (typeof data.selectedLauncherIndex === 'number') {
+                    this.selectedLauncherIndex = data.selectedLauncherIndex;
+                } else {
+                    this.selectedLauncherIndex = null;
+                }
+
+                // Re-create auto launchers
+                this.autoLaunchers.forEach(launcher => {
+                    if (!launcher.accumulator) {
+                        launcher.accumulator = Math.random() * 5;
+                    }
+                    if (launcher.level === undefined) {
+                        launcher.level = 1;
+                        launcher.spawnInterval = 5;
+                        launcher.upgradeCost = 15;
+                    }
+                    this.createAutoLauncherMesh(launcher);
+                });
+
+                // Re-save everything to localStorage
+                this.saveProgress();
+
+                this.updateUI();
+                this.updateComponentsList();
+                this.updateRecipeList();
+                this.updateLauncherList();
+
+                if (this.selectedLauncherIndex !== null && this.selectedLauncherIndex < this.autoLaunchers.length) {
+                    this.selectLauncher(this.selectedLauncherIndex);
                 }
             }
         }
@@ -2136,18 +2139,15 @@
                 this.particleSystem = particleSystem;
                 this.exploded = false;
                 this.alive = true;
-                this.particles = {}; // Key: shape, Value: Set of particle indices
+                this.particles = {};
 
-                // Initialize particle sets for each shape
                 FIREWORK_CONFIG.supportedShapes.forEach(shape => {
                     this.particles[shape] = new Set();
                 });
 
-                // Create rocket
                 this.rocket = this.createRocket(x, y);
                 this.trailParticles = [];
 
-                // Calculate explosion height
                 const distance = this.camera.position.z - this.rocket.position.z;
                 const vFOV = this.camera.fov * Math.PI / 180;
                 const viewHeight = 2 * Math.tan(vFOV / 2) * distance;
@@ -2167,34 +2167,17 @@
                 return rocket;
             }
 
-            getViewBounds() {
-                const distance = this.camera.position.z;
-                const vFOV = this.camera.fov * Math.PI / 180;
-                const viewHeight = 2 * Math.tan(vFOV / 2) * distance;
-                const viewWidth = viewHeight * this.camera.aspect;
-
-                const minY = -viewHeight / 2;
-                const maxY = viewHeight / 2;
-                const minX = -viewWidth / 2;
-                const maxX = viewWidth / 2;
-
-                return { minX, maxX, minY, maxY };
-            }
-
             update(delta) {
                 if (!this.exploded) {
-                    // Pre-explosion update (rocket ascending)
                     this.rocket.position.y += FIREWORK_CONFIG.ascentSpeed * delta;
                     this.createTrailParticle(this.rocket.position.x, this.rocket.position.y);
 
-                    // Update trail particles
                     this.updateTrailParticles(delta);
 
                     if (this.rocket.position.y >= this.targetY) {
                         this.explode();
                     }
                 } else {
-                    // After explosion, check if particles are still alive
                     this.alive = false;
                     FIREWORK_CONFIG.supportedShapes.forEach(shape => {
                         if (this.particles[shape].size > 0) {
@@ -2323,7 +2306,6 @@
                     }
                 });
 
-                // Clean up old trail particles
                 for (let i = this.trailParticles.length - 1; i >= 0; i--) {
                     const particle = this.trailParticles[i];
                     if (Date.now() - particle.createdAt > 500) {
@@ -2337,7 +2319,6 @@
                     }
                 }
             }
-
 
             explode() {
                 // Remove and dispose of the rocket
@@ -2358,13 +2339,14 @@
                 });
                 this.trailParticles = [];
 
-                // Create explosion particles
+                // Explosion patterns with secondary color for helix:
                 this.components.forEach(component => {
                     const particleCount = Math.floor(FIREWORK_CONFIG.particleDensity * component.size);
                     const pattern = component.pattern;
                     const gravity = FIREWORK_CONFIG.patternGravities[pattern] || FIREWORK_CONFIG.patternGravities.default;
                     const speed = FIREWORK_CONFIG.baseSpeed * component.size;
                     const color = new THREE.Color(component.color);
+                    const secondaryColor = new THREE.Color(component.secondaryColor || '#00ff00');
                     const size = FIREWORK_CONFIG.particleSize * component.size;
                     const rocketPos = this.rocket.position.clone();
                     const velocity = new THREE.Vector3();
@@ -2381,7 +2363,6 @@
                                     Math.sin(angle) * magnitude,
                                     0
                                 );
-
                                 const index = this.particleSystem.addParticle(
                                     rocketPos.clone(),
                                     velocity.clone(),
@@ -2404,7 +2385,6 @@
                                     Math.sin(angle) * magnitude,
                                     0
                                 );
-
                                 const index = this.particleSystem.addParticle(
                                     rocketPos.clone(),
                                     velocity.clone(),
@@ -2427,7 +2407,6 @@
                                     Math.sin(angle) * magnitude,
                                     0
                                 );
-
                                 const index = this.particleSystem.addParticle(
                                     rocketPos.clone(),
                                     velocity.clone(),
@@ -2447,18 +2426,15 @@
                             for (let i = 0; i < particleCount; i++) {
                                 const branch = i % branches;
                                 const particleInBranch = Math.floor(i / branches);
-
                                 const baseAngle = (branch / branches) * Math.PI * 2;
                                 const angleSpread = 0.3 * (particleInBranch / particlesPerBranch);
                                 const angle = baseAngle + (Math.random() - 0.5) * angleSpread;
-
                                 const magnitude = speed * (1.2 + particleInBranch / particlesPerBranch) * spread;
                                 velocity.set(
                                     Math.cos(angle) * magnitude,
                                     Math.sin(angle) * magnitude,
                                     0
                                 );
-
                                 const index = this.particleSystem.addParticle(
                                     rocketPos.clone(),
                                     velocity.clone(),
@@ -2484,7 +2460,6 @@
                                     Math.sin(angle) * initialSpeed,
                                     0
                                 );
-
                                 const index = this.particleSystem.addParticle(
                                     rocketPos.clone(),
                                     velocity.clone(),
@@ -2511,7 +2486,6 @@
                                     Math.sin(angle) * magnitude,
                                     0
                                 );
-
                                 const index = this.particleSystem.addParticle(
                                     rocketPos.clone(),
                                     velocity.clone(),
@@ -2525,25 +2499,22 @@
                             }
                             break;
 
-
                         case 'helix':
-                            // Configuration for helix pattern
-                            const helixRadius = .5;              // Base radius of the helix
-                            const riseSpeed = speed * 0.1 * spread;      // How fast particles go up
-                            const rotationSpeed = 2;            // How fast the helix rotates
-                            const particlesPerStream = 100;     // Particles per helix stream
-                            const verticalSpacing = 0.1;        // Reduced from 0.2 to make it more compact
-                            const spreadFactor = 0.1;          // How much random spread to add
+                            const helixRadius = 0.5;
+                            const riseSpeed = speed * 0.1 * spread;
+                            const rotationSpeed = 2;
+                            const particlesPerStream = 100;
+                            const verticalSpacing = 0.1;
+                            const spreadFactor = 0.1;
 
+                            // Use different colors for each stream: primaryColor for stream 0, secondaryColor for stream 1
                             for (let stream = 0; stream < 2; stream++) {
                                 const streamOffset = stream * Math.PI;
-
                                 for (let i = 0; i < particlesPerStream; i++) {
                                     const t = (i / particlesPerStream) * Math.PI * 2;
                                     const angle = t + streamOffset;
 
                                     const randomSpread = (Math.random() - 0.5) * spreadFactor;
-
                                     const offset = new THREE.Vector3(
                                         Math.cos(angle) * helixRadius * (1 + randomSpread),
                                         -i * verticalSpacing,
@@ -2555,12 +2526,11 @@
                                         riseSpeed * (1 + randomSpread),
                                         Math.cos(angle) * rotationSpeed
                                     );
-                                    const particleColor = color.clone();
+                                    const particleColor = new THREE.Color();
                                     if (stream === 1) {
-                                        const hsl = {};
-                                        particleColor.getHSL(hsl);
-                                        hsl.h = (hsl.h + 0.5) % 1;
-                                        particleColor.setHSL(hsl.h, hsl.s, hsl.l);
+                                        particleColor.copy(secondaryColor);
+                                    } else {
+                                        particleColor.copy(color);
                                     }
 
                                     const index = this.particleSystem.addParticle(
@@ -2572,7 +2542,6 @@
                                         gravity * 0.2,
                                         shape
                                     );
-
                                     if (index !== -1) this.particles[shape].add(index);
                                 }
                             }
@@ -2587,13 +2556,11 @@
                             for (let i = 0; i < particleCount; i++) {
                                 const starPoint = i % pointsPerStar;
                                 const starCopy = Math.floor(i / pointsPerStar);
-
                                 let radius = (starPoint % 2 === 0) ? outerRadius : innerRadius;
                                 let angle = (starPoint / pointsPerStar) * Math.PI * 2;
 
-                                // Make the outer edges more dense
                                 if (i > pointsPerStar && (starPoint % 2 === 0)) {
-                                    radius = outerRadius * 1 + (Math.random() * 0.2 - 0.1) * (starCopy > 0 ? 1 : 0);
+                                    radius = outerRadius * (1 + (Math.random() * 0.2 - 0.1));
                                 }
 
                                 const radiusVariation = 1 + (Math.random() * 0.2 - 0.1) * (starCopy > 0 ? 1 : 0);
@@ -2627,7 +2594,6 @@
                                     Math.sin(angle) * magnitude,
                                     0
                                 );
-
                                 const index = this.particleSystem.addParticle(
                                     rocketPos.clone(),
                                     velocity.clone(),
@@ -2643,6 +2609,7 @@
                 });
                 this.exploded = true;
             }
+
 
             dispose() {
                 if (this.rocket) {
@@ -2665,8 +2632,6 @@
                 this.trailParticles = [];
 
                 FIREWORK_CONFIG.supportedShapes.forEach(shape => {
-                    this.particles[shape].forEach(index => {
-                    });
                     this.particles[shape].clear();
                 });
 
@@ -2674,12 +2639,9 @@
             }
         }
 
-
-        // Initialize game when DOM is loaded
         document.addEventListener('DOMContentLoaded', () => {
             window.game = new FireworkGame();
         });
-
     </script>
 </body>
 
