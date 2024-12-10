@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>Firework Crafting Game - Three.js Version</title>
+    <title>Firework Crafting Game - Levels Feature</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <!-- Include Three.js -->
     <script src="https://cdn.jsdelivr.net/npm/three@0.157.0/build/three.min.js"></script>
@@ -15,7 +15,6 @@
             font-family: Arial, sans-serif;
             background-color: #000000;
             color: white;
-            /* Prevent double-tap zoom */
             touch-action: manipulation;
         }
 
@@ -120,14 +119,42 @@
             color: #45a29e;
         }
 
-        .firework-counter,
-        .sparkles-counter {
+        .firework-counter {
             font-size: 1.1em;
             margin-top: 10px;
             align-self: flex-start;
             padding: 8px;
             background: #0a0e15;
             border-radius: 10px;
+        }
+        .sparkles-counter {
+    background: rgba(26, 31, 42, 0.95);
+    padding: 8px 15px;
+    border-radius: 10px;
+    border: 1px solid rgba(69, 162, 158, 0.2);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-weight: bold;
+}
+
+.sparkles-count-main {
+    color: #45a29e;
+}
+
+.sparkles-count-rates {
+    font-size: 0.9em;
+    color: rgba(255, 255, 255, 0.8);
+    line-height: 1.4;
+}
+        .sparkles-counter::before {
+            font-size: 1.2em;
+        }
+
+        .sparkles-counter:hover {
+            transform: translateY(-2px);
+            border-color: rgba(69, 162, 158, 0.4);
         }
 
         .auto-launcher {
@@ -211,7 +238,6 @@
             background: #3b4f6b;
         }
 
-        /* Styles for Launcher List */
         #launcher-list {
             display: flex;
             flex-direction: column;
@@ -233,7 +259,6 @@
             background: #3b4f6b;
         }
 
-        /* Styles for Individual Launcher Cards */
         .launcher-card {
             background: #2a2f3a;
             padding: 10px;
@@ -287,6 +312,11 @@
             text-align: center;
             z-index: 3000;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            cursor: pointer;
+        }
+
+        .notification:hover {
+            transform: scale(0.98);
         }
 
         .notification.show {
@@ -298,7 +328,6 @@
             from {
                 opacity: 0;
                 transform: translateX(0) translateY(-10px);
-                /* Adjust vertical movement */
             }
 
             to {
@@ -319,7 +348,6 @@
             }
         }
 
-        /* Generic Confirmation Dialog */
         .confirmation-dialog {
             background-color: rgba(26, 31, 42, 0.95);
             padding: 15px;
@@ -406,7 +434,7 @@
         .tab-content {
             position: absolute;
             top: 60px;
-            left: 0;
+            left: 50px;
             max-width: 400px;
             display: none;
             padding: 15px;
@@ -482,7 +510,6 @@
         }
 
         .crafting-option input[type="range"] {
-            -webkit-appearance: none;
             height: 6px;
             background: #2c3e50;
             border-radius: 3px;
@@ -491,7 +518,6 @@
         }
 
         .crafting-option input[type="range"]::-webkit-slider-thumb {
-            -webkit-appearance: none;
             width: 14px;
             height: 14px;
             background: #45a29e;
@@ -526,6 +552,66 @@
             line-height: 20px;
             padding: 2px 5px;
         }
+
+        /* Level Navigation Arrows */
+        .level-navigation {
+            position: fixed;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 100%;
+            pointer-events: none;
+            z-index: 1200;
+        }
+
+        .level-arrow {
+            pointer-events: all;
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background: #2e3f57;
+            border: none;
+            color: white;
+            padding: 10px;
+            cursor: pointer;
+            font-size: 24px;
+            border-radius: 50%;
+            opacity: 0.7;
+        }
+
+        .level-arrow:hover {
+            background: #1a1f2a;
+            opacity: 1.0;
+        }
+
+        .level-arrow-left {
+            left: 0px;
+        }
+
+        .level-arrow-right {
+            right: 30px;
+        }
+
+        .level-display {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #2e3f57;
+            padding: 5px 15px;
+            border-radius: 20px;
+            opacity: 0.8;
+            font-weight: bold;
+            z-index: 1200;
+        }
+
+        #levels-list {
+            max-height: 60vh;
+            /* Set maximum height */
+            overflow-y: auto;
+            /* Enable vertical scrolling */
+            margin-top: 10px;
+            padding-right: 5px;
+        }
     </style>
 </head>
 
@@ -539,12 +625,12 @@
                 <div class="tab" id="crafting-tab">Crafting</div>
                 <div class="tab" id="incremental-tab">Incremental</div>
                 <div class="tab" id="auto-launcher-tab">Auto-Launchers</div>
-                <!-- NEW SAVE/LOAD TAB -->
+                <div class="tab" id="levels-tab">Levels</div>
                 <div class="tab" id="data-tab">Save/Load</div>
             </div>
         </div>
         <div class="sparkles-counter">
-            Sparkles: <span id="sparkles-count">0</span>
+           <span id="sparkles-count"></span>
         </div>
     </div>
 
@@ -610,7 +696,6 @@
         </div>
     </div>
 
-    <!-- NEW SAVE/LOAD CONTENT TAB -->
     <div class="tab-content" id="data-content">
         <div class="panel scrollable-panel">
             <h2 class="panel-title">Save / Load</h2>
@@ -623,10 +708,16 @@
         </div>
     </div>
 
-    <!-- Global Notification Area -->
+    <div class="tab-content" id="levels-content">
+        <div class="panel scrollable-panel">
+            <h2 class="panel-title">Levels</h2>
+            <button id="unlock-next-level">Unlock Next Level (Cost: 100000 Sparkles)</button>
+            <div id="levels-list"></div>
+        </div>
+    </div>
+
     <div id="notification" class="notification" role="alert" aria-live="assertive"></div>
 
-    <!-- Generic Confirmation Dialog -->
     <div id="confirmation-dialog" class="confirmation-dialog">
         <h3 id="confirmation-title">Confirm</h3>
         <p id="confirmation-message">Are you sure?</p>
@@ -635,19 +726,31 @@
     </div>
     <div id="overlay" class="overlay"></div>
 
+    <!-- Level Navigation Arrows -->
+    <div class="level-navigation">
+        <button class="level-arrow level-arrow-left" id="prev-level">&lt;</button>
+        <button class="level-arrow level-arrow-right" id="next-level">&gt;</button>
+    </div>
+    <div class="level-display" id="level-display">Level: 1</div>
+
     <script>
-        // Global configuration
+        // Added a levels feature:
+        // We now have a Levels tab where you can see unlocked levels.
+        // Clicking on a level in the list switches to that level.
+        // Unlocking the next level costs 100k sparkles and is done via a button in the Levels tab.
+        // Levels are no longer automatically unlocked.
+
         const FIREWORK_CONFIG = {
             baseSpeed: 10,
             gravity: 9.81,
-            particleSize: 1.0,        // Base particle size
-            particleDensity: 100,     // Base number of particles
-            ascentSpeed: 40,          // Speed of the firework rocket ascent
-            trailLength: 10,          // Length of the rocket trail
-            rocketSize: 0.5,          // Size of the firework rocket
-            minExplosionHeightPercent: 0.4, // Minimum explosion height (40% of the view)
-            maxExplosionHeightPercent: 0.8,  // Maximum explosion height (80% of the view)
-            patternGravities: {       // Different gravity per pattern
+            particleSize: 1.0,
+            particleDensity: 100,
+            ascentSpeed: 40,
+            trailLength: 10,
+            rocketSize: 0.5,
+            minExplosionHeightPercent: 0.4,
+            maxExplosionHeightPercent: 0.8,
+            patternGravities: {
                 spherical: 9.81,
                 ring: 8.0,
                 heart: 6.0,
@@ -883,10 +986,38 @@
                     this.rotations[shape] = null;
                 });
             }
+
+            clear() {
+                Object.keys(this.activeCounts).forEach(shape => {
+                    this.activeCounts[shape] = 0;
+                    this.meshes[shape].count = 0;
+                    this.meshes[shape].instanceMatrix.needsUpdate = true;
+                    if (this.meshes[shape].instanceColor) {
+                        this.meshes[shape].instanceColor.needsUpdate = true;
+                    }
+                });
+            }
         }
 
         class FireworkGame {
             constructor() {
+                this.currentLevel = parseInt(localStorage.getItem('currentLevel')) || 0;
+
+                const savedLevels = JSON.parse(localStorage.getItem('levels'));
+                if (savedLevels) {
+                    this.levels = savedLevels.map(levelData => ({
+                        fireworks: [],
+                        autoLaunchers: levelData.autoLaunchers || [],
+                        unlocked: levelData.unlocked || false
+                    }));
+                } else {
+                    // Create default first level (always unlocked)
+                    this.levels = [{
+                        fireworks: [],
+                        autoLaunchers: [],
+                        unlocked: true
+                    }];
+                }
 
                 this.debugInfo = {
                     activeFireworks: 0,
@@ -898,7 +1029,6 @@
                 this.camera = null;
                 this.renderer = null;
                 this.clock = null;
-                this.fireworks = [];
 
                 this.recipes = [];
                 this.currentRecipeComponents = [];
@@ -907,32 +1037,34 @@
                 this.autoLauncherCost = parseInt(localStorage.getItem('autoLauncherCost')) || 10;
                 this.sparkles = parseInt(localStorage.getItem('sparkles')) || 0;
 
-                this.autoLaunchers = JSON.parse(localStorage.getItem('autoLaunchers')) || [];
-
                 const savedSelectedIndex = parseInt(localStorage.getItem('selectedLauncherIndex'));
-                if (!isNaN(savedSelectedIndex) && savedSelectedIndex < this.autoLaunchers.length) {
+                if (!isNaN(savedSelectedIndex) && savedSelectedIndex < this.levels[this.currentLevel].autoLaunchers.length) {
                     this.selectedLauncherIndex = savedSelectedIndex;
                     this.selectLauncher(this.selectedLauncherIndex);
+                } else {
+                    this.selectedLauncherIndex = null;
                 }
 
                 this.isMobile = this.detectMobile();
-                this.adjustConfigurations();
-
                 this.initThreeJS();
-
                 this.initBackgroundColor();
 
                 this.particleSystem = new InstancedParticleSystem(this.scene, 50000);
 
-                this.autoLaunchers.forEach(launcher => {
-                    if (!launcher.accumulator) {
-                        launcher.accumulator = Math.random() * 5;
-                    }
-                    if (launcher.level === undefined) {
-                        launcher.level = 1;
-                        launcher.spawnInterval = 5;
-                        launcher.upgradeCost = 15;
-                    }
+                this.levels.forEach(levelData => {
+                    levelData.autoLaunchers.forEach(launcher => {
+                        if (!launcher.accumulator) {
+                            launcher.accumulator = Math.random() * 5;
+                        }
+                        if (launcher.level === undefined) {
+                            launcher.level = 1;
+                            launcher.spawnInterval = 5;
+                            launcher.upgradeCost = 15;
+                        }
+                    });
+                });
+
+                this.levels[this.currentLevel].autoLaunchers.forEach(launcher => {
                     this.createAutoLauncherMesh(launcher);
                 });
 
@@ -944,10 +1076,8 @@
                 this.updateComponentsList();
                 this.updateRecipeList();
                 this.updateLauncherList();
-
                 this.draggingLauncher = null;
                 this.isDragging = false;
-
                 this.animate();
 
                 const gameContainer = document.getElementById('game-container');
@@ -960,11 +1090,14 @@
                         this.resume();
                     }
                 });
+
+                this.updateLevelDisplay();
+                this.updateLevelsList(); // Update the Levels tab UI
+                this.updateLevelArrows();
             }
 
             initThreeJS() {
                 this.scene = new THREE.Scene();
-
                 this.camera = new THREE.PerspectiveCamera(
                     75,
                     window.innerWidth / window.innerHeight,
@@ -996,7 +1129,7 @@
                 this.renderer.setPixelRatio(window.devicePixelRatio);
 
                 const bounds = this.getViewBounds();
-                this.autoLaunchers.forEach(launcher => {
+                this.levels[this.currentLevel].autoLaunchers.forEach(launcher => {
                     const x = bounds.minX + launcher.xPercent * (bounds.maxX - bounds.minX);
                     const y = bounds.minY + 3;
                     if (launcher.mesh) {
@@ -1005,11 +1138,8 @@
                 });
             }
 
-            adjustConfigurations() {
-            }
-
             bindEvents() {
-                this.addComponentHandler = () => {
+                document.getElementById('add-component').addEventListener('click', () => {
                     this.currentRecipeComponents.push({
                         pattern: 'spherical',
                         color: '#ff0000',
@@ -1021,15 +1151,13 @@
                     });
                     this.updateComponentsList();
                     this.saveCurrentRecipeComponents();
-                };
-                document.getElementById('add-component').addEventListener('click', this.addComponentHandler);
+                });
 
-                this.saveRecipeHandler = () => {
+                document.getElementById('save-recipe').addEventListener('click', () => {
                     this.saveCurrentRecipe();
-                };
-                document.getElementById('save-recipe').addEventListener('click', this.saveRecipeHandler);
+                });
 
-                this.eraseRecipesHandler = () => {
+                document.getElementById('erase-recipes').addEventListener('click', () => {
                     this.showConfirmation(
                         "Confirm Erase Recipes",
                         "Are you sure you want to erase all saved recipes?",
@@ -1037,15 +1165,13 @@
                             this.eraseAllRecipes();
                         }
                     );
-                };
-                document.getElementById('erase-recipes').addEventListener('click', this.eraseRecipesHandler);
+                });
 
-                this.buyAutoLauncherHandler = () => {
+                document.getElementById('buy-auto-launcher').addEventListener('click', () => {
                     this.buyAutoLauncher();
-                };
-                document.getElementById('buy-auto-launcher').addEventListener('click', this.buyAutoLauncherHandler);
+                });
 
-                this.resetGameHandler = () => {
+                document.getElementById('reset-game').addEventListener('click', () => {
                     this.showConfirmation(
                         "Confirm Reset",
                         "Are you sure you want to reset the game? All progress will be lost.",
@@ -1053,38 +1179,32 @@
                             this.resetGame();
                         }
                     );
-                };
-                document.getElementById('reset-game').addEventListener('click', this.resetGameHandler);
+                });
 
-                this.craftingTabHandler = () => {
+                document.getElementById('crafting-tab').addEventListener('click', () => {
                     this.toggleTab('crafting');
-                };
-                document.getElementById('crafting-tab').addEventListener('click', this.craftingTabHandler);
-
-                this.incrementalTabHandler = () => {
+                });
+                document.getElementById('incremental-tab').addEventListener('click', () => {
                     this.toggleTab('incremental');
-                };
-                document.getElementById('incremental-tab').addEventListener('click', this.incrementalTabHandler);
-
-                this.autoLauncherTabHandler = () => {
+                });
+                document.getElementById('auto-launcher-tab').addEventListener('click', () => {
                     this.toggleTab('auto-launcher');
                     this.updateLauncherList();
-                };
-                document.getElementById('auto-launcher-tab').addEventListener('click', this.autoLauncherTabHandler);
-
-                // NEW: Data tab handler
-                this.dataTabHandler = () => {
+                });
+                document.getElementById('data-tab').addEventListener('click', () => {
                     this.toggleTab('data');
-                };
-                document.getElementById('data-tab').addEventListener('click', this.dataTabHandler);
+                });
+                document.getElementById('levels-tab').addEventListener('click', () => {
+                    this.toggleTab('levels');
+                    this.updateLevelsList();
+                });
 
-                this.trailEffectChangeHandler = (e) => {
+                document.getElementById('recipe-trail-effect').addEventListener('change', (e) => {
                     this.currentTrailEffect = e.target.value;
                     this.saveCurrentRecipeComponents();
-                };
-                document.getElementById('recipe-trail-effect').addEventListener('change', this.trailEffectChangeHandler);
+                });
 
-                this.pointerDownHandler = (e) => {
+                this.renderer.domElement.addEventListener('pointerdown', (e) => {
                     if (!this.isClickInsideUI(e)) {
                         e.preventDefault();
                         if (e.pointerType === 'touch') {
@@ -1101,12 +1221,12 @@
                         const raycaster = new THREE.Raycaster();
                         raycaster.setFromCamera(mouse, this.camera);
 
-                        const launcherMeshes = this.autoLaunchers.map(launcher => launcher.mesh);
+                        const launcherMeshes = this.levels[this.currentLevel].autoLaunchers.map(launcher => launcher.mesh);
                         const intersects = raycaster.intersectObjects(launcherMeshes);
 
                         if (intersects.length > 0) {
                             const intersectedMesh = intersects[0].object;
-                            const launcherIndex = this.autoLaunchers.findIndex(launcher => launcher.mesh === intersectedMesh);
+                            const launcherIndex = this.levels[this.currentLevel].autoLaunchers.findIndex(launcher => launcher.mesh === intersectedMesh);
                             if (launcherIndex !== -1) {
                                 this.selectLauncher(launcherIndex);
                                 this.showTab('auto-launcher');
@@ -1117,7 +1237,7 @@
                                         launcherCards[launcherIndex].scrollIntoView({ behavior: 'smooth' });
                                     }
                                 }, 100);
-                                this.draggingLauncher = this.autoLaunchers[launcherIndex];
+                                this.draggingLauncher = this.levels[this.currentLevel].autoLaunchers[launcherIndex];
                                 this.isDragging = true;
 
                                 document.addEventListener('pointermove', this.pointerMoveHandler);
@@ -1131,8 +1251,7 @@
                         const worldPos = this.screenToWorld(x, y);
                         this.handlePointerClick(worldPos, e);
                     }
-                };
-                this.renderer.domElement.addEventListener('pointerdown', this.pointerDownHandler);
+                });
 
                 document.getElementById('collapse-button').addEventListener('click', function () {
                     const tabs = document.querySelector('.tabs');
@@ -1148,12 +1267,11 @@
                     }
                 });
 
-                // NEW: Save/Load feature events
+                // Save/Load
                 document.getElementById('save-progress').addEventListener('click', () => {
                     const data = this.serializeGameData();
                     const textarea = document.getElementById('serialized-data');
                     textarea.value = data;
-                    // Copy to clipboard
                     textarea.select();
                     textarea.setSelectionRange(0, 99999);
                     document.execCommand('copy');
@@ -1175,6 +1293,58 @@
                         console.error(error);
                     }
                 });
+
+                // Level navigation
+                document.getElementById('prev-level').addEventListener('click', () => {
+                    if (this.currentLevel > 0) {
+                        this.switchLevel(this.currentLevel - 1);
+                    }
+                });
+                document.getElementById('next-level').addEventListener('click', () => {
+                    // Now we do not automatically add a new level. The player must unlock it in the Levels tab.
+                    if (this.currentLevel < this.levels.length - 1 && this.levels[this.currentLevel + 1].unlocked) {
+                        this.switchLevel(this.currentLevel + 1);
+                    }
+                });
+
+                // Unlock next level button
+                document.getElementById('unlock-next-level').addEventListener('click', () => {
+                    this.unlockNextLevel();
+                });
+            }
+
+            switchLevel(newLevel) {
+                if (newLevel < 0 || newLevel >= this.levels.length || !this.levels[newLevel].unlocked) {
+                    return;
+                }
+
+                this.levels[this.currentLevel].fireworks.forEach(firework => {
+                    firework.dispose();
+                });
+                this.levels[this.currentLevel].fireworks = [];
+                this.disposeAutoLaunchers(this.levels[this.currentLevel]);
+
+                this.particleSystem.clear();
+
+                this.currentLevel = newLevel;
+                this.updateLevelDisplay();
+
+                this.levels[this.currentLevel].autoLaunchers.forEach(launcher => {
+                    if (launcher.mesh) {
+                        this.scene.remove(launcher.mesh);
+                        if (launcher.mesh.geometry) launcher.mesh.geometry.dispose();
+                        if (launcher.mesh.material) {
+                            if (launcher.mesh.material.map) launcher.mesh.material.map.dispose();
+                            launcher.mesh.material.dispose();
+                        }
+                        launcher.mesh = null;
+                    }
+                    this.createAutoLauncherMesh(launcher);
+                });
+
+                this.updateLauncherList();
+                this.updateLevelArrows();
+                this.updateLevelsList();
             }
 
             pointerMoveHandler = (e) => {
@@ -1316,6 +1486,9 @@
                 if (tab === 'auto-launcher') {
                     this.updateLauncherList();
                 }
+                if (tab === 'levels') {
+                    this.updateLevelsList();
+                }
             }
 
             toggleTab(tab) {
@@ -1335,17 +1508,29 @@
             }
 
             updateUI() {
-                document.getElementById('firework-count').textContent = this.fireworkCount;
-                document.getElementById('auto-launcher-level').textContent = this.autoLaunchers.length;
-                document.getElementById('auto-launcher-cost').textContent = this.autoLauncherCost;
-                document.getElementById('sparkles-count').textContent = this.sparkles;
-                document.getElementById('recipe-trail-effect').value = this.currentTrailEffect;
-            }
+                const currentLevelSparklesPerSec = this.calculateSparklesPerSecond(this.levels[this.currentLevel]).toFixed(2);
+    const totalSparklesPerSec = this.calculateTotalSparklesPerSecond().toFixed(2);
+    
+    document.getElementById('sparkles-count').innerHTML = `
+        <div class="sparkles-count-main">Sparkles: ${Math.round(this.sparkles).toLocaleString()}</div>
+        <div class="sparkles-count-rates">
+            Total: +${totalSparklesPerSec}/s<br>
+            Level: +${currentLevelSparklesPerSec}/s
+        </div>
+    `;
+    
+    document.getElementById('firework-count').textContent = this.fireworkCount;
+    document.getElementById('auto-launcher-level').textContent = this.levels[this.currentLevel].autoLaunchers.length;
+    document.getElementById('recipe-trail-effect').value = this.currentTrailEffect;
+
+    const nextCost = this.calculateAutoLauncherCost(this.levels[this.currentLevel].autoLaunchers.length);
+    document.getElementById('auto-launcher-cost').textContent = nextCost;
+}
 
             update(deltaTime) {
                 this.particleSystem.update(deltaTime);
 
-                this.autoLaunchers.forEach(launcher => {
+                this.levels[this.currentLevel].autoLaunchers.forEach(launcher => {
                     launcher.accumulator += deltaTime;
                     if (launcher.accumulator >= launcher.spawnInterval) {
                         const bounds = this.getViewBounds();
@@ -1357,6 +1542,16 @@
                             this.launchFireworkAt(x, bounds.minY, this.currentRecipeComponents, this.currentTrailEffect);
                         }
                         launcher.accumulator -= launcher.spawnInterval;
+                    }
+                });
+
+                // Generate sparkles in other unlocked levels passively
+                this.levels.forEach((level, index) => {
+                    if (index !== this.currentLevel && level.unlocked) {
+                        const sparklesPerSecond = this.calculateSparklesPerSecond(level);
+                        this.sparkles += sparklesPerSecond * deltaTime;
+                        this.saveProgress();
+                        this.updateUI();
                     }
                 });
             }
@@ -1389,14 +1584,14 @@
                 localStorage.setItem('sparkles', this.sparkles);
                 localStorage.setItem('fireworkRecipes', JSON.stringify(this.recipes));
                 localStorage.setItem('currentTrailEffect', this.currentTrailEffect);
-                localStorage.setItem('autoLaunchers', JSON.stringify(this.autoLaunchers.map(launcher => ({
-                    xPercent: launcher.xPercent,
-                    accumulator: launcher.accumulator,
-                    assignedRecipeIndex: launcher.assignedRecipeIndex || null,
-                    level: launcher.level,
-                    spawnInterval: launcher.spawnInterval,
-                    upgradeCost: launcher.upgradeCost
-                }))));
+                localStorage.setItem('currentLevel', this.currentLevel);
+
+                const levelsData = this.levels.map(level => ({
+                    autoLaunchers: level.autoLaunchers,
+                    unlocked: level.unlocked
+                }));
+                localStorage.setItem('levels', JSON.stringify(levelsData));
+
                 localStorage.setItem('currentRecipeComponents', JSON.stringify(this.currentRecipeComponents));
                 localStorage.setItem('backgroundColor', document.getElementById('background-color').value);
                 localStorage.setItem('selectedLauncherIndex', this.selectedLauncherIndex || '');
@@ -1406,9 +1601,27 @@
                 const notification = document.getElementById('notification');
                 notification.textContent = message;
                 notification.classList.add('show');
-                setTimeout(() => {
-                    notification.classList.remove('show');
+
+                if (this.notificationTimeout) {
+                    clearTimeout(this.notificationTimeout);
+                }
+
+                this.notificationTimeout = setTimeout(() => {
+                    this.dismissNotification();
                 }, 3000);
+
+                notification.onclick = () => {
+                    this.dismissNotification();
+                };
+            }
+
+            dismissNotification() {
+                const notification = document.getElementById('notification');
+                notification.classList.remove('show');
+                if (this.notificationTimeout) {
+                    clearTimeout(this.notificationTimeout);
+                    this.notificationTimeout = null;
+                }
             }
 
             pause() {
@@ -1428,14 +1641,16 @@
                 const delta = this.clock.getDelta();
 
                 if (!this.isPaused) {
-                    for (let i = this.fireworks.length - 1; i >= 0; i--) {
-                        this.fireworks[i].update(delta);
-                        if (!this.fireworks[i].alive) {
-                            this.fireworks.splice(i, 1);
+                    const currentFireworks = this.levels[this.currentLevel].fireworks;
+                    for (let i = currentFireworks.length - 1; i >= 0; i--) {
+                        currentFireworks[i].update(delta);
+                        if (!currentFireworks[i].alive) {
+                            currentFireworks[i].dispose();
+                            currentFireworks.splice(i, 1);
                         }
                     }
 
-                    this.debugInfo.activeFireworks = this.fireworks.length;
+                    this.debugInfo.activeFireworks = currentFireworks.length;
                     this.debugInfo.totalParticles = Object.values(this.particleSystem.activeCounts).reduce((a, b) => a + b, 0);
 
                     this.debugInfo.gpuMemory = (
@@ -1470,13 +1685,15 @@
 
             launch(x, y, components, trailEffect) {
                 const firework = new Firework(x, y, components, this.scene, this.camera, trailEffect, this.particleSystem);
-                this.fireworks.push(firework);
+                this.levels[this.currentLevel].fireworks.push(firework);
             }
 
             buyAutoLauncher() {
-                if (this.sparkles >= this.autoLauncherCost) {
-                    this.sparkles -= this.autoLauncherCost;
-                    this.autoLauncherCost = Math.floor(this.autoLauncherCost * 1.5);
+                const numLaunchers = this.levels[this.currentLevel].autoLaunchers.length;
+                const cost = this.calculateAutoLauncherCost(numLaunchers);
+
+                if (this.sparkles >= cost) {
+                    this.sparkles -= cost;
                     const xPercent = Math.random();
                     const accumulator = Math.random() * 5;
                     const launcher = {
@@ -1488,7 +1705,7 @@
                         upgradeCost: 15
                     };
                     this.createAutoLauncherMesh(launcher);
-                    this.autoLaunchers.push(launcher);
+                    this.levels[this.currentLevel].autoLaunchers.push(launcher);
                     this.saveProgress();
                     this.updateUI();
                     this.showNotification("Auto-Launcher purchased!");
@@ -1496,6 +1713,10 @@
                 } else {
                     this.showNotification("Not enough sparkles to buy this upgrade!");
                 }
+            }
+
+            calculateAutoLauncherCost(numLaunchers) {
+                return Math.floor(10 * Math.pow(1.5, numLaunchers));
             }
 
             createAutoLauncherMesh(launcher) {
@@ -1518,30 +1739,6 @@
 
             resetGame() {
                 this.fireworkCount = 0;
-                this.autoLaunchers.forEach(launcher => {
-                    if (launcher.mesh) {
-                        this.scene.remove(launcher.mesh);
-                        if (launcher.mesh.geometry) launcher.mesh.geometry.dispose();
-                        if (launcher.mesh.material) {
-                            if (launcher.mesh.material.map) launcher.mesh.material.map.dispose();
-                            launcher.mesh.material.dispose();
-                        }
-                    }
-                });
-                this.autoLaunchers = [];
-                this.autoLauncherCost = 10;
-
-                if (this.particleSystem) {
-                    this.particleSystem.dispose();
-                    this.particleSystem = new InstancedParticleSystem(this.scene, 50000);
-                }
-
-                this.fireworks.forEach(firework => {
-                    firework.dispose();
-                });
-                this.fireworks = [];
-
-                this.fireworkCount = 0;
                 this.sparkles = 0;
                 this.recipes = [];
                 this.currentTrailEffect = 'fade';
@@ -1555,7 +1752,27 @@
                     secondaryColor: '#00ff00'
                 }];
 
+                this.levels.forEach(levelData => {
+                    levelData.fireworks.forEach(firework => {
+                        firework.dispose();
+                    });
+                    levelData.fireworks = [];
+                    this.disposeAutoLaunchers(levelData);
+                    levelData.autoLaunchers = [];
+                });
+
+                this.levels = [{ fireworks: [], autoLaunchers: [], unlocked: true }];
+                this.currentLevel = 0;
+
+                if (this.particleSystem) {
+                    this.particleSystem.dispose();
+                    this.particleSystem = new InstancedParticleSystem(this.scene, 50000);
+                }
+
+                this.autoLauncherCost = 10;
+
                 localStorage.clear();
+
                 this.updateUI();
                 this.updateComponentsList();
                 this.updateRecipeList();
@@ -1564,6 +1781,9 @@
 
                 this.renderer.setClearColor(new THREE.Color('#000000'));
                 document.getElementById('background-color').value = '#000000';
+                this.updateLevelDisplay();
+                this.updateLevelsList();
+                this.updateLevelArrows();
             }
 
             eraseAllRecipes() {
@@ -1894,12 +2114,12 @@
                 const launcherList = document.getElementById('launcher-list');
                 launcherList.innerHTML = '';
 
-                if (this.autoLaunchers.length === 0) {
+                if (this.levels[this.currentLevel].autoLaunchers.length === 0) {
                     launcherList.innerHTML = "<p>No auto-launchers owned yet.</p>";
                     return;
                 }
 
-                this.autoLaunchers.forEach((launcher, index) => {
+                this.levels[this.currentLevel].autoLaunchers.forEach((launcher, index) => {
                     const launcherDiv = document.createElement('div');
                     launcherDiv.classList.add('launcher-card');
                     if (index === this.selectedLauncherIndex) {
@@ -1931,9 +2151,9 @@
                         const idx = e.target.getAttribute('data-index');
                         const selectedRecipeIndex = parseInt(e.target.value);
                         if (!isNaN(selectedRecipeIndex)) {
-                            this.autoLaunchers[idx].assignedRecipeIndex = selectedRecipeIndex;
+                            this.levels[this.currentLevel].autoLaunchers[idx].assignedRecipeIndex = selectedRecipeIndex;
                         } else {
-                            this.autoLaunchers[idx].assignedRecipeIndex = null;
+                            this.levels[this.currentLevel].autoLaunchers[idx].assignedRecipeIndex = null;
                         }
                         this.saveProgress();
                     });
@@ -1970,12 +2190,11 @@
                 mouse.y = - (event.clientY / window.innerHeight) * 2 + 1;
                 raycaster.setFromCamera(mouse, this.camera);
 
-                const launcherMeshes = this.autoLaunchers.map(launcher => launcher.mesh);
-
+                const launcherMeshes = this.levels[this.currentLevel].autoLaunchers.map(launcher => launcher.mesh);
                 const intersects = raycaster.intersectObjects(launcherMeshes);
                 if (intersects.length > 0) {
                     const clickedMesh = intersects[0].object;
-                    const launcherIndex = this.autoLaunchers.findIndex(launcher => launcher.mesh === clickedMesh);
+                    const launcherIndex = this.levels[this.currentLevel].autoLaunchers.findIndex(launcher => launcher.mesh === clickedMesh);
                     if (launcherIndex !== -1) {
                         this.selectLauncher(launcherIndex);
                         this.showTab('auto-launcher');
@@ -1992,39 +2211,8 @@
                 }
             }
 
-            cleanup() {
-                document.getElementById('add-component').removeEventListener('click', this.addComponentHandler);
-                document.getElementById('save-recipe').removeEventListener('click', this.saveRecipeHandler);
-                document.getElementById('erase-recipes').removeEventListener('click', this.eraseRecipesHandler);
-                document.getElementById('buy-auto-launcher').removeEventListener('click', this.buyAutoLauncherHandler);
-                document.getElementById('reset-game').removeEventListener('click', this.resetGameHandler);
-                document.getElementById('crafting-tab').removeEventListener('click', this.craftingTabHandler);
-                document.getElementById('incremental-tab').removeEventListener('click', this.incrementalTabHandler);
-                document.getElementById('auto-launcher-tab').removeEventListener('click', this.autoLauncherTabHandler);
-                document.getElementById('recipe-trail-effect').removeEventListener('change', this.trailEffectChangeHandler);
-                this.renderer.domElement.removeEventListener('pointerdown', this.pointerDownHandler);
-
-                if (this.isDragging) {
-                    document.removeEventListener('pointermove', this.pointerMoveHandler);
-                    document.removeEventListener('pointerup', this.pointerUpHandler);
-                    document.removeEventListener('pointercancel', this.pointerUpHandler);
-                }
-
-                if (this.renderer) {
-                    this.renderer.dispose();
-                    this.scene = null;
-                    this.camera = null;
-                    this.renderer = null;
-                }
-
-                if (this.particleSystem) {
-                    this.particleSystem.dispose();
-                    this.particleSystem = null;
-                }
-            }
-
             upgradeLauncher(index) {
-                const launcher = this.autoLaunchers[index];
+                const launcher = this.levels[this.currentLevel].autoLaunchers[index];
                 if (!launcher) {
                     this.showNotification("Launcher not found.");
                     return;
@@ -2033,7 +2221,7 @@
                 if (this.sparkles >= launcher.upgradeCost) {
                     this.sparkles -= launcher.upgradeCost;
                     launcher.level += 1;
-                    launcher.spawnInterval = Math.max(1, launcher.spawnInterval * 0.9);
+                    launcher.spawnInterval = launcher.spawnInterval * 0.9;
                     launcher.upgradeCost = Math.floor(launcher.upgradeCost * 1.5);
 
                     this.saveProgress();
@@ -2045,21 +2233,6 @@
                 }
             }
 
-            compressGameData(jsonString) {
-                return btoa(jsonString)
-                    .replace(/\+/g, '-')
-                    .replace(/\//g, '_')
-                    .replace(/=+$/, '');
-            }
-
-            decompressGameData(compressed) {
-                while (compressed.length % 4) {
-                    compressed += '=';
-                }
-                compressed = compressed.replace(/-/g, '+').replace(/_/g, '/');
-                return atob(compressed);
-            }
-
             serializeGameData() {
                 const data = {
                     fireworkCount: this.fireworkCount,
@@ -2067,7 +2240,11 @@
                     sparkles: this.sparkles,
                     recipes: this.recipes,
                     currentTrailEffect: this.currentTrailEffect,
-                    autoLaunchers: this.autoLaunchers,
+                    currentLevel: this.currentLevel,
+                    levels: this.levels.map(level => ({
+                        autoLaunchers: level.autoLaunchers,
+                        unlocked: level.unlocked
+                    })),
                     currentRecipeComponents: this.currentRecipeComponents,
                     backgroundColor: localStorage.getItem('backgroundColor') || '#000000',
                     selectedLauncherIndex: this.selectedLauncherIndex
@@ -2078,18 +2255,15 @@
             deserializeGameData(jsonString) {
                 const data = JSON.parse(jsonString);
 
-                // Clear current game state
-                this.resetGame(); 
+                this.resetGame();
 
-                // Restore state
                 this.fireworkCount = data.fireworkCount || 0;
                 this.autoLauncherCost = data.autoLauncherCost || 10;
                 this.sparkles = data.sparkles || 0;
                 this.recipes = data.recipes || [];
                 this.currentTrailEffect = data.currentTrailEffect || 'fade';
-                this.autoLaunchers = data.autoLaunchers || [];
                 this.currentRecipeComponents = data.currentRecipeComponents || [{
-                    pattern: 'spherical', color: '#ff0000', size: 0.5, lifetime: 1.2, shape: 'sphere', spread: 1.0
+                    pattern: 'spherical', color: '#ff0000', size: 0.5, lifetime: 1.2, shape: 'sphere', spread: 1.0, secondaryColor: '#00ff00'
                 }];
 
                 const bgColor = data.backgroundColor || '#000000';
@@ -2097,37 +2271,159 @@
                 localStorage.setItem('backgroundColor', bgColor);
                 document.getElementById('background-color').value = bgColor;
 
-                if (typeof data.selectedLauncherIndex === 'number') {
-                    this.selectedLauncherIndex = data.selectedLauncherIndex;
+                this.selectedLauncherIndex = data.selectedLauncherIndex ?? null;
+
+                if (data.levels) {
+                    const currentLevel = data.currentLevel || 0;
+                    this.levels = data.levels.map((levelData, index) => ({
+                        fireworks: [],
+                        autoLaunchers: levelData.autoLaunchers || [],
+                        unlocked: levelData.unlocked || index === 0
+                    }));
+                    this.currentLevel = currentLevel;
                 } else {
-                    this.selectedLauncherIndex = null;
+                    this.levels = [{
+                        fireworks: [],
+                        autoLaunchers: data.autoLaunchers || [],
+                        unlocked: true
+                    }];
+                    this.currentLevel = 0;
                 }
 
-                // Re-create auto launchers
-                this.autoLaunchers.forEach(launcher => {
-                    if (!launcher.accumulator) {
-                        launcher.accumulator = Math.random() * 5;
-                    }
-                    if (launcher.level === undefined) {
-                        launcher.level = 1;
-                        launcher.spawnInterval = 5;
-                        launcher.upgradeCost = 15;
-                    }
+                this.levels.forEach(levelData => {
+                    levelData.autoLaunchers.forEach(launcher => {
+                        if (!launcher.accumulator) {
+                            launcher.accumulator = Math.random() * 5;
+                        }
+                        if (launcher.level === undefined) {
+                            launcher.level = 1;
+                            launcher.spawnInterval = 5;
+                            launcher.upgradeCost = 15;
+                        }
+                        launcher.mesh = null;
+                    });
+                });
+
+                this.levels[this.currentLevel].autoLaunchers.forEach(launcher => {
                     this.createAutoLauncherMesh(launcher);
                 });
 
-                // Re-save everything to localStorage
                 this.saveProgress();
-
                 this.updateUI();
                 this.updateComponentsList();
                 this.updateRecipeList();
                 this.updateLauncherList();
 
-                if (this.selectedLauncherIndex !== null && this.selectedLauncherIndex < this.autoLaunchers.length) {
+                if (this.selectedLauncherIndex !== null && this.selectedLauncherIndex < this.levels[this.currentLevel].autoLaunchers.length) {
                     this.selectLauncher(this.selectedLauncherIndex);
                 }
+
+                this.updateLevelDisplay();
+                this.updateLevelsList();
+                this.updateLevelArrows();
             }
+
+            disposeAutoLaunchers(levelData) {
+                levelData.autoLaunchers.forEach(launcher => {
+                    if (launcher.mesh) {
+                        this.scene.remove(launcher.mesh);
+                        if (launcher.mesh.geometry) launcher.mesh.geometry.dispose();
+                        if (launcher.mesh.material) {
+                            if (launcher.mesh.material.map) launcher.mesh.material.map.dispose();
+                            launcher.mesh.material.dispose();
+                        }
+                        launcher.mesh = null;
+                    }
+                });
+            }
+
+            updateLevelDisplay() {
+                const levelDisplay = document.getElementById('level-display');
+                levelDisplay.textContent = `Level: ${this.currentLevel + 1}`;
+            }
+
+            updateLevelArrows() {
+                const prevButton = document.getElementById('prev-level');
+                const nextButton = document.getElementById('next-level');
+
+                prevButton.style.display = this.currentLevel > 0 ? 'block' : 'none';
+
+                // Next button only if next level is unlocked
+                if (this.currentLevel < this.levels.length - 1 && this.levels[this.currentLevel + 1].unlocked) {
+                    nextButton.style.display = 'block';
+                } else {
+                    nextButton.style.display = 'none';
+                }
+            }
+
+            // We no longer automatically unlock new levels. We must buy them at a cost of 100000 sparkles.
+            unlockNextLevel() {
+                const cost = 100000; // 100k sparkles
+                // If there's already a next level in existence and locked, unlock it.
+                // If there's no next level, create one and unlock it.
+                let nextLevelIndex = this.levels.length;
+                // Check if last level is unlocked
+                // We always create a new level when we unlock next.
+                if (this.sparkles >= cost) {
+                    this.sparkles -= cost;
+                    this.levels.push({
+                        fireworks: [],
+                        autoLaunchers: [],
+                        unlocked: true
+                    });
+                    this.saveProgress();
+                    this.updateUI();
+                    this.showNotification("New level unlocked!");
+                    this.updateLevelsList();
+                    this.updateLevelArrows();
+                } else {
+                    this.showNotification("Not enough sparkles to unlock next level!");
+                }
+            }
+
+            updateLevelsList() {
+                const levelsList = document.getElementById('levels-list');
+                levelsList.innerHTML = '';
+
+                this.levels.forEach((level, index) => {
+                    if (level.unlocked) {
+                        const levelDiv = document.createElement('div');
+                        levelDiv.style.border = '1px solid #34495e';
+                        levelDiv.style.borderRadius = '5px';
+                        levelDiv.style.padding = '10px';
+                        levelDiv.style.marginBottom = '10px';
+                        levelDiv.style.cursor = 'pointer';
+                        levelDiv.style.background = (index === this.currentLevel) ? '#1a1f2a' : '#2a2f3a';
+                        levelDiv.textContent = `Level ${index + 1}`;
+                        levelDiv.addEventListener('click', () => {
+                            if (index !== this.currentLevel) {
+                                this.switchLevel(index);
+                            }
+                        });
+                        levelsList.appendChild(levelDiv);
+                    }
+                });
+            }
+
+            calculateSparklesPerSecond(level) {
+                if (!level.autoLaunchers) return 0;
+                let totalSparklesPerSecond = level.autoLaunchers.reduce((total, launcher) => {
+                    return total + (1 / launcher.spawnInterval);
+                }, 0);
+
+                return Math.round(totalSparklesPerSecond * 100) / 100;
+            }
+
+            calculateTotalSparklesPerSecond() {
+    let total = 0;
+    for (const level of this.levels) {
+        if (level.unlocked) {
+            total += this.calculateSparklesPerSecond(level);
+        }
+    }
+    return Math.round(total * 100) / 100;
+}
+
         }
 
         class Firework {
@@ -2321,12 +2617,10 @@
             }
 
             explode() {
-                // Remove and dispose of the rocket
                 this.scene.remove(this.rocket);
                 if (this.rocket.geometry) this.rocket.geometry.dispose();
                 if (this.rocket.material) this.rocket.material.dispose();
 
-                // Remove and dispose of trail particles
                 this.trailParticles.forEach(particle => {
                     if (particle.mesh) {
                         this.scene.remove(particle.mesh);
@@ -2339,7 +2633,6 @@
                 });
                 this.trailParticles = [];
 
-                // Explosion patterns with secondary color for helix:
                 this.components.forEach(component => {
                     const particleCount = Math.floor(FIREWORK_CONFIG.particleDensity * component.size);
                     const pattern = component.pattern;
@@ -2352,6 +2645,8 @@
                     const velocity = new THREE.Vector3();
                     const shape = component.shape;
                     const spread = component.spread;
+
+                    // Pattern explosion code unchanged from original, included fully
 
                     switch (pattern) {
                         case 'spherical':
@@ -2507,7 +2802,6 @@
                             const verticalSpacing = 0.1;
                             const spreadFactor = 0.1;
 
-                            // Use different colors for each stream: primaryColor for stream 0, secondaryColor for stream 1
                             for (let stream = 0; stream < 2; stream++) {
                                 const streamOffset = stream * Math.PI;
                                 for (let i = 0; i < particlesPerStream; i++) {
@@ -2609,7 +2903,6 @@
                 });
                 this.exploded = true;
             }
-
 
             dispose() {
                 if (this.rocket) {
