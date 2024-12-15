@@ -217,44 +217,15 @@ line-height: 1.4;
     background: #3b4f6b;
 }
 
-#crafting-content {
-    max-height: 80vh;
-    overflow-y: auto;
-}
 
-#crafting-content::-webkit-scrollbar {
-    width: 8px;
-}
-
-#crafting-content::-webkit-scrollbar-thumb {
-    background: #2e3f57;
-    border-radius: 4px;
-}
-
-#crafting-content::-webkit-scrollbar-thumb:hover {
-    background: #3b4f6b;
-}
 
 #launcher-list {
     display: flex;
     flex-direction: column;
     gap: 10px;
     max-height: 60vh;
-    overflow-y: auto;
 }
 
-#launcher-list::-webkit-scrollbar {
-    width: 8px;
-}
-
-#launcher-list::-webkit-scrollbar-thumb {
-    background: #2e3f57;
-    border-radius: 4px;
-}
-
-#launcher-list::-webkit-scrollbar-thumb:hover {
-    background: #3b4f6b;
-}
 
 .launcher-card {
     background: #2a2f3a;
@@ -427,6 +398,8 @@ line-height: 1.4;
     scrollbar-color: rgba(255, 255, 255, 0.2) rgba(0, 0, 0, 0.1);
 }
 
+
+
 .tab-content {
     position: absolute;
     top: 90px;
@@ -445,12 +418,27 @@ line-height: 1.4;
     opacity: 0;
     height: 0;
     overflow: hidden;
+    max-height: 80vh;
+    overflow-y: auto;
 }
 
 .tab-content.active {
     display: block;
     opacity: 1;
     height: auto;
+}
+
+.tab-content::-webkit-scrollbar {
+    width: 8px;
+}
+
+.tab-content::-webkit-scrollbar-thumb {
+    background: #2e3f57;
+    border-radius: 4px;
+}
+
+.tab-content::-webkit-scrollbar-thumb:hover {
+    background: #3b4f6b;
 }
 
 button {

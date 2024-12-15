@@ -459,8 +459,8 @@ class FireworkGame {
         document.getElementById('crafting-tab').addEventListener('click', () => {
             this.toggleTab('crafting');
         });
-        document.getElementById('incremental-tab').addEventListener('click', () => {
-            this.toggleTab('incremental');
+        document.getElementById('stats-tab').addEventListener('click', () => {
+            this.toggleTab('stats');
         });
         document.getElementById('auto-launcher-tab').addEventListener('click', () => {
             this.toggleTab('auto-launcher');
@@ -593,9 +593,11 @@ class FireworkGame {
     }
 
     handleScroll(event) {
-        event.preventDefault();
+        if (this.isClickInsideUI(event)) {
+            return;
+        }
 
-        const scrollSpeed = 0.01;
+        const scrollSpeed = 0.05;
         const scrollAmount = event.deltaY * scrollSpeed;
 
         this.camera.position.x += scrollAmount;
@@ -793,17 +795,12 @@ class FireworkGame {
         cancelAction.addEventListener('click', cancelHandler);
     }
 
+    isPositionInsideUI(x, y) {
+        return document.elementFromPoint(x, y) !== this.renderer.domElement;
+    }
+
     isClickInsideUI(event) {
-        const uiElements = document.querySelectorAll('.game-ui, .confirmation-dialog, .overlay');
-        for (let ui of uiElements) {
-            const rect = ui.getBoundingClientRect();
-            let x = event.clientX;
-            let y = event.clientY;
-            if (x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom && ui.style.display !== 'none') {
-                return true;
-            }
-        }
-        return false;
+        return this.isPositionInsideUI(event.clientX, event.clientY);
     }
 
     screenToWorld(x, y) {
@@ -1764,6 +1761,14 @@ class FireworkGame {
 
     setCameraTarget(targetX) {
         this.cameraTargetX = targetX;
+    }
+
+    isTabContentActive() {
+        const activeTabContent = document.querySelector('.tab-content.active');
+        if (activeTabContent) {
+return activeTabContent;        
+    }
+        return null; // No active tab found
     }
 }
 
