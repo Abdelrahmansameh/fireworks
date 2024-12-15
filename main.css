@@ -4,7 +4,9 @@ body {
     font-family: Arial, sans-serif;
     background-color: #000000;
     color: white;
-    touch-action: manipulation;
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
 }
 
 #game-container {
@@ -15,6 +17,9 @@ body {
     height: 100%;
     overflow: hidden;
     z-index: 0;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
 }
 
 .top-bar-container {

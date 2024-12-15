@@ -503,7 +503,7 @@ class FireworkGame {
                         this.draggingLauncher = this.levels[this.currentLevel].autoLaunchers[launcherIndex];
                         this.isDragging = true;
 
-                        document.addEventListener('pointermove', this.pointerMoveHandler);
+                        document.addEventListener('pointermove', this.pointerMoveHandler, { passive: false });
                         document.addEventListener('pointerup', this.pointerUpHandler);
                         document.addEventListener('pointercancel', this.pointerUpHandler);
 
@@ -514,7 +514,7 @@ class FireworkGame {
                 const worldPos = this.screenToWorld(x, y);
                 this.handlePointerClick(worldPos, e);
             }
-        });
+        }, { passive: false });
 
         document.getElementById('collapse-button').addEventListener('click', function () {
             const tabs = document.querySelector('.tabs');
@@ -708,7 +708,7 @@ class FireworkGame {
                         event.target.setPointerCapture(event.pointerId);
                     }
 
-                    document.addEventListener('pointermove', this.pointerMoveHandler);
+                    document.addEventListener('pointermove', this.pointerMoveHandler, { passive: false });
                     document.addEventListener('pointerup', this.pointerUpHandler);
                     document.addEventListener('pointercancel', this.pointerUpHandler);
 
@@ -726,7 +726,7 @@ class FireworkGame {
                 event.target.setPointerCapture(event.pointerId);
             }
 
-            document.addEventListener('pointermove', this.pointerMoveHandler);
+            document.addEventListener('pointermove', this.pointerMoveHandler, { passive: false });
             document.addEventListener('pointerup', this.pointerUpHandler);
             document.addEventListener('pointercancel', this.pointerUpHandler);
             return;
