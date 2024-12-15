@@ -591,3 +591,15 @@ textarea {
     margin-top: 10px;
     padding-right: 5px;
 }
+
+.danger-button {
+    background-color: #ab362a;
+    color: white;
+    border: none;
+    cursor: pointer;
+    border-radius: 4px;
+}
+
+.danger-button:hover {
+    background-color: #761f16;
+}

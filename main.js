@@ -366,12 +366,12 @@ class FireworkGame {
     initThreeJS() {
         this.scene = new THREE.Scene();
         this.camera = new THREE.PerspectiveCamera(
-           75,
+            75,
             window.innerWidth / window.innerHeight,
             0.1,
             1000
         );
-        
+
         const aspectRatio = window.innerWidth / window.innerHeight;
         const verticalSize = GAME_BOUNDS.MAX_Y - GAME_BOUNDS.MIN_Y;
         const desiredDistance = (verticalSize / 2) / Math.tan((this.camera.fov * Math.PI / 180) / 2);
@@ -382,10 +382,10 @@ class FireworkGame {
         this.visibleWidth = this.visibleHeight * aspectRatio;
 
         // Adjust game bounds based on visible area
-        GAME_BOUNDS.MIN_Y = -this.visibleHeight/2;
-        GAME_BOUNDS.MAX_Y = this.visibleHeight/2;
-        GAME_BOUNDS.MIN_X = -this.visibleWidth/2;
-        GAME_BOUNDS.MAX_X = this.visibleWidth/2;
+        GAME_BOUNDS.MIN_Y = -this.visibleHeight / 2;
+        GAME_BOUNDS.MAX_Y = this.visibleHeight / 2;
+        GAME_BOUNDS.MIN_X = -this.visibleWidth / 2;
+        GAME_BOUNDS.MAX_X = this.visibleWidth / 2;
 
         this.cameraTargetX = null;
         this.cameraTransitionSpeed = 5.0;
@@ -452,6 +452,17 @@ class FireworkGame {
                 "Are you sure you want to reset the game? All progress will be lost.",
                 () => {
                     this.resetGame();
+                }
+            );
+        });
+
+        document.getElementById('reset-launchers').addEventListener('click', () => {
+            this.showConfirmation(
+                'Reset Auto-Launchers',
+                'Are you sure you want to reset all auto-launchers? This will remove all launchers and refund 100% of their cost.',
+                () => {
+                    const refundAmount = this.resetAutoLaunchers();
+                    this.showNotification(`Auto-launchers reset! Refunded ${Math.floor(refundAmount)} sparkles`);
                 }
             );
         });
@@ -1097,6 +1108,44 @@ class FireworkGame {
         launcher.mesh = launcherMesh;
     }
 
+    resetAutoLaunchers() {
+        let refundAmount = 0;
+
+
+        this.levels.forEach(level => {
+            level.autoLaunchers.forEach(launcher => {
+                let cost = 0;
+                // Initial purchase cost
+                cost += this.calculateAutoLauncherCost(0);
+                // Add all upgrade costs
+                for (let i = 2; i <= launcher.level; i++) {
+                    cost += launcher.upgradeCost * (i - 1);
+                }
+                refundAmount += cost;
+
+                // Remove the mesh from the scene
+                if (launcher.mesh) {
+                    this.scene.remove(launcher.mesh);
+                    launcher.mesh.geometry.dispose();
+                    launcher.mesh.material.dispose();
+                }
+            });
+            level.autoLaunchers = []; // Clear all launchers
+        });
+
+        // Add the refund to sparkles
+        this.sparkles += Math.floor(refundAmount);
+
+        // Reset auto launcher cost to initial value
+        this.autoLauncherCost = 10;
+
+        // Update UI
+        this.updateUI();
+        this.updateLauncherList();
+        this.saveProgress();
+        return refundAmount;
+    }
+
     resetGame() {
         this.fireworkCount = 0;
         this.sparkles = 0;
@@ -1535,7 +1584,7 @@ class FireworkGame {
         localStorage.setItem('selectedLauncherIndex', selectedIndex);
     }
 
- 
+
     upgradeLauncher(index) {
         const launcher = this.levels[this.currentLevel].autoLaunchers[index];
         if (!launcher) {
@@ -1753,7 +1802,7 @@ class FireworkGame {
         if (this.cameraTargetX !== null) {
             const t = Math.min(this.cameraTransitionSpeed * deltaTime, 1.0);
             this.camera.position.x += (this.cameraTargetX - this.camera.position.x) * t;
-            if (Math.abs(this.camera.position.x - this.cameraTargetX) <0.1) {
+            if (Math.abs(this.camera.position.x - this.cameraTargetX) < 0.1) {
                 this.cameraTargetX = null;
             }
         }
@@ -1766,8 +1815,8 @@ class FireworkGame {
     isTabContentActive() {
         const activeTabContent = document.querySelector('.tab-content.active');
         if (activeTabContent) {
-return activeTabContent;        
-    }
+            return activeTabContent;
+        }
         return null; // No active tab found
     }
 }
