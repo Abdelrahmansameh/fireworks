@@ -1,9 +1,3 @@
-// Added a levels feature:
-// We now have a Levels tab where you can see unlocked levels.
-// Clicking on a level in the list switches to that level.
-// Unlocking the next level costs 100k sparkles and is done via a button in the Levels tab.
-// Levels are no longer automatically unlocked.
-
 const FIREWORK_CONFIG = {
     baseSpeed: 10,
     gravity: 9.81,
@@ -342,6 +336,8 @@ class FireworkGame {
         this.updateLauncherList();
         this.draggingLauncher = null;
         this.isDragging = false;
+        this.isScrollDragging = false;
+        this.lastPointerX = 0;
         this.animate();
 
         const gameContainer = document.getElementById('game-container');
@@ -369,6 +365,9 @@ class FireworkGame {
             1000
         );
         this.camera.position.z = 100;
+        
+        this.cameraTargetX = null;
+        this.cameraTransitionSpeed = 5.0;
 
         this.renderer = new THREE.WebGLRenderer({
             antialias: true,
@@ -575,6 +574,30 @@ class FireworkGame {
         document.getElementById('unlock-next-level').addEventListener('click', () => {
             this.unlockNextLevel();
         });
+
+        // Add wheel event listener for horizontal scrolling
+        document.addEventListener('wheel', this.handleScroll.bind(this));
+
+    }
+
+    handleScroll(event) {
+        // Prevent default scrolling behavior
+        event.preventDefault();
+
+        // Get the current view bounds
+        const bounds = this.getViewBounds();
+        const viewWidth = bounds.maxX - bounds.minX;
+
+        // Calculate scroll amount (use deltaY for horizontal scrolling)
+        const scrollSpeed = 0.01;
+        const scrollAmount = event.deltaY * scrollSpeed;
+
+        // Update camera position
+        this.camera.position.x += scrollAmount;
+
+        // Limit scrolling range 
+        const maxScroll = viewWidth * 1.5;
+        this.camera.position.x = Math.max(-maxScroll, Math.min(maxScroll, this.camera.position.x));
     }
 
     switchLevel(newLevel) {
@@ -636,23 +659,107 @@ class FireworkGame {
             this.draggingLauncher.xPercent = Math.max(0, Math.min(1, this.draggingLauncher.xPercent));
 
             this.saveProgress();
+        } else if (this.isScrollDragging) {
+            const deltaX = e.clientX - this.lastPointerX;
+            const scrollSpeed = 0.05;
+
+            this.camera.position.x -= deltaX * scrollSpeed;
+
+            const bounds = this.getViewBounds();
+            const viewWidth = bounds.maxX - bounds.minX;
+            const maxScroll = viewWidth * 1.5;
+            this.camera.position.x = Math.max(-maxScroll, Math.min(maxScroll, this.camera.position.x));
+
+            this.lastPointerX = e.clientX;
         }
     };
 
+    handlePointerClick(worldPos, event) {
+        if (this.isClickInsideUI(event)) {
+            return;
+        }
+
+        const raycaster = new THREE.Raycaster();
+        const mouse = new THREE.Vector2();
+        mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+        mouse.y = - (event.clientY / window.innerHeight) * 2 + 1;
+        raycaster.setFromCamera(mouse, this.camera);
+
+        const launcherMeshes = this.levels[this.currentLevel].autoLaunchers.map(launcher => launcher.mesh);
+        const intersects = raycaster.intersectObjects(launcherMeshes);
+        if (intersects.length > 0) {
+            const clickedMesh = intersects[0].object;
+            const launcherIndex = this.levels[this.currentLevel].autoLaunchers.findIndex(launcher => launcher.mesh === clickedMesh);
+            if (launcherIndex !== -1) {
+                if (event.pointerType === 'touch' || event.button === 0) {
+                    this.selectLauncher(launcherIndex);
+
+                    // Scroll the launcher into view in the UI
+                    setTimeout(() => {
+                        const launcherCards = document.querySelectorAll('.launcher-card');
+                        if (launcherCards[launcherIndex]) {
+                            launcherCards[launcherIndex].scrollIntoView({ behavior: 'smooth' });
+                        }
+                    }, 100);
+                    this.draggingLauncher = this.levels[this.currentLevel].autoLaunchers[launcherIndex];
+                    this.isDragging = true;
+
+                    if (event.pointerType === 'touch' && event.target) {
+                        event.target.setPointerCapture(event.pointerId);
+                    }
+
+                    document.addEventListener('pointermove', this.pointerMoveHandler);
+                    document.addEventListener('pointerup', this.pointerUpHandler);
+                    document.addEventListener('pointercancel', this.pointerUpHandler);
+
+                    return;
+                }
+            }
+        } else {
+            // Start scroll dragging if not clicking on a launcher
+            this.isScrollDragging = true;
+            this.cameraTargetX = null;
+            this.lastPointerX = event.clientX;
+            document.body.style.cursor = 'grabbing';
+
+            if (event.pointerType === 'touch' && event.target) {
+                event.target.setPointerCapture(event.pointerId);
+            }
+
+            document.addEventListener('pointermove', this.pointerMoveHandler);
+            document.addEventListener('pointerup', this.pointerUpHandler);
+            document.addEventListener('pointercancel', this.pointerUpHandler);
+            return;
+        }
+
+        this.launchFireworkAt(worldPos.x);
+    }
+
     pointerUpHandler = (e) => {
-        if (this.isDragging) {
+        if (this.isDragging || this.isScrollDragging) {
             if (e.pointerType === 'touch' && e.target) {
                 e.target.releasePointerCapture(e.pointerId);
             }
 
+            // If it was a very small drag, treat it as a click and launch a firework
+            if (this.isScrollDragging) {
+                const deltaX = Math.abs(e.clientX - this.lastPointerX);
+                if (deltaX < 20 && !this.isClickInsideUI(e)) {
+                    const worldPos = this.screenToWorld(e.clientX, e.clientY);
+                    this.launchFireworkAt(worldPos.x);
+                }
+                document.body.style.cursor = 'default';
+            }
+
             this.isDragging = false;
+            this.isScrollDragging = false;
             this.draggingLauncher = null;
 
             document.removeEventListener('pointermove', this.pointerMoveHandler);
             document.removeEventListener('pointerup', this.pointerUpHandler);
             document.removeEventListener('pointercancel', this.pointerUpHandler);
         }
-    };
+    }
 
     showConfirmation(title, message, onConfirm) {
         const confirmationDialog = document.getElementById('confirmation-dialog');
@@ -718,12 +825,11 @@ class FireworkGame {
         const distance = this.camera.position.z;
         const vFOV = this.camera.fov * Math.PI / 180;
         const viewHeight = 2 * Math.tan(vFOV / 2) * distance;
-        const viewWidth = viewHeight * this.camera.aspect;
 
         const minY = -viewHeight / 2;
         const maxY = viewHeight / 2;
-        const minX = -viewWidth / 2;
-        const maxX = viewWidth / 2;
+        const minX = -viewHeight / 2 * this.camera.aspect;
+        const maxX = viewHeight / 2 * this.camera.aspect;
 
         return { minX, maxX, minY, maxY };
     }
@@ -793,6 +899,8 @@ class FireworkGame {
 
     update(deltaTime) {
         this.particleSystem.update(deltaTime);
+
+        this.updateCameraPosition(deltaTime);
 
         this.levels[this.currentLevel].autoLaunchers.forEach(launcher => {
             launcher.accumulator += deltaTime;
@@ -1007,13 +1115,7 @@ class FireworkGame {
         this.recipes = [];
         this.currentTrailEffect = 'fade';
         this.currentRecipeComponents = [{
-            pattern: 'spherical',
-            color: '#ff0000',
-            size: 0.5,
-            lifetime: 1.2,
-            shape: 'sphere',
-            spread: 1.0,
-            secondaryColor: '#00ff00'
+            pattern: 'spherical', color: '#ff0000', size: 0.5, lifetime: 1.2, shape: 'sphere', spread: 1.0, secondaryColor: '#00ff00'
         }];
 
         this.levels.forEach(levelData => {
@@ -1430,6 +1532,10 @@ class FireworkGame {
 
             launcherDiv.addEventListener('click', () => {
                 this.selectLauncher(index);
+                const launcher = this.levels[this.currentLevel].autoLaunchers[index];
+                if (launcher && launcher.mesh) {
+                    this.setCameraTarget(launcher.mesh.position.x);
+                }
             });
         });
     }
@@ -1447,32 +1553,24 @@ class FireworkGame {
         localStorage.setItem('selectedLauncherIndex', selectedIndex);
     }
 
-    handlePointerClick(worldPos, event) {
-        const raycaster = new THREE.Raycaster();
-        const mouse = new THREE.Vector2();
-        mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-        mouse.y = - (event.clientY / window.innerHeight) * 2 + 1;
-        raycaster.setFromCamera(mouse, this.camera);
+    handleScroll(event) {
+        // Prevent default scrolling behavior
+        event.preventDefault();
 
-        const launcherMeshes = this.levels[this.currentLevel].autoLaunchers.map(launcher => launcher.mesh);
-        const intersects = raycaster.intersectObjects(launcherMeshes);
-        if (intersects.length > 0) {
-            const clickedMesh = intersects[0].object;
-            const launcherIndex = this.levels[this.currentLevel].autoLaunchers.findIndex(launcher => launcher.mesh === clickedMesh);
-            if (launcherIndex !== -1) {
-                this.selectLauncher(launcherIndex);
-                this.showTab('auto-launcher');
-                setTimeout(() => {
-                    const launcherList = document.getElementById('launcher-list');
-                    const launcherCards = launcherList.getElementsByClassName('launcher-card');
-                    if (launcherCards[launcherIndex]) {
-                        launcherCards[launcherIndex].scrollIntoView({ behavior: 'smooth' });
-                    }
-                }, 100);
-            }
-        } else {
-            this.launchFireworkAt(worldPos.x);
-        }
+        // Get the current view bounds
+        const bounds = this.getViewBounds();
+        const viewWidth = bounds.maxX - bounds.minX;
+
+        // Calculate scroll amount (use deltaY for horizontal scrolling)
+        const scrollSpeed = 0.01;
+        const scrollAmount = event.deltaY * scrollSpeed;
+
+        // Update camera position
+        this.camera.position.x += scrollAmount;
+
+        // Limit scrolling range (3x the view width in each direction)
+        const maxScroll = viewWidth * 1.5;
+        this.camera.position.x = Math.max(-maxScroll, Math.min(maxScroll, this.camera.position.x));
     }
 
     upgradeLauncher(index) {
@@ -1564,7 +1662,6 @@ class FireworkGame {
                     launcher.spawnInterval = 5;
                     launcher.upgradeCost = 15;
                 }
-                launcher.mesh = null;
             });
         });
 
@@ -1688,6 +1785,20 @@ class FireworkGame {
         return Math.round(total * 100) / 100;
     }
 
+    updateCameraPosition(deltaTime) {
+        // we can use null as an invalid value for vectors because javascript will coerce it to 0 because its weird like that
+        if (this.cameraTargetX !== null) {
+            const t = Math.min(this.cameraTransitionSpeed * deltaTime, 1.0);
+            this.camera.position.x += (this.cameraTargetX - this.camera.position.x) * t;
+            if (Math.abs(this.camera.position.x - this.cameraTargetX) <0.1) {
+                this.cameraTargetX = null;
+            }
+        }
+    }
+
+    setCameraTarget(targetX) {
+        this.cameraTargetX = targetX;
+    }
 }
 
 class Firework {
