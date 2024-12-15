@@ -366,7 +366,7 @@ class FireworkGame {
     initThreeJS() {
         this.scene = new THREE.Scene();
         this.camera = new THREE.PerspectiveCamera(
-            75,
+           75,
             window.innerWidth / window.innerHeight,
             0.1,
             1000
@@ -374,9 +374,19 @@ class FireworkGame {
         
         const aspectRatio = window.innerWidth / window.innerHeight;
         const verticalSize = GAME_BOUNDS.MAX_Y - GAME_BOUNDS.MIN_Y;
-        const desiredDistance = (verticalSize / 2) / Math.tan((75 * Math.PI / 180) / 2);
-        this.camera.position.z = desiredDistance;
-        
+        const desiredDistance = (verticalSize / 2) / Math.tan((this.camera.fov * Math.PI / 180) / 2);
+        this.camera.position.z = desiredDistance * 1.5;
+
+        // Calculate the visible height at the target z-position
+        this.visibleHeight = 2 * Math.tan((this.camera.fov * Math.PI / 180) / 2) * this.camera.position.z;
+        this.visibleWidth = this.visibleHeight * aspectRatio;
+
+        // Adjust game bounds based on visible area
+        GAME_BOUNDS.MIN_Y = -this.visibleHeight/2;
+        GAME_BOUNDS.MAX_Y = this.visibleHeight/2;
+        GAME_BOUNDS.MIN_X = -this.visibleWidth/2;
+        GAME_BOUNDS.MAX_X = this.visibleWidth/2;
+
         this.cameraTargetX = null;
         this.cameraTransitionSpeed = 5.0;
 
@@ -1082,7 +1092,8 @@ class FireworkGame {
             side: THREE.DoubleSide
         });
         const launcherMesh = new THREE.Mesh(geometry, material);
-        const y = GAME_BOUNDS.MIN_Y + 3;
+        // Position launcher at bottom of visible area with small offset
+        const y = GAME_BOUNDS.MIN_Y + (height / 2);
         launcherMesh.position.set(launcher.x, y, 0);
         this.scene.add(launcherMesh);
 
@@ -1313,13 +1324,7 @@ class FireworkGame {
             });
         } else {
             this.currentRecipeComponents = [{
-                pattern: 'spherical',
-                color: '#ff0000',
-                size: 0.5,
-                lifetime: 1.2,
-                shape: 'sphere',
-                spread: 1.0,
-                secondaryColor: '#00ff00'
+                pattern: 'spherical', color: '#ff0000', size: 0.5, lifetime: 1.2, shape: 'sphere', spread: 1.0, secondaryColor: '#00ff00'
             }];
         }
         if (savedTrailEffect) {
