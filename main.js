@@ -21,6 +21,13 @@ const FIREWORK_CONFIG = {
     supportedShapes: ['sphere', 'star', 'ring', 'crystalDroplet', 'sliceBurst']
 };
 
+const GAME_BOUNDS = {
+    MIN_X: -100,
+    MAX_X: 100,
+    MIN_Y: -50,
+    MAX_Y: 50
+};
+
 class InstancedParticleSystem {
     constructor(scene, maxParticles = 10000) {
         this.scene = scene;
@@ -364,7 +371,11 @@ class FireworkGame {
             0.1,
             1000
         );
-        this.camera.position.z = 100;
+        
+        const aspectRatio = window.innerWidth / window.innerHeight;
+        const verticalSize = GAME_BOUNDS.MAX_Y - GAME_BOUNDS.MIN_Y;
+        const desiredDistance = (verticalSize / 2) / Math.tan((75 * Math.PI / 180) / 2);
+        this.camera.position.z = desiredDistance;
         
         this.cameraTargetX = null;
         this.cameraTransitionSpeed = 5.0;
@@ -390,15 +401,6 @@ class FireworkGame {
         this.camera.updateProjectionMatrix();
         this.renderer.setSize(window.innerWidth, window.innerHeight);
         this.renderer.setPixelRatio(window.devicePixelRatio);
-
-        const bounds = this.getViewBounds();
-        this.levels[this.currentLevel].autoLaunchers.forEach(launcher => {
-            const x = bounds.minX + launcher.xPercent * (bounds.maxX - bounds.minX);
-            const y = bounds.minY + 3;
-            if (launcher.mesh) {
-                launcher.mesh.position.set(x, y, 0);
-            }
-        });
     }
 
     bindEvents() {
@@ -576,27 +578,20 @@ class FireworkGame {
         });
 
         // Add wheel event listener for horizontal scrolling
-        document.addEventListener('wheel', this.handleScroll.bind(this));
+        document.addEventListener('wheel', this.handleScroll.bind(this), { passive: false });
 
     }
 
     handleScroll(event) {
-        // Prevent default scrolling behavior
         event.preventDefault();
 
-        // Get the current view bounds
-        const bounds = this.getViewBounds();
-        const viewWidth = bounds.maxX - bounds.minX;
-
-        // Calculate scroll amount (use deltaY for horizontal scrolling)
         const scrollSpeed = 0.01;
         const scrollAmount = event.deltaY * scrollSpeed;
 
-        // Update camera position
         this.camera.position.x += scrollAmount;
 
-        // Limit scrolling range 
-        const maxScroll = viewWidth * 1.5;
+        // Use absolute bounds for scroll limits
+        const maxScroll = (GAME_BOUNDS.MAX_X - GAME_BOUNDS.MIN_X) * 0.5;
         this.camera.position.x = Math.max(-maxScroll, Math.min(maxScroll, this.camera.position.x));
     }
 
@@ -651,13 +646,10 @@ class FireworkGame {
             const worldPos = new THREE.Vector3();
             worldPos.copy(raycaster.ray.direction).multiplyScalar(t).add(this.camera.position);
 
-            const bounds = this.getViewBounds();
-            const clampedX = Math.max(bounds.minX, Math.min(worldPos.x, bounds.maxX));
+            const clampedX = Math.max(GAME_BOUNDS.MIN_X, Math.min(worldPos.x, GAME_BOUNDS.MAX_X));
 
             this.draggingLauncher.mesh.position.x = clampedX;
-            this.draggingLauncher.xPercent = (clampedX - bounds.minX) / (bounds.maxX - bounds.minX);
-            this.draggingLauncher.xPercent = Math.max(0, Math.min(1, this.draggingLauncher.xPercent));
-
+            this.draggingLauncher.x = clampedX;
             this.saveProgress();
         } else if (this.isScrollDragging) {
             const deltaX = e.clientX - this.lastPointerX;
@@ -665,9 +657,7 @@ class FireworkGame {
 
             this.camera.position.x -= deltaX * scrollSpeed;
 
-            const bounds = this.getViewBounds();
-            const viewWidth = bounds.maxX - bounds.minX;
-            const maxScroll = viewWidth * 1.5;
+            const maxScroll = (GAME_BOUNDS.MAX_X - GAME_BOUNDS.MIN_X) * 0.5;
             this.camera.position.x = Math.max(-maxScroll, Math.min(maxScroll, this.camera.position.x));
 
             this.lastPointerX = e.clientX;
@@ -822,16 +812,8 @@ class FireworkGame {
     }
 
     getViewBounds() {
-        const distance = this.camera.position.z;
-        const vFOV = this.camera.fov * Math.PI / 180;
-        const viewHeight = 2 * Math.tan(vFOV / 2) * distance;
-
-        const minY = -viewHeight / 2;
-        const maxY = viewHeight / 2;
-        const minX = -viewHeight / 2 * this.camera.aspect;
-        const maxX = viewHeight / 2 * this.camera.aspect;
-
-        return { minX, maxX, minY, maxY };
+        // Return fixed game bounds instead of screen-relative bounds
+        return { ...GAME_BOUNDS };
     }
 
     detectMobile() {
@@ -905,13 +887,12 @@ class FireworkGame {
         this.levels[this.currentLevel].autoLaunchers.forEach(launcher => {
             launcher.accumulator += deltaTime;
             if (launcher.accumulator >= launcher.spawnInterval) {
-                const bounds = this.getViewBounds();
-                const x = bounds.minX + launcher.xPercent * (bounds.maxX - bounds.minX);
+                const x = launcher.x;
                 let recipe = this.recipes[launcher.assignedRecipeIndex];
                 if (recipe) {
-                    this.launchFireworkAt(x, bounds.minY, recipe.components, recipe.trailEffect);
+                    this.launchFireworkAt(x, GAME_BOUNDS.MIN_Y, recipe.components, recipe.trailEffect);
                 } else {
-                    this.launchFireworkAt(x, bounds.minY, this.currentRecipeComponents, this.currentTrailEffect);
+                    this.launchFireworkAt(x, GAME_BOUNDS.MIN_Y, this.currentRecipeComponents, this.currentTrailEffect);
                 }
                 launcher.accumulator -= launcher.spawnInterval;
             }
@@ -1045,7 +1026,7 @@ class FireworkGame {
             return;
         }
 
-        const y = minY || this.getViewBounds().minY;
+        const y = minY || GAME_BOUNDS.MIN_Y;
         const effect = trailEffect || this.currentTrailEffect;
 
         this.launch(x, y, components, effect);
@@ -1066,10 +1047,11 @@ class FireworkGame {
 
         if (this.sparkles >= cost) {
             this.sparkles -= cost;
-            const xPercent = Math.random();
+            // Use absolute bounds for positioning
+            const x = GAME_BOUNDS.MIN_X + (Math.random() * (GAME_BOUNDS.MAX_X - GAME_BOUNDS.MIN_X));
             const accumulator = Math.random() * 5;
             const launcher = {
-                xPercent: xPercent,
+                x: x,
                 accumulator: accumulator,
                 assignedRecipeIndex: null,
                 level: 1,
@@ -1100,10 +1082,8 @@ class FireworkGame {
             side: THREE.DoubleSide
         });
         const launcherMesh = new THREE.Mesh(geometry, material);
-        const bounds = this.getViewBounds();
-        const x = bounds.minX + launcher.xPercent * (bounds.maxX - bounds.minX);
-        const y = bounds.minY + 3;
-        launcherMesh.position.set(x, y, 0);
+        const y = GAME_BOUNDS.MIN_Y + 3;
+        launcherMesh.position.set(launcher.x, y, 0);
         this.scene.add(launcherMesh);
 
         launcher.mesh = launcherMesh;
@@ -1553,26 +1533,7 @@ class FireworkGame {
         localStorage.setItem('selectedLauncherIndex', selectedIndex);
     }
 
-    handleScroll(event) {
-        // Prevent default scrolling behavior
-        event.preventDefault();
-
-        // Get the current view bounds
-        const bounds = this.getViewBounds();
-        const viewWidth = bounds.maxX - bounds.minX;
-
-        // Calculate scroll amount (use deltaY for horizontal scrolling)
-        const scrollSpeed = 0.01;
-        const scrollAmount = event.deltaY * scrollSpeed;
-
-        // Update camera position
-        this.camera.position.x += scrollAmount;
-
-        // Limit scrolling range (3x the view width in each direction)
-        const maxScroll = viewWidth * 1.5;
-        this.camera.position.x = Math.max(-maxScroll, Math.min(maxScroll, this.camera.position.x));
-    }
-
+ 
     upgradeLauncher(index) {
         const launcher = this.levels[this.currentLevel].autoLaunchers[index];
         if (!launcher) {
