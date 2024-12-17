@@ -5,7 +5,7 @@ const FIREWORK_CONFIG = {
     particleDensity: 100,
     ascentSpeed: 40,
     trailLength: 10,
-    rocketSize: 0.5,
+    rocketSize: 0.25,
     minExplosionHeightPercent: 0.4,
     maxExplosionHeightPercent: 0.8,
     patternGravities: {
@@ -599,17 +599,17 @@ class FireworkGame {
         });
 
         // Add wheel event listener for horizontal scrolling
-        document.addEventListener('wheel', this.handleScroll.bind(this), { passive: false });
+        document.addEventListener('wheel', this.handleWheelScroll.bind(this), { passive: false });
 
     }
 
-    handleScroll(event) {
+    handleWheelScroll(event) {
         if (this.isClickInsideUI(event)) {
             return;
         }
 
-        const scrollSpeed = 0.05;
-        const scrollAmount = event.deltaY * scrollSpeed;
+        const wheelScrollSpeed = 0.05;
+        const scrollAmount = event.deltaY * wheelScrollSpeed;
 
         this.camera.position.x += scrollAmount;
 
@@ -676,9 +676,9 @@ class FireworkGame {
             this.saveProgress();
         } else if (this.isScrollDragging) {
             const deltaX = e.clientX - this.lastPointerX;
-            const scrollSpeed = 0.2;
+            const dragScrollSpeed = 0.2;
 
-            this.camera.position.x -= deltaX * scrollSpeed;
+            this.camera.position.x -= deltaX * dragScrollSpeed;
 
             const maxScroll = (GAME_BOUNDS.MAX_X - GAME_BOUNDS.MIN_X) * 0.5;
             this.camera.position.x = Math.max(-maxScroll, Math.min(maxScroll, this.camera.position.x));
@@ -1882,23 +1882,37 @@ class Firework {
         let material;
         switch (this.trailEffect) {
             case 'sparkle':
-                material = new THREE.PointsMaterial({
-                    color: 0xffffff,
-                    size: 0.3 + Math.random() * 0.3,
-                    transparent: true,
-                    opacity: 0.8,
-                    blending: THREE.AdditiveBlending
-                });
-                const geometry = new THREE.BufferGeometry();
-                const positions = new Float32Array([x, y, 0]);
-                geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-                const particle = new THREE.Points(geometry, material);
-                this.scene.add(particle);
-                this.trailParticles.push({
-                    mesh: particle,
-                    createdAt: Date.now(),
-                    initialOpacity: 0.8
-                });
+                const groupSize = 5;  // Number of particles in each sparkle group
+                const groupSpread = 0.3;  // How far particles spread from center
+                const groupTime = Date.now();  // Shared timestamp for the group
+                const groupId = Math.floor(groupTime / 100);  // Group identifier
+                
+                for (let i = 0; i < groupSize; i++) {
+                    const angle = (Math.PI * 2 * i) / groupSize;
+                    const offsetX = x + Math.cos(angle) * groupSpread * Math.random();
+                    const offsetY = y + Math.sin(angle) * groupSpread * Math.random();
+                    
+                    material = new THREE.PointsMaterial({
+                        color: 0xffffff,
+                        size: 0.2 + Math.random() * 0.2,
+                        transparent: true,
+                        opacity: 0.8,
+                        blending: THREE.AdditiveBlending
+                    });
+                    
+                    const geometry = new THREE.BufferGeometry();
+                    const positions = new Float32Array([offsetX, offsetY, 0]);
+                    geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+                    const particle = new THREE.Points(geometry, material);
+                    this.scene.add(particle);
+                    
+                    this.trailParticles.push({
+                        mesh: particle,
+                        createdAt: groupTime,
+                        initialOpacity: 0.8,
+                        groupId: groupId
+                    });
+                }
                 break;
 
             case 'rainbow':
@@ -1965,6 +1979,18 @@ class Firework {
 
     updateTrailParticles(delta) {
         const now = Date.now();
+        const flickerSpeed = 8;  
+        
+        const groups = {};
+        this.trailParticles.forEach(particle => {
+            if (particle.groupId) {
+                if (!groups[particle.groupId]) {
+                    groups[particle.groupId] = [];
+                }
+                groups[particle.groupId].push(particle);
+            }
+        });
+
         this.trailParticles.forEach((particle, index) => {
             const age = (now - particle.createdAt) / 500;
 
@@ -1972,19 +1998,40 @@ class Firework {
 
             switch (this.trailEffect) {
                 case 'sparkle':
-                    particle.mesh.material.size = (0.3 + Math.random() * 0.3) * (1 - age);
-                    particle.mesh.material.opacity = particle.initialOpacity * (1 - age);
+                    if (particle.groupId) {
+                        // Calculate a shared brightness for the group
+                        const groupPhase = (now * flickerSpeed + particle.groupId * 1000) / 1000;
+                        const groupBrightness = 0.3 + (Math.sin(groupPhase) * 0.5 + 0.5) * 0.7;
+                        
+                        particle.mesh.material.size = (0.2 + Math.random() * 0.2) * (1 - age * 0.5);
+                        particle.mesh.material.opacity = particle.initialOpacity * groupBrightness * (1 - age);
+                    } else {
+                        // Fallback for any particles without a group
+                        particle.mesh.material.size = (0.3 + Math.random() * 0.3) * (1 - age);
+                        particle.mesh.material.opacity = particle.initialOpacity * (1 - age);
+                    }
                     break;
 
                 case 'rainbow':
-                    const hue = ((now * 0.001) + index * 0.1) % 1;
-                    particle.color.setHSL(hue, 1, 0.5);
-                    particle.mesh.material.color = particle.color;
-                    particle.mesh.material.opacity = particle.initialOpacity * (1 - age);
+                    if (particle.groupId) {
+                        // Calculate a shared hue for the group
+                        const groupPhase = (now * flickerSpeed + particle.groupId * 1000) / 1000;
+                        const groupHue = (groupPhase + index * 0.1) % 1;
+                        
+                        particle.color.setHSL(groupHue, 1, 0.5);
+                        particle.mesh.material.color = particle.color;
+                        particle.mesh.material.opacity = particle.initialOpacity * (1 - age);
+                    } else {
+                        // Fallback for any particles without a group
+                        const hue = ((now * 0.001) + index * 0.1) % 1;
+                        particle.color.setHSL(hue, 1, 0.5);
+                        particle.mesh.material.color = particle.color;
+                        particle.mesh.material.opacity = particle.initialOpacity * (1 - age);
+                    }
                     break;
 
                 case 'comet':
-                    particle.scale = Math.max(0.2, particle.scale * 0.95);
+                    particle.scale = Math.max(0.0001, particle.scale * 1.1 * (1 - age));
                     particle.mesh.scale.set(particle.scale, particle.scale, particle.scale);
                     particle.mesh.material.opacity = particle.initialOpacity * (1 - age);
                     particle.mesh.position.y += delta * 2;
