@@ -676,7 +676,7 @@ class FireworkGame {
             this.saveProgress();
         } else if (this.isScrollDragging) {
             const deltaX = e.clientX - this.lastPointerX;
-            const scrollSpeed = 0.05;
+            const scrollSpeed = 0.2;
 
             this.camera.position.x -= deltaX * scrollSpeed;
 
