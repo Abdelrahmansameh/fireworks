@@ -22,10 +22,17 @@ const FIREWORK_CONFIG = {
 };
 
 const GAME_BOUNDS = {
-    MIN_X: -100,
-    MAX_X: 100,
+    // Auto launcher bounds 
+    LAUNCHER_MIN_X: 0,
+    LAUNCHER_MAX_X: 120,
     MIN_Y: -50,
-    MAX_Y: 50
+    MAX_Y: 50,
+    // Extended bounds for scrolling 
+    SCROLL_MIN_X: -100,
+    SCROLL_MAX_X: 200,
+    // Crowd area bounds
+    CROWD_RIGHT_X: -10,
+    CROWD_LEFT_X: -60
 };
 
 class InstancedParticleSystem {
@@ -264,31 +271,71 @@ class InstancedParticleSystem {
     }
 }
 
+class Crowd {
+    constructor(scene) {
+        this.scene = scene;
+        this.meshes = new Set();
+        
+        // Create person geometry (simple cylinder for now)
+        const geometry = new THREE.CylinderGeometry(0.5, 0.5, 2, 8);
+        const material = new THREE.MeshBasicMaterial({ color: 0x808080 });
+        this.personGeometry = geometry;
+        this.personMaterial = material;
+        
+        // Animation properties
+        this.bobSpeed = 10; // Speed of the bobbing motion
+        this.bobHeight = 0.4; // How high they bob
+        this.bobOffsets = new Map(); // Store random offset for each mesh
+    }
+
+    addPerson() {
+        const mesh = new THREE.Mesh(this.personGeometry, this.personMaterial);
+        const height = 2; // Height of person mesh
+        const y = GAME_BOUNDS.MIN_Y + (height / 2); // Same formula as launchers
+        
+        // Random position between left and right crowd boundaries
+        const crowdX = GAME_BOUNDS.CROWD_LEFT_X + (Math.random() * (GAME_BOUNDS.CROWD_RIGHT_X - GAME_BOUNDS.CROWD_LEFT_X));
+        mesh.position.set(crowdX, y, 0);
+        
+        // Add random offset for varied bobbing
+        this.bobOffsets.set(mesh, Math.random() * Math.PI * 2);
+        
+        this.scene.add(mesh);
+        this.meshes.add(mesh);
+    }
+
+    update(deltaTime) {
+        // Update each person's position with bobbing motion
+        this.meshes.forEach(mesh => {
+            const offset = this.bobOffsets.get(mesh);
+            const baseY = GAME_BOUNDS.MIN_Y + this.personGeometry.parameters.height / 2;
+            const bobAmount = Math.sin((performance.now() / 1000 * this.bobSpeed) + offset) * this.bobHeight;
+            mesh.position.y = baseY + bobAmount;
+        });
+    }
+
+    dispose() {
+        for (const mesh of this.meshes) {
+            this.scene.remove(mesh);
+            mesh.geometry.dispose();
+            mesh.material.dispose();
+        }
+        this.meshes.clear();
+        this.bobOffsets.clear();
+    }
+}
+
 class FireworkGame {
     constructor() {
-        this.currentLevel = parseInt(localStorage.getItem('currentLevel')) || 0;
+        // Core game state
+        this.currentLevel = 0;
+        this.levels = [{
+            fireworks: [],
+            autoLaunchers: [],
+            unlocked: true
+        }];
+        
 
-        const savedLevels = JSON.parse(localStorage.getItem('levels'));
-        if (savedLevels) {
-            this.levels = savedLevels.map(levelData => ({
-                fireworks: [],
-                autoLaunchers: levelData.autoLaunchers || [],
-                unlocked: levelData.unlocked || false
-            }));
-        } else {
-            // Create default first level (always unlocked)
-            this.levels = [{
-                fireworks: [],
-                autoLaunchers: [],
-                unlocked: true
-            }];
-        }
-
-        this.debugInfo = {
-            activeFireworks: 0,
-            totalParticles: 0,
-            gpuMemory: 0
-        };
 
         this.scene = null;
         this.camera = null;
@@ -298,24 +345,59 @@ class FireworkGame {
         this.recipes = [];
         this.currentRecipeComponents = [];
         this.currentTrailEffect = 'fade';
+        this.fireworkCount = 0;
+        this.autoLauncherCost = 10;
+        this.sparkles = 0;
+        this.selectedLauncherIndex = null;
+        this.crowdCount = 0;
+        this.lastSparklesPerSecond = 0;
+        this.crowdThresholds = [1, 2, 3, 4, 5, 10, 15];
+
+        this.draggingLauncher = null;
+        this.isDragging = false;
+        this.isScrollDragging = false;
+        this.lastPointerX = 0;
+
+        this.isMobile = this.detectMobile();
+        
+        // Initialize the game
+        this.init();
+    }
+
+    init() {
+        // Load game state from localStorage
+        this.currentLevel = parseInt(localStorage.getItem('currentLevel')) || 0;
         this.fireworkCount = parseInt(localStorage.getItem('fireworkCount')) || 0;
         this.autoLauncherCost = parseInt(localStorage.getItem('autoLauncherCost')) || 10;
         this.sparkles = parseInt(localStorage.getItem('sparkles')) || 0;
+        this.crowdCount = parseInt(localStorage.getItem('crowdCount')) || 0;
 
+        // Load levels data
+        const savedLevels = JSON.parse(localStorage.getItem('levels'));
+        if (savedLevels) {
+            this.levels = savedLevels.map(levelData => ({
+                fireworks: [],
+                autoLaunchers: levelData.autoLaunchers || [],
+                unlocked: levelData.unlocked || false
+            }));
+        }
+
+        // Load selected launcher
         const savedSelectedIndex = parseInt(localStorage.getItem('selectedLauncherIndex'));
         if (!isNaN(savedSelectedIndex) && savedSelectedIndex < this.levels[this.currentLevel].autoLaunchers.length) {
             this.selectedLauncherIndex = savedSelectedIndex;
             this.selectLauncher(this.selectedLauncherIndex);
-        } else {
-            this.selectedLauncherIndex = null;
         }
 
-        this.isMobile = this.detectMobile();
+        // Initialize Three.js components
         this.initThreeJS();
         this.initBackgroundColor();
 
+        // Initialize game components
         this.particleSystem = new InstancedParticleSystem(this.scene, 50000);
+        this.crowd = new Crowd(this.scene);
 
+        // Initialize launchers
         this.levels.forEach(levelData => {
             levelData.autoLaunchers.forEach(launcher => {
                 if (!launcher.accumulator) {
@@ -326,6 +408,7 @@ class FireworkGame {
                     launcher.spawnInterval = 5;
                     launcher.upgradeCost = 15;
                 }
+                launcher.x = this.clampToLauncherBounds(launcher.x);
             });
         });
 
@@ -333,23 +416,20 @@ class FireworkGame {
             this.createAutoLauncherMesh(launcher);
         });
 
+        // Initialize UI and events
         this.bindEvents();
-
         this.loadRecipes();
         this.loadCurrentRecipe();
         this.updateUI();
         this.updateComponentsList();
         this.updateRecipeList();
         this.updateLauncherList();
-        this.draggingLauncher = null;
-        this.isDragging = false;
-        this.isScrollDragging = false;
-        this.lastPointerX = 0;
-        this.animate();
 
+        // Set up game container
         const gameContainer = document.getElementById('game-container');
         gameContainer.style.touchAction = 'none';
 
+        // Add visibility change handler
         document.addEventListener('visibilitychange', () => {
             if (document.visibilityState === 'hidden') {
                 this.pause();
@@ -358,9 +438,13 @@ class FireworkGame {
             }
         });
 
+        // Update UI displays
         this.updateLevelDisplay();
-        this.updateLevelsList(); // Update the Levels tab UI
+        this.updateLevelsList();
         this.updateLevelArrows();
+
+        // Start game loop
+        this.animate();
     }
 
     initThreeJS() {
@@ -383,9 +467,6 @@ class FireworkGame {
 
         // Adjust game bounds based on visible area
         GAME_BOUNDS.MIN_Y = -this.visibleHeight / 2;
-        GAME_BOUNDS.MAX_Y = this.visibleHeight / 2;
-        GAME_BOUNDS.MIN_X = -this.visibleWidth / 2;
-        GAME_BOUNDS.MAX_X = this.visibleWidth / 2;
 
         this.cameraTargetX = null;
         this.cameraTransitionSpeed = 5.0;
@@ -472,6 +553,9 @@ class FireworkGame {
         });
         document.getElementById('stats-tab').addEventListener('click', () => {
             this.toggleTab('stats');
+        });
+        document.getElementById('crowd-tab').addEventListener('click', () => {
+            this.toggleTab('crowd');
         });
         document.getElementById('auto-launcher-tab').addEventListener('click', () => {
             this.toggleTab('auto-launcher');
@@ -601,6 +685,9 @@ class FireworkGame {
         // Add wheel event listener for horizontal scrolling
         document.addEventListener('wheel', this.handleWheelScroll.bind(this), { passive: false });
 
+        document.getElementById('spread-launchers').addEventListener('click', () => {
+            this.spreadLaunchers();
+        });
     }
 
     handleWheelScroll(event) {
@@ -614,7 +701,7 @@ class FireworkGame {
         this.camera.position.x += scrollAmount;
 
         // Use absolute bounds for scroll limits
-        const maxScroll = (GAME_BOUNDS.MAX_X - GAME_BOUNDS.MIN_X) * 0.5;
+        const maxScroll = (GAME_BOUNDS.SCROLL_MAX_X - GAME_BOUNDS.SCROLL_MIN_X) * 0.5;
         this.camera.position.x = Math.max(-maxScroll, Math.min(maxScroll, this.camera.position.x));
     }
 
@@ -669,7 +756,7 @@ class FireworkGame {
             const worldPos = new THREE.Vector3();
             worldPos.copy(raycaster.ray.direction).multiplyScalar(t).add(this.camera.position);
 
-            const clampedX = Math.max(GAME_BOUNDS.MIN_X, Math.min(worldPos.x, GAME_BOUNDS.MAX_X));
+            const clampedX = Math.max(GAME_BOUNDS.LAUNCHER_MIN_X, Math.min(worldPos.x, GAME_BOUNDS.LAUNCHER_MAX_X));
 
             this.draggingLauncher.mesh.position.x = clampedX;
             this.draggingLauncher.x = clampedX;
@@ -680,7 +767,7 @@ class FireworkGame {
 
             this.camera.position.x -= deltaX * dragScrollSpeed;
 
-            const maxScroll = (GAME_BOUNDS.MAX_X - GAME_BOUNDS.MIN_X) * 0.5;
+            const maxScroll = (GAME_BOUNDS.SCROLL_MAX_X - GAME_BOUNDS.SCROLL_MIN_X) * 0.5;
             this.camera.position.x = Math.max(-maxScroll, Math.min(maxScroll, this.camera.position.x));
 
             this.lastPointerX = e.clientX;
@@ -925,6 +1012,22 @@ class FireworkGame {
                 this.updateUI();
             }
         });
+
+        // Update crowd based on sparkles per second
+        const currentSps = this.calculateTotalSparklesPerSecond();
+        if (currentSps > this.lastSparklesPerSecond) {
+            // Add new crowd members based on thresholds
+            for (const threshold of this.crowdThresholds) {
+                if (currentSps >= threshold && this.lastSparklesPerSecond < threshold) {
+                    this.crowdCount++;
+                    this.crowd.addPerson();
+                    this.saveProgress();
+                    this.updateCrowdDisplay();
+                }
+            }
+        }
+        this.lastSparklesPerSecond = currentSps;
+        this.updateCrowdDisplay();
     }
 
     initBackgroundColor() {
@@ -966,6 +1069,7 @@ class FireworkGame {
         localStorage.setItem('currentRecipeComponents', JSON.stringify(this.currentRecipeComponents));
         localStorage.setItem('backgroundColor', document.getElementById('background-color').value);
         localStorage.setItem('selectedLauncherIndex', this.selectedLauncherIndex || '');
+        localStorage.setItem('crowdCount', this.crowdCount);
     }
 
     showNotification(message) {
@@ -1021,16 +1125,10 @@ class FireworkGame {
                 }
             }
 
-            this.debugInfo.activeFireworks = currentFireworks.length;
-            this.debugInfo.totalParticles = Object.values(this.particleSystem.activeCounts).reduce((a, b) => a + b, 0);
-
-            this.debugInfo.gpuMemory = (
-                (FIREWORK_CONFIG.supportedShapes.length * this.particleSystem.meshes[FIREWORK_CONFIG.supportedShapes[0]].geometry.attributes.position.array.length * 4) +
-                (this.particleSystem.meshes[FIREWORK_CONFIG.supportedShapes[0]].instanceMatrix.array.length * 4) +
-                (this.particleSystem.meshes[FIREWORK_CONFIG.supportedShapes[0]].instanceColor.array.length * 4)
-            ) / (1024 * 1024);
-
             this.update(delta);
+
+            // Update crowd animation
+            this.crowd.update(delta);
 
             this.renderer.render(this.scene, this.camera);
         }
@@ -1065,8 +1163,7 @@ class FireworkGame {
 
         if (this.sparkles >= cost) {
             this.sparkles -= cost;
-            // Use absolute bounds for positioning
-            const x = GAME_BOUNDS.MIN_X + (Math.random() * (GAME_BOUNDS.MAX_X - GAME_BOUNDS.MIN_X));
+            const x = GAME_BOUNDS.LAUNCHER_MIN_X + (Math.random() * (GAME_BOUNDS.LAUNCHER_MAX_X - GAME_BOUNDS.LAUNCHER_MIN_X));
             const accumulator = Math.random() * 5;
             const launcher = {
                 x: x,
@@ -1088,7 +1185,7 @@ class FireworkGame {
     }
 
     calculateAutoLauncherCost(numLaunchers) {
-        return Math.floor(10 * Math.pow(1.5, numLaunchers));
+        return Math.floor(10 * Math.pow(1.2, numLaunchers));
     }
 
     createAutoLauncherMesh(launcher) {
@@ -1150,6 +1247,7 @@ class FireworkGame {
         this.fireworkCount = 0;
         this.sparkles = 0;
         this.recipes = [];
+        this.crowdCount = 0;
         this.currentTrailEffect = 'fade';
         this.currentRecipeComponents = [{
             pattern: 'spherical', color: '#ff0000', size: 0.5, lifetime: 1.2, shape: 'sphere', spread: 1.0, secondaryColor: '#00ff00'
@@ -1163,6 +1261,11 @@ class FireworkGame {
             this.disposeAutoLaunchers(levelData);
             levelData.autoLaunchers = [];
         });
+
+        // Properly dispose of crowd members
+        if (this.crowd) {
+            this.crowd.dispose();
+        }
 
         this.levels = [{ fireworks: [], autoLaunchers: [], unlocked: true }];
         this.currentLevel = 0;
@@ -1187,6 +1290,7 @@ class FireworkGame {
         this.updateLevelDisplay();
         this.updateLevelsList();
         this.updateLevelArrows();
+        this.updateCrowdDisplay();
     }
 
     eraseAllRecipes() {
@@ -1596,7 +1700,7 @@ class FireworkGame {
             this.sparkles -= launcher.upgradeCost;
             launcher.level += 1;
             launcher.spawnInterval = launcher.spawnInterval * 0.9;
-            launcher.upgradeCost = Math.floor(launcher.upgradeCost * 1.5);
+            launcher.upgradeCost = Math.floor(launcher.upgradeCost * 1.2);
 
             this.saveProgress();
             this.updateUI();
@@ -1621,7 +1725,8 @@ class FireworkGame {
             })),
             currentRecipeComponents: this.currentRecipeComponents,
             backgroundColor: localStorage.getItem('backgroundColor') || '#000000',
-            selectedLauncherIndex: this.selectedLauncherIndex
+            selectedLauncherIndex: this.selectedLauncherIndex,
+            crowdCount: this.crowdCount
         };
         return JSON.stringify(data);
     }
@@ -1680,6 +1785,8 @@ class FireworkGame {
         this.levels[this.currentLevel].autoLaunchers.forEach(launcher => {
             this.createAutoLauncherMesh(launcher);
         });
+
+        this.crowdCount = data.crowdCount || 0;
 
         this.saveProgress();
         this.updateUI();
@@ -1818,6 +1925,65 @@ class FireworkGame {
             return activeTabContent;
         }
         return null; // No active tab found
+    }
+
+    updateCrowdDisplay() {
+        const crowdCountElement = document.getElementById('crowd-count');
+        const currentSpsElement = document.getElementById('current-sps');
+        const nextThresholdElement = document.getElementById('next-threshold');
+        const progressBar = document.getElementById('threshold-progress');
+        
+        if (crowdCountElement) {
+            crowdCountElement.textContent = this.crowdCount;
+        }
+        
+        const currentSps = this.calculateTotalSparklesPerSecond();
+        if (currentSpsElement) {
+            currentSpsElement.textContent = currentSps;
+        }
+        
+        // Find next threshold
+        const nextThreshold = this.crowdThresholds.find(t => t > currentSps) || 'Max';
+        if (nextThresholdElement) {
+            nextThresholdElement.textContent = nextThreshold;
+        }
+        
+        // Update progress bar
+        if (progressBar && nextThreshold !== 'Max') {
+            const prevThreshold = this.crowdThresholds[this.crowdThresholds.indexOf(nextThreshold) - 1] || 0;
+            const progress = ((currentSps - prevThreshold) / (nextThreshold - prevThreshold)) * 100;
+            progressBar.style.width = `${Math.min(100, Math.max(0, progress))}%`;
+        } else if (progressBar) {
+            progressBar.style.width = '100%';
+        }
+    }
+
+    clampToLauncherBounds(x) {
+        return Math.max(GAME_BOUNDS.LAUNCHER_MIN_X, Math.min(x, GAME_BOUNDS.LAUNCHER_MAX_X));
+    }
+
+    clampToCrowdBounds(x) {
+        return Math.max(GAME_BOUNDS.CROWD_LEFT_X, Math.min(x, GAME_BOUNDS.CROWD_RIGHT_X));
+    }
+
+    spreadLaunchers() {
+        const launchers = this.levels[this.currentLevel].autoLaunchers;
+        if (launchers.length === 0) {
+            this.showNotification("No launchers to spread!");
+            return;
+        }
+
+        const totalWidth = GAME_BOUNDS.LAUNCHER_MAX_X - GAME_BOUNDS.LAUNCHER_MIN_X;
+        const spacing = totalWidth / (launchers.length + 1);
+
+        launchers.forEach((launcher, index) => {
+            const newX = GAME_BOUNDS.LAUNCHER_MIN_X + spacing * (index + 1);
+            launcher.x = newX;
+            launcher.mesh.position.x = newX;
+        });
+
+        this.saveProgress();
+        this.showNotification("Launchers spread evenly!");
     }
 }
 

@@ -601,3 +601,54 @@ textarea {
 .danger-button:hover {
     background-color: #761f16;
 }
+
+.crowd-info {
+/*idk what to do*/
+}
+
+.crowd-info ul {
+    list-style-type: none;
+    padding: 0;
+    margin: 10px 0;
+}
+
+.crowd-info li {
+    padding: 5px 0;
+    border-bottom: 1px solid #34495e;
+}
+
+.crowd-info li:last-child {
+    border-bottom: none;
+}
+
+.progress-container {
+    width: 100%;
+    height: 20px;
+    background-color: #1f2833;
+    border-radius: 10px;
+    margin: 10px 0;
+    overflow: hidden;
+}
+
+.progress-bar {
+    height: 100%;
+    background-color: #45a29e;
+    width: 0%;
+    transition: width 0.3s ease-in-out;
+}
+
+.milestone-info {
+    color: #66fcf1;
+    font-style: italic;
+    margin-top: 10px;
+}
+
+#current-sps {
+    color: #66fcf1;
+    font-weight: bold;
+}
+
+#next-threshold {
+    color: #45a29e;
+    font-weight: bold;
+}

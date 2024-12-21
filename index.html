@@ -18,6 +18,7 @@
             <div class="tabs">
                 <div class="tab" id="crafting-tab">Crafting</div>
                 <div class="tab" id="auto-launcher-tab">Auto-Launchers</div>
+                <div class="tab" id="crowd-tab">Crowd</div>
                 <div class="tab" id="levels-tab">Levels</div>
                 <div class="tab" id="data-tab">Save/Load</div>
                 <div class="tab" id="stats-tab">Stats</div>
@@ -85,9 +86,25 @@
                 <h3>Auto-Launchers Owned: <span id="auto-launcher-level">0</span></h3>
                 <p>Cost: <span id="auto-launcher-cost">10</span> sparkles</p>
                 <button id="buy-auto-launcher">Buy Auto-Launcher</button>
+                <button id="spread-launchers">Spread Launchers Evenly</button>
             </div>
             <br>
             <div id="launcher-list"></div>
+        </div>
+    </div>
+
+    <div class="tab-content" id="crowd-content">
+        <div class="panel scrollable-panel">
+            <h2 class="panel-title">Crowd</h2>
+            <div class="crowd-info">
+                <h3>Crowd Size: <span id="crowd-count">0</span></h3>
+                <p>Current Sparkles/s: <span id="current-sps">0</span></p>
+                <p>Next Milestone: <span id="next-threshold">Loading...</span> sparkles/s</p>
+                <div class="progress-container">
+                    <div id="threshold-progress" class="progress-bar"></div>
+                </div>
+                <p class="milestone-info">Reach the next milestone to attract more fans!</p>
+            </div>
         </div>
     </div>
 
