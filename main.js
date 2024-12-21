@@ -277,8 +277,8 @@ class Crowd {
         this.meshes = new Set();
         
         // Create a plane geometry for the sprite
-        const width = 10;  // Adjust size as needed
-        const height = 10;
+        const width = 7;  // Adjust size as needed
+        const height = 7;
         this.personGeometry = new THREE.PlaneGeometry(width, height);
         
         // Load the texture with transparency
