@@ -276,11 +276,33 @@ class Crowd {
         this.scene = scene;
         this.meshes = new Set();
         
-        // Create person geometry (simple cylinder for now)
-        const geometry = new THREE.CylinderGeometry(0.5, 0.5, 2, 8);
-        const material = new THREE.MeshBasicMaterial({ color: 0x808080 });
-        this.personGeometry = geometry;
-        this.personMaterial = material;
+        // Create a plane geometry for the sprite
+        const width = 10;  // Adjust size as needed
+        const height = 10;
+        this.personGeometry = new THREE.PlaneGeometry(width, height);
+        
+        // Load the texture with transparency
+        const textureLoader = new THREE.TextureLoader();
+        textureLoader.load('https://abdelrahmansameh.github.io/fireworks/assets/crowd_member.png', (texture) => {
+            // Create material with transparency
+            this.personMaterial = new THREE.MeshBasicMaterial({
+                map: texture,
+                side: THREE.DoubleSide,
+                transparent: true,
+            });
+            
+            // Update existing meshes with new material
+            this.meshes.forEach(mesh => {
+                mesh.material = this.personMaterial;
+            });
+        });
+        
+        // Temporary material while texture loads
+        this.personMaterial = new THREE.MeshBasicMaterial({
+            color: 0x808080,
+            transparent: true,
+            side: THREE.DoubleSide
+        });
         
         // Animation properties
         this.bobSpeed = 10; // Speed of the bobbing motion
@@ -1189,8 +1211,8 @@ class FireworkGame {
     }
 
     createAutoLauncherMesh(launcher) {
-        const width = 3;
-        const height = 6;
+        const width = 2;
+        const height = 4;
         const geometry = new THREE.PlaneGeometry(width, height);
         const material = new THREE.MeshBasicMaterial({
             color: 0xffffff,
@@ -1801,6 +1823,7 @@ class FireworkGame {
         this.updateLevelDisplay();
         this.updateLevelsList();
         this.updateLevelArrows();
+        this.updateCrowdDisplay();
     }
 
     disposeAutoLaunchers(levelData) {
