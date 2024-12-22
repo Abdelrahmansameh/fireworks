@@ -392,7 +392,6 @@ class FireworkGame {
         this.fireworkCount = parseInt(localStorage.getItem('fireworkCount')) || 0;
         this.autoLauncherCost = parseInt(localStorage.getItem('autoLauncherCost')) || 10;
         this.sparkles = parseInt(localStorage.getItem('sparkles')) || 0;
-        this.crowdCount = parseInt(localStorage.getItem('crowdCount')) || 0;
 
         // Load levels data
         const savedLevels = JSON.parse(localStorage.getItem('levels'));
@@ -710,6 +709,8 @@ class FireworkGame {
         document.getElementById('spread-launchers').addEventListener('click', () => {
             this.spreadLaunchers();
         });
+
+        document.getElementById('upgrade-all-launchers').addEventListener('click', () => this.upgradeAllLaunchers());
     }
 
     handleWheelScroll(event) {
@@ -1199,8 +1200,8 @@ class FireworkGame {
             this.levels[this.currentLevel].autoLaunchers.push(launcher);
             this.saveProgress();
             this.updateUI();
-            this.showNotification("Auto-Launcher purchased!");
             this.updateLauncherList();
+            this.showNotification("Auto-Launcher purchased!");
         } else {
             this.showNotification("Not enough sparkles to buy this upgrade!");
         }
@@ -1297,6 +1298,8 @@ class FireworkGame {
             this.particleSystem = new InstancedParticleSystem(this.scene, 50000);
         }
 
+        this.lastSparklesPerSecond = 0;
+        
         this.autoLauncherCost = 10;
 
         localStorage.clear();
@@ -1730,6 +1733,32 @@ class FireworkGame {
         }
     }
 
+    upgradeAllLaunchers() {
+        const currentLevel = this.levels[this.currentLevel];
+        let upgraded = false;
+        let totalSpent = 0;
+
+        for (let i = 0; i < currentLevel.autoLaunchers.length; i++) {
+            let keepUpgrading = true;
+            while (keepUpgrading) {
+                const upgradeCost = Math.floor(10 * Math.pow(1.5, currentLevel.autoLaunchers[i].level));
+                if (this.sparkles >= upgradeCost) {
+                    totalSpent += upgradeCost;
+                    this.upgradeLauncher(i);
+                    upgraded = true;
+                } else {
+                    keepUpgrading = false;
+                }
+            }
+        }
+
+        if (!upgraded) {
+            this.showNotification("Not enough sparkles to upgrade any launchers!");
+        } else {
+            this.showNotification(`Upgraded all launchers! (${totalSpent.toLocaleString()} sparkles spent)`);
+        }
+    }
+
     serializeGameData() {
         const data = {
             fireworkCount: this.fireworkCount,
@@ -1805,7 +1834,6 @@ class FireworkGame {
             this.createAutoLauncherMesh(launcher);
         });
 
-        this.crowdCount = data.crowdCount || 0;
 
         this.saveProgress();
         this.updateUI();

@@ -162,6 +162,11 @@ line-height: 1.4;
     border: 1px solid #25344a;
 }
 
+.auto-launcher button {
+    display: block;
+    margin: 10px 0;
+}
+
 .saved-recipes {
     margin-top: 20px;
     padding-top: 15px;
