@@ -25,7 +25,19 @@
             </div>
         </div>
         <div class="sparkles-counter">
-            <span id="sparkles-count"></span>
+            <div id="sparkles-count" class="sparkles-count compact">
+                <div class="sparkles-count-compact">
+                    <span class="sparkle-total"></span>
+                    <span class="sparkle-rate"></span>
+                </div>
+                <div class="sparkles-count-expanded">
+                    <div class="sparkles-count-main">Sparkles: <span class="sparkle-total"></span></div>
+                    <div class="sparkles-count-rates">
+                       <span class="sparkles-count-main">Total:</span> <span class="total-rate"></span><br>
+                        <span class="sparkles-count-main">Level:</span> <span class="level-rate"></span>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -150,7 +162,7 @@
     </div>
     <div class="level-display" id="level-display">Level: 1</div>
 
-    <script src="main.js"></script>
+    <script type="module" src="js/main.js"></script>
 </body>
 
 </html>
