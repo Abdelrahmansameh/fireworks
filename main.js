@@ -1741,18 +1741,28 @@ class FireworkGame {
         const currentLevel = this.levels[this.currentLevel];
         let upgraded = false;
         let totalSpent = 0;
+        let foundAffordableUpgrade = true;
 
-        for (let i = 0; i < currentLevel.autoLaunchers.length; i++) {
-            let keepUpgrading = true;
-            while (keepUpgrading) {
-                const upgradeCost = Math.floor(10 * Math.pow(1.5, currentLevel.autoLaunchers[i].level));
-                if (this.sparkles >= upgradeCost) {
-                    totalSpent += upgradeCost;
-                    this.upgradeLauncher(i);
-                    upgraded = true;
-                } else {
-                    keepUpgrading = false;
+        while (foundAffordableUpgrade) {
+            foundAffordableUpgrade = false;
+            let cheapestCost = Infinity;
+            let cheapestIndex = -1;
+
+            // Find the cheapest upgrade we can afford
+            for (let i = 0; i < currentLevel.autoLaunchers.length; i++) {
+                const cost = currentLevel.autoLaunchers[i].upgradeCost;
+                if (cost <= this.sparkles && cost < cheapestCost) {
+                    cheapestCost = cost;
+                    cheapestIndex = i;
+                    foundAffordableUpgrade = true;
                 }
+            }
+
+            // If we found one, buy it
+            if (foundAffordableUpgrade) {
+                this.upgradeLauncher(cheapestIndex);
+                totalSpent += cheapestCost;
+                upgraded = true;
             }
         }
 

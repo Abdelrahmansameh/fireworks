@@ -414,13 +414,11 @@ line-height: 1.4;
     background: rgba(10, 14, 21, 0.9);
     border-radius: 10px;
     z-index: 1000;
-    max-height: calc(100vh - 75px);
+    max-height: 60vh;
     overflow-y: hidden;
     transition: opacity 0.3s ease;
     opacity: 0;
     height: 0;
-    overflow: hidden;
-    max-height: 80vh;
 }
 
 .tab-content.active {
