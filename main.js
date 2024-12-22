@@ -2323,6 +2323,7 @@ class Firework {
             const size = FIREWORK_CONFIG.particleSize * component.size;
             const rocketPos = this.rocket.position.clone();
             const velocity = new THREE.Vector3();
+            const acceleration = new THREE.Vector3();
             const shape = component.shape;
             const spread = component.spread;
 
@@ -2345,7 +2346,8 @@ class Firework {
                             size,
                             component.lifetime,
                             gravity * (0.8 + Math.random() * 0.4),
-                            shape
+                            shape,
+                            acceleration
                         );
                         if (index !== -1) this.particles[shape].add(index);
                     }
@@ -2367,7 +2369,8 @@ class Firework {
                             size,
                             component.lifetime,
                             gravity * (0.8 + Math.random() * 0.2),
-                            shape
+                            shape, 
+                            acceleration
                         );
                         if (index !== -1) this.particles[shape].add(index);
                     }
@@ -2389,7 +2392,8 @@ class Firework {
                             size,
                             component.lifetime,
                             gravity,
-                            shape
+                            shape,
+                            acceleration
                         );
                         if (index !== -1) this.particles[shape].add(index);
                     }
@@ -2417,7 +2421,8 @@ class Firework {
                             size,
                             component.lifetime,
                             gravity,
-                            shape
+                            shape,
+                            acceleration
                         );
                         if (index !== -1) this.particles[shape].add(index);
                     }
@@ -2442,7 +2447,8 @@ class Firework {
                             size,
                             component.lifetime,
                             gravity,
-                            shape
+                            shape,
+                            acceleration
                         );
                         if (index !== -1) this.particles[shape].add(index);
                     }
@@ -2456,7 +2462,7 @@ class Firework {
                             const xOffset = heartScale * (16 * Math.pow(Math.sin(t), 3));
                             const yOffset = heartScale * (13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t));
                             const angle = Math.atan2(yOffset, xOffset);
-                            const magnitude = speed * Math.sqrt(xOffset * xOffset + yOffset * yOffset) * 0.01;
+                            const magnitude = speed * Math.sqrt(xOffset * xOffset + yOffset * yOffset) * 0.05;
                             velocity.set(
                                 Math.cos(angle) * magnitude,
                                 Math.sin(angle) * magnitude,
@@ -2469,7 +2475,8 @@ class Firework {
                                 size,
                                 component.lifetime,
                                 gravity * (0.8 + Math.random() * 0.2),
-                                shape
+                                shape,
+                                acceleration
                             );
                             if (index !== -1) this.particles[shape].add(index);
                         }
@@ -2567,7 +2574,8 @@ class Firework {
                                 size,
                                 component.lifetime,
                                 gravity * 0.2,
-                                shape
+                                shape,
+                                acceleration
                             );
                             if (index !== -1) this.particles[shape].add(index);
                         }
@@ -2606,7 +2614,8 @@ class Firework {
                             size,
                             component.lifetime,
                             gravity,
-                            shape
+                            shape,
+                            acceleration
                         );
                         if (index !== -1) this.particles[shape].add(index);
                     }
@@ -2628,7 +2637,8 @@ class Firework {
                             size,
                             component.lifetime,
                             gravity,
-                            shape
+                            shape,
+                            acceleration
                         );
                         if (index !== -1) this.particles[shape].add(index);
                     }
