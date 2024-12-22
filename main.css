@@ -184,9 +184,6 @@ line-height: 1.4;
 
 .remove-component,
 .component button {
-    background: none;
-    border: none;
-    padding: 0;
     margin: 5px 0;
     color: #e74c3c;
     cursor: pointer;

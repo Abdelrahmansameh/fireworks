@@ -277,13 +277,13 @@ class Crowd {
         this.meshes = new Set();
         
         // Create a plane geometry for the sprite
-        const width = 7;  // Adjust size as needed
-        const height = 7;
+        const width = 6; 
+        const height = 6;
         this.personGeometry = new THREE.PlaneGeometry(width, height);
         
         // Load the texture with transparency
         const textureLoader = new THREE.TextureLoader();
-        textureLoader.load('https://abdelrahmansameh.github.io/fireworks/assets/crowd_member.png', (texture) => {
+        textureLoader.load('./assets/crowd_member.png', (texture) => {
             // Create material with transparency
             this.personMaterial = new THREE.MeshBasicMaterial({
                 map: texture,
@@ -1369,19 +1369,16 @@ class FireworkGame {
                             <input type="color" class="secondary-color-input" data-index="${index}" value="${component.secondaryColor}">
                         </div>
                         <div class="crafting-option">
-                            <label>Shell Size (0.3 - 0.7):</label>
+                            <label>Shell Size:</label>
                             <input type="range" class="size-select" data-index="${index}" min="0.3" max="0.7" step="0.05" value="${component.size}">
-                            <span class="size-value">${component.size}</span>
                         </div>
                         <div class="crafting-option">
-                            <label>Lifetime (0.5 - 3 seconds):</label>
+                            <label>Lifetime:</label>
                             <input type="range" class="lifetime-select" data-index="${index}" min="0.5" max="3" step="0.1" value="${component.lifetime}">
-                            <span class="lifetime-value">${component.lifetime}</span>
                         </div>
                         <div class="crafting-option">
-                            <label>Spread (0.5 - 2.0):</label>
+                            <label>Spread:</label>
                             <input type="range" class="spread-select" data-index="${index}" min="0.5" max="2" step="0.1" value="${component.spread}">
-                            <span class="spread-value">${component.spread}</span>
                         </div>
                         <button class="remove-component" data-index="${index}">Remove Component</button>
                     `;
