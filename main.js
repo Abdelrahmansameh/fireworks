@@ -70,6 +70,8 @@ class InstancedParticleSystem {
                 3
             );
 
+            instancedMesh.frustumCulled = false;
+
             this.meshes[shape] = instancedMesh;
             this.activeCounts[shape] = 0;
             scene.add(instancedMesh);
@@ -1872,7 +1874,7 @@ class FireworkGame {
                 if (launcher.mesh.geometry) launcher.mesh.geometry.dispose();
                 if (launcher.mesh.material) {
                     if (launcher.mesh.material.map) launcher.mesh.material.map.dispose();
-                    launcher.mesh.material.dispose();
+                launcher.mesh.material.dispose();
                 }
                 launcher.mesh = null;
             }
@@ -2297,7 +2299,7 @@ class Firework {
                 if (particle.mesh.geometry) particle.mesh.geometry.dispose();
                 if (particle.mesh.material) {
                     if (particle.mesh.material.map) particle.mesh.material.map.dispose();
-                    particle.mesh.material.dispose();
+                particle.mesh.material.dispose();
                 }
             }
         });
@@ -2588,7 +2590,7 @@ class Firework {
                 if (particle.mesh.geometry) particle.mesh.geometry.dispose();
                 if (particle.mesh.material) {
                     if (particle.mesh.material.map) particle.mesh.material.map.dispose();
-                    particle.mesh.material.dispose();
+                particle.mesh.material.dispose();
                 }
             }
         });
