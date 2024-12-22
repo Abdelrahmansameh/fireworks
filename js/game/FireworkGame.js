@@ -3,6 +3,7 @@ import InstancedParticleSystem from '../particles/InstancedParticleSystem.js';
 import Crowd from '../entities/Crowd.js';
 import Firework from '../entities/Firework.js';
 import UIManager from '../ui/UIManager.js';
+import ResourceManager from '../resources/ResourceManager.js';
 
 class FireworkGame {
     constructor() {
@@ -24,18 +25,13 @@ class FireworkGame {
         this.currentTrailEffect = 'fade';
         this.fireworkCount = 0;
         this.autoLauncherCost = 10;
-        this.sparkles = 0;
         this.selectedLauncherIndex = null;
         this.crowdCount = 0;
         this.lastSparklesPerSecond = 0;
         this.crowdThresholds = [1, 2, 3, 4, 5, 10, 15];
 
-        this.draggingLauncher = null;
-        this.isDragging = false;
-        this.isScrollDragging = false;
-        this.lastPointerX = 0;
-
-        this.isMobile = this.detectMobile();
+        // Initialize resource system
+        this.resourceManager = new ResourceManager(this);
 
         // Initialize UI
         this.ui = new UIManager(this);
@@ -49,7 +45,18 @@ class FireworkGame {
         this.currentLevel = parseInt(localStorage.getItem('currentLevel')) || 0;
         this.fireworkCount = parseInt(localStorage.getItem('fireworkCount')) || 0;
         this.autoLauncherCost = parseInt(localStorage.getItem('autoLauncherCost')) || 10;
-        this.sparkles = parseInt(localStorage.getItem('sparkles')) || 0;
+        this.crowdCount =  0;
+
+        // Load resources
+        const savedResources = localStorage.getItem('resources');
+        if (savedResources) {
+            try {
+                const resourceData = JSON.parse(savedResources);
+                this.resourceManager.load(resourceData);
+            } catch (e) {
+                console.error('Failed to load resources:', e);
+            }
+        }
 
         // Load levels data
         const savedLevels = JSON.parse(localStorage.getItem('levels'));
@@ -123,6 +130,8 @@ class FireworkGame {
 
         // Start game loop
         this.animate();
+
+        this.ui.bindEvents();
     }
 
     initThreeJS() {
@@ -166,7 +175,7 @@ class FireworkGame {
 
         // Initialize UI events after renderer is set up
         this.ui.initializeRendererEvents();
-        this.ui.bindEvents();
+        this.bindEvents();
     }
 
     onWindowResize() {
@@ -177,201 +186,8 @@ class FireworkGame {
     }
 
     bindEvents() {
-        document.getElementById('add-component').addEventListener('click', () => {
-            this.currentRecipeComponents.push({
-                pattern: 'spherical',
-                color: '#ff0000',
-                size: 0.5,
-                lifetime: 1.2,
-                shape: 'sphere',
-                spread: 1.0,
-                secondaryColor: '#00ff00'
-            });
-            this.updateComponentsList();
-            this.saveCurrentRecipeComponents();
-        });
-
-        document.getElementById('save-recipe').addEventListener('click', () => {
-            this.saveCurrentRecipe();
-        });
-
-        document.getElementById('erase-recipes').addEventListener('click', () => {
-            this.showConfirmation(
-                "Confirm Erase Recipes",
-                "Are you sure you want to erase all saved recipes?",
-                () => {
-                    this.eraseAllRecipes();
-                }
-            );
-        });
-
-        document.getElementById('buy-auto-launcher').addEventListener('click', () => {
-            this.buyAutoLauncher();
-        });
-
-        document.getElementById('reset-game').addEventListener('click', () => {
-            this.showConfirmation(
-                "Confirm Reset",
-                "Are you sure you want to reset the game? All progress will be lost.",
-                () => {
-                    this.resetGame();
-                }
-            );
-        });
-
-        document.getElementById('reset-launchers').addEventListener('click', () => {
-            this.showConfirmation(
-                'Reset Auto-Launchers',
-                'Are you sure you want to reset all auto-launchers? This will remove all launchers and refund 100% of their cost.',
-                () => {
-                    const refundAmount = this.resetAutoLaunchers();
-                    this.showNotification(`Auto-launchers reset! Refunded ${Math.floor(refundAmount)} sparkles`);
-                }
-            );
-        });
-
-        document.getElementById('crafting-tab').addEventListener('click', () => {
-            this.toggleTab('crafting');
-        });
-        document.getElementById('stats-tab').addEventListener('click', () => {
-            this.toggleTab('stats');
-        });
-        document.getElementById('crowd-tab').addEventListener('click', () => {
-            this.toggleTab('crowd');
-        });
-        document.getElementById('auto-launcher-tab').addEventListener('click', () => {
-            this.toggleTab('auto-launcher');
-            this.updateLauncherList();
-        });
-        document.getElementById('data-tab').addEventListener('click', () => {
-            this.toggleTab('data');
-        });
-        document.getElementById('levels-tab').addEventListener('click', () => {
-            this.toggleTab('levels');
-            this.updateLevelsList();
-        });
-
-        document.getElementById('recipe-trail-effect').addEventListener('change', (e) => {
-            this.currentTrailEffect = e.target.value;
-            this.saveCurrentRecipeComponents();
-        });
-
-        this.renderer.domElement.addEventListener('pointerdown', (e) => {
-            if (!this.isClickInsideUI(e)) {
-                e.preventDefault();
-                if (e.pointerType === 'touch') {
-                    e.target.setPointerCapture(e.pointerId);
-                }
-
-                const x = e.clientX;
-                const y = e.clientY;
-
-                const mouse = new THREE.Vector2();
-                mouse.x = (x / window.innerWidth) * 2 - 1;
-                mouse.y = - (y / window.innerHeight) * 2 + 1;
-
-                const raycaster = new THREE.Raycaster();
-                raycaster.setFromCamera(mouse, this.camera);
-
-                const launcherMeshes = this.levels[this.currentLevel].autoLaunchers.map(launcher => launcher.mesh);
-                const intersects = raycaster.intersectObjects(launcherMeshes);
-
-                if (intersects.length > 0) {
-                    const intersectedMesh = intersects[0].object;
-                    const launcherIndex = this.levels[this.currentLevel].autoLaunchers.findIndex(launcher => launcher.mesh === intersectedMesh);
-                    if (launcherIndex !== -1) {
-                        this.selectLauncher(launcherIndex);
-                        this.showTab('auto-launcher');
-                        setTimeout(() => {
-                            const launcherList = document.getElementById('launcher-list');
-                            const launcherCards = launcherList.getElementsByClassName('launcher-card');
-                            if (launcherCards[launcherIndex]) {
-                                launcherCards[launcherIndex].scrollIntoView({ behavior: 'smooth' });
-                            }
-                        }, 100);
-                        this.draggingLauncher = this.levels[this.currentLevel].autoLaunchers[launcherIndex];
-                        this.isDragging = true;
-
-                        document.addEventListener('pointermove', this.pointerMoveHandler, { passive: false });
-                        document.addEventListener('pointerup', this.pointerUpHandler);
-                        document.addEventListener('pointercancel', this.pointerUpHandler);
-
-                        return;
-                    }
-                }
-
-                const worldPos = this.screenToWorld(x, y);
-                this.handlePointerClick(worldPos, e);
-            }
-        }, { passive: false });
-
-        document.getElementById('collapse-button').addEventListener('click', function () {
-            const tabs = document.querySelector('.tabs');
-            const activeTabContent = document.querySelector('.tab-content.active');
-
-            if (tabs.classList.contains('collapsed')) {
-                tabs.classList.remove('collapsed');
-            } else {
-                tabs.classList.add('collapsed');
-                if (activeTabContent) {
-                    activeTabContent.classList.remove('active');
-                }
-            }
-        });
-
-        // Save/Load
-        document.getElementById('save-progress').addEventListener('click', () => {
-            const data = this.serializeGameData();
-            const textarea = document.getElementById('serialized-data');
-            textarea.value = data;
-            textarea.select();
-            textarea.setSelectionRange(0, 99999);
-            document.execCommand('copy');
-            this.showNotification("Progress saved and copied to clipboard!");
-        });
-
-        document.getElementById('load-progress').addEventListener('click', () => {
-            const textarea = document.getElementById('serialized-data');
-            const data = textarea.value.trim();
-            if (!data) {
-                this.showNotification("No data provided!");
-                return;
-            }
-            try {
-                this.deserializeGameData(data);
-                this.showNotification("Progress loaded successfully!");
-            } catch (error) {
-                this.showNotification("Invalid data format!");
-                console.error(error);
-            }
-        });
-
-        // Level navigation
-        document.getElementById('prev-level').addEventListener('click', () => {
-            if (this.currentLevel > 0) {
-                this.switchLevel(this.currentLevel - 1);
-            }
-        });
-        document.getElementById('next-level').addEventListener('click', () => {
-            // Now we do not automatically add a new level. The player must unlock it in the Levels tab.
-            if (this.currentLevel < this.levels.length - 1 && this.levels[this.currentLevel + 1].unlocked) {
-                this.switchLevel(this.currentLevel + 1);
-            }
-        });
-
-        // Unlock next level button
-        document.getElementById('unlock-next-level').addEventListener('click', () => {
-            this.unlockNextLevel();
-        });
-
-        // Add wheel event listener for horizontal scrolling
-        document.addEventListener('wheel', this.handleWheelScroll.bind(this), { passive: false });
-
-        document.getElementById('spread-launchers').addEventListener('click', () => {
-            this.spreadLaunchers();
-        });
-
-        document.getElementById('upgrade-all-launchers').addEventListener('click', () => this.upgradeAllLaunchers());
+        // Moving event listeners to UIManager
+        this.ui.bindUIEvents();
     }
 
     handleWheelScroll(event) {
@@ -597,14 +413,26 @@ class FireworkGame {
         this.ui.toggleTab(tab);
     }
 
+    addSparkles(amount) {
+        this.resourceManager.resources.sparkles.add(amount);
+    }
+
+    subtractSparkles(amount) {
+        this.resourceManager.resources.sparkles.subtract(amount);
+    }
+
+    getSparkles() {
+        return this.resourceManager.resources.sparkles.amount;
+    }
+
     updateUI() {
         const currentLevelSparklesPerSec = this.calculateSparklesPerSecond(this.levels[this.currentLevel]).toFixed(2);
         const totalSparklesPerSec = this.calculateTotalSparklesPerSecond().toFixed(2);
 
         this.ui.updateUI(
-            Math.round(this.sparkles).toLocaleString(),
-            `+${totalSparklesPerSec}`,
-            `+${currentLevelSparklesPerSec}`,
+            Math.floor(this.getSparkles()),
+            this.lastSparklesPerSecond,
+            this.calculateSparklesPerSecond(this.levels[this.currentLevel]) || 0,
             this.fireworkCount,
             this.levels[this.currentLevel].autoLaunchers.length,
             this.currentTrailEffect,
@@ -635,7 +463,7 @@ class FireworkGame {
         this.levels.forEach((level, index) => {
             if (index !== this.currentLevel && level.unlocked) {
                 const sparklesPerSecond = this.calculateSparklesPerSecond(level);
-                this.sparkles += sparklesPerSecond * deltaTime;
+                this.addSparkles(sparklesPerSecond * deltaTime);
                 this.saveProgress();
                 this.updateUI();
             }
@@ -656,6 +484,14 @@ class FireworkGame {
         }
         this.lastSparklesPerSecond = currentSps;
         this.updateCrowdDisplay();
+
+        // Update resources
+        this.resourceManager.updateGoldFromCrowd(this.crowdCount);
+        this.resourceManager.update();
+        // Update crowd animation
+        this.crowd.update(deltaTime);
+
+        this.renderer.render(this.scene, this.camera);
     }
 
     initBackgroundColor() {
@@ -683,7 +519,7 @@ class FireworkGame {
     saveProgress() {
         localStorage.setItem('fireworkCount', this.fireworkCount);
         localStorage.setItem('autoLauncherCost', this.autoLauncherCost);
-        localStorage.setItem('sparkles', this.sparkles);
+        localStorage.setItem('sparkles', this.getSparkles());
         localStorage.setItem('fireworkRecipes', JSON.stringify(this.recipes));
         localStorage.setItem('currentTrailEffect', this.currentTrailEffect);
         localStorage.setItem('currentLevel', this.currentLevel);
@@ -698,6 +534,9 @@ class FireworkGame {
         localStorage.setItem('backgroundColor', document.getElementById('background-color').value);
         localStorage.setItem('selectedLauncherIndex', this.selectedLauncherIndex || '');
         localStorage.setItem('crowdCount', this.crowdCount);
+
+        // Save resources
+        localStorage.setItem('resources', JSON.stringify(this.resourceManager.save()));
     }
 
     dismissNotification() {
@@ -757,7 +596,7 @@ class FireworkGame {
 
         this.launch(x, y, components, effect);
         this.fireworkCount++;
-        this.sparkles++;
+        this.addSparkles(1);
         this.saveProgress();
         this.updateUI();
     }
@@ -771,8 +610,8 @@ class FireworkGame {
         const numLaunchers = this.levels[this.currentLevel].autoLaunchers.length;
         const cost = this.calculateAutoLauncherCost(numLaunchers);
 
-        if (this.sparkles >= cost) {
-            this.sparkles -= cost;
+        if (this.getSparkles() >= cost) {
+            this.subtractSparkles(cost);
             const x = GAME_BOUNDS.LAUNCHER_MIN_X + (Math.random() * (GAME_BOUNDS.LAUNCHER_MAX_X - GAME_BOUNDS.LAUNCHER_MIN_X));
             const accumulator = Math.random() * 5;
             const launcher = {
@@ -844,7 +683,7 @@ class FireworkGame {
         });
 
         // Add the refund to sparkles
-        this.sparkles += Math.floor(refundAmount);
+        this.addSparkles(Math.floor(refundAmount));
 
         // Reset auto launcher cost to initial value
         this.autoLauncherCost = 10;
@@ -858,13 +697,15 @@ class FireworkGame {
 
     resetGame() {
         this.fireworkCount = 0;
-        this.sparkles = 0;
         this.recipes = [];
         this.crowdCount = 0;
         this.currentTrailEffect = 'fade';
         this.currentRecipeComponents = [{
             pattern: 'spherical', color: '#ff0000', size: 0.5, lifetime: 1.2, shape: 'sphere', spread: 1.0, secondaryColor: '#00ff00'
         }];
+
+        // Reset resources
+        this.resourceManager.reset();
 
         this.levels.forEach(levelData => {
             levelData.fireworks.forEach(firework => {
@@ -880,7 +721,11 @@ class FireworkGame {
             this.crowd.dispose();
         }
 
-        this.levels = [{ fireworks: [], autoLaunchers: [], unlocked: true }];
+        this.levels = [{
+            fireworks: [],
+            autoLaunchers: [],
+            unlocked: true
+        }];
         this.currentLevel = 0;
 
         if (this.particleSystem) {
@@ -889,7 +734,6 @@ class FireworkGame {
         }
 
         this.lastSparklesPerSecond = 0;
-
         this.autoLauncherCost = 10;
 
         localStorage.clear();
@@ -1059,8 +903,8 @@ class FireworkGame {
             return;
         }
 
-        if (this.sparkles >= launcher.upgradeCost) {
-            this.sparkles -= launcher.upgradeCost;
+        if (this.getSparkles() >= launcher.upgradeCost) {
+            this.subtractSparkles(launcher.upgradeCost);
             launcher.level += 1;
             launcher.spawnInterval = launcher.spawnInterval * 0.9;
             launcher.upgradeCost = Math.floor(launcher.upgradeCost * 1.2);
@@ -1088,7 +932,7 @@ class FireworkGame {
             // Find the cheapest upgrade we can afford
             for (let i = 0; i < currentLevel.autoLaunchers.length; i++) {
                 const cost = currentLevel.autoLaunchers[i].upgradeCost;
-                if (cost <= this.sparkles && cost < cheapestCost) {
+                if (cost <= this.getSparkles() && cost < cheapestCost) {
                     cheapestCost = cost;
                     cheapestIndex = i;
                     foundAffordableUpgrade = true;
@@ -1114,7 +958,7 @@ class FireworkGame {
         const data = {
             fireworkCount: this.fireworkCount,
             autoLauncherCost: this.autoLauncherCost,
-            sparkles: this.sparkles,
+            sparkles: this.getSparkles(),
             recipes: this.recipes,
             currentTrailEffect: this.currentTrailEffect,
             currentLevel: this.currentLevel,
@@ -1125,7 +969,8 @@ class FireworkGame {
             currentRecipeComponents: this.currentRecipeComponents,
             backgroundColor: localStorage.getItem('backgroundColor') || '#000000',
             selectedLauncherIndex: this.selectedLauncherIndex,
-            crowdCount: this.crowdCount
+            crowdCount: this.crowdCount,
+            resources: this.resourceManager.save()
         };
         return JSON.stringify(data);
     }
@@ -1135,14 +980,21 @@ class FireworkGame {
 
         this.resetGame();
 
+        if (data.resources) {
+            const resourceData = typeof data.resources === 'string' ? JSON.parse(data.resources) : data.resources;
+            this.resourceManager.load(resourceData);
+            // Save to localStorage immediately
+            localStorage.setItem('resources', JSON.stringify(resourceData));
+        }
+
         this.fireworkCount = data.fireworkCount || 0;
         this.autoLauncherCost = data.autoLauncherCost || 10;
-        this.sparkles = data.sparkles || 0;
         this.recipes = data.recipes || [];
         this.currentTrailEffect = data.currentTrailEffect || 'fade';
         this.currentRecipeComponents = data.currentRecipeComponents || [{
             pattern: 'spherical', color: '#ff0000', size: 0.5, lifetime: 1.2, shape: 'sphere', spread: 1.0, secondaryColor: '#00ff00'
         }];
+        this.crowdCount = data.crowdCount || 0;
 
         const bgColor = data.backgroundColor || '#000000';
         this.renderer.setClearColor(new THREE.Color(bgColor));
@@ -1152,53 +1004,31 @@ class FireworkGame {
         this.selectedLauncherIndex = data.selectedLauncherIndex ?? null;
 
         if (data.levels) {
-            const currentLevel = data.currentLevel || 0;
-            this.levels = data.levels.map((levelData, index) => ({
+            this.levels = data.levels.map(levelData => ({
                 fireworks: [],
                 autoLaunchers: levelData.autoLaunchers || [],
-                unlocked: levelData.unlocked || index === 0
+                unlocked: levelData.unlocked || false
             }));
-            this.currentLevel = currentLevel;
-        } else {
-            this.levels = [{
-                fireworks: [],
-                autoLaunchers: data.autoLaunchers || [],
-                unlocked: true
-            }];
-            this.currentLevel = 0;
         }
 
-        this.levels.forEach(levelData => {
-            levelData.autoLaunchers.forEach(launcher => {
-                if (!launcher.accumulator) {
-                    launcher.accumulator = Math.random() * 5;
-                }
-                if (launcher.level === undefined) {
-                    launcher.level = 1;
-                    launcher.spawnInterval = 5;
-                    launcher.upgradeCost = 15;
-                }
-            });
-        });
-
-        this.levels[this.currentLevel].autoLaunchers.forEach(launcher => {
-            this.createAutoLauncherMesh(launcher);
-        });
-
+        // Save all loaded data to localStorage
         this.saveProgress();
+
+        // Update all UI elements
         this.updateUI();
         this.updateComponentsList();
         this.updateRecipeList();
         this.updateLauncherList();
-
-        if (this.selectedLauncherIndex !== null && this.selectedLauncherIndex < this.levels[this.currentLevel].autoLaunchers.length) {
-            this.selectLauncher(this.selectedLauncherIndex);
-        }
-
         this.updateLevelDisplay();
         this.updateLevelsList();
         this.updateLevelArrows();
         this.updateCrowdDisplay();
+
+        // Recreate launcher meshes
+        this.resetAutoLaunchers();
+        if (this.selectedLauncherIndex !== null) {
+            this.selectLauncher(this.selectedLauncherIndex);
+        }
     }
 
     disposeAutoLaunchers(levelData) {
@@ -1242,8 +1072,8 @@ class FireworkGame {
         let nextLevelIndex = this.levels.length;
         // Check if last level is unlocked
         // We always create a new level when we unlock next.
-        if (this.sparkles >= cost) {
-            this.sparkles -= cost;
+        if (this.getSparkles() >= cost) {
+            this.subtractSparkles(cost);
             this.levels.push({
                 fireworks: [],
                 autoLaunchers: [],

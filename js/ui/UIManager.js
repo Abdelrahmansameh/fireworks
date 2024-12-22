@@ -22,7 +22,7 @@ class UIManager {
         }
     }
 
-    bindEvents() {
+    bindUIEvents() {
         document.getElementById('add-component').addEventListener('click', () => {
             this.game.currentRecipeComponents.push({
                 pattern: 'spherical',
@@ -76,15 +76,22 @@ class UIManager {
             );
         });
 
-        // Tab navigation
-        document.getElementById('crafting-tab').addEventListener('click', () => this.toggleTab('crafting'));
-        document.getElementById('stats-tab').addEventListener('click', () => this.toggleTab('stats'));
-        document.getElementById('crowd-tab').addEventListener('click', () => this.toggleTab('crowd'));
+        document.getElementById('crafting-tab').addEventListener('click', () => {
+            this.toggleTab('crafting');
+        });
+        document.getElementById('stats-tab').addEventListener('click', () => {
+            this.toggleTab('stats');
+        });
+        document.getElementById('crowd-tab').addEventListener('click', () => {
+            this.toggleTab('crowd');
+        });
         document.getElementById('auto-launcher-tab').addEventListener('click', () => {
             this.toggleTab('auto-launcher');
             this.game.updateLauncherList();
         });
-        document.getElementById('data-tab').addEventListener('click', () => this.toggleTab('data'));
+        document.getElementById('data-tab').addEventListener('click', () => {
+            this.toggleTab('data');
+        });
         document.getElementById('levels-tab').addEventListener('click', () => {
             this.toggleTab('levels');
             this.game.updateLevelsList();
@@ -95,6 +102,48 @@ class UIManager {
             this.game.saveCurrentRecipeComponents();
         });
 
+        this.game.renderer.domElement.addEventListener('pointerdown', (e) => {
+            if (!this.game.isClickInsideUI(e)) {
+                e.preventDefault();
+                if (e.pointerType === 'touch') {
+                    e.target.setPointerCapture(e.pointerId);
+                }
+
+                const x = e.clientX;
+                const y = e.clientY;
+
+                const mouse = new THREE.Vector2();
+                mouse.x = (x / window.innerWidth) * 2 - 1;
+                mouse.y = - (y / window.innerHeight) * 2 + 1;
+
+                const raycaster = new THREE.Raycaster();
+                raycaster.setFromCamera(mouse, this.game.camera);
+
+                const launcherMeshes = this.game.levels[this.game.currentLevel].autoLaunchers.map(launcher => launcher.mesh);
+                const intersects = raycaster.intersectObjects(launcherMeshes);
+
+                if (intersects.length > 0) {
+                    const intersectedMesh = intersects[0].object;
+                    const launcherIndex = this.game.levels[this.game.currentLevel].autoLaunchers.findIndex(launcher => launcher.mesh === intersectedMesh);
+                    if (launcherIndex !== -1) {
+                        this.game.selectLauncher(launcherIndex);
+                        this.showTab('auto-launcher');
+                        setTimeout(() => {
+                            const launcherList = document.getElementById('launcher-list');
+                            const launcherCards = launcherList.getElementsByClassName('launcher-card');
+                            if (launcherCards[launcherIndex]) {
+                                launcherCards[launcherIndex].scrollIntoView({ behavior: 'smooth' });
+                            }
+                        }, 100);
+                        this.game.draggingLauncher = this.game.levels[this.game.currentLevel].autoLaunchers[launcherIndex];
+                        this.game.isDragging = true;
+                    }
+                }
+            }
+        });
+    }
+
+    bindEvents() {
         document.getElementById('collapse-button').addEventListener('click', this.handleCollapseButton);
 
         // Save/Load
@@ -147,7 +196,10 @@ class UIManager {
             this.game.spreadLaunchers();
         });
 
-        document.getElementById('upgrade-all-launchers').addEventListener('click', () => this.game.upgradeAllLaunchers());
+        document.getElementById('upgrade-all-launchers').addEventListener('click', () => {
+            this.game.upgradeAllLaunchers();
+            this.showNotification("All launchers upgraded!");
+        });
     }
 
     handlePointerDown(e) {
@@ -432,12 +484,10 @@ class UIManager {
 
         if (isActive) {
             tabContent.classList.remove('active');
-            tabs.classList.add('collapsed');
         } else {
             const tabContents = document.querySelectorAll('.tab-content');
             tabContents.forEach(content => content.classList.remove('active'));
             tabContent.classList.add('active');
-            tabs.classList.remove('collapsed');
         }
     }
 
@@ -465,7 +515,7 @@ class UIManager {
     }
 
     updateUI(sparklesCount, totalSparklesRate, levelSparklesRate, fireworkCount, autoLauncherLevel, trailEffect, nextCost) {
-        const sparklesElement = document.getElementById('sparkles-count');
+        const sparklesElement = document.getElementById('ressource-count');
         const isCompact = sparklesElement.classList.contains('compact');
         
         // Format numbers for compact display
@@ -476,22 +526,37 @@ class UIManager {
             return num.toString();
         };
         
-        // Update the totals in both views
-        const totalElements = sparklesElement.querySelectorAll('.sparkle-total');
-        totalElements.forEach(el => {
+        // Update sparkle totals
+        const sparkleTotalElements = sparklesElement.querySelectorAll('.sparkle-total');
+        sparkleTotalElements.forEach(el => {
             el.textContent = isCompact ? 
                 `${formatCompactNumber(sparklesCount)} sp` : 
-                sparklesCount;
+                `${sparklesCount} sp`;
         });
         
-        // Update rates
+        // Update sparkle rates
         if (isCompact) {
             sparklesElement.querySelector('.sparkle-rate').textContent = 
-                ` (${formatCompactNumber(totalSparklesRate)} sp/s)`;
+                ` (+${formatCompactNumber(totalSparklesRate)}/s)`;
         } else {
-            sparklesElement.querySelector('.total-rate').textContent = totalSparklesRate + ' sp/s';
-            sparklesElement.querySelector('.level-rate').textContent = levelSparklesRate + ' sp/s';
+            sparklesElement.querySelector('.total-rate').textContent = 
+                `${totalSparklesRate} sp/s`;
+            sparklesElement.querySelector('.level-rate').textContent = 
+                `${levelSparklesRate} sp/s`;
         }
+
+        // Update gold totals
+        const gold = this.game.resourceManager.resources.gold;
+        const goldTotalElements = sparklesElement.querySelectorAll('.gold-total');
+        goldTotalElements.forEach(el => {
+            el.textContent = gold.formatAmount();
+        });
+
+        // Update gold rates
+        const goldRateElements = sparklesElement.querySelectorAll('.gold-rate');
+        goldRateElements.forEach(el => {
+            el.textContent = ` +${gold.perSecond.toFixed(1)}/s`;
+        });
 
         // Add click handler if not already added
         if (!sparklesElement._hasClickHandler) {
@@ -502,6 +567,7 @@ class UIManager {
             });
         }
 
+        // Update other UI elements
         document.getElementById('firework-count').textContent = fireworkCount;
         document.getElementById('auto-launcher-level').textContent = autoLauncherLevel;
         document.getElementById('recipe-trail-effect').value = trailEffect;
@@ -723,13 +789,6 @@ class UIManager {
                     this.game.setCameraTarget(launcher.mesh.position.x);
                 }
             });
-
-            // If this is the selected launcher, scroll it into view
-            if (index === selectedIndex) {
-                setTimeout(() => {
-                    launcherDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-                }, 100);
-            }
         });
     }
 

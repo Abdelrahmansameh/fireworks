@@ -10,17 +10,14 @@ class Crowd {
         const height = 6;
         this.personGeometry = new THREE.PlaneGeometry(width, height);
 
-        // Load the texture with transparency
         const textureLoader = new THREE.TextureLoader();
         textureLoader.load('./assets/crowd_member.png', (texture) => {
-            // Create material with transparency
             this.personMaterial = new THREE.MeshBasicMaterial({
                 map: texture,
                 side: THREE.DoubleSide,
                 transparent: true,
             });
 
-            // Update existing meshes with new material
             this.meshes.forEach(mesh => {
                 mesh.material = this.personMaterial;
             });
@@ -56,7 +53,7 @@ class Crowd {
     }
 
     update(deltaTime) {
-        // Update each person's position with bobbing motion
+        // bobbig
         this.meshes.forEach(mesh => {
             const offset = this.bobOffsets.get(mesh);
             const baseY = GAME_BOUNDS.MIN_Y + this.personGeometry.parameters.height / 2;
