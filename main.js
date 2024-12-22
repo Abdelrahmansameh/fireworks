@@ -16,7 +16,8 @@ const FIREWORK_CONFIG = {
         burst: 9.81,
         palm: 5.0,
         willow: 1.0,
-        helix: 3.0
+        helix: 3.0,
+        brokenHeart: 6.0
     },
     supportedShapes: ['sphere', 'star', 'ring', 'crystalDroplet', 'sliceBurst']
 };
@@ -79,6 +80,7 @@ class InstancedParticleSystem {
 
         this.positions = {};
         this.velocities = {};
+        this.accelerations = {};  
         this.colors = {};
         this.scales = {};
         this.lifetimes = {};
@@ -90,6 +92,7 @@ class InstancedParticleSystem {
         FIREWORK_CONFIG.supportedShapes.forEach(shape => {
             this.positions[shape] = new Array(maxParticles).fill(null).map(() => new THREE.Vector3());
             this.velocities[shape] = new Array(maxParticles).fill(null).map(() => new THREE.Vector3());
+            this.accelerations[shape] = new Array(maxParticles).fill(null).map(() => new THREE.Vector3()); 
             this.colors[shape] = new Array(maxParticles).fill(null).map(() => new THREE.Color());
             this.scales[shape] = new Float32Array(maxParticles);
             this.lifetimes[shape] = new Float32Array(maxParticles);
@@ -154,7 +157,7 @@ class InstancedParticleSystem {
         return geometry;
     }
 
-    addParticle(position, velocity, color, scale, lifetime, gravity, shape = 'sphere') {
+    addParticle(position, velocity, color, scale, lifetime, gravity, shape = 'sphere', acceleration = new THREE.Vector3()) {
         if (!FIREWORK_CONFIG.supportedShapes.includes(shape)) {
             shape = 'sphere';
         }
@@ -167,6 +170,7 @@ class InstancedParticleSystem {
 
         this.positions[shape][index].copy(position);
         this.velocities[shape][index].copy(velocity);
+        this.accelerations[shape][index].copy(acceleration);
         this.colors[shape][index].copy(color);
         this.scales[shape][index] = scale;
         this.lifetimes[shape][index] = lifetime;
@@ -216,6 +220,7 @@ class InstancedParticleSystem {
                     if (i !== nextFreeIndex) {
                         this.positions[shape][nextFreeIndex].copy(this.positions[shape][i]);
                         this.velocities[shape][nextFreeIndex].copy(this.velocities[shape][i]);
+                        this.accelerations[shape][nextFreeIndex].copy(this.accelerations[shape][i]);  // Copy acceleration
                         this.colors[shape][nextFreeIndex].copy(this.colors[shape][i]);
                         this.scales[shape][nextFreeIndex] = this.scales[shape][i];
                         this.lifetimes[shape][nextFreeIndex] = this.lifetimes[shape][i];
@@ -225,6 +230,10 @@ class InstancedParticleSystem {
                         this.rotations[shape][nextFreeIndex].copy(this.rotations[shape][i]);
                     }
 
+                    this.velocities[shape][nextFreeIndex].addScaledVector(
+                        this.accelerations[shape][nextFreeIndex],  // Use acceleration
+                        delta
+                    );
                     this.velocities[shape][nextFreeIndex].y -= this.gravities[shape][nextFreeIndex] * delta;
                     this.positions[shape][nextFreeIndex].addScaledVector(
                         this.velocities[shape][nextFreeIndex],
@@ -277,12 +286,12 @@ class Crowd {
     constructor(scene) {
         this.scene = scene;
         this.meshes = new Set();
-        
+
         // Create a plane geometry for the sprite
-        const width = 6; 
+        const width = 6;
         const height = 6;
         this.personGeometry = new THREE.PlaneGeometry(width, height);
-        
+
         // Load the texture with transparency
         const textureLoader = new THREE.TextureLoader();
         textureLoader.load('./assets/crowd_member.png', (texture) => {
@@ -292,20 +301,20 @@ class Crowd {
                 side: THREE.DoubleSide,
                 transparent: true,
             });
-            
+
             // Update existing meshes with new material
             this.meshes.forEach(mesh => {
                 mesh.material = this.personMaterial;
             });
         });
-        
+
         // Temporary material while texture loads
         this.personMaterial = new THREE.MeshBasicMaterial({
             color: 0x808080,
             transparent: true,
             side: THREE.DoubleSide
         });
-        
+
         // Animation properties
         this.bobSpeed = 10; // Speed of the bobbing motion
         this.bobHeight = 0.4; // How high they bob
@@ -316,14 +325,14 @@ class Crowd {
         const mesh = new THREE.Mesh(this.personGeometry, this.personMaterial);
         const height = 2; // Height of person mesh
         const y = GAME_BOUNDS.MIN_Y + (height / 2); // Same formula as launchers
-        
+
         // Random position between left and right crowd boundaries
         const crowdX = GAME_BOUNDS.CROWD_LEFT_X + (Math.random() * (GAME_BOUNDS.CROWD_RIGHT_X - GAME_BOUNDS.CROWD_LEFT_X));
         mesh.position.set(crowdX, y, 0);
-        
+
         // Add random offset for varied bobbing
         this.bobOffsets.set(mesh, Math.random() * Math.PI * 2);
-        
+
         this.scene.add(mesh);
         this.meshes.add(mesh);
     }
@@ -358,7 +367,7 @@ class FireworkGame {
             autoLaunchers: [],
             unlocked: true
         }];
-        
+
 
 
         this.scene = null;
@@ -383,7 +392,7 @@ class FireworkGame {
         this.lastPointerX = 0;
 
         this.isMobile = this.detectMobile();
-        
+
         // Initialize the game
         this.init();
     }
@@ -870,7 +879,7 @@ class FireworkGame {
             if (e.pointerType === 'touch' && !this.isClickInsideUI(e)) {
                 const worldPos = this.screenToWorld(e.clientX, e.clientY);
                 this.launchFireworkAt(worldPos.x);
-            } 
+            }
             if (this.isScrollDragging) {
                 const deltaX = Math.abs(e.clientX - this.lastPointerX);
                 if (deltaX < 20 && !this.isClickInsideUI(e)) {
@@ -1252,8 +1261,12 @@ class FireworkGame {
                 // Remove the mesh from the scene
                 if (launcher.mesh) {
                     this.scene.remove(launcher.mesh);
-                    launcher.mesh.geometry.dispose();
-                    launcher.mesh.material.dispose();
+                    if (launcher.mesh.geometry) launcher.mesh.geometry.dispose();
+                    if (launcher.mesh.material) {
+                        if (launcher.mesh.material.map) launcher.mesh.material.map.dispose();
+                        launcher.mesh.material.dispose();
+                    }
+                    launcher.mesh = null;
                 }
             });
             level.autoLaunchers = []; // Clear all launchers
@@ -1305,7 +1318,7 @@ class FireworkGame {
         }
 
         this.lastSparklesPerSecond = 0;
-        
+
         this.autoLauncherCost = 10;
 
         localStorage.clear();
@@ -1356,6 +1369,7 @@ class FireworkGame {
                                     <option value="willow">Willow</option>
                                     <option value="helix">Helix</option>
                                     <option value="star">Star</option>
+                                    <option value="brokenHeart">Broken Heart</option>
                                 </select>
                             </div>
                             <div class="flex-item">
@@ -1404,13 +1418,10 @@ class FireworkGame {
             const secondaryColorInput = componentDiv.querySelector('.secondary-color-input');
 
             const sizeSelect = componentDiv.querySelector('.size-select');
-            const sizeValue = componentDiv.querySelector('.size-value');
 
             const lifetimeSelect = componentDiv.querySelector('.lifetime-select');
-            const lifetimeValue = componentDiv.querySelector('.lifetime-value');
 
             const spreadSelect = componentDiv.querySelector('.spread-select');
-            const spreadValue = componentDiv.querySelector('.spread-value');
 
             const updateSecondaryColorVisibility = () => {
                 if (patternSelect.value === 'helix') {
@@ -1450,21 +1461,18 @@ class FireworkGame {
             sizeSelect.addEventListener('input', (e) => {
                 const idx = e.target.getAttribute('data-index');
                 this.currentRecipeComponents[idx].size = parseFloat(e.target.value);
-                sizeValue.textContent = e.target.value;
                 this.saveCurrentRecipeComponents();
             });
 
             lifetimeSelect.addEventListener('input', (e) => {
                 const idx = e.target.getAttribute('data-index');
                 this.currentRecipeComponents[idx].lifetime = parseFloat(e.target.value);
-                lifetimeValue.textContent = e.target.value;
                 this.saveCurrentRecipeComponents();
             });
 
             spreadSelect.addEventListener('input', (e) => {
                 const idx = e.target.getAttribute('data-index');
                 this.currentRecipeComponents[idx].spread = parseFloat(e.target.value);
-                spreadValue.textContent = e.target.value;
                 this.saveCurrentRecipeComponents();
             });
 
@@ -1874,7 +1882,7 @@ class FireworkGame {
                 if (launcher.mesh.geometry) launcher.mesh.geometry.dispose();
                 if (launcher.mesh.material) {
                     if (launcher.mesh.material.map) launcher.mesh.material.map.dispose();
-                launcher.mesh.material.dispose();
+                    launcher.mesh.material.dispose();
                 }
                 launcher.mesh = null;
             }
@@ -1996,22 +2004,22 @@ class FireworkGame {
         const currentSpsElement = document.getElementById('current-sps');
         const nextThresholdElement = document.getElementById('next-threshold');
         const progressBar = document.getElementById('threshold-progress');
-        
+
         if (crowdCountElement) {
             crowdCountElement.textContent = this.crowdCount;
         }
-        
+
         const currentSps = this.calculateTotalSparklesPerSecond();
         if (currentSpsElement) {
             currentSpsElement.textContent = currentSps;
         }
-        
+
         // Find next threshold
         const nextThreshold = this.crowdThresholds.find(t => t > currentSps) || 'Max';
         if (nextThresholdElement) {
             nextThresholdElement.textContent = nextThreshold;
         }
-        
+
         // Update progress bar
         if (progressBar && nextThreshold !== 'Max') {
             const prevThreshold = this.crowdThresholds[this.crowdThresholds.indexOf(nextThreshold) - 1] || 0;
@@ -2116,12 +2124,12 @@ class Firework {
                 const groupSpread = 0.3;  // How far particles spread from center
                 const groupTime = Date.now();  // Shared timestamp for the group
                 const groupId = Math.floor(groupTime / 100);  // Group identifier
-                
+
                 for (let i = 0; i < groupSize; i++) {
                     const angle = (Math.PI * 2 * i) / groupSize;
                     const offsetX = x + Math.cos(angle) * groupSpread * Math.random();
                     const offsetY = y + Math.sin(angle) * groupSpread * Math.random();
-                    
+
                     material = new THREE.PointsMaterial({
                         color: 0xffffff,
                         size: 0.2 + Math.random() * 0.2,
@@ -2129,13 +2137,13 @@ class Firework {
                         opacity: 0.8,
                         blending: THREE.AdditiveBlending
                     });
-                    
+
                     const geometry = new THREE.BufferGeometry();
                     const positions = new Float32Array([offsetX, offsetY, 0]);
                     geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
                     const particle = new THREE.Points(geometry, material);
                     this.scene.add(particle);
-                    
+
                     this.trailParticles.push({
                         mesh: particle,
                         createdAt: groupTime,
@@ -2209,8 +2217,8 @@ class Firework {
 
     updateTrailParticles(delta) {
         const now = Date.now();
-        const flickerSpeed = 8;  
-        
+        const flickerSpeed = 8;
+
         const groups = {};
         this.trailParticles.forEach(particle => {
             if (particle.groupId) {
@@ -2232,7 +2240,7 @@ class Firework {
                         // Calculate a shared brightness for the group
                         const groupPhase = (now * flickerSpeed + particle.groupId * 1000) / 1000;
                         const groupBrightness = 0.3 + (Math.sin(groupPhase) * 0.5 + 0.5) * 0.7;
-                        
+
                         particle.mesh.material.size = (0.2 + Math.random() * 0.2) * (1 - age * 0.5);
                         particle.mesh.material.opacity = particle.initialOpacity * groupBrightness * (1 - age);
                     } else {
@@ -2247,7 +2255,7 @@ class Firework {
                         // Calculate a shared hue for the group
                         const groupPhase = (now * flickerSpeed + particle.groupId * 1000) / 1000;
                         const groupHue = (groupPhase + index * 0.1) % 1;
-                        
+
                         particle.color.setHSL(groupHue, 1, 0.5);
                         particle.mesh.material.color = particle.color;
                         particle.mesh.material.opacity = particle.initialOpacity * (1 - age);
@@ -2299,7 +2307,7 @@ class Firework {
                 if (particle.mesh.geometry) particle.mesh.geometry.dispose();
                 if (particle.mesh.material) {
                     if (particle.mesh.material.map) particle.mesh.material.map.dispose();
-                particle.mesh.material.dispose();
+                    particle.mesh.material.dispose();
                 }
             }
         });
@@ -2441,31 +2449,84 @@ class Firework {
                     break;
 
                 case 'heart':
-                    const heartScale = spread;
-                    for (let i = 0; i < particleCount; i++) {
-                        const t = (i / particleCount) * Math.PI * 2;
-                        const xOffset = heartScale * (16 * Math.pow(Math.sin(t), 3));
-                        const yOffset = heartScale * (13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t));
-                        const angle = Math.atan2(yOffset, xOffset);
-                        const magnitude = speed * Math.sqrt(xOffset * xOffset + yOffset * yOffset) * 0.05;
-                        velocity.set(
-                            Math.cos(angle) * magnitude,
-                            Math.sin(angle) * magnitude,
-                            0
-                        );
-                        const index = this.particleSystem.addParticle(
-                            rocketPos.clone(),
-                            velocity.clone(),
-                            color,
-                            size,
-                            component.lifetime,
-                            gravity * (0.8 + Math.random() * 0.2),
-                            shape
-                        );
-                        if (index !== -1) this.particles[shape].add(index);
+                    {
+                        const heartScale = spread;
+                        for (let i = 0; i < particleCount; i++) {
+                            const t = (i / particleCount) * Math.PI * 2;
+                            const xOffset = heartScale * (16 * Math.pow(Math.sin(t), 3));
+                            const yOffset = heartScale * (13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t));
+                            const angle = Math.atan2(yOffset, xOffset);
+                            const magnitude = speed * Math.sqrt(xOffset * xOffset + yOffset * yOffset) * 0.01;
+                            velocity.set(
+                                Math.cos(angle) * magnitude,
+                                Math.sin(angle) * magnitude,
+                                0
+                            );
+                            const index = this.particleSystem.addParticle(
+                                rocketPos.clone(),
+                                velocity.clone(),
+                                color,
+                                size,
+                                component.lifetime,
+                                gravity * (0.8 + Math.random() * 0.2),
+                                shape
+                            );
+                            if (index !== -1) this.particles[shape].add(index);
+                        }
+                        break;
                     }
-                    break;
-
+                    case 'brokenHeart': {
+                        const heartScale = spread;
+                        
+                        // Pick an approximate pivot near the bottom tip of the heart shape.
+                        const pivotOffset = new THREE.Vector3(0, -heartScale * 30, 0);
+                        const pivotPoint = rocketPos.clone().add(pivotOffset);
+                    
+                        const rotationAxis = new THREE.Vector3(0, 0, 1);
+                        
+                        for (let i = 0; i < particleCount; i++) {
+                            // Parametric heart shape
+                            const t = (i / particleCount) * Math.PI * 2;
+                            const xOffset = heartScale * (16 * Math.pow(Math.sin(t), 3));
+                            const yOffset = heartScale * (
+                                13 * Math.cos(t)
+                                - 5 * Math.cos(2 * t)
+                                - 2 * Math.cos(3 * t)
+                                - Math.cos(4 * t)
+                            );
+                    
+                            const particlePos = rocketPos.clone().add(new THREE.Vector3(xOffset, yOffset, 0));
+                            
+                            const angle = Math.atan2(yOffset, xOffset);
+                            const magnitude = speed * Math.sqrt(xOffset * xOffset + yOffset * yOffset) * 0.05;
+                            const unbrokenHeartVelocity = new THREE.Vector3(
+                                Math.cos(angle) * magnitude,
+                                Math.sin(angle) * magnitude,
+                                0
+                            );
+                            
+                            const pivotToParticle = particlePos.clone().sub(pivotPoint);
+                            const rotation = new THREE.Vector3().crossVectors(pivotToParticle, rotationAxis);
+                            const sign = (i < particleCount / 2) ? 1 : -1;
+                            const rotationSpeed = 0.05 * sign;
+                            rotation.multiplyScalar(rotationSpeed);
+                    
+                            const index = this.particleSystem.addParticle(
+                                rocketPos.clone(),  
+                                unbrokenHeartVelocity.clone(),
+                                color,
+                                size,
+                                component.lifetime,
+                                gravity * 1.5,
+                                shape, 
+                                rotation
+                            );
+                            if (index !== -1) {
+                                this.particles[shape].add(index);
+                            }
+                        }
+                        break;
+                    }
                 case 'helix':
                     const helixRadius = 0.5;
                     const riseSpeed = speed * 0.1 * spread;
@@ -2590,7 +2651,7 @@ class Firework {
                 if (particle.mesh.geometry) particle.mesh.geometry.dispose();
                 if (particle.mesh.material) {
                     if (particle.mesh.material.map) particle.mesh.material.map.dispose();
-                particle.mesh.material.dispose();
+                    particle.mesh.material.dispose();
                 }
             }
         });
