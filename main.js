@@ -2368,7 +2368,7 @@ class Firework {
                             color,
                             size,
                             component.lifetime,
-                            gravity * (0.8 + Math.random() * 0.2),
+                            gravity * (0.9 + Math.random() * 0.1),
                             shape, 
                             acceleration
                         );
@@ -2408,7 +2408,7 @@ class Firework {
                         const baseAngle = (branch / branches) * Math.PI * 2;
                         const angleSpread = 0.3 * (particleInBranch / particlesPerBranch);
                         const angle = baseAngle + (Math.random() - 0.5) * angleSpread;
-                        const magnitude = speed * (1.2 + particleInBranch / particlesPerBranch) * spread;
+                        const magnitude = speed * (1 + particleInBranch / particlesPerBranch) * spread;
                         velocity.set(
                             Math.cos(angle) * magnitude,
                             Math.sin(angle) * magnitude,
@@ -2474,7 +2474,7 @@ class Firework {
                                 color,
                                 size,
                                 component.lifetime,
-                                gravity * (0.8 + Math.random() * 0.2),
+                                gravity * (0.9 + Math.random() * 0.1),
                                 shape,
                                 acceleration
                             );
@@ -2524,7 +2524,7 @@ class Firework {
                                 color,
                                 size,
                                 component.lifetime,
-                                gravity * 1.5,
+                                gravity * 1.3,
                                 shape, 
                                 rotation
                             );
