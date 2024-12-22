@@ -784,7 +784,7 @@ class FireworkGame {
             this.draggingLauncher.mesh.position.x = clampedX;
             this.draggingLauncher.x = clampedX;
             this.saveProgress();
-        } else if (this.isScrollDragging && e.pointerType !== 'touch') {
+        } else if (this.isScrollDragging) {
             const deltaX = e.clientX - this.lastPointerX;
             const dragScrollSpeed = 0.2;
 
@@ -868,7 +868,8 @@ class FireworkGame {
             if (e.pointerType === 'touch' && !this.isClickInsideUI(e)) {
                 const worldPos = this.screenToWorld(e.clientX, e.clientY);
                 this.launchFireworkAt(worldPos.x);
-            } else if (this.isScrollDragging) {
+            } 
+            if (this.isScrollDragging) {
                 const deltaX = Math.abs(e.clientX - this.lastPointerX);
                 if (deltaX < 20 && !this.isClickInsideUI(e)) {
                     const worldPos = this.screenToWorld(e.clientX, e.clientY);
