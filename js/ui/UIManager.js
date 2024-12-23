@@ -198,7 +198,6 @@ class UIManager {
 
         document.getElementById('upgrade-all-launchers').addEventListener('click', () => {
             this.game.upgradeAllLaunchers();
-            this.showNotification("All launchers upgraded!");
         });
     }
 
