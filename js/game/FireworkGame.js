@@ -45,7 +45,7 @@ class FireworkGame {
         this.currentLevel = parseInt(localStorage.getItem('currentLevel')) || 0;
         this.fireworkCount = parseInt(localStorage.getItem('fireworkCount')) || 0;
         this.autoLauncherCost = parseInt(localStorage.getItem('autoLauncherCost')) || 10;
-        this.crowdCount =  0;
+        this.crowdCount = 0;
 
         // Load resources
         const savedResources = localStorage.getItem('resources');
@@ -575,6 +575,11 @@ class FireworkGame {
         this.updateLevelsList();
         this.updateLevelArrows();
         this.updateCrowdDisplay();
+
+        // Recreate launcher meshes
+        this.levels.forEach(levelData => {
+            levelData.autoLaunchers = [];
+        });
     }
 
     eraseAllRecipes() {
@@ -850,10 +855,23 @@ class FireworkGame {
         this.updateCrowdDisplay();
 
         // Recreate launcher meshes
-        this.resetAutoLaunchers();
-        if (this.selectedLauncherIndex !== null) {
-            this.selectLauncher(this.selectedLauncherIndex);
-        }
+        this.levels.forEach(levelData => {
+            levelData.autoLaunchers.forEach(launcher => {
+                if (!launcher.accumulator) {
+                    launcher.accumulator = Math.random() * 5;
+                }
+                if (launcher.level === undefined) {
+                    launcher.level = 1;
+                    launcher.spawnInterval = 5;
+                    launcher.upgradeCost = 15;
+                }
+                launcher.x = this.clampToLauncherBounds(launcher.x);
+            });
+        });
+
+        this.levels[this.currentLevel].autoLaunchers.forEach(launcher => {
+            this.createAutoLauncherMesh(launcher);
+        });
     }
 
     disposeAutoLaunchers(levelData) {
@@ -914,6 +932,35 @@ class FireworkGame {
         }
     }
 
+    switchLevel(newLevel) {
+        if (newLevel < 0 || newLevel >= this.levels.length || !this.levels[newLevel].unlocked) {
+            return;
+        }
+        this.levels[this.currentLevel].fireworks.forEach(firework => {
+            firework.dispose();
+        });
+        this.levels[this.currentLevel].fireworks = [];
+        this.disposeAutoLaunchers(this.levels[this.currentLevel]);
+        this.particleSystem.clear();
+        this.currentLevel = newLevel;
+        this.updateLevelDisplay();
+        this.levels[this.currentLevel].autoLaunchers.forEach(launcher => {
+            if (launcher.mesh) {
+                this.scene.remove(launcher.mesh);
+                if (launcher.mesh.geometry) launcher.mesh.geometry.dispose();
+                if (launcher.mesh.material) {
+                    if (launcher.mesh.material.map) launcher.mesh.material.map.dispose();
+                    launcher.mesh.material.dispose();
+                }
+                launcher.mesh = null;
+            }
+            this.createAutoLauncherMesh(launcher);
+        });
+        this.updateLauncherList();
+        this.updateLevelArrows();
+        this.updateLevelsList();
+    }
+    
     updateLevelsList() {
         const levelsList = document.getElementById('levels-list');
         levelsList.innerHTML = '';
