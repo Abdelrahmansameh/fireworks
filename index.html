@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>Firework Crafting Game - Levels Feature</title>
+    <title>Idle Fireworks</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <!-- Include Three.js -->
     <script src="https://cdn.jsdelivr.net/npm/three@0.157.0/build/three.min.js"></script>
@@ -16,7 +16,7 @@
         <div class="tab-bar">
             <button id="collapse-button" class="collapse-button">☰</button>
             <div class="tabs">
-                <div class="tab" id="crafting-tab">Crafting</div>
+                <div class="tab" id="recipes-tab">Recipes</div>
                 <div class="tab" id="auto-launcher-tab">Auto-Launchers</div>
                 <div class="tab" id="crowd-tab">Crowd</div>
                 <div class="tab" id="levels-tab">Levels</div>
@@ -55,11 +55,11 @@
         </div>
     </div>
 
-    <div class="tab-content" id="crafting-content">
+    <div class="tab-content" id="recipes-content">
         <div class="panel scrollable-panel">
-            <h2 class="panel-title">Firework Crafting</h2>
+            <h2 class="panel-title">Recipes</h2>
 
-            <div class="crafting-option">
+            <div class="recipes-option">
                 <label>Trail Effect:</label>
                 <select id="recipe-trail-effect">
                     <option value="fade">Fade</option>
@@ -72,7 +72,7 @@
             <div id="components-list"></div>
             <button id="add-component">Add Component</button>
 
-            <div class="crafting-option">
+            <div class="recipes-option">
                 <label>Recipe Name:</label>
                 <input type="text" id="recipe-name" placeholder="Enter recipe name">
             </div>
@@ -85,7 +85,7 @@
                 <div id="recipe-list"></div>
             </div>
 
-            <div class="crafting-option" style="margin-top: 20px; border-top: 1px solid #34495e; padding-top: 20px;">
+            <div class="recipes-option" style="margin-top: 20px; border-top: 1px solid #34495e; padding-top: 20px;">
                 <label>Background Color:</label>
                 <input type="color" id="background-color" value="#000000">
             </div>
@@ -139,7 +139,7 @@
         <div class="panel scrollable-panel">
             <h2 class="panel-title">Save / Load</h2>
             <button id="save-progress">Save Progress</button>
-            <div class="crafting-option">
+            <div class="recipes-option">
                 <label>Serialized Data (copy/paste):</label>
                 <textarea id="serialized-data" style="width:100%;height:100px;"></textarea>
             </div>

@@ -14,6 +14,7 @@ class UIManager {
         this.pointerUpHandler = this.pointerUpHandler.bind(this);
         this.handleWheelScroll = this.handleWheelScroll.bind(this);
         this.handlePointerDown = this.handlePointerDown.bind(this);
+        this.handlePointerClick = this.handlePointerClick.bind(this);
     }
 
     initializeRendererEvents() {
@@ -76,8 +77,8 @@ class UIManager {
             );
         });
 
-        document.getElementById('crafting-tab').addEventListener('click', () => {
-            this.toggleTab('crafting');
+        document.getElementById('recipes-tab').addEventListener('click', () => {
+            this.toggleTab('recipes');
         });
         document.getElementById('stats-tab').addEventListener('click', () => {
             this.toggleTab('stats');
@@ -202,7 +203,7 @@ class UIManager {
     }
 
     handlePointerDown(e) {
-        if (!this.isClickInsideUI(e)) {
+        if (!this.game.isClickInsideUI(e)) {
             e.preventDefault();
             if (e.pointerType === 'touch') {
                 e.target.setPointerCapture(e.pointerId);
@@ -250,7 +251,7 @@ class UIManager {
     }
 
     handlePointerClick(worldPos, event) {
-        if (this.isClickInsideUI(event)) {
+        if (this.game.isClickInsideUI(event)) {
             return;
         }
 
@@ -349,14 +350,15 @@ class UIManager {
                 e.target.releasePointerCapture(e.pointerId);
             }
 
-            if (e.pointerType === 'touch' && !this.isClickInsideUI(e)) {
-                const worldPos = this.screenToWorld(e.clientX, e.clientY);
+            // For touch events, always treat them as potential firework launches
+            if (e.pointerType === 'touch' && !this.game.isClickInsideUI(e)) {
+                const worldPos = this.game.screenToWorld(e.clientX, e.clientY);
                 this.game.launchFireworkAt(worldPos.x);
             }
             if (this.isScrollDragging) {
                 const deltaX = Math.abs(e.clientX - this.lastPointerX);
-                if (deltaX < 20 && !this.isClickInsideUI(e)) {
-                    const worldPos = this.screenToWorld(e.clientX, e.clientY);
+                if (deltaX < 20 && !this.game.isClickInsideUI(e)) {
+                    const worldPos = this.game.screenToWorld(e.clientX, e.clientY);
                     this.game.launchFireworkAt(worldPos.x);
                 }
                 document.body.style.cursor = 'default';
@@ -373,7 +375,7 @@ class UIManager {
     }
 
     handleWheelScroll(event) {
-        if (this.isClickInsideUI(event)) {
+        if (this.game.isClickInsideUI(event)) {
             return;
         }
 
@@ -382,6 +384,7 @@ class UIManager {
 
         this.game.camera.position.x += scrollAmount;
 
+        // Use absolute bounds for scroll limits
         const maxScroll = (GAME_BOUNDS.SCROLL_MAX_X - GAME_BOUNDS.SCROLL_MIN_X) * 0.5;
         this.game.camera.position.x = Math.max(-maxScroll, Math.min(maxScroll, this.game.camera.position.x));
     }
@@ -586,7 +589,7 @@ class UIManager {
 
             componentDiv.innerHTML = `
                 <h3>Component ${index + 1}</h3>
-                <div class="crafting-option flex-row">
+                <div class="recipes-option flex-row">
                     <div class="flex-item">
                         <label>Pattern:</label>
                         <select class="pattern-select" data-index="${index}">
@@ -612,23 +615,23 @@ class UIManager {
                         </select>
                     </div>
                 </div>
-                <div class="crafting-option">
+                <div class="recipes-option">
                     <label>Primary Color:</label>
                     <input type="color" class="color-input" data-index="${index}" value="${component.color}">
                 </div>
-                <div class="crafting-option secondary-color-container" style="display:none;">
+                <div class="recipes-option secondary-color-container" style="display:none;">
                     <label>Secondary Color (Helix Only):</label>
                     <input type="color" class="secondary-color-input" data-index="${index}" value="${component.secondaryColor}">
                 </div>
-                <div class="crafting-option">
+                <div class="recipes-option">
                     <label>Shell Size:</label>
                     <input type="range" class="size-select" data-index="${index}" min="0.3" max="0.7" step="0.05" value="${component.size}">
                 </div>
-                <div class="crafting-option">
+                <div class="recipes-option">
                     <label>Lifetime:</label>
                     <input type="range" class="lifetime-select" data-index="${index}" min="0.5" max="3" step="0.1" value="${component.lifetime}">
                 </div>
-                <div class="crafting-option">
+                <div class="recipes-option">
                     <label>Spread:</label>
                     <input type="range" class="spread-select" data-index="${index}" min="0.5" max="2" step="0.1" value="${component.spread}">
                 </div>
@@ -749,7 +752,7 @@ class UIManager {
 
             launcherDiv.innerHTML = `
                 <h3>Auto-Launcher ${index + 1}</h3>
-                <div class="crafting-option">
+                <div class="recipes-option">
                     <label>Assign Recipe:</label>
                     <select class="recipe-select" data-index="${index}">
                         <option value="">-- Select a Recipe --</option>

@@ -514,24 +514,24 @@ button:hover {
     background: #4a6485;
 }
 
-.crafting-option {
+.recipes-option {
     margin: 0;
     padding: 0;
     border: none;
     background: none;
 }
 
-.crafting-option label {
+.recipes-option label {
     margin: 0 0 5px 0;
     font-size: 0.9em;
     color: #ffffff;
     display: block;
 }
 
-.crafting-option select,
-.crafting-option input[type="range"],
-.crafting-option input[type="color"],
-.crafting-option input[type="text"],
+.recipes-option select,
+.recipes-option input[type="range"],
+.recipes-option input[type="color"],
+.recipes-option input[type="text"],
 textarea {
     width: 100%;
     padding: 5px;
@@ -544,7 +544,7 @@ textarea {
     box-shadow: none;
 }
 
-.crafting-option input[type="range"] {
+.recipes-option input[type="range"] {
     height: 6px;
     background: #2c3e50;
     border-radius: 3px;
@@ -552,7 +552,7 @@ textarea {
     padding: 0;
 }
 
-.crafting-option input[type="range"]::-webkit-slider-thumb {
+.recipes-option input[type="range"]::-webkit-slider-thumb {
     width: 14px;
     height: 14px;
     background: #45a29e;
@@ -560,7 +560,7 @@ textarea {
     cursor: pointer;
 }
 
-.crafting-option input[type="range"]::-moz-range-thumb {
+.recipes-option input[type="range"]::-moz-range-thumb {
     width: 16px;
     height: 16px;
     background: #45a29e;
