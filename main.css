@@ -28,7 +28,7 @@ body {
     margin: 10px 10px 10px 10px;
     display: flex;
     flex-wrap: wrap;
-    align-items: center;
+    align-items: flex-start;
     padding: 0;
     border: none;
     background: none;
@@ -44,10 +44,10 @@ body {
     box-sizing: content-box;
     width: fit-content;
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     flex-shrink: 0;
     max-width: calc(100vw - 20px);
-    height: 100%;
+    align-self: flex-start;
 }
 
 .collapse-button {
