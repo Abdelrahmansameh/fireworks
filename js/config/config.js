@@ -19,7 +19,8 @@ const FIREWORK_CONFIG = {
         palm: 5.0,
         willow: 1.0,
         helix: 3.0,
-        brokenHeart: 6.0
+        brokenHeart: 6.0,
+        christmasTree: 7.0
     },
     supportedShapes: ['sphere', 'star', 'ring', 'crystalDroplet', 'sliceBurst']
 };

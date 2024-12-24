@@ -602,6 +602,7 @@ class UIManager {
                             <option value="helix">Helix</option>
                             <option value="star">Star</option>
                             <option value="brokenHeart">Broken Heart</option>
+                            <option value="christmasTree">Christmas Tree</option>
                         </select>
                     </div>
                     <div class="flex-item">
@@ -620,7 +621,7 @@ class UIManager {
                     <input type="color" class="color-input" data-index="${index}" value="${component.color}">
                 </div>
                 <div class="recipes-option secondary-color-container" style="display:none;">
-                    <label>Secondary Color (Helix Only):</label>
+                    <label>Secondary Color (Helix & Christmas Tree):</label>
                     <input type="color" class="secondary-color-input" data-index="${index}" value="${component.secondaryColor}">
                 </div>
                 <div class="recipes-option">
@@ -654,7 +655,7 @@ class UIManager {
             const spreadSelect = componentDiv.querySelector('.spread-select');
 
             const updateSecondaryColorVisibility = () => {
-                if (patternSelect.value === 'helix') {
+                if (patternSelect.value === 'helix' || patternSelect.value === 'christmasTree') {
                     secondaryColorContainer.style.display = 'block';
                 } else {
                     secondaryColorContainer.style.display = 'none';

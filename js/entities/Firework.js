@@ -269,8 +269,6 @@ class Firework {
             const shape = component.shape;
             const spread = component.spread;
 
-            // Pattern explosion code unchanged from original, included fully
-
             switch (pattern) {
                 case 'spherical':
                     for (let i = 0; i < particleCount; i++) {
@@ -396,86 +394,212 @@ class Firework {
                     }
                     break;
 
-                case 'heart':
-                    {
-                        const heartScale = spread;
-                        for (let i = 0; i < particleCount; i++) {
-                            const t = (i / particleCount) * Math.PI * 2;
-                            const xOffset = heartScale * (16 * Math.pow(Math.sin(t), 3));
-                            const yOffset = heartScale * (13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t));
-                            const angle = Math.atan2(yOffset, xOffset);
-                            const magnitude = speed * Math.sqrt(xOffset * xOffset + yOffset * yOffset) * 0.05;
+                case 'christmasTree':
+                    const baseWidth = spread * 2;
+                    const baseHeight = spread * 3;
+                    const trunkWidth = baseWidth * 0.2;
+                    const trunkHeight = baseHeight * 0.2;
+                    const triangleScales = [1, 0.7, 0.4];
+                    const triangleHeights = [baseHeight * 0.4, baseHeight * 0.3, baseHeight * 0.2]; // Heights for each triangle
+                    const horizontalLinesCount = 3; // Number of horizontal lines in each triangle (not counting base)
+                    
+                    // Create trunk
+                    const trunkParticles = Math.floor(particleCount * 0.2);
+                    const trunkRows = Math.floor(Math.sqrt(trunkParticles));
+                    const trunkCols = Math.floor(trunkParticles / trunkRows);
+                    
+                    for (let row = 0; row < trunkRows; row++) {
+                        for (let col = 0; col < trunkCols; col++) {
+                            const x = (col / (trunkCols - 1) - 0.5) * trunkWidth;
+                            const y = (row / trunkRows) * trunkHeight;
                             velocity.set(
-                                Math.cos(angle) * magnitude,
-                                Math.sin(angle) * magnitude,
+                                x * speed,
+                                y * speed,
                                 0
                             );
                             const index = this.particleSystem.addParticle(
                                 rocketPos.clone(),
                                 velocity.clone(),
-                                color,
+                                secondaryColor, // Brown trunk
                                 size,
                                 component.lifetime,
-                                gravity * (0.9 + Math.random() * 0.1),
+                                gravity,
                                 shape,
                                 acceleration
                             );
                             if (index !== -1) this.particles[shape].add(index);
                         }
-                        break;
                     }
-                    case 'brokenHeart': {
-                        const heartScale = spread;
-                        
-                        // Pick an approximate pivot near the bottom tip of the heart shape.
-                        const pivotOffset = new THREE.Vector3(0, -heartScale * 30, 0);
-                        const pivotPoint = rocketPos.clone().add(pivotOffset);
+
+                    // Create triangles
+                    const triangleParticles = Math.floor((particleCount - trunkParticles) / triangleScales.length);
+                    const edgeParticles = Math.floor(Math.sqrt(triangleParticles) * 2); // Number of particles per edge
                     
-                        const rotationAxis = new THREE.Vector3(0, 0, 1);
-                        
-                        for (let i = 0; i < particleCount; i++) {
-                            // Parametric heart shape
-                            const t = (i / particleCount) * Math.PI * 2;
-                            const xOffset = heartScale * (16 * Math.pow(Math.sin(t), 3));
-                            const yOffset = heartScale * (
-                                13 * Math.cos(t)
-                                - 5 * Math.cos(2 * t)
-                                - 2 * Math.cos(3 * t)
-                                - Math.cos(4 * t)
-                            );
+                    let currentBaseY = trunkHeight;
                     
-                            const particlePos = rocketPos.clone().add(new THREE.Vector3(xOffset, yOffset, 0));
-                            
-                            const angle = Math.atan2(yOffset, xOffset);
-                            const magnitude = speed * Math.sqrt(xOffset * xOffset + yOffset * yOffset) * 0.05;
-                            const unbrokenHeartVelocity = new THREE.Vector3(
-                                Math.cos(angle) * magnitude,
-                                Math.sin(angle) * magnitude,
+                    triangleScales.forEach((scale, triangleIndex) => {
+                        const triangleWidth = baseWidth * scale;
+                        const triangleHeight = triangleHeights[triangleIndex];
+                        const baseY = currentBaseY;
+                        
+                        // Create left edge
+                        for (let i = 0; i < edgeParticles; i++) {
+                            const progress = i / (edgeParticles - 1);
+                            const x = (-0.5 + progress * 0.5) * triangleWidth;
+                            const y = baseY + progress * triangleHeight;
+                            velocity.set(
+                                x * speed,
+                                y * speed,
                                 0
                             );
-                            
-                            const pivotToParticle = particlePos.clone().sub(pivotPoint);
-                            const rotation = new THREE.Vector3().crossVectors(pivotToParticle, rotationAxis);
-                            const sign = (i < particleCount / 2) ? 1 : -1;
-                            const rotationSpeed = 0.05 * sign;
-                            rotation.multiplyScalar(rotationSpeed);
-                    
                             const index = this.particleSystem.addParticle(
-                                rocketPos.clone(),  
-                                unbrokenHeartVelocity.clone(),
-                                color,
+                                rocketPos.clone(),
+                                velocity.clone(),
+                                color, // Primary color for outline
                                 size,
                                 component.lifetime,
-                                gravity * 1.3,
-                                shape, 
-                                rotation
+                                gravity,
+                                shape,
+                                acceleration
                             );
-                            if (index !== -1) {
-                                this.particles[shape].add(index);
+                            if (index !== -1) this.particles[shape].add(index);
+                        }
+                        
+                        // Create right edge
+                        for (let i = 0; i < edgeParticles; i++) {
+                            const progress = i / (edgeParticles - 1);
+                            const x = (0.5 - progress * 0.5) * triangleWidth;
+                            const y = baseY + progress * triangleHeight;
+                            velocity.set(
+                                x * speed,
+                                y * speed,
+                                0
+                            );
+                            const index = this.particleSystem.addParticle(
+                                rocketPos.clone(),
+                                velocity.clone(),
+                                color, // Primary color for outline
+                                size,
+                                component.lifetime,
+                                gravity,
+                                shape,
+                                acceleration
+                            );
+                            if (index !== -1) this.particles[shape].add(index);
+                        }
+                        
+                        // Create horizontal lines
+                        for (let line = 0; line <= horizontalLinesCount; line++) {
+                            const lineProgress = line / horizontalLinesCount;
+                            const y = baseY + lineProgress * triangleHeight;
+                            const currentWidth = triangleWidth * (1 - lineProgress); // Width gets smaller as we go up
+                            const lineParticles = Math.floor(edgeParticles * 0.5 * (1 - lineProgress) + 3); // At least 3 particles per line
+                            
+                            for (let i = 0; i < lineParticles; i++) {
+                                const x = ((i / (lineParticles - 1)) - 0.5) * currentWidth;
+                                velocity.set(
+                                    x * speed,
+                                    y * speed,
+                                    0
+                                );
+                                const index = this.particleSystem.addParticle(
+                                    rocketPos.clone(),
+                                    velocity.clone(),
+                                    color, // Primary color for horizontal lines
+                                    size,
+                                    component.lifetime,
+                                    gravity,
+                                    shape,
+                                    acceleration
+                                );
+                                if (index !== -1) this.particles[shape].add(index);
                             }
                         }
-                        break;
+
+                        // Update the base Y for the next triangle
+                        currentBaseY += triangleHeight;
+                    });
+                    break;
+
+                case 'heart':
+                    const heartScale = spread;
+                    for (let i = 0; i < particleCount; i++) {
+                        const t = (i / particleCount) * Math.PI * 2;
+                        const xOffset = heartScale * (16 * Math.pow(Math.sin(t), 3));
+                        const yOffset = heartScale * (13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t));
+                        const angle = Math.atan2(yOffset, xOffset);
+                        const magnitude = speed * Math.sqrt(xOffset * xOffset + yOffset * yOffset) * 0.05;
+                        velocity.set(
+                            Math.cos(angle) * magnitude,
+                            Math.sin(angle) * magnitude,
+                            0
+                        );
+                        const index = this.particleSystem.addParticle(
+                            rocketPos.clone(),
+                            velocity.clone(),
+                            color,
+                            size,
+                            component.lifetime,
+                            gravity * (0.9 + Math.random() * 0.1),
+                            shape,
+                            acceleration
+                        );
+                        if (index !== -1) this.particles[shape].add(index);
                     }
+                    break;
+
+                case 'brokenHeart': {
+                    const heartScale = spread;
+                    
+                    // Pick an approximate pivot near the bottom tip of the heart shape.
+                    const pivotOffset = new THREE.Vector3(0, -heartScale * 30, 0);
+                    const pivotPoint = rocketPos.clone().add(pivotOffset);
+                
+                    const rotationAxis = new THREE.Vector3(0, 0, 1);
+                    
+                    for (let i = 0; i < particleCount; i++) {
+                        // Parametric heart shape
+                        const t = (i / particleCount) * Math.PI * 2;
+                        const xOffset = heartScale * (16 * Math.pow(Math.sin(t), 3));
+                        const yOffset = heartScale * (
+                            13 * Math.cos(t)
+                            - 5 * Math.cos(2 * t)
+                            - 2 * Math.cos(3 * t)
+                            - Math.cos(4 * t)
+                        );
+                
+                        const particlePos = rocketPos.clone().add(new THREE.Vector3(xOffset, yOffset, 0));
+                        
+                        const angle = Math.atan2(yOffset, xOffset);
+                        const magnitude = speed * Math.sqrt(xOffset * xOffset + yOffset * yOffset) * 0.05;
+                        const unbrokenHeartVelocity = new THREE.Vector3(
+                            Math.cos(angle) * magnitude,
+                            Math.sin(angle) * magnitude,
+                            0
+                        );
+                        
+                        const pivotToParticle = particlePos.clone().sub(pivotPoint);
+                        const rotation = new THREE.Vector3().crossVectors(pivotToParticle, rotationAxis);
+                        const sign = (i < particleCount / 2) ? 1 : -1;
+                        const rotationSpeed = 0.05 * sign;
+                        rotation.multiplyScalar(rotationSpeed);
+                
+                        const index = this.particleSystem.addParticle(
+                            rocketPos.clone(),  
+                            unbrokenHeartVelocity.clone(),
+                            color,
+                            size,
+                            component.lifetime,
+                            gravity * 1.3,
+                            shape, 
+                            rotation
+                        );
+                        if (index !== -1) {
+                            this.particles[shape].add(index);
+                        }
+                    }
+                    break;
+                }
                 case 'helix':
                     const helixRadius = 0.5;
                     const riseSpeed = speed * 0.1 * spread;
