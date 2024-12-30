@@ -10,7 +10,7 @@ class InstancedParticleSystem {
 
         this.activeTrails = new Map();
         this.maxTrails = maxParticles * 2;
-        this.maxTrailPoints = 12;
+        this.maxTrailPoints = 10;
         this.trailUpdateInterval = 33;
         this.lifetimeToStartTrailRetraction = 0.5;
 
