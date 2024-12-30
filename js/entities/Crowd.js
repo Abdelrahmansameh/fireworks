@@ -5,7 +5,6 @@ class Crowd {
         this.scene = scene;
         this.meshes = new Set();
 
-        // Create a plane geometry for the sprite
         const width = 6;
         const height = 6;
         this.personGeometry = new THREE.PlaneGeometry(width, height);
@@ -30,22 +29,19 @@ class Crowd {
             side: THREE.DoubleSide
         });
 
-        // Animation properties
-        this.bobSpeed = 10; // Speed of the bobbing motion
-        this.bobHeight = 0.4; // How high they bob
-        this.bobOffsets = new Map(); // Store random offset for each mesh
+        this.bobSpeed = 10;
+        this.bobHeight = 0.4;
+        this.bobOffsets = new Map();
     }
 
     addPerson() {
         const mesh = new THREE.Mesh(this.personGeometry, this.personMaterial);
-        const height = 2; // Height of person mesh
-        const y = GAME_BOUNDS.MIN_Y + (height / 2); // Same formula as launchers
+        const height = 2;
+        const y = GAME_BOUNDS.MIN_Y + (height / 2);
 
-        // Random position between left and right crowd boundaries
         const crowdX = GAME_BOUNDS.CROWD_LEFT_X + (Math.random() * (GAME_BOUNDS.CROWD_RIGHT_X - GAME_BOUNDS.CROWD_LEFT_X));
         mesh.position.set(crowdX, y, 0);
 
-        // Add random offset for varied bobbing
         this.bobOffsets.set(mesh, Math.random() * Math.PI * 2);
 
         this.scene.add(mesh);
@@ -53,7 +49,7 @@ class Crowd {
     }
 
     update(deltaTime) {
-        // bobbig
+        // bobbing
         this.meshes.forEach(mesh => {
             const offset = this.bobOffsets.get(mesh);
             const baseY = GAME_BOUNDS.MIN_Y + this.personGeometry.parameters.height / 2;

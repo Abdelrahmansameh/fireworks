@@ -8,13 +8,12 @@ class InstancedParticleSystem {
         this.meshes = {};
         this.activeCounts = {};
 
-        // Trail system management
         this.activeTrails = new Map();
         this.maxTrails = maxParticles * 2;
         this.maxTrailPoints = 10;
         this.trailUpdateInterval = 33;
+        this.lifetimeToStartTrailRetraction = 0.4;
 
-        // Particle system management
         this.positions = {};
         this.velocities = {};
         this.accelerations = {};
@@ -130,43 +129,39 @@ class InstancedParticleSystem {
         return geometry;
     }
 
-    createTrailGeometry(points, explosionCenterPosition) {
+    createTrailGeometry(points, explosionCenterPosition, maxCurveLength = 1) {
+        const geometry = new THREE.BufferGeometry();
+        this.fillTrailGeometryPositions(geometry, points, explosionCenterPosition, maxCurveLength);
+        return geometry;
+    }
+
+    fillTrailGeometryPositions(geometry, points, explosionCenterPosition, maxCurveLength = 1) {
         if (points.length < 2) return null;
 
         const relativePoints = points.map(p => p.clone().sub(explosionCenterPosition));
 
         const curve = new THREE.CatmullRomCurve3(relativePoints, false, 'centripetal');
 
-        const geometry = new THREE.BufferGeometry();
-        const segments = 50;
+        const fullSegments = 50;
+        const usedSegments = Math.ceil(maxCurveLength * fullSegments);
 
-        const positions = new Float32Array((segments + 1) * 3);
+        const positions = new Float32Array((usedSegments + 1) * 3);
 
-        for (let i = 0; i <= segments; i++) {
-            const t = i / segments;
+        for (let i = 0; i <= usedSegments; i++) {
+            const t = i / fullSegments;
             const point = curve.getPoint(t);
             positions[i * 3] = point.x;
             positions[i * 3 + 1] = point.y;
             positions[i * 3 + 2] = point.z;
         }
 
-        // Set the position attribute
         geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
 
         return geometry;
     }
 
-    updateTrailGeometry(trail, points, explosionCenterPosition) {
-        const newGeometry = this.createTrailGeometry(points, explosionCenterPosition);
-        if (newGeometry) {
-            const oldGeometry = trail.geometry;
-            trail.geometry = newGeometry;
-
-            // Schedule old geometry disposal for next frame
-            requestAnimationFrame(() => {
-                oldGeometry.dispose();
-            });
-        }
+    updateTrailGeometry(trail, points, explosionCenterPosition, maxCurveLength) {
+        this.fillTrailGeometryPositions(trail.geometry, points, explosionCenterPosition, maxCurveLength);
     }
 
     createTrailForParticle(shape, index, position, velocity, color) {
@@ -199,7 +194,6 @@ class InstancedParticleSystem {
             points: points,
             lastUpdate: performance.now(),
             explosionCenterPosition: position.clone(),
-            phase: 0,
             trailUpdateInterval: this.trailUpdateInterval,
         });
 
@@ -284,7 +278,6 @@ class InstancedParticleSystem {
 
                 if (this.lifetimes[shape][i] > 0) {
                     if (i !== nextFreeIndex) {
-                        // Move particle data
                         this.positions[shape][nextFreeIndex].copy(this.positions[shape][i]);
                         this.velocities[shape][nextFreeIndex].copy(this.velocities[shape][i]);
                         this.accelerations[shape][nextFreeIndex].copy(this.accelerations[shape][i]);
@@ -296,7 +289,6 @@ class InstancedParticleSystem {
                         this.alphas[shape][nextFreeIndex] = this.alphas[shape][i];
                         this.rotations[shape][nextFreeIndex].copy(this.rotations[shape][i]);
 
-                        // Move trail if it exists
                         const oldTrailKey = `${shape}-${i}`;
                         const newTrailKey = `${shape}-${nextFreeIndex}`;
                         const trailData = this.activeTrails.get(oldTrailKey);
@@ -306,7 +298,6 @@ class InstancedParticleSystem {
                         }
                     }
 
-                    // Update particle physics
                     this.velocities[shape][nextFreeIndex].addScaledVector(
                         this.accelerations[shape][nextFreeIndex],
                         delta
@@ -317,14 +308,12 @@ class InstancedParticleSystem {
                         delta
                     );
 
-                    // Update particle appearance
                     const normalizedLifetime = this.lifetimes[shape][nextFreeIndex] /
                         this.initialLifetimes[shape][nextFreeIndex];
                     this.alphas[shape][nextFreeIndex] = Math.pow(normalizedLifetime, 3);
 
                     this.updateParticleTransform(shape, nextFreeIndex);
 
-                    // Update trail
                     const trailKey = `${shape}-${nextFreeIndex}`;
                     const trailData = this.activeTrails.get(trailKey);
 
@@ -334,24 +323,19 @@ class InstancedParticleSystem {
                         trailData.mesh.position.copy(this.positions[shape][nextFreeIndex].clone().add(offset));
 
                         if (now - trailData.lastUpdate >= trailData.trailUpdateInterval) {
-                            if (normalizedLifetime < 0.5) {
-                                if (trailData.phase === 0) {
-                                    trailData.phase = 1;
-                                    trailData.trailUpdateInterval = (this.lifetimes[shape][nextFreeIndex] / (trailData.points.length - 1)) * 1000;
-                                }
-
-                                trailData.points.pop();
+                            if (normalizedLifetime < this.lifetimeToStartTrailRetraction) {
+                                this.updateTrailGeometry(trailData.mesh, trailData.points, trailData.points[0], normalizedLifetime / this.lifetimeToStartTrailRetraction);
+                                trailData.lastUpdate = now;
                             }
                             else {
                                 trailData.points.push(this.positions[shape][nextFreeIndex].clone());
-
                                 if (trailData.points.length > this.maxTrailPoints) {
                                     trailData.points.shift();
                                 }
-                            }
 
-                            this.updateTrailGeometry(trailData.mesh, trailData.points, trailData.points[0]);
-                            trailData.lastUpdate = now;
+                                this.updateTrailGeometry(trailData.mesh, trailData.points, trailData.points[0], 1);
+                                trailData.lastUpdate = now;
+                            }
                         }
                     }
 

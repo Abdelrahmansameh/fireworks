@@ -9,7 +9,6 @@ class UIManager {
         this.lastPointerX = 0;
         this.notificationTimeout = null;
         
-        // Bind event handlers
         this.pointerMoveHandler = this.pointerMoveHandler.bind(this);
         this.pointerUpHandler = this.pointerUpHandler.bind(this);
         this.handleWheelScroll = this.handleWheelScroll.bind(this);
@@ -148,7 +147,6 @@ class UIManager {
     bindEvents() {
         document.getElementById('collapse-button').addEventListener('click', this.handleCollapseButton);
 
-        // Save/Load
         document.getElementById('save-progress').addEventListener('click', () => {
             const data = this.game.serializeGameData();
             const textarea = document.getElementById('serialized-data');
@@ -175,7 +173,6 @@ class UIManager {
             }
         });
 
-        // Level navigation
         document.getElementById('prev-level').addEventListener('click', () => {
             if (this.game.currentLevel > 0) {
                 this.game.switchLevel(this.game.currentLevel - 1);
@@ -347,18 +344,20 @@ class UIManager {
 
     pointerUpHandler(e) {
         if (this.isDragging || this.isScrollDragging) {
-            if (e.pointerType === 'touch' && e.target) {
+            const isTouch = e.pointerType === 'touch';
+
+            if (isTouch && e.target) {
                 e.target.releasePointerCapture(e.pointerId);
             }
 
-            // For touch events, always treat them as potential firework launches
-            if (e.pointerType === 'touch' && !this.game.isClickInsideUI(e)) {
+            if (isTouch && !this.game.isClickInsideUI(e)) {
                 const worldPos = this.game.screenToWorld(e.clientX, e.clientY);
                 this.game.launchFireworkAt(worldPos.x);
             }
+
             if (this.isScrollDragging) {
                 const deltaX = Math.abs(e.clientX - this.lastPointerX);
-                if (deltaX < 20 && !this.game.isClickInsideUI(e)) {
+                if (!isTouch && deltaX < 20 && !this.game.isClickInsideUI(e)) {
                     const worldPos = this.game.screenToWorld(e.clientX, e.clientY);
                     this.game.launchFireworkAt(worldPos.x);
                 }
@@ -385,7 +384,6 @@ class UIManager {
 
         this.game.camera.position.x += scrollAmount;
 
-        // Use absolute bounds for scroll limits
         const maxScroll = (GAME_BOUNDS.SCROLL_MAX_X - GAME_BOUNDS.SCROLL_MIN_X) * 0.5;
         this.game.camera.position.x = Math.max(-maxScroll, Math.min(maxScroll, this.game.camera.position.x));
     }
@@ -521,7 +519,6 @@ class UIManager {
         const sparklesElement = document.getElementById('ressource-count');
         const isCompact = sparklesElement.classList.contains('compact');
         
-        // Format numbers for compact display
         const formatCompactNumber = (num) => {
             if (num >= 1e9) return (num / 1e9).toFixed(1) + 'B';
             if (num >= 1e6) return (num / 1e6).toFixed(1) + 'M';
@@ -529,7 +526,6 @@ class UIManager {
             return num.toString();
         };
         
-        // Update sparkle totals
         const sparkleTotalElements = sparklesElement.querySelectorAll('.sparkle-total');
         sparkleTotalElements.forEach(el => {
             el.textContent = isCompact ? 
@@ -537,7 +533,6 @@ class UIManager {
                 `${sparklesCount} sp`;
         });
         
-        // Update sparkle rates
         if (isCompact) {
             sparklesElement.querySelector('.sparkle-rate').textContent = 
                 ` (+${formatCompactNumber(totalSparklesRate)}/s)`;
@@ -548,20 +543,17 @@ class UIManager {
                 `${levelSparklesRate} sp/s`;
         }
 
-        // Update gold totals
         const gold = this.game.resourceManager.resources.gold;
         const goldTotalElements = sparklesElement.querySelectorAll('.gold-total');
         goldTotalElements.forEach(el => {
             el.textContent = gold.formatAmount();
         });
 
-        // Update gold rates
         const goldRateElements = sparklesElement.querySelectorAll('.gold-rate');
         goldRateElements.forEach(el => {
             el.textContent = ` +${gold.perSecond.toFixed(1)}/s`;
         });
 
-        // Add click handler if not already added
         if (!sparklesElement._hasClickHandler) {
             sparklesElement._hasClickHandler = true;
             sparklesElement.addEventListener('click', () => {
@@ -570,7 +562,6 @@ class UIManager {
             });
         }
 
-        // Update other UI elements
         document.getElementById('firework-count').textContent = fireworkCount;
         document.getElementById('auto-launcher-level').textContent = autoLauncherLevel;
         document.getElementById('recipe-trail-effect').value = trailEffect;

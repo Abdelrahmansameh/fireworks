@@ -25,7 +25,7 @@ export default class Resource {
 
     update() {
         const now = performance.now();
-        const deltaTime = (now - this._lastUpdate) / 1000; // Convert to seconds
+        const deltaTime = (now - this._lastUpdate) / 1000; 
         this._amount += this._perSecond * deltaTime;
         this._lastUpdate = now;
     }

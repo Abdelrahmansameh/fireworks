@@ -62,10 +62,10 @@ class Firework {
         let material;
         switch (this.trailEffect) {
             case 'sparkle':
-                const groupSize = 5;  // Number of particles in each sparkle group
-                const groupSpread = 0.3;  // How far particles spread from center
-                const groupTime = Date.now();  // Shared timestamp for the group
-                const groupId = Math.floor(groupTime / 100);  // Group identifier
+                const groupSize = 5; 
+                const groupSpread = 0.3;  
+                const groupTime = Date.now(); 
+                const groupId = Math.floor(groupTime / 100);  
 
                 for (let i = 0; i < groupSize; i++) {
                     const angle = (Math.PI * 2 * i) / groupSize;
@@ -179,14 +179,12 @@ class Firework {
             switch (this.trailEffect) {
                 case 'sparkle':
                     if (particle.groupId) {
-                        // Calculate a shared brightness for the group
                         const groupPhase = (now * flickerSpeed + particle.groupId * 1000) / 1000;
                         const groupBrightness = 0.3 + (Math.sin(groupPhase) * 0.5 + 0.5) * 0.7;
 
                         particle.mesh.material.size = (0.2 + Math.random() * 0.2) * (1 - age * 0.5);
                         particle.mesh.material.opacity = particle.initialOpacity * groupBrightness * (1 - age);
                     } else {
-                        // Fallback for any particles without a group
                         particle.mesh.material.size = (0.3 + Math.random() * 0.3) * (1 - age);
                         particle.mesh.material.opacity = particle.initialOpacity * (1 - age);
                     }
@@ -194,7 +192,6 @@ class Firework {
 
                 case 'rainbow':
                     if (particle.groupId) {
-                        // Calculate a shared hue for the group
                         const groupPhase = (now * flickerSpeed + particle.groupId * 1000) / 1000;
                         const groupHue = (groupPhase + index * 0.1) % 1;
 
@@ -202,7 +199,6 @@ class Firework {
                         particle.mesh.material.color = particle.color;
                         particle.mesh.material.opacity = particle.initialOpacity * (1 - age);
                     } else {
-                        // Fallback for any particles without a group
                         const hue = ((now * 0.001) + index * 0.1) % 1;
                         particle.color.setHSL(hue, 1, 0.5);
                         particle.mesh.material.color = particle.color;
@@ -405,10 +401,10 @@ class Firework {
                     const trunkWidth = baseWidth * 0.2;
                     const trunkHeight = baseHeight * 0.2;
                     const triangleScales = [1, 0.7, 0.4];
-                    const triangleHeights = [baseHeight * 0.4, baseHeight * 0.3, baseHeight * 0.2]; // Heights for each triangle
-                    const horizontalLinesCount = 3; // Number of horizontal lines in each triangle (not counting base)
+                    const triangleHeights = [baseHeight * 0.4, baseHeight * 0.3, baseHeight * 0.2];
+                    const horizontalLinesCount = 3;
                     
-                    // Create trunk
+                    //  trunk
                     const trunkParticles = Math.floor(particleCount * 0.2);
                     const trunkRows = Math.floor(Math.sqrt(trunkParticles));
                     const trunkCols = Math.floor(trunkParticles / trunkRows);
@@ -425,7 +421,7 @@ class Firework {
                             const index = this.particleSystem.addParticle(
                                 rocketPos.clone(),
                                 velocity.clone(),
-                                secondaryColor, // Brown trunk
+                                secondaryColor, 
                                 size,
                                 component.lifetime,
                                 gravity,
@@ -437,9 +433,8 @@ class Firework {
                         }
                     }
 
-                    // Create triangles
                     const triangleParticles = Math.floor((particleCount - trunkParticles) / triangleScales.length);
-                    const edgeParticles = Math.floor(Math.sqrt(triangleParticles) * 2); // Number of particles per edge
+                    const edgeParticles = Math.floor(Math.sqrt(triangleParticles) * 2);
                     
                     let currentBaseY = trunkHeight;
                     
@@ -447,8 +442,7 @@ class Firework {
                         const triangleWidth = baseWidth * scale;
                         const triangleHeight = triangleHeights[triangleIndex];
                         const baseY = currentBaseY;
-                        
-                        // Create left edge
+                        // left edge
                         for (let i = 0; i < edgeParticles; i++) {
                             const progress = i / (edgeParticles - 1);
                             const x = (-0.5 + progress * 0.5) * triangleWidth;
@@ -461,7 +455,7 @@ class Firework {
                             const index = this.particleSystem.addParticle(
                                 rocketPos.clone(),
                                 velocity.clone(),
-                                color, // Primary color for outline
+                                color, 
                                 size,
                                 component.lifetime,
                                 gravity,
@@ -472,7 +466,7 @@ class Firework {
                             if (index !== -1) this.particles[shape].add(index);
                         }
                         
-                        // Create right edge
+                        //  right edge
                         for (let i = 0; i < edgeParticles; i++) {
                             const progress = i / (edgeParticles - 1);
                             const x = (0.5 - progress * 0.5) * triangleWidth;
@@ -485,7 +479,7 @@ class Firework {
                             const index = this.particleSystem.addParticle(
                                 rocketPos.clone(),
                                 velocity.clone(),
-                                color, // Primary color for outline
+                                color, 
                                 size,
                                 component.lifetime,
                                 gravity,
@@ -496,12 +490,12 @@ class Firework {
                             if (index !== -1) this.particles[shape].add(index);
                         }
                         
-                        // Create horizontal lines
+                        //  horizontal lines
                         for (let line = 0; line <= horizontalLinesCount; line++) {
                             const lineProgress = line / horizontalLinesCount;
                             const y = baseY + lineProgress * triangleHeight;
-                            const currentWidth = triangleWidth * (1 - lineProgress); // Width gets smaller as we go up
-                            const lineParticles = Math.floor(edgeParticles * 0.5 * (1 - lineProgress) + 3); // At least 3 particles per line
+                            const currentWidth = triangleWidth * (1 - lineProgress);
+                            const lineParticles = Math.floor(edgeParticles * 0.5 * (1 - lineProgress) + 3);
                             
                             for (let i = 0; i < lineParticles; i++) {
                                 const x = ((i / (lineParticles - 1)) - 0.5) * currentWidth;
@@ -513,7 +507,7 @@ class Firework {
                                 const index = this.particleSystem.addParticle(
                                     rocketPos.clone(),
                                     velocity.clone(),
-                                    color, // Primary color for horizontal lines
+                                    color,
                                     size,
                                     component.lifetime,
                                     gravity,
@@ -525,7 +519,6 @@ class Firework {
                             }
                         }
 
-                        // Update the base Y for the next triangle
                         currentBaseY += triangleHeight;
                     });
                     break;
@@ -561,14 +554,12 @@ class Firework {
                 case 'brokenHeart': {
                     const heartScale = spread;
                     
-                    // Pick an approximate pivot near the bottom tip of the heart shape.
                     const pivotOffset = new THREE.Vector3(0, -heartScale * 30, 0);
                     const pivotPoint = rocketPos.clone().add(pivotOffset);
                 
                     const rotationAxis = new THREE.Vector3(0, 0, 1);
                     
                     for (let i = 0; i < particleCount; i++) {
-                        // Parametric heart shape
                         const t = (i / particleCount) * Math.PI * 2;
                         const xOffset = heartScale * (16 * Math.pow(Math.sin(t), 3));
                         const yOffset = heartScale * (

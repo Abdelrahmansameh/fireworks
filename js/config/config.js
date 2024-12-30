@@ -26,15 +26,12 @@ const FIREWORK_CONFIG = {
 };
 
 const GAME_BOUNDS = {
-    // Auto launcher bounds 
     LAUNCHER_MIN_X: 0,
     LAUNCHER_MAX_X: 120,
     MIN_Y: -50,
     MAX_Y: 50,
-    // Extended bounds for scrolling 
     SCROLL_MIN_X: -100,
     SCROLL_MAX_X: 200,
-    // Crowd area bounds
     CROWD_RIGHT_X: -10,
     CROWD_LEFT_X: -60
 };

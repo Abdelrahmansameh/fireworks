@@ -7,7 +7,6 @@ import ResourceManager from '../resources/ResourceManager.js';
 
 class FireworkGame {
     constructor() {
-        // Core game state
         this.currentLevel = 0;
         this.levels = [{
             fireworks: [],
@@ -30,24 +29,20 @@ class FireworkGame {
         this.lastSparklesPerSecond = 0;
         this.crowdThresholds = [1, 2, 3, 4, 5, 10, 15];
 
-        // Initialize resource system
         this.resourceManager = new ResourceManager(this);
 
-        // Initialize UI
         this.ui = new UIManager(this);
 
-        // Initialize the game
         this.init();
     }
 
     init() {
-        // Load game state from localStorage
         this.currentLevel = parseInt(localStorage.getItem('currentLevel')) || 0;
         this.fireworkCount = parseInt(localStorage.getItem('fireworkCount')) || 0;
         this.autoLauncherCost = parseInt(localStorage.getItem('autoLauncherCost')) || 10;
         this.crowdCount = 0;
 
-        // Load resources
+        //  resources
         const savedResources = localStorage.getItem('resources');
         if (savedResources) {
             try {
@@ -58,7 +53,7 @@ class FireworkGame {
             }
         }
 
-        // Load levels data
+        //  levels data
         const savedLevels = JSON.parse(localStorage.getItem('levels'));
         if (savedLevels) {
             this.levels = savedLevels.map(levelData => ({
@@ -68,22 +63,22 @@ class FireworkGame {
             }));
         }
 
-        // Load selected launcher
+        //  selected launcher
         const savedSelectedIndex = parseInt(localStorage.getItem('selectedLauncherIndex'));
         if (!isNaN(savedSelectedIndex) && savedSelectedIndex < this.levels[this.currentLevel].autoLaunchers.length) {
             this.selectedLauncherIndex = savedSelectedIndex;
             this.selectLauncher(this.selectedLauncherIndex);
         }
 
-        // Initialize Three.js components
+        //  three.js 
         this.initThreeJS();
         this.initBackgroundColor();
 
-        // Initialize game components
+        //  game components
         this.particleSystem = new InstancedParticleSystem(this.scene, 50000);
         this.crowd = new Crowd(this.scene);
 
-        // Initialize launchers
+        //  launchers
         this.levels.forEach(levelData => {
             levelData.autoLaunchers.forEach(launcher => {
                 if (!launcher.accumulator) {
@@ -102,7 +97,7 @@ class FireworkGame {
             this.createAutoLauncherMesh(launcher);
         });
 
-        // Initialize UI and events
+        //  UI and events
         this.loadRecipes();
         this.loadCurrentRecipe();
         this.updateUI();
@@ -110,11 +105,11 @@ class FireworkGame {
         this.updateRecipeList();
         this.updateLauncherList();
 
-        // Set up game container
+        //  game container
         const gameContainer = document.getElementById('game-container');
         gameContainer.style.touchAction = 'none';
 
-        // Add visibility change handler
+        //  visibility change handler
         document.addEventListener('visibilitychange', () => {
             if (document.visibilityState === 'hidden') {
                 this.pause();
@@ -123,12 +118,12 @@ class FireworkGame {
             }
         });
 
-        // Update UI displays
+        // UI displays
         this.updateLevelDisplay();
         this.updateLevelsList();
         this.updateLevelArrows();
 
-        // Start game loop
+        //   loop
         this.animate();
 
         this.ui.bindEvents();
@@ -148,11 +143,9 @@ class FireworkGame {
         const desiredDistance = (verticalSize / 2) / Math.tan((this.camera.fov * Math.PI / 180) / 2);
         this.camera.position.z = desiredDistance * 1.5;
 
-        // Calculate the visible height at the target z-position
         this.visibleHeight = 2 * Math.tan((this.camera.fov * Math.PI / 180) / 2) * this.camera.position.z;
         this.visibleWidth = this.visibleHeight * aspectRatio;
 
-        // Adjust game bounds based on visible area
         GAME_BOUNDS.MIN_Y = -this.visibleHeight / 2;
 
         this.cameraTargetX = null;
@@ -173,7 +166,6 @@ class FireworkGame {
 
         window.addEventListener('resize', this.onWindowResize.bind(this), false);
 
-        // Initialize UI events after renderer is set up
         this.ui.initializeRendererEvents();
         this.bindEvents();
     }
@@ -186,7 +178,6 @@ class FireworkGame {
     }
 
     bindEvents() {
-        // Moving event listeners to UIManager
         this.ui.bindUIEvents();
     }
 
@@ -222,7 +213,6 @@ class FireworkGame {
     }
 
     getViewBounds() {
-        // Return fixed game bounds instead of screen-relative bounds
         return { ...GAME_BOUNDS };
     }
 
@@ -284,7 +274,7 @@ class FireworkGame {
             }
         });
 
-        // Generate sparkles in other unlocked levels passively
+        // Generate sparkles in other unlocked levels
         this.levels.forEach((level, index) => {
             if (index !== this.currentLevel && level.unlocked) {
                 const sparklesPerSecond = this.calculateSparklesPerSecond(level);
@@ -297,7 +287,6 @@ class FireworkGame {
         // Update crowd based on sparkles per second
         const currentSps = this.calculateTotalSparklesPerSecond();
         if (currentSps > this.lastSparklesPerSecond) {
-            // Add new crowd members based on thresholds
             for (const threshold of this.crowdThresholds) {
                 if (currentSps >= threshold && this.lastSparklesPerSecond < threshold) {
                     this.crowdCount++;
@@ -310,10 +299,9 @@ class FireworkGame {
         this.lastSparklesPerSecond = currentSps;
         this.updateCrowdDisplay();
 
-        // Update resources
         this.resourceManager.updateGoldFromCrowd(this.crowdCount);
         this.resourceManager.update();
-        // Update crowd animation
+
         this.crowd.update(deltaTime);
 
         this.renderer.render(this.scene, this.camera);
@@ -401,7 +389,6 @@ class FireworkGame {
 
             this.update(delta);
 
-            // Update crowd animation
             this.crowd.update(delta);
 
             this.renderer.render(this.scene, this.camera);
@@ -471,7 +458,7 @@ class FireworkGame {
             side: THREE.DoubleSide
         });
         const launcherMesh = new THREE.Mesh(geometry, material);
-        // Position launcher at bottom of visible area with small offset
+
         const y = GAME_BOUNDS.MIN_Y + (height / 2);
         launcherMesh.position.set(launcher.x, y, 0);
         this.scene.add(launcherMesh);
@@ -485,15 +472,12 @@ class FireworkGame {
         this.levels.forEach(level => {
             level.autoLaunchers.forEach(launcher => {
                 let cost = 0;
-                // Initial purchase cost
                 cost += this.calculateAutoLauncherCost(0);
-                // Add all upgrade costs
                 for (let i = 2; i <= launcher.level; i++) {
                     cost += launcher.upgradeCost * (i - 1);
                 }
                 refundAmount += cost;
 
-                // Remove the mesh from the scene
                 if (launcher.mesh) {
                     this.scene.remove(launcher.mesh);
                     if (launcher.mesh.geometry) launcher.mesh.geometry.dispose();
@@ -504,16 +488,13 @@ class FireworkGame {
                     launcher.mesh = null;
                 }
             });
-            level.autoLaunchers = []; // Clear all launchers
+            level.autoLaunchers = []; 
         });
 
-        // Add the refund to sparkles
         this.addSparkles(Math.floor(refundAmount));
 
-        // Reset auto launcher cost to initial value
         this.autoLauncherCost = 10;
 
-        // Update UI
         this.updateUI();
         this.updateLauncherList();
         this.saveProgress();
@@ -529,7 +510,6 @@ class FireworkGame {
             pattern: 'spherical', color: '#ff0000', size: 0.5, lifetime: 1.2, shape: 'sphere', spread: 1.0, secondaryColor: '#00ff00'
         }];
 
-        // Reset resources
         this.resourceManager.reset();
 
         this.levels.forEach(levelData => {
@@ -541,7 +521,6 @@ class FireworkGame {
             levelData.autoLaunchers = [];
         });
 
-        // Properly dispose of crowd members
         if (this.crowd) {
             this.crowd.dispose();
         }
@@ -576,7 +555,6 @@ class FireworkGame {
         this.updateLevelArrows();
         this.updateCrowdDisplay();
 
-        // Recreate launcher meshes
         this.levels.forEach(levelData => {
             levelData.autoLaunchers = [];
         });
@@ -759,7 +737,6 @@ class FireworkGame {
             let cheapestCost = Infinity;
             let cheapestIndex = -1;
 
-            // Find the cheapest upgrade we can afford
             for (let i = 0; i < currentLevel.autoLaunchers.length; i++) {
                 const cost = currentLevel.autoLaunchers[i].upgradeCost;
                 if (cost <= this.getSparkles() && cost < cheapestCost) {
@@ -769,7 +746,6 @@ class FireworkGame {
                 }
             }
 
-            // If we found one, buy it
             if (foundAffordableUpgrade) {
                 this.upgradeLauncher(cheapestIndex);
                 totalSpent += cheapestCost;
@@ -813,7 +789,6 @@ class FireworkGame {
         if (data.resources) {
             const resourceData = typeof data.resources === 'string' ? JSON.parse(data.resources) : data.resources;
             this.resourceManager.load(resourceData);
-            // Save to localStorage immediately
             localStorage.setItem('resources', JSON.stringify(resourceData));
         }
 
@@ -841,10 +816,8 @@ class FireworkGame {
             }));
         }
 
-        // Save all loaded data to localStorage
         this.saveProgress();
 
-        // Update all UI elements
         this.updateUI();
         this.updateComponentsList();
         this.updateRecipeList();
@@ -854,7 +827,6 @@ class FireworkGame {
         this.updateLevelArrows();
         this.updateCrowdDisplay();
 
-        // Recreate launcher meshes
         this.levels.forEach(levelData => {
             levelData.autoLaunchers.forEach(launcher => {
                 if (!launcher.accumulator) {
@@ -899,7 +871,6 @@ class FireworkGame {
 
         prevButton.style.display = this.currentLevel > 0 ? 'block' : 'none';
 
-        // Next button only if next level is unlocked
         if (this.currentLevel < this.levels.length - 1 && this.levels[this.currentLevel + 1].unlocked) {
             nextButton.style.display = 'block';
         } else {
@@ -907,14 +878,9 @@ class FireworkGame {
         }
     }
 
-    // We no longer automatically unlock new levels. We must buy them at a cost of 100000 sparkles.
     unlockNextLevel() {
-        const cost = 100000; // 100k sparkles
-        // If there's already a next level in existence and locked, unlock it.
-        // If there's no next level, create one and unlock it.
+        const cost = 100000;
         let nextLevelIndex = this.levels.length;
-        // Check if last level is unlocked
-        // We always create a new level when we unlock next.
         if (this.getSparkles() >= cost) {
             this.subtractSparkles(cost);
             this.levels.push({
@@ -1024,7 +990,7 @@ class FireworkGame {
         if (activeTabContent) {
             return activeTabContent;
         }
-        return null; // No active tab found
+        return null; 
     }
 
     updateCrowdDisplay() {
@@ -1042,13 +1008,11 @@ class FireworkGame {
             currentSpsElement.textContent = currentSps;
         }
 
-        // Find next threshold
         const nextThreshold = this.crowdThresholds.find(t => t > currentSps) || 'Max';
         if (nextThresholdElement) {
             nextThresholdElement.textContent = nextThreshold;
         }
 
-        // Update progress bar
         if (progressBar && nextThreshold !== 'Max') {
             const prevThreshold = this.crowdThresholds[this.crowdThresholds.indexOf(nextThreshold) - 1] || 0;
             const progress = ((currentSps - prevThreshold) / (nextThreshold - prevThreshold)) * 100;
