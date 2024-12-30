@@ -258,7 +258,7 @@ class Firework {
         this.components.forEach(component => {
             const particleCount = Math.floor(FIREWORK_CONFIG.particleDensity * component.size);
             const pattern = component.pattern;
-            const gravity = FIREWORK_CONFIG.patternGravities[pattern] || FIREWORK_CONFIG.patternGravities.default;
+            const gravity = FIREWORK_CONFIG.gravityMultiplier * FIREWORK_CONFIG.patternGravities[pattern] || FIREWORK_CONFIG.patternGravities.default;
             const speed = FIREWORK_CONFIG.baseSpeed * component.size;
             const color = new THREE.Color(component.color);
             const secondaryColor = new THREE.Color(component.secondaryColor || '#00ff00');

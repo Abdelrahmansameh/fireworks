@@ -2,7 +2,7 @@
 
 const FIREWORK_CONFIG = {
     baseSpeed: 10,
-    gravity: 9.81,
+    gravityMultiplier: 1.5,
     particleSize: 1.0,
     particleDensity: 100,
     ascentSpeed: 40,
