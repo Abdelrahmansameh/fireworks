@@ -9,10 +9,10 @@ class InstancedParticleSystem {
         this.activeCounts = {};
 
         // Trail system management
-        this.activeTrails = new Map(); 
+        this.activeTrails = new Map();
         this.maxTrails = maxParticles * 2;
-        this.maxTrailPoints = 10; 
-        this.trailUpdateInterval = 33; 
+        this.maxTrailPoints = 10;
+        this.trailUpdateInterval = 33;
 
         // Particle system management
         this.positions = {};
@@ -136,12 +136,12 @@ class InstancedParticleSystem {
         const relativePoints = points.map(p => p.clone().sub(explosionCenterPosition));
 
         const curve = new THREE.CatmullRomCurve3(relativePoints, false, 'centripetal');
-        
+
         const geometry = new THREE.BufferGeometry();
-        const segments = 50; 
-        
+        const segments = 50;
+
         const positions = new Float32Array((segments + 1) * 3);
-        
+
         for (let i = 0; i <= segments; i++) {
             const t = i / segments;
             const point = curve.getPoint(t);
@@ -149,10 +149,10 @@ class InstancedParticleSystem {
             positions[i * 3 + 1] = point.y;
             positions[i * 3 + 2] = point.z;
         }
-        
+
         // Set the position attribute
         geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-        
+
         return geometry;
     }
 
@@ -161,7 +161,7 @@ class InstancedParticleSystem {
         if (newGeometry) {
             const oldGeometry = trail.geometry;
             trail.geometry = newGeometry;
-            
+
             // Schedule old geometry disposal for next frame
             requestAnimationFrame(() => {
                 oldGeometry.dispose();
@@ -199,6 +199,8 @@ class InstancedParticleSystem {
             points: points,
             lastUpdate: performance.now(),
             explosionCenterPosition: position.clone(),
+            phase: 0,
+            trailUpdateInterval: this.trailUpdateInterval,
         });
 
         this.scene.add(trail);
@@ -325,17 +327,27 @@ class InstancedParticleSystem {
                     // Update trail
                     const trailKey = `${shape}-${nextFreeIndex}`;
                     const trailData = this.activeTrails.get(trailKey);
-                    if (trailData) {
-                        trailData.mesh.material.opacity = this.alphas[shape][nextFreeIndex] * 0.5;
 
+                    if (trailData && trailData.points.length > 0) {
+                        trailData.mesh.material.opacity = normalizedLifetime;
                         const offset = trailData.points[0].clone().sub(trailData.points[trailData.points.length - 1]);
                         trailData.mesh.position.copy(this.positions[shape][nextFreeIndex].clone().add(offset));
 
-                        if (now - trailData.lastUpdate >= this.trailUpdateInterval) {
-                            trailData.points.push(this.positions[shape][nextFreeIndex].clone());
+                        if (now - trailData.lastUpdate >= trailData.trailUpdateInterval) {
+                            if (normalizedLifetime < 0.5) {
+                                if (trailData.phase === 0) {
+                                    trailData.phase = 1;
+                                    trailData.trailUpdateInterval = (this.lifetimes[shape][nextFreeIndex] / (trailData.points.length - 1)) * 1000;
+                                }
 
-                            if (trailData.points.length > this.maxTrailPoints) {
-                                trailData.points.shift();
+                                trailData.points.pop();
+                            }
+                            else {
+                                trailData.points.push(this.positions[shape][nextFreeIndex].clone());
+
+                                if (trailData.points.length > this.maxTrailPoints) {
+                                    trailData.points.shift();
+                                }
                             }
 
                             this.updateTrailGeometry(trailData.mesh, trailData.points, trailData.points[0]);
