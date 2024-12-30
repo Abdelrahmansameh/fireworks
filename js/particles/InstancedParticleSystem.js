@@ -9,10 +9,10 @@ class InstancedParticleSystem {
         this.activeCounts = {};
 
         // Trail system management
-        this.activeTrails = new Map(); // Map<`${shape}-${index}`, {mesh, points, lastUpdate}>
+        this.activeTrails = new Map(); 
         this.maxTrails = maxParticles * 2;
-        this.maxTrailPoints = 10; // Maximum points to store per trail
-        this.trailUpdateInterval = 66; 
+        this.maxTrailPoints = 10; 
+        this.trailUpdateInterval = 33; 
 
         // Particle system management
         this.positions = {};
@@ -32,7 +32,7 @@ class InstancedParticleSystem {
             ring: new THREE.RingGeometry(0.5, 1, 8),
             crystalDroplet: this.createCrystalDropletGeometry(),
             sliceBurst: this.createSliceBurstGeometry(),
-            trail: this.createTrailGeometry([])
+            trail: this.createTrailGeometry([], null)
         };
 
         FIREWORK_CONFIG.supportedShapes.forEach(shape => {
@@ -133,17 +133,13 @@ class InstancedParticleSystem {
     createTrailGeometry(points, explosionCenterPosition) {
         if (points.length < 2) return null;
 
-        // Create points relative to the first point
         const relativePoints = points.map(p => p.clone().sub(explosionCenterPosition));
 
-        // Create a curve that passes through all points
         const curve = new THREE.CatmullRomCurve3(relativePoints, false, 'centripetal');
         
-        // Create line geometry
         const geometry = new THREE.BufferGeometry();
         const segments = 50; 
         
-        // Generate points along the curve
         const positions = new Float32Array((segments + 1) * 3);
         
         for (let i = 0; i <= segments; i++) {
@@ -178,7 +174,6 @@ class InstancedParticleSystem {
             return null;
         }
 
-        // Initial points: current position and projected position
         const points = [
             position.clone(),
             position.clone(),
@@ -249,7 +244,6 @@ class InstancedParticleSystem {
 
         this.updateParticleTransform(shape, index);
 
-        // Only create trail if enabled for this particle
         if (enableTrail) {
             this.createTrailForParticle(shape, index, position, velocity, color);
         }
@@ -332,20 +326,19 @@ class InstancedParticleSystem {
                     const trailKey = `${shape}-${nextFreeIndex}`;
                     const trailData = this.activeTrails.get(trailKey);
                     if (trailData) {
-                        // Update trail opacity
                         trailData.mesh.material.opacity = this.alphas[shape][nextFreeIndex] * 0.5;
 
-                        // Only update trail points periodically
+                        const offset = trailData.points[0].clone().sub(trailData.points[trailData.points.length - 1]);
+                        trailData.mesh.position.copy(this.positions[shape][nextFreeIndex].clone().add(offset));
+
                         if (now - trailData.lastUpdate >= this.trailUpdateInterval) {
-                            // Add new position to trail points
                             trailData.points.push(this.positions[shape][nextFreeIndex].clone());
 
-                            // Keep only the most recent points
                             if (trailData.points.length > this.maxTrailPoints) {
                                 trailData.points.shift();
                             }
 
-                            this.updateTrailGeometry(trailData.mesh, trailData.points, trailData.explosionCenterPosition);
+                            this.updateTrailGeometry(trailData.mesh, trailData.points, trailData.points[0]);
                             trailData.lastUpdate = now;
                         }
                     }
@@ -376,7 +369,6 @@ class InstancedParticleSystem {
             this.rotations[shape] = null;
         });
 
-        // Dispose all trails
         for (const trail of this.activeTrails.values()) {
             this.scene.remove(trail.mesh);
             trail.mesh.geometry.dispose();
@@ -388,7 +380,6 @@ class InstancedParticleSystem {
     clear() {
         Object.keys(this.activeCounts).forEach(shape => {
             const activeCount = this.activeCounts[shape];
-            // Remove trails for all active particles
             for (let i = 0; i < activeCount; i++) {
                 this.removeTrail(shape, i);
             }
