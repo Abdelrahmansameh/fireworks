@@ -625,7 +625,7 @@ class UIManager {
                     <input type="color" class="color-input" data-index="${index}" value="${component.color}">
                 </div>
                 <div class="recipes-option secondary-color-container" style="display:none;">
-                    <label>Secondary Color (Helix & Christmas Tree):</label>
+                    <label>Secondary Color:</label>
                     <input type="color" class="secondary-color-input" data-index="${index}" value="${component.secondaryColor}">
                 </div>
                 <div class="recipes-option">
@@ -641,7 +641,7 @@ class UIManager {
                     <input type="range" class="spread-select" data-index="${index}" min="0.5" max="2" step="0.1" value="${component.spread}">
                 </div>
                 <div class="recipes-option">
-                    <label>Trail:</label>
+                    <label>Trail (Pretty but will kill your FPS):</label>
                     <input type="checkbox" class="trail-toggle" data-index="${index}" ${component.enableTrail ? 'checked' : ''}>
                 </div>
                 <button class="remove-component" data-index="${index}">Remove Component</button>
