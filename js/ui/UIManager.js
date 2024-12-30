@@ -32,7 +32,8 @@ class UIManager {
                 lifetime: 1.2,
                 shape: 'sphere',
                 spread: 1.0,
-                secondaryColor: '#00ff00'
+                secondaryColor: '#00ff00',
+                enableTrail: false
             });
             this.game.updateComponentsList();
             this.game.saveCurrentRecipeComponents();
@@ -584,6 +585,9 @@ class UIManager {
             if (!('secondaryColor' in component)) {
                 component.secondaryColor = '#00ff00';
             }
+            if (!('enableTrail' in component)) {
+                component.enableTrail = false;
+            }
             const componentDiv = document.createElement('div');
             componentDiv.classList.add('component');
 
@@ -636,6 +640,10 @@ class UIManager {
                     <label>Spread:</label>
                     <input type="range" class="spread-select" data-index="${index}" min="0.5" max="2" step="0.1" value="${component.spread}">
                 </div>
+                <div class="recipes-option">
+                    <label>Trail:</label>
+                    <input type="checkbox" class="trail-toggle" data-index="${index}" ${component.enableTrail ? 'checked' : ''}>
+                </div>
                 <button class="remove-component" data-index="${index}">Remove Component</button>
             `;
             componentsList.appendChild(componentDiv);
@@ -653,6 +661,7 @@ class UIManager {
             const sizeSelect = componentDiv.querySelector('.size-select');
             const lifetimeSelect = componentDiv.querySelector('.lifetime-select');
             const spreadSelect = componentDiv.querySelector('.spread-select');
+            const trailToggle = componentDiv.querySelector('.trail-toggle');
 
             const updateSecondaryColorVisibility = () => {
                 if (patternSelect.value === 'helix' || patternSelect.value === 'christmasTree') {
@@ -704,6 +713,12 @@ class UIManager {
             spreadSelect.addEventListener('input', (e) => {
                 const idx = e.target.getAttribute('data-index');
                 components[idx].spread = parseFloat(e.target.value);
+                onUpdate();
+            });
+
+            trailToggle.addEventListener('change', (e) => {
+                const idx = e.target.getAttribute('data-index');
+                components[idx].enableTrail = e.target.checked;
                 onUpdate();
             });
 

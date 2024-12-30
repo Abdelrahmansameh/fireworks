@@ -287,7 +287,8 @@ class Firework {
                             component.lifetime,
                             gravity * (0.8 + Math.random() * 0.4),
                             shape,
-                            acceleration
+                            acceleration,
+                            component.enableTrail
                         );
                         if (index !== -1) this.particles[shape].add(index);
                     }
@@ -310,7 +311,8 @@ class Firework {
                             component.lifetime,
                             gravity * (0.9 + Math.random() * 0.1),
                             shape, 
-                            acceleration
+                            acceleration,
+                            component.enableTrail
                         );
                         if (index !== -1) this.particles[shape].add(index);
                     }
@@ -333,7 +335,8 @@ class Firework {
                             component.lifetime,
                             gravity,
                             shape,
-                            acceleration
+                            acceleration,
+                            component.enableTrail
                         );
                         if (index !== -1) this.particles[shape].add(index);
                     }
@@ -362,7 +365,8 @@ class Firework {
                             component.lifetime,
                             gravity,
                             shape,
-                            acceleration
+                            acceleration,
+                            component.enableTrail
                         );
                         if (index !== -1) this.particles[shape].add(index);
                     }
@@ -388,7 +392,8 @@ class Firework {
                             component.lifetime,
                             gravity,
                             shape,
-                            acceleration
+                            acceleration,
+                            component.enableTrail
                         );
                         if (index !== -1) this.particles[shape].add(index);
                     }
@@ -425,7 +430,8 @@ class Firework {
                                 component.lifetime,
                                 gravity,
                                 shape,
-                                acceleration
+                                acceleration,
+                                component.enableTrail
                             );
                             if (index !== -1) this.particles[shape].add(index);
                         }
@@ -460,7 +466,8 @@ class Firework {
                                 component.lifetime,
                                 gravity,
                                 shape,
-                                acceleration
+                                acceleration,
+                                component.enableTrail
                             );
                             if (index !== -1) this.particles[shape].add(index);
                         }
@@ -483,7 +490,8 @@ class Firework {
                                 component.lifetime,
                                 gravity,
                                 shape,
-                                acceleration
+                                acceleration,
+                                component.enableTrail
                             );
                             if (index !== -1) this.particles[shape].add(index);
                         }
@@ -510,7 +518,8 @@ class Firework {
                                     component.lifetime,
                                     gravity,
                                     shape,
-                                    acceleration
+                                    acceleration,
+                                    component.enableTrail
                                 );
                                 if (index !== -1) this.particles[shape].add(index);
                             }
@@ -542,7 +551,8 @@ class Firework {
                             component.lifetime,
                             gravity * (0.9 + Math.random() * 0.1),
                             shape,
-                            acceleration
+                            acceleration,
+                            component.enableTrail
                         );
                         if (index !== -1) this.particles[shape].add(index);
                     }
@@ -592,7 +602,8 @@ class Firework {
                             component.lifetime,
                             gravity * 1.3,
                             shape, 
-                            rotation
+                            rotation,
+                            component.enableTrail
                         );
                         if (index !== -1) {
                             this.particles[shape].add(index);
@@ -641,7 +652,8 @@ class Firework {
                                 component.lifetime,
                                 gravity * 0.2,
                                 shape,
-                                acceleration
+                                acceleration,
+                                component.enableTrail
                             );
                             if (index !== -1) this.particles[shape].add(index);
                         }
@@ -681,7 +693,8 @@ class Firework {
                             component.lifetime,
                             gravity,
                             shape,
-                            acceleration
+                            acceleration,
+                            component.enableTrail
                         );
                         if (index !== -1) this.particles[shape].add(index);
                     }
@@ -704,7 +717,8 @@ class Firework {
                             component.lifetime,
                             gravity,
                             shape,
-                            acceleration
+                            acceleration,
+                            component.enableTrail
                         );
                         if (index !== -1) this.particles[shape].add(index);
                     }

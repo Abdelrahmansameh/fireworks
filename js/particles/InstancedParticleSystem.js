@@ -1,4 +1,5 @@
 import { FIREWORK_CONFIG } from '../config/config.js';
+import { createDebugCross } from '../utils/debug.js';
 
 class InstancedParticleSystem {
     constructor(scene, maxParticles = 10000) {
@@ -7,12 +8,31 @@ class InstancedParticleSystem {
         this.meshes = {};
         this.activeCounts = {};
 
+        // Trail system management
+        this.activeTrails = new Map(); // Map<`${shape}-${index}`, {mesh, points, lastUpdate}>
+        this.maxTrails = maxParticles * 2;
+        this.maxTrailPoints = 10; // Maximum points to store per trail
+        this.trailUpdateInterval = 66; 
+
+        // Particle system management
+        this.positions = {};
+        this.velocities = {};
+        this.accelerations = {};
+        this.colors = {};
+        this.scales = {};
+        this.lifetimes = {};
+        this.initialLifetimes = {};
+        this.gravities = {};
+        this.alphas = {};
+        this.rotations = {};
+
         const geometries = {
             sphere: new THREE.SphereGeometry(1, 8, 8),
             star: this.createStarGeometry(),
             ring: new THREE.RingGeometry(0.5, 1, 8),
             crystalDroplet: this.createCrystalDropletGeometry(),
-            sliceBurst: this.createSliceBurstGeometry()
+            sliceBurst: this.createSliceBurstGeometry(),
+            trail: this.createTrailGeometry([])
         };
 
         FIREWORK_CONFIG.supportedShapes.forEach(shape => {
@@ -42,21 +62,10 @@ class InstancedParticleSystem {
             scene.add(instancedMesh);
         });
 
-        this.positions = {};
-        this.velocities = {};
-        this.accelerations = {};  
-        this.colors = {};
-        this.scales = {};
-        this.lifetimes = {};
-        this.initialLifetimes = {};
-        this.gravities = {};
-        this.alphas = {};
-        this.rotations = {};
-
         FIREWORK_CONFIG.supportedShapes.forEach(shape => {
             this.positions[shape] = new Array(maxParticles).fill(null).map(() => new THREE.Vector3());
             this.velocities[shape] = new Array(maxParticles).fill(null).map(() => new THREE.Vector3());
-            this.accelerations[shape] = new Array(maxParticles).fill(null).map(() => new THREE.Vector3()); 
+            this.accelerations[shape] = new Array(maxParticles).fill(null).map(() => new THREE.Vector3());
             this.colors[shape] = new Array(maxParticles).fill(null).map(() => new THREE.Color());
             this.scales[shape] = new Float32Array(maxParticles);
             this.lifetimes[shape] = new Float32Array(maxParticles);
@@ -121,13 +130,103 @@ class InstancedParticleSystem {
         return geometry;
     }
 
-    addParticle(position, velocity, color, scale, lifetime, gravity, shape = 'sphere', acceleration = new THREE.Vector3()) {
+    createTrailGeometry(points, explosionCenterPosition) {
+        if (points.length < 2) return null;
+
+        // Create points relative to the first point
+        const relativePoints = points.map(p => p.clone().sub(explosionCenterPosition));
+
+        // Create a curve that passes through all points
+        const curve = new THREE.CatmullRomCurve3(relativePoints, false, 'centripetal');
+        
+        // Create line geometry
+        const geometry = new THREE.BufferGeometry();
+        const segments = 50; 
+        
+        // Generate points along the curve
+        const positions = new Float32Array((segments + 1) * 3);
+        
+        for (let i = 0; i <= segments; i++) {
+            const t = i / segments;
+            const point = curve.getPoint(t);
+            positions[i * 3] = point.x;
+            positions[i * 3 + 1] = point.y;
+            positions[i * 3 + 2] = point.z;
+        }
+        
+        // Set the position attribute
+        geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+        
+        return geometry;
+    }
+
+    updateTrailGeometry(trail, points, explosionCenterPosition) {
+        const newGeometry = this.createTrailGeometry(points, explosionCenterPosition);
+        if (newGeometry) {
+            const oldGeometry = trail.geometry;
+            trail.geometry = newGeometry;
+            
+            // Schedule old geometry disposal for next frame
+            requestAnimationFrame(() => {
+                oldGeometry.dispose();
+            });
+        }
+    }
+
+    createTrailForParticle(shape, index, position, velocity, color) {
+        if (this.activeTrails.size >= this.maxTrails) {
+            return null;
+        }
+
+        // Initial points: current position and projected position
+        const points = [
+            position.clone(),
+            position.clone(),
+        ];
+
+        const geometry = this.createTrailGeometry(points, points[0]);
+        if (!geometry) return null;
+
+        const material = new THREE.LineBasicMaterial({
+            transparent: true,
+            opacity: 0.5,
+            blending: THREE.AdditiveBlending,
+            color: color,
+            linewidth: 1
+        });
+
+        const trail = new THREE.Line(geometry, material);
+        trail.position.copy(position);
+
+        const trailKey = `${shape}-${index}`;
+        this.activeTrails.set(trailKey, {
+            mesh: trail,
+            points: points,
+            lastUpdate: performance.now(),
+            explosionCenterPosition: position.clone(),
+        });
+
+        this.scene.add(trail);
+        return trail;
+    }
+
+    removeTrail(shape, index) {
+        const trailKey = `${shape}-${index}`;
+        const trailData = this.activeTrails.get(trailKey);
+        if (trailData) {
+            this.scene.remove(trailData.mesh);
+            trailData.mesh.geometry.dispose();
+            trailData.mesh.material.dispose();
+            this.activeTrails.delete(trailKey);
+        }
+    }
+
+    addParticle(position, velocity, color, scale, lifetime, gravity, shape = 'sphere', acceleration = new THREE.Vector3(), enableTrail = true) {
         if (!FIREWORK_CONFIG.supportedShapes.includes(shape)) {
             shape = 'sphere';
         }
 
         const activeCount = this.activeCounts[shape];
-
         if (activeCount >= this.maxParticles) return -1;
 
         const index = activeCount;
@@ -149,6 +248,11 @@ class InstancedParticleSystem {
         this.rotations[shape][index].copy(quaternion);
 
         this.updateParticleTransform(shape, index);
+
+        // Only create trail if enabled for this particle
+        if (enableTrail) {
+            this.createTrailForParticle(shape, index, position, velocity, color);
+        }
 
         this.activeCounts[shape]++;
         return index;
@@ -173,6 +277,8 @@ class InstancedParticleSystem {
     }
 
     update(delta) {
+        const now = performance.now();
+
         FIREWORK_CONFIG.supportedShapes.forEach(shape => {
             let nextFreeIndex = 0;
             const activeCount = this.activeCounts[shape];
@@ -182,9 +288,10 @@ class InstancedParticleSystem {
 
                 if (this.lifetimes[shape][i] > 0) {
                     if (i !== nextFreeIndex) {
+                        // Move particle data
                         this.positions[shape][nextFreeIndex].copy(this.positions[shape][i]);
                         this.velocities[shape][nextFreeIndex].copy(this.velocities[shape][i]);
-                        this.accelerations[shape][nextFreeIndex].copy(this.accelerations[shape][i]);  // Copy acceleration
+                        this.accelerations[shape][nextFreeIndex].copy(this.accelerations[shape][i]);
                         this.colors[shape][nextFreeIndex].copy(this.colors[shape][i]);
                         this.scales[shape][nextFreeIndex] = this.scales[shape][i];
                         this.lifetimes[shape][nextFreeIndex] = this.lifetimes[shape][i];
@@ -192,10 +299,20 @@ class InstancedParticleSystem {
                         this.gravities[shape][nextFreeIndex] = this.gravities[shape][i];
                         this.alphas[shape][nextFreeIndex] = this.alphas[shape][i];
                         this.rotations[shape][nextFreeIndex].copy(this.rotations[shape][i]);
+
+                        // Move trail if it exists
+                        const oldTrailKey = `${shape}-${i}`;
+                        const newTrailKey = `${shape}-${nextFreeIndex}`;
+                        const trailData = this.activeTrails.get(oldTrailKey);
+                        if (trailData) {
+                            this.activeTrails.delete(oldTrailKey);
+                            this.activeTrails.set(newTrailKey, trailData);
+                        }
                     }
 
+                    // Update particle physics
                     this.velocities[shape][nextFreeIndex].addScaledVector(
-                        this.accelerations[shape][nextFreeIndex],  // Use acceleration
+                        this.accelerations[shape][nextFreeIndex],
                         delta
                     );
                     this.velocities[shape][nextFreeIndex].y -= this.gravities[shape][nextFreeIndex] * delta;
@@ -204,12 +321,38 @@ class InstancedParticleSystem {
                         delta
                     );
 
+                    // Update particle appearance
                     const normalizedLifetime = this.lifetimes[shape][nextFreeIndex] /
                         this.initialLifetimes[shape][nextFreeIndex];
                     this.alphas[shape][nextFreeIndex] = Math.pow(normalizedLifetime, 3);
 
                     this.updateParticleTransform(shape, nextFreeIndex);
+
+                    // Update trail
+                    const trailKey = `${shape}-${nextFreeIndex}`;
+                    const trailData = this.activeTrails.get(trailKey);
+                    if (trailData) {
+                        // Update trail opacity
+                        trailData.mesh.material.opacity = this.alphas[shape][nextFreeIndex] * 0.5;
+
+                        // Only update trail points periodically
+                        if (now - trailData.lastUpdate >= this.trailUpdateInterval) {
+                            // Add new position to trail points
+                            trailData.points.push(this.positions[shape][nextFreeIndex].clone());
+
+                            // Keep only the most recent points
+                            if (trailData.points.length > this.maxTrailPoints) {
+                                trailData.points.shift();
+                            }
+
+                            this.updateTrailGeometry(trailData.mesh, trailData.points, trailData.explosionCenterPosition);
+                            trailData.lastUpdate = now;
+                        }
+                    }
+
                     nextFreeIndex++;
+                } else {
+                    this.removeTrail(shape, i);
                 }
             }
 
@@ -232,10 +375,24 @@ class InstancedParticleSystem {
             this.meshes[shape].material.dispose();
             this.rotations[shape] = null;
         });
+
+        // Dispose all trails
+        for (const trail of this.activeTrails.values()) {
+            this.scene.remove(trail.mesh);
+            trail.mesh.geometry.dispose();
+            trail.mesh.material.dispose();
+        }
+        this.activeTrails.clear();
     }
 
     clear() {
         Object.keys(this.activeCounts).forEach(shape => {
+            const activeCount = this.activeCounts[shape];
+            // Remove trails for all active particles
+            for (let i = 0; i < activeCount; i++) {
+                this.removeTrail(shape, i);
+            }
+
             this.activeCounts[shape] = 0;
             this.meshes[shape].count = 0;
             this.meshes[shape].instanceMatrix.needsUpdate = true;
