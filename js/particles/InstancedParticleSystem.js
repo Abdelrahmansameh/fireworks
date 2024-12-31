@@ -12,7 +12,7 @@ class InstancedParticleSystem {
 
         this.activeTrails = new Map();
         this.maxTrails = maxParticles * 2;
-        this.maxTrailPoints = 10;
+        this.maxTrailPoints = 7;
         this.trailUpdateInterval = 33;
         this.lifetimeToStartTrailRetraction = 0.5;
 
@@ -335,14 +335,13 @@ class InstancedParticleSystem {
                     const trailData = this.activeTrails.get(trailKey);
 
                     if (trailData && trailData.points.length > 0) {
-                        trailData.mesh.material.opacity = normalizedLifetime +0.5;
+                        trailData.mesh.material.opacity = normalizedLifetime +0.25 ;
                         const offset = trailData.points[0].clone().sub(trailData.points[trailData.points.length - 1]);
                         trailData.mesh.position.copy(this.positions[shape][nextFreeIndex].clone().add(offset));
 
                         if (now - trailData.lastUpdate >= trailData.trailUpdateInterval) {
                             if (normalizedLifetime < this.lifetimeToStartTrailRetraction) {
                                 this.updateTrailGeometry(trailData.mesh, trailData.points, trailData.points[0], normalizedLifetime / this.lifetimeToStartTrailRetraction);
-                                trailData.lastUpdate = now;
                             }
                             else {
                                 trailData.points.push(this.positions[shape][nextFreeIndex].clone());
@@ -351,8 +350,9 @@ class InstancedParticleSystem {
                                 }
 
                                 this.updateTrailGeometry(trailData.mesh, trailData.points, trailData.points[0], 1);
-                                trailData.lastUpdate = now;
                             }
+
+                            trailData.lastUpdate = now;
                         }
                     }
 
