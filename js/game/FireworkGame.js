@@ -4,6 +4,7 @@ import Crowd from '../entities/Crowd.js';
 import Firework from '../entities/Firework.js';
 import UIManager from '../ui/UIManager.js';
 import ResourceManager from '../resources/ResourceManager.js';
+import GameProfiler from '../profiling/GameProfiler.js';
 
 class FireworkGame {
     constructor() {
@@ -30,8 +31,8 @@ class FireworkGame {
         this.crowdThresholds = [1, 2, 3, 4, 5, 10, 15];
 
         this.resourceManager = new ResourceManager(this);
-
         this.ui = new UIManager(this);
+        this.profiler = new GameProfiler();
 
         this.init();
     }
@@ -75,7 +76,7 @@ class FireworkGame {
         this.initBackgroundColor();
 
         //  game components
-        this.particleSystem = new InstancedParticleSystem(this.scene, 50000);
+        this.particleSystem = new InstancedParticleSystem(this.scene, 50000, this.profiler);
         this.crowd = new Crowd(this.scene);
 
         //  launchers
@@ -256,10 +257,14 @@ class FireworkGame {
     }
 
     update(deltaTime) {
+        this.profiler.startFrame();
+        
         this.particleSystem.update(deltaTime);
 
         this.updateCameraPosition(deltaTime);
 
+
+        this.profiler.startFunction('autoLaunchersUpdate');
         this.levels[this.currentLevel].autoLaunchers.forEach(launcher => {
             launcher.accumulator += deltaTime;
             if (launcher.accumulator >= launcher.spawnInterval) {
@@ -273,6 +278,7 @@ class FireworkGame {
                 launcher.accumulator -= launcher.spawnInterval;
             }
         });
+        this.profiler.endFunction('autoLaunchersUpdate');
 
         // Generate sparkles in other unlocked levels
         this.levels.forEach((level, index) => {
@@ -285,6 +291,7 @@ class FireworkGame {
         });
 
         // Update crowd based on sparkles per second
+        this.profiler.startFunction('crowdUpdate');
         const currentSps = this.calculateTotalSparklesPerSecond();
         if (currentSps > this.lastSparklesPerSecond) {
             for (const threshold of this.crowdThresholds) {
@@ -298,13 +305,22 @@ class FireworkGame {
         }
         this.lastSparklesPerSecond = currentSps;
         this.updateCrowdDisplay();
+        this.profiler.endFunction('crowdUpdate');
 
+        this.profiler.startFunction('resourceUpdate');
         this.resourceManager.updateGoldFromCrowd(this.crowdCount);
         this.resourceManager.update();
+        this.profiler.endFunction('resourceUpdate');
 
+        this.profiler.startFunction('crowdAnimation');
         this.crowd.update(deltaTime);
+        this.profiler.endFunction('crowdAnimation');
 
+        this.profiler.startFunction('rendering');
         this.renderer.render(this.scene, this.camera);
+        this.profiler.endFunction('rendering');
+
+        this.profiler.endFrame();
     }
 
     initBackgroundColor() {
@@ -534,7 +550,7 @@ class FireworkGame {
 
         if (this.particleSystem) {
             this.particleSystem.dispose();
-            this.particleSystem = new InstancedParticleSystem(this.scene, 50000);
+            this.particleSystem = new InstancedParticleSystem(this.scene, 50000, this.profiler);
         }
 
         this.lastSparklesPerSecond = 0;

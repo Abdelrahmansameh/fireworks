@@ -198,6 +198,18 @@ class UIManager {
         document.getElementById('upgrade-all-launchers').addEventListener('click', () => {
             this.game.upgradeAllLaunchers();
         });
+
+        document.addEventListener('keydown', (e) => {
+            if ((e.key === 'P' || e.key === 'p') && e.shiftKey) {
+                if (!this.game.profiler.isRecording) {
+                    console.log('Starting performance recording...');
+                    this.game.profiler.startRecording();
+                } else {
+                    console.log('Stopping performance recording...');
+                    this.game.profiler.stopRecording();
+                }
+            }
+        });
     }
 
     handlePointerDown(e) {

@@ -2,7 +2,9 @@ import { FIREWORK_CONFIG } from '../config/config.js';
 import { createDebugCross } from '../utils/debug.js';
 
 class InstancedParticleSystem {
-    constructor(scene, maxParticles = 10000) {
+    constructor(scene, maxParticles = 10000, profiler) {
+        this.profiler = profiler;
+
         this.scene = scene;
         this.maxParticles = maxParticles;
         this.meshes = {};
@@ -267,6 +269,7 @@ class InstancedParticleSystem {
     }
 
     update(delta) {
+        this.profiler.startFunction('particleSystemUpdate');
         const now = performance.now();
 
         FIREWORK_CONFIG.supportedShapes.forEach(shape => {
@@ -278,6 +281,7 @@ class InstancedParticleSystem {
 
                 if (this.lifetimes[shape][i] > 0) {
                     if (i !== nextFreeIndex) {
+                        this.profiler.startFunction('shiftParticleMatrix');
                         this.positions[shape][nextFreeIndex].copy(this.positions[shape][i]);
                         this.velocities[shape][nextFreeIndex].copy(this.velocities[shape][i]);
                         this.accelerations[shape][nextFreeIndex].copy(this.accelerations[shape][i]);
@@ -296,8 +300,10 @@ class InstancedParticleSystem {
                             this.activeTrails.delete(oldTrailKey);
                             this.activeTrails.set(newTrailKey, trailData);
                         }
+                        this.profiler.endFunction('shiftParticleMatrix');
                     }
 
+                    this.profiler.startFunction('particlePhysicsUpdate');
                     this.velocities[shape][nextFreeIndex].addScaledVector(
                         this.accelerations[shape][nextFreeIndex],
                         delta
@@ -307,13 +313,18 @@ class InstancedParticleSystem {
                         this.velocities[shape][nextFreeIndex],
                         delta
                     );
+                    this.profiler.endFunction('particlePhysicsUpdate');
 
                     const normalizedLifetime = this.lifetimes[shape][nextFreeIndex] /
                         this.initialLifetimes[shape][nextFreeIndex];
                     this.alphas[shape][nextFreeIndex] = Math.pow(normalizedLifetime, 3);
 
+                    this.profiler.startFunction('updateParticleTransform');
                     this.updateParticleTransform(shape, nextFreeIndex);
+                    this.profiler.endFunction('updateParticleTransform');
 
+                    this.profiler.startFunction('updateParticleTrail');
+                    
                     const trailKey = `${shape}-${nextFreeIndex}`;
                     const trailData = this.activeTrails.get(trailKey);
 
@@ -339,6 +350,8 @@ class InstancedParticleSystem {
                         }
                     }
 
+                    this.profiler.endFunction('updateParticleTrail');
+                    
                     nextFreeIndex++;
                 } else {
                     this.removeTrail(shape, i);
@@ -355,6 +368,8 @@ class InstancedParticleSystem {
                 this.meshes[shape].instanceColor.needsUpdate = true;
             }
         });
+
+        this.profiler.endFunction('particleSystemUpdate');
     }
 
     dispose() {

@@ -1,5 +1,5 @@
 .windsurfrules
 
 # Ignore ChatGPT Generated Documentation
-ChatGPTGeneratedDocumentation/
 localSaves/
+traces/
