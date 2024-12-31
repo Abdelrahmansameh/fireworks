@@ -164,7 +164,11 @@ class InstancedParticleSystem {
 
     updateTrailGeometry(trail, points, explosionCenterPosition, maxCurveLength) {
         this.profiler.startFunction('updateParticleTrailGeometry');
-        this.fillTrailGeometryPositions(trail.geometry, points, explosionCenterPosition, maxCurveLength);
+        const newGeometry = this.createTrailGeometry(points, explosionCenterPosition, maxCurveLength);
+        if (newGeometry) {
+            trail.geometry.dispose();
+            trail.geometry = newGeometry;
+        }
         this.profiler.endFunction('updateParticleTrailGeometry');
     }
 
