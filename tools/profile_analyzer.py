@@ -396,17 +396,81 @@ def generate_memory_chart(data):
     
     return fig.to_html(full_html=False)
 
-def generate_html_report(profile_data):
-    combined_timings = generate_combined_timings_plot(profile_data)
-    frame_histogram = generate_frame_histogram(profile_data)
-    function_percentages = generate_function_percentage_histogram(profile_data)
-    function_breakdown = generate_function_breakdown(profile_data)
-    function_stats_table = generate_function_stats_table(profile_data)
-    memory_chart = generate_memory_chart(profile_data)
+def generate_function_timeline(data):
+    """Generate a line graph showing function times across frames"""
+    frames = data['frameData']
     
-    avg_frame_time = profile_data['metadata']['averageFrameTime']
-    total_frames = profile_data['metadata']['totalFrames']
-    slow_frames = len(profile_data['slowFrames'])
+    # Get the top functions by total time
+    total_time_by_func = {}
+    for frame in frames:
+        for func_name, func_data in frame['functions'].items():
+            if func_name not in total_time_by_func:
+                total_time_by_func[func_name] = 0
+            total_time_by_func[func_name] += func_data['totalTime']
+    
+    # Sort and get top 10 functions
+    top_functions = sorted(
+        total_time_by_func.items(),
+        key=lambda x: x[1],
+        reverse=True
+    )[:10]
+    
+    # Create traces for each function
+    traces = []
+    for func_name, _ in top_functions:
+        x = []  # Frame indices
+        y = []  # Function times
+        
+        for i, frame in enumerate(frames):
+            if func_name in frame['functions']:
+                x.append(i)
+                y.append(frame['functions'][func_name]['totalTime'])
+            else:
+                x.append(i)
+                y.append(0)
+        
+        traces.append(go.Scatter(
+            name=func_name,
+            x=x,
+            y=y,
+            mode='lines',
+            hovertemplate='Frame %{x}<br>' +
+                         '%{y:.2f} ms<br>' +
+                         '<extra>%{fullData.name}</extra>'
+        ))
+    
+    fig = go.Figure(data=traces)
+    
+    fig.update_layout(
+        title='Function Times per Frame',
+        xaxis_title='Frame Number',
+        yaxis_title='Time (ms)',
+        height=500,
+        showlegend=True,
+        legend=dict(
+            yanchor="top",
+            y=0.99,
+            xanchor="left",
+            x=0.01
+        ),
+        hovermode='x unified'
+    )
+    
+    return fig.to_html(full_html=False)
+
+def generate_html_report(data):
+    """Generate an HTML report with all visualizations"""
+    combined_timings = generate_combined_timings_plot(data)
+    frame_histogram = generate_frame_histogram(data)
+    function_percentages = generate_function_percentage_histogram(data)
+    function_breakdown = generate_function_breakdown(data)
+    function_stats_table = generate_function_stats_table(data)
+    memory_chart = generate_memory_chart(data)
+    function_timeline = generate_function_timeline(data)
+    
+    avg_frame_time = data['metadata']['averageFrameTime']
+    total_frames = data['metadata']['totalFrames']
+    slow_frames = len(data['slowFrames'])
     slow_frame_percentage = (slow_frames / total_frames) * 100 if total_frames > 0 else 0
     
     html = f"""
@@ -556,6 +620,11 @@ def generate_html_report(profile_data):
                     <div class="chart-container">
                         <h3>Function Breakdown</h3>
                         {function_breakdown}
+                    </div>
+                    
+                    <div class="chart-container">
+                        <h3>Function Timeline</h3>
+                        {function_timeline}
                     </div>
                     
                     <div class="chart-container">

@@ -163,7 +163,9 @@ class InstancedParticleSystem {
     }
 
     updateTrailGeometry(trail, points, explosionCenterPosition, maxCurveLength) {
+        this.profiler.startFunction('updateParticleTrailGeometry');
         this.fillTrailGeometryPositions(trail.geometry, points, explosionCenterPosition, maxCurveLength);
+        this.profiler.endFunction('updateParticleTrailGeometry');
     }
 
     createTrailForParticle(shape, index, position, velocity, color) {
@@ -351,7 +353,7 @@ class InstancedParticleSystem {
                     }
 
                     this.profiler.endFunction('updateParticleTrail');
-                    
+
                     nextFreeIndex++;
                 } else {
                     this.removeTrail(shape, i);
