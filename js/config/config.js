@@ -1,11 +1,12 @@
 // Game Configuration Constants
 
 const FIREWORK_CONFIG = {
-    baseSpeed: 10,
+    baseSpeed: 50,
+    baseFriction: 0.9,
     gravityMultiplier: 1.5,
     particleSize: 1.0,
     particleDensity: 100,
-    ascentSpeed: 40,
+    ascentSpeed: 60,
     trailLength: 10,
     rocketSize: 0.25,
     minExplosionHeightPercent: 0.4,

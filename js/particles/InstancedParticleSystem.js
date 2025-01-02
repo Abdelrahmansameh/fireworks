@@ -12,8 +12,8 @@ class InstancedParticleSystem {
 
         this.activeTrails = new Map();
         this.maxTrails = maxParticles * 2;
-        this.maxTrailPoints = 7;
-        this.trailUpdateInterval = 33;
+        this.maxTrailPoints = 8;
+        this.trailUpdateInterval = 50;
         this.lifetimeToStartTrailRetraction = 0.5;
 
         this.positions = {};
@@ -26,6 +26,7 @@ class InstancedParticleSystem {
         this.gravities = {};
         this.alphas = {};
         this.rotations = {};
+        this.frictions = {};
 
         const geometries = {
             sphere: new THREE.SphereGeometry(1, 8, 8),
@@ -74,6 +75,7 @@ class InstancedParticleSystem {
             this.gravities[shape] = new Float32Array(maxParticles);
             this.alphas[shape] = new Float32Array(maxParticles).fill(1.0);
             this.rotations[shape] = new Array(maxParticles).fill(null).map(() => new THREE.Quaternion());
+            this.frictions[shape] = new Float32Array(maxParticles).fill(0.0);
         });
 
         this.matrix = new THREE.Matrix4();
@@ -203,6 +205,7 @@ class InstancedParticleSystem {
             lastUpdate: performance.now(),
             explosionCenterPosition: position.clone(),
             trailUpdateInterval: this.trailUpdateInterval,
+            offset: 0,
         });
 
         this.scene.add(trail);
@@ -220,7 +223,7 @@ class InstancedParticleSystem {
         }
     }
 
-    addParticle(position, velocity, color, scale, lifetime, gravity, shape = 'sphere', acceleration = new THREE.Vector3(), enableTrail = true) {
+    addParticle(position, velocity, color, scale, lifetime, gravity, shape = 'sphere', acceleration = new THREE.Vector3(), enableTrail = true, friction = FIREWORK_CONFIG.baseFriction) {
         if (!FIREWORK_CONFIG.supportedShapes.includes(shape)) {
             shape = 'sphere';
         }
@@ -239,6 +242,7 @@ class InstancedParticleSystem {
         this.initialLifetimes[shape][index] = lifetime;
         this.gravities[shape][index] = gravity;
         this.alphas[shape][index] = 1.0;
+        this.frictions[shape][index] = Math.max(0.0, Math.min(1.0, 1-friction));
 
         const normalizedVelocity = velocity.clone().normalize();
         const targetDir = normalizedVelocity.clone().multiplyScalar(-1);
@@ -298,6 +302,7 @@ class InstancedParticleSystem {
                         this.gravities[shape][nextFreeIndex] = this.gravities[shape][i];
                         this.alphas[shape][nextFreeIndex] = this.alphas[shape][i];
                         this.rotations[shape][nextFreeIndex].copy(this.rotations[shape][i]);
+                        this.frictions[shape][nextFreeIndex] = this.frictions[shape][i];
 
                         const oldTrailKey = `${shape}-${i}`;
                         const newTrailKey = `${shape}-${nextFreeIndex}`;
@@ -315,6 +320,10 @@ class InstancedParticleSystem {
                         delta
                     );
                     this.velocities[shape][nextFreeIndex].y -= this.gravities[shape][nextFreeIndex] * delta;
+                    
+                    const frictionFactor = Math.pow(this.frictions[shape][nextFreeIndex], delta);
+                    this.velocities[shape][nextFreeIndex].multiplyScalar(frictionFactor);
+                    
                     this.positions[shape][nextFreeIndex].addScaledVector(
                         this.velocities[shape][nextFreeIndex],
                         delta
@@ -335,12 +344,9 @@ class InstancedParticleSystem {
                     const trailData = this.activeTrails.get(trailKey);
 
                     if (trailData && trailData.points.length > 0) {
-                        trailData.mesh.material.opacity = normalizedLifetime +0.25 ;
-                        const offset = trailData.points[0].clone().sub(trailData.points[trailData.points.length - 1]);
-                        trailData.mesh.position.copy(this.positions[shape][nextFreeIndex].clone().add(offset));
-
                         if (now - trailData.lastUpdate >= trailData.trailUpdateInterval) {
                             if (normalizedLifetime < this.lifetimeToStartTrailRetraction) {
+                                trailData.offset = trailData.points[0].clone().sub(trailData.points[trailData.points.length - 1])
                                 this.updateTrailGeometry(trailData.mesh, trailData.points, trailData.points[0], normalizedLifetime / this.lifetimeToStartTrailRetraction);
                             }
                             else {
@@ -348,12 +354,16 @@ class InstancedParticleSystem {
                                 if (trailData.points.length > this.maxTrailPoints) {
                                     trailData.points.shift();
                                 }
+                                trailData.offset = trailData.points[0].clone().sub(trailData.points[trailData.points.length - 1])
 
                                 this.updateTrailGeometry(trailData.mesh, trailData.points, trailData.points[0], 1);
                             }
 
                             trailData.lastUpdate = now;
                         }
+
+                        trailData.mesh.material.opacity = normalizedLifetime  ;
+                        trailData.mesh.position.copy(this.positions[shape][nextFreeIndex].clone().add(trailData.offset));
                     }
 
                     this.profiler.endFunction('updateParticleTrail');
