@@ -582,7 +582,7 @@ class Firework {
                         const pivotToParticle = particlePos.clone().sub(pivotPoint);
                         const rotation = new THREE.Vector3().crossVectors(pivotToParticle, rotationAxis);
                         const sign = (i < particleCount / 2) ? 1 : -1;
-                        const rotationSpeed = 0.05 * sign;
+                        const rotationSpeed = 0.2 * sign;
                         rotation.multiplyScalar(rotationSpeed);
                 
                         const index = this.particleSystem.addParticle(

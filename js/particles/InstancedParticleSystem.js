@@ -14,7 +14,6 @@ class InstancedParticleSystem {
         this.maxTrails = maxParticles * 2;
         this.maxTrailPoints = 8;
         this.trailUpdateInterval = 50;
-        this.lifetimeToStartTrailRetraction = 0.5;
 
         this.positions = {};
         this.velocities = {};
@@ -345,20 +344,14 @@ class InstancedParticleSystem {
 
                     if (trailData && trailData.points.length > 0) {
                         if (now - trailData.lastUpdate >= trailData.trailUpdateInterval) {
-                            if (normalizedLifetime < this.lifetimeToStartTrailRetraction) {
-                                trailData.offset = trailData.points[0].clone().sub(trailData.points[trailData.points.length - 1])
-                                this.updateTrailGeometry(trailData.mesh, trailData.points, trailData.points[0], normalizedLifetime / this.lifetimeToStartTrailRetraction);
-                            }
-                            else {
-                                trailData.points.push(this.positions[shape][nextFreeIndex].clone());
-                                if (trailData.points.length > this.maxTrailPoints) {
-                                    trailData.points.shift();
-                                }
-                                trailData.offset = trailData.points[0].clone().sub(trailData.points[trailData.points.length - 1])
-
-                                this.updateTrailGeometry(trailData.mesh, trailData.points, trailData.points[0], 1);
+                            trailData.points.push(this.positions[shape][nextFreeIndex].clone());
+                            if (trailData.points.length > this.maxTrailPoints) {
+                                trailData.points.shift();
                             }
 
+                            this.updateTrailGeometry(trailData.mesh, trailData.points, trailData.points[0], 1);
+                        
+                            trailData.offset = trailData.points[0].clone().sub(trailData.points[trailData.points.length - 1])
                             trailData.lastUpdate = now;
                         }
 
