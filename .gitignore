@@ -5,3 +5,5 @@ localSaves/
 traces/
 # Ignore concatenated JavaScript files
 tools/all_js_files_concatenated.js
+# Ignore renderer directory
+js/rendering/
