@@ -637,7 +637,7 @@ class UIManager {
                 </div>
                 <div class="recipes-option">
                     <label>Lifetime:</label>
-                    <input type="range" class="lifetime-select" data-index="${index}" min="0.5" max="3" step="0.1" value="${component.lifetime}">
+                    <input type="range" class="lifetime-select" data-index="${index}" min="1.5" max="5" step="0.1" value="${component.lifetime}">
                 </div>
                 <div class="recipes-option">
                     <label>Spread:</label>
