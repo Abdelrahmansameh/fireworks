@@ -389,7 +389,8 @@ class Firework {
                             gravity,
                             shape,
                             acceleration,
-                            component.enableTrail
+                            component.enableTrail,
+                            0.7,
                         );
                         if (index !== -1) this.particles[shape].add(index);
                     }

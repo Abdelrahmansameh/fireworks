@@ -18,7 +18,7 @@ const FIREWORK_CONFIG = {
         star: 7.0,
         burst: 9.81,
         palm: 5.0,
-        willow: 1.0,
+        willow: 5.0,
         helix: 3.0,
         brokenHeart: 6.0,
         christmasTree: 7.0
