@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>My 2D Renderer Demo</title>
+  <style>
+    body {
+      margin: 0; 
+      padding: 0;
+      overflow: hidden; /* optional, to remove scrollbars */
+      background: #222;
+    }
+    #game-canvas {
+      display: block;
+      width: 100vw;  /* fill the viewport */
+      height: 100vh; 
+    }
+  </style>
+</head>
+<body>
+  <!-- We'll have a full-window canvas for the 2D renderer -->
+  <canvas id="game-canvas"></canvas>
+    
+  <script type="module" src="Renderer.js"></script>
+
+  <!-- 2) Include our main usage code -->
+  <script type="module" src="example.js"></script>
+</body>
+</html>
