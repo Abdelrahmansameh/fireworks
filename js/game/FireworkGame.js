@@ -5,6 +5,7 @@ import Firework from '../entities/Firework.js';
 import UIManager from '../ui/UIManager.js';
 import ResourceManager from '../resources/ResourceManager.js';
 import GameProfiler from '../profiling/GameProfiler.js';
+import * as Renderer2D from '../rendering/Renderer.js';
 
 class FireworkGame {
     constructor() {
@@ -75,8 +76,117 @@ class FireworkGame {
         this.initThreeJS();
         this.initBackgroundColor();
 
+        this.canvas2D = document.getElementById('game-canvas');
+        this.renderer2D = new Renderer2D.Renderer2D(this.canvas2D, {
+            width: window.innerWidth ,
+            height: window.innerHeight
+        });
+
+        this.cameraTargetX = 0;
+        this.cameraTargtY = 0;
+        this.cameraTargetZoom = 1.0;
+
+
+        const redcircleData = Renderer2D.buildCircle(50, 32);
+        this.opaqueRedCircle = this.renderer2D.createNormalShape({
+            vertices: redcircleData.vertices,
+            indices: redcircleData.indices,
+            color: new Renderer2D.Color(1, 0, 0, 1),
+            position: new Renderer2D.Vector2(100, 100),
+            rotation: 0,
+            scale: new Renderer2D.Vector2(1, 1),
+            zIndex: -1,
+            blendMode: Renderer2D.BlendMode.ADDITIVE,
+            isStroke: false
+        });
+
+        const circleData = Renderer2D.buildCircle(50, 32);
+        this.circleShape = this.renderer2D.createNormalShape({
+            vertices: circleData.vertices,
+            indices: circleData.indices,
+            color: new Renderer2D.Color(1, 0, 0, 1), // red
+            position: new Renderer2D.Vector2(200, 200),
+            rotation: 0,
+            scale: new Renderer2D.Vector2(2, 1),
+            zIndex: 1,
+            blendMode: Renderer2D.BlendMode.ADDITIVE,
+            isStroke: false
+        });
+
+        for (let i = 0; i < 2; i++) {
+            const ringData = Renderer2D.buildRing(80, 50, 32);
+            this.ringShape = this.renderer2D.createNormalShape({
+                vertices: ringData.vertices,
+                indices: ringData.indices,
+                color: new Renderer2D.Color(0.2, 1, 0.2 , 1),
+                position: new Renderer2D.Vector2(400, 300),
+                rotation: 0,
+                scale: new Renderer2D.Vector2(2, 1),
+                zIndex: 2,
+                blendMode: Renderer2D.BlendMode.ADDITIVE,
+                isStroke: false
+            });
+        }
+
+        const starData = Renderer2D.buildStar(5, 60, 30);
+        this.starShape = this.renderer2D.createNormalShape({
+            vertices: starData.vertices,
+            indices: starData.indices,
+            color: new Renderer2D.Color(0.8, 0.8, 0.2, 0.9),
+            position: new Renderer2D.Vector2(600, 200),
+            rotation: 0,
+            scale: new Renderer2D.Vector2(1, 1),
+            zIndex: 3,
+            blendMode: Renderer2D.BlendMode.ADDITIVE,
+            isStroke: false
+        });
+
+        const linePoints = [
+            200, 500,
+            200, 450,
+            300, 470,
+            400, 520,
+            500, 510
+        ];
+        const strokeData = Renderer2D.buildStrokeGeometry(linePoints, 8);
+        this.lineShape = this.renderer2D.createNormalShape({
+            vertices: strokeData.vertices,
+            indices: strokeData.indices,
+            color: new Renderer2D.Color(1, 0, 0, 1),
+            position: new Renderer2D.Vector2(0, 0),
+            rotation: Math.random() * Math.PI * 2,
+            scale: new Renderer2D.Vector2(1, 1),
+            zIndex: 0,
+            blendMode: Renderer2D.BlendMode.ADDITIVE,
+            isStroke: true
+        });
+
+        const heartData = Renderer2D.buildTriangle();
+        this.heartShape = this.renderer2D.createNormalShape({
+            vertices: heartData.vertices,
+            indices: heartData.indices,
+            color: new Renderer2D.Color(1, 0.2, 0.5, 0.9),
+            position: new Renderer2D.Vector2(150, 400),
+            rotation: 0,
+            scale: new Renderer2D.Vector2(1, 1),
+            zIndex: 5,
+            blendMode: Renderer2D.BlendMode.ADDITIVE,
+            isStroke: false
+        });
+
+        const smallStarData = Renderer2D.buildStar(5, 0.5, 0.25);
+        this.starGroup = this.renderer2D.createInstancedGroup({
+            vertices: smallStarData.vertices,
+            indices: smallStarData.indices,
+            maxInstances: 50000,
+            zIndex: 10,
+            blendMode: Renderer2D.BlendMode.ADDITIVE
+        });
+
+
+
         //  game components
-        this.particleSystem = new InstancedParticleSystem(this.scene, 50000, this.profiler);
+        this.particleSystem = new InstancedParticleSystem(this.scene, this.renderer2D, 50000, this.profiler);
         this.crowd = new Crowd(this.scene);
 
         //  launchers
@@ -163,7 +273,7 @@ class FireworkGame {
         const gameContainer = document.getElementById('game-container');
         gameContainer.appendChild(this.renderer.domElement);
 
-        this.clock = new THREE.Clock();
+        this.clock = new Renderer2D.Clock();
 
         window.addEventListener('resize', this.onWindowResize.bind(this), false);
 
@@ -258,7 +368,7 @@ class FireworkGame {
 
     update(deltaTime) {
         this.profiler.startFrame();
-        
+
         this.particleSystem.update(deltaTime);
 
         this.updateCameraPosition(deltaTime);
@@ -316,9 +426,9 @@ class FireworkGame {
         this.crowd.update(deltaTime);
         this.profiler.endFunction('crowdAnimation');
 
-        this.profiler.startFunction('rendering');
-        this.renderer.render(this.scene, this.camera);
-        this.profiler.endFunction('rendering');
+        //        this.profiler.startFunction('rendering');
+        //        this.renderer.render(this.scene, this.camera);
+        //       this.profiler.endFunction('rendering');
 
         this.profiler.endFrame();
     }
@@ -407,8 +517,30 @@ class FireworkGame {
 
             this.crowd.update(delta);
 
-            this.renderer.render(this.scene, this.camera);
+            //            this.renderer.render(this.scene, this.camera);
         }
+
+
+        this.ringShape.rotation += 0.01;
+        this.renderer2D.updateNormalShape(this.ringShape, { rotation: this.ringShape.rotation });
+        this.starShape.rotation -= 0.02;
+        this.renderer2D.updateNormalShape(this.starShape, { rotation: this.starShape.rotation });
+
+        this.starGroup.clear();
+        for (let i = 0; i < 10000; i++) {
+            const x = (Math.random() - 0.5) * 3000 + 400;
+            const y = (Math.random() - 0.5) * 3000 + 300;
+            const rot = Math.random() * Math.PI * 2;
+            const s = 2 + Math.random() * 6;
+            const r = Math.random();
+            const g = Math.random();
+            const b = Math.random();
+            this.starGroup.addInstance(new Renderer2D.Vector2(x, y), rot, new Renderer2D.Vector2(s, s), new Renderer2D.Color(r, g, b, 0.8));
+        }
+
+
+        this.renderer2D.drawFrame();
+
     }
 
     launchFireworkAt(x, minY = null, recipeComponents = null, trailEffect = null) {
@@ -504,7 +636,7 @@ class FireworkGame {
                     launcher.mesh = null;
                 }
             });
-            level.autoLaunchers = []; 
+            level.autoLaunchers = [];
         });
 
         this.addSparkles(Math.floor(refundAmount));
@@ -550,7 +682,7 @@ class FireworkGame {
 
         if (this.particleSystem) {
             this.particleSystem.dispose();
-            this.particleSystem = new InstancedParticleSystem(this.scene, 50000, this.profiler);
+            this.particleSystem = new InstancedParticleSystem(this.scene, this.renderer2D, 50000, this.profiler);
         }
 
         this.lastSparklesPerSecond = 0;
@@ -942,7 +1074,7 @@ class FireworkGame {
         this.updateLevelArrows();
         this.updateLevelsList();
     }
-    
+
     updateLevelsList() {
         const levelsList = document.getElementById('levels-list');
         levelsList.innerHTML = '';
@@ -1006,7 +1138,7 @@ class FireworkGame {
         if (activeTabContent) {
             return activeTabContent;
         }
-        return null; 
+        return null;
     }
 
     updateCrowdDisplay() {

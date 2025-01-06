@@ -1,5 +1,6 @@
 import { FIREWORK_CONFIG } from '../config/config.js';
 import InstancedParticleSystem from '../particles/InstancedParticleSystem.js';
+import * as Renderer2D from '../rendering/Renderer.js';
 
 class Firework {
     constructor(x, y, components, scene, camera, trailEffect, particleSystem) {
@@ -256,12 +257,12 @@ class Firework {
             const pattern = component.pattern;
             const gravity = FIREWORK_CONFIG.gravityMultiplier * FIREWORK_CONFIG.patternGravities[pattern] || FIREWORK_CONFIG.patternGravities.default;
             const speed = FIREWORK_CONFIG.baseSpeed * component.size;
-            const color = new THREE.Color(component.color);
-            const secondaryColor = new THREE.Color(component.secondaryColor || '#00ff00');
+            const color = new Renderer2D.Color(0, 0, 1, .9);
+            const secondaryColor = new Renderer2D.Color(1, 0, 0, .9);
             const size = FIREWORK_CONFIG.particleSize * component.size;
             const rocketPos = this.rocket.position.clone();
-            const velocity = new THREE.Vector3();
-            const acceleration = new THREE.Vector3();
+            const velocity = new Renderer2D.Vector2();
+            const acceleration = new Renderer2D.Vector2();
             const shape = component.shape;
             const spread = component.spread;
 
@@ -574,17 +575,16 @@ class Firework {
                         
                         const angle = Math.atan2(yOffset, xOffset);
                         const magnitude = speed * Math.sqrt(xOffset * xOffset + yOffset * yOffset) * 0.05;
-                        const unbrokenHeartVelocity = new THREE.Vector3(
+                        const unbrokenHeartVelocity = new Renderer2D.Vector2(
                             Math.cos(angle) * magnitude,
                             Math.sin(angle) * magnitude,
-                            0
                         );
                         
                         const pivotToParticle = particlePos.clone().sub(pivotPoint);
                         const rotation = new THREE.Vector3().crossVectors(pivotToParticle, rotationAxis);
                         const sign = (i < particleCount / 2) ? 1 : -1;
                         const rotationSpeed = 0.2 * sign;
-                        rotation.multiplyScalar(rotationSpeed);
+                        rotation.multiply(rotationSpeed);
                 
                         const index = this.particleSystem.addParticle(
                             rocketPos.clone(),  

@@ -1,3 +1,141 @@
+// Vector2 and Color Classes
+class Vector2 {
+    constructor(x = 0, y = 0) {
+        this.x = x;
+        this.y = y;
+    }
+
+    set (x, y) {
+        this.x = x;
+        this.y = y;
+    }
+
+    add(v) {
+        this.x += v.x;
+        this.y += v.y;
+
+        return this;
+    }
+
+    subtract(v) {
+        this.x -= v.x;
+        this.y -= v.y;
+
+        return this;
+    }
+
+    scale(scalar) {
+       this.x *= scalar; 
+       this.y *= scalar;
+
+       return this;
+    }
+
+    addScaledVector(v, scalar) {
+        this.x += v.x * scalar;
+        this.y += v.y * scalar;
+        return this;
+    }
+
+    length() {
+        return Math.hypot(this.x, this.y);
+    }
+
+    normalize() {
+        const len = this.length();
+        if (len === 0) return new Vector2(0, 0);
+        let normalX = this.x / len;
+        let normalY = this.y / len;
+        if (Math.abs(normalX) < 0.000001) 
+            normalX = 0;
+        if (Math.abs(normalY) < 0.000001) 
+            normalY = 0;
+        this.x = normalX;
+        this.y = normalY;
+
+        return this;
+    }
+
+    clone() {
+        return new Vector2(this.x, this.y);
+    }
+
+    copy(other) {
+        this.x = other.x;
+        this.y = other.y;
+    }
+
+    toArray() {
+        return [this.x, this.y];
+    }
+
+    getAngle() {
+        return Math.atan2(this.y, this.x);
+    }
+    
+    static dot(v1, v2) {
+        return v1.x * v2.x + v1.y * v2.y;
+    }
+
+    static lerp(v1, v2, t) {
+        return new Vector2(
+            v1.x + (v2.x - v1.x) * t,
+            v1.y + (v2.y - v1.y) * t
+        );
+    }
+}
+
+class Color {
+    constructor(r = 1, g = 1, b = 1, a = 1) {
+        this.r = r;
+        this.g = g;
+        this.b = b;
+        this.a = a;
+    }
+
+    set(r, g, b, a = 1) {
+        this.r = r;
+        this.g = g;
+        this.b = b;
+        this.a = a;
+    }
+
+    multiply(scalar) {
+        return new Color(
+            this.r * scalar,
+            this.g * scalar,
+            this.b * scalar,
+            this.a
+        );
+    }
+
+    clone() {
+        return new Color(this.r, this.g, this.b, this.a);
+    }
+
+    copy(other) {
+        this.r = other.r;
+        this.g = other.g;
+        this.b = other.b;
+        this.a = other.a;
+    }
+    
+    toArray() {
+        return [this.r, this.g, this.b, this.a];
+    }
+
+
+    static lerp(c1, c2, t) {
+        return new Color(
+            c1.r + (c2.r - c1.r) * t,
+            c1.g + (c2.g - c1.g) * t,
+            c1.b + (c2.b - c1.b) * t,
+            c1.a + (c2.a - c1.a) * t
+        );
+    }
+}
+
+// Earcut Implementation
 function earcut(data, holeIndices, dim) {
     dim = dim || 2;
     var hasHoles = holeIndices && holeIndices.length,
@@ -384,7 +522,7 @@ function splitPolygon(a, b) {
 /*************************************************************
  * 2) Shape Builders
  *************************************************************/
-function buildCircle(radius = 50, segments = 32) {
+function buildCircle(radius = 1, segments = 32) {
     const verts = [0, 0];
     for (let i = 0; i <= segments; i++) {
         const th = (i / segments) * 2 * Math.PI;
@@ -400,7 +538,7 @@ function buildCircle(radius = 50, segments = 32) {
     };
 }
 
-function buildRing(outerR = 100, innerR = 50, segments = 32) {
+function buildRing(outerR = 2, innerR = 1, segments = 32) {
     const verts = [];
     for (let i = 0; i < segments; i++) {
         const t = (i / segments) * 2 * Math.PI;
@@ -425,7 +563,7 @@ function buildRing(outerR = 100, innerR = 50, segments = 32) {
     };
 }
 
-function buildStar(points = 5, outerR = 50, innerR = 25) {
+function buildStar(points = 5, outerR = 2, innerR = 1) {
     const verts = [0, 0];
     const step = Math.PI / points;
     for (let i = 0; i <= points * 2; i++) {
@@ -443,7 +581,7 @@ function buildStar(points = 5, outerR = 50, innerR = 25) {
     };
 }
 
-function buildHeart(scale = 50, steps = 100) {
+function buildDroplet(scale = 1, steps = 100) {
     const coords = [];
     for (let i = 0; i <= steps; i++) {
         const t = Math.PI * (i / steps);
@@ -456,6 +594,20 @@ function buildHeart(scale = 50, steps = 100) {
         coords.push(x * scale * 0.2, -y * scale * 0.2);
     }
     coords.push(coords[0], coords[1]);
+    const triIndices = earcut(coords, null, 2);
+    return {
+        vertices: new Float32Array(coords),
+        indices: new Uint16Array(triIndices),
+    };
+}
+
+function buildTriangle(base = 1, height = 2) {
+    const coords = [];
+
+    coords.push(-base / 2, 0);
+    coords.push(base / 2, 0);
+    coords.push(0, -height);
+
     const triIndices = earcut(coords, null, 2);
     return {
         vertices: new Float32Array(coords),
@@ -535,28 +687,28 @@ function buildStrokeGeometry(points, strokeWidth = 5) {
 const BlendMode = {
     NORMAL: 'normal',
     ADDITIVE: 'additive',
-    NO: 'no',
-    MULTIPL: 'multiply',
+    NO_BLENDING: 'no_blending',
+    MULTIPLY_BLENDING: 'multiply',
 };
 
 class Shape2D {
     constructor({
         vertices = null,
         indices = null,
-        color = [1, 1, 1, 1], 
-        position = [0, 0],
+        color = new Color(1, 1, 1, 1), 
+        position = new Vector2(0, 0),
         rotation = 0,
-        scale = [1, 1],
+        scale = new Vector2(1, 1),
         zIndex = 0,
         blendMode = BlendMode.NORMAL,
         isStroke = false,
     }) {
         this.vertices = vertices;
         this.indices = indices;
-        this.color = color.slice(); 
-        this.position = position.slice();
+        this.color = color.clone(); 
+        this.position = position.clone();
         this.rotation = rotation;
-        this.scale = scale.slice();
+        this.scale = scale.clone();
         this.zIndex = zIndex;
         this.blendMode = blendMode;
         this.isStroke = isStroke;
@@ -568,7 +720,6 @@ class Shape2D {
     }
 }
 
-
 class InstancedGroup {
     constructor({ baseGeometry, maxInstances = 10000, zIndex = 0, blendMode = BlendMode.NORMAL }) {
         this.baseGeometry = baseGeometry; 
@@ -576,7 +727,7 @@ class InstancedGroup {
         this.zIndex = zIndex;
         this.blendMode = blendMode;
 
-        // instance data
+        // number of floats per instance
         this.instanceStrideFloats = 9;
         this.instanceData = new Float32Array(maxInstances * this.instanceStrideFloats);
         this.instanceCount = 0;
@@ -585,25 +736,105 @@ class InstancedGroup {
         this._instanceBuffer = null;
         this._vao = null;
     }
+    
     clear() {
         this.instanceCount = 0;
     }
+
     addInstance(pos, rotation, scale, color) {
         const i = this.instanceCount;
         if (i >= this.maxInstances) return;
         const base = i * this.instanceStrideFloats;
-        this.instanceData[base + 0] = pos[0];
-        this.instanceData[base + 1] = pos[1];
+        this.instanceData[base + 0] = pos.x;
+        this.instanceData[base + 1] = pos.y;
         this.instanceData[base + 2] = rotation;
-        this.instanceData[base + 3] = scale[0];
-        this.instanceData[base + 4] = scale[1];
-        this.instanceData[base + 5] = color[0];
-        this.instanceData[base + 6] = color[1];
-        this.instanceData[base + 7] = color[2];
-        this.instanceData[base + 8] = color[3];
+        this.instanceData[base + 3] = scale.x;
+        this.instanceData[base + 4] = scale.y;
+        this.instanceData[base + 5] = color.r;
+        this.instanceData[base + 6] = color.g;
+        this.instanceData[base + 7] = color.b;
+        this.instanceData[base + 8] = color.a;
         this.instanceCount++;
     }
 
+    updateInstance(index, changes) {
+        if (changes.color !== undefined) this.updateInstanceColor(index, changes.color.clone());
+        if (changes.position !== undefined) this.updateInstancePosition(index, changes.position.clone());
+        if (changes.rotation !== undefined) this.updateInstanceRotation(index, changes.rotation);
+        if (changes.scale !== undefined) this.updateInstanceScale(index, changes.scale.clone());
+    }
+
+
+     removeInstance(index) {
+        if (index < 0 || index >= this.instanceCount) {
+            console.warn('Instance index out of bounds');
+            return;
+        }
+
+        const lastIndex = this.instanceCount - 1;
+
+        //swap with last instance
+        
+        if (index !== lastIndex) {
+            const targetBase = index * this.instanceStrideFloats;
+            const lastBase = lastIndex * this.instanceStrideFloats;
+
+            this.instanceData[targetBase + 0] = this.instanceData[lastBase + 0];
+            this.instanceData[targetBase + 1] = this.instanceData[lastBase + 1];
+
+            this.instanceData[targetBase + 2] = this.instanceData[lastBase + 2];
+
+            this.instanceData[targetBase + 3] = this.instanceData[lastBase + 3];
+            this.instanceData[targetBase + 4] = this.instanceData[lastBase + 4];
+
+            this.instanceData[targetBase + 5] = this.instanceData[lastBase + 5];
+            this.instanceData[targetBase + 6] = this.instanceData[lastBase + 6];
+            this.instanceData[targetBase + 7] = this.instanceData[lastBase + 7];
+            this.instanceData[targetBase + 8] = this.instanceData[lastBase + 8];
+        }
+
+        const base = lastIndex * this.instanceStrideFloats;
+        this.instanceData[base + 0] = 0;
+        this.instanceData[base + 1] = 0;
+        this.instanceData[base + 2] = 0;
+        this.instanceData[base + 3] = 0;
+        this.instanceData[base + 4] = 0;
+        this.instanceData[base + 5] = 0;
+        this.instanceData[base + 6] = 0;
+        this.instanceData[base + 7] = 0;
+        this.instanceData[base + 8] = 0;
+
+        this.instanceCount--;
+    }
+
+    updateInstancePosition(index, position) {
+        if (index < 0 || index >= this.instanceCount) {
+            console.warn('Instance index out of bounds');
+            return;
+        }
+        const base = index * this.instanceStrideFloats;
+        this.instanceData[base + 0] = position.x;
+        this.instanceData[base + 1] = position.y;
+    }
+
+    updateInstanceRotation(index, rotation) {
+        if (index < 0 || index >= this.instanceCount) {
+            console.warn('Instance index out of bounds');
+            return;
+        }
+        const base = index * this.instanceStrideFloats;
+        this.instanceData[base + 2] = rotation;
+    }
+
+    updateInstanceScale(index, scale) {
+        if (index < 0 || index >= this.instanceCount) {
+            console.warn('Instance index out of bounds');
+            return;
+        }
+        const base = index * this.instanceStrideFloats;
+        this.instanceData[base + 3] = scale.x;
+        this.instanceData[base + 4] = scale.y;
+    }
 
     updateInstanceColor(index, color) {
         if (index < 0 || index >= this.instanceCount) {
@@ -611,11 +842,12 @@ class InstancedGroup {
             return;
         }
         const base = index * this.instanceStrideFloats + 5; 
-        this.instanceData[base] = color[0];
-        this.instanceData[base + 1] = color[1];
-        this.instanceData[base + 2] = color[2];
-        this.instanceData[base + 3] = color[3];
+        this.instanceData[base] = color.r;
+        this.instanceData[base + 1] = color.g;
+        this.instanceData[base + 2] = color.b;
+        this.instanceData[base + 3] = color.a;
     }
+
 }
 
 class Renderer2D {
@@ -653,7 +885,6 @@ class Renderer2D {
         this.u_proj_Inst = gl.getUniformLocation(this.instancedProgram, 'u_proj');
     }
 
-
     setCamera({ x = 0, y = 0, zoom = 1.0 }) {
         this.cameraX = x;
         this.cameraY = y;
@@ -666,6 +897,7 @@ class Renderer2D {
         this.normalShapes.push(shape);
         return shape;
     }
+
     updateNormalShape(shape, changes) {
         let reuploadVerts = false,
             reuploadIdx = false;
@@ -677,10 +909,10 @@ class Renderer2D {
             shape.indices = changes.indices;
             reuploadIdx = true;
         }
-        if (changes.color !== undefined) shape.color = changes.color.slice();
-        if (changes.position !== undefined) shape.position = changes.position.slice();
+        if (changes.color !== undefined) shape.color = changes.color.clone();
+        if (changes.position !== undefined) shape.position = changes.position.clone();
         if (changes.rotation !== undefined) shape.rotation = changes.rotation;
-        if (changes.scale !== undefined) shape.scale = changes.scale.slice();
+        if (changes.scale !== undefined) shape.scale = changes.scale.clone();
         if (changes.zIndex !== undefined) shape.zIndex = changes.zIndex;
         if (changes.blendMode !== undefined) shape.blendMode = changes.blendMode;
         if (changes.isStroke !== undefined) shape.isStroke = changes.isStroke;
@@ -688,6 +920,7 @@ class Renderer2D {
         if (reuploadVerts) this._uploadShapeVertices(shape);
         if (reuploadIdx) this._uploadShapeIndices(shape);
     }
+
     removeNormalShape(shape) {
         const idx = this.normalShapes.indexOf(shape);
         if (idx >= 0) this.normalShapes.splice(idx, 1);
@@ -700,7 +933,6 @@ class Renderer2D {
             shape._ibo = null;
         }
     }
-
 
     createInstancedGroup({ vertices, indices, maxInstances = 10000, zIndex = 0, blendMode = BlendMode.NORMAL }) {
         const gl = this.gl;
@@ -857,7 +1089,7 @@ class Renderer2D {
         const mvp = this._multiplyMat4(this._projectionMatrix, model);
 
         gl.uniformMatrix4fv(this.u_matrix_Normal, false, mvp);
-        gl.uniform4fv(this.u_color_Normal, new Float32Array(shape.color));
+        gl.uniform4fv(this.u_color_Normal, shape.color.toArray());
 
         // bind shape buffers
         gl.bindBuffer(gl.ARRAY_BUFFER, shape._vbo);
@@ -1069,8 +1301,8 @@ class Renderer2D {
     _computeModelMatrix(pos, rot, scl) {
         const cosr = Math.cos(rot),
             sinr = Math.sin(rot);
-        const [sx, sy] = scl;
-        const [px, py] = pos;
+        const [sx, sy] = [scl.x, scl.y];
+        const [px, py] = [pos.x, pos.y];
         const m = new Float32Array(16);
         // col-major
         m[0] = cosr * sx;
@@ -1119,14 +1351,70 @@ class Renderer2D {
     }
 }
 
+// https://github.com/mrdoob/three.js/blob/master/src/core/Clock.js
+class Clock {
+    constructor(autoStart = true) {
+        this.autoStart = autoStart;
+        this.startTime = 0;
+        this.oldTime = 0;
+        this.elapsedTime = 0;
+        this.running = false;
+    }
+
+    start() {
+        this.startTime = now();
+        this.oldTime = this.startTime;
+        this.elapsedTime = 0;
+        this.running = true;
+    }
+
+    stop() {
+        this.getElapsedTime();
+        this.running = false;
+        this.autoStart = false;
+    }
+
+    getElapsedTime() {
+        this.getDelta();
+        return this.elapsedTime;
+    }
+
+    getDelta() {
+        let diff = 0;
+        if (this.autoStart && !this.running) {
+            this.start();
+            return 0;
+        }
+
+        if (this.running) {
+            const newTime = now();
+
+            diff = (newTime - this.oldTime) / 1000;
+            this.oldTime = newTime;
+
+            this.elapsedTime += diff;
+        }
+
+        return diff;
+    }
+}
+
+function now() {
+    return performance.now();
+}
+
 export {
     Renderer2D,
     BlendMode,
+    Clock,
+    Vector2,
+    Color,
     buildCircle,
     buildRing,
     buildStar,
-    buildHeart,
+    buildDroplet,
     buildHelix,
     buildPolygon,
     buildStrokeGeometry,
+    buildTriangle,
 };
