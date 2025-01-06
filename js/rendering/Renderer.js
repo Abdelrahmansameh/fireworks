@@ -1,4 +1,3 @@
-// Vector2 and Color Classes
 class Vector2 {
     constructor(x = 0, y = 0) {
         this.x = x;
@@ -591,7 +590,7 @@ function buildDroplet(scale = 1, steps = 100) {
             5 * Math.cos(2 * t) -
             2 * Math.cos(3 * t) -
             Math.cos(4 * t);
-        coords.push(x * scale * 0.2, -y * scale * 0.2);
+        coords.push(x * scale * 0.2, y * scale * 0.2); // Removed the negation on y
     }
     coords.push(coords[0], coords[1]);
     const triIndices = earcut(coords, null, 2);
@@ -606,7 +605,7 @@ function buildTriangle(base = 1, height = 2) {
 
     coords.push(-base / 2, 0);
     coords.push(base / 2, 0);
-    coords.push(0, -height);
+    coords.push(0, height); // Removed the negation on y
 
     const triIndices = earcut(coords, null, 2);
     return {
@@ -681,9 +680,6 @@ function buildStrokeGeometry(points, strokeWidth = 5) {
     };
 }
 
-/*************************************************************
- * 3) Data Structures for Normal & Instanced
- *************************************************************/
 const BlendMode = {
     NORMAL: 'normal',
     ADDITIVE: 'additive',
@@ -1021,9 +1017,7 @@ class Renderer2D {
         }
     }
 
-    /****************************************
-     * The main rendering
-     ****************************************/
+
     drawFrame() {
         this._resizeIfNeeded();
         const gl = this.gl;
@@ -1031,27 +1025,23 @@ class Renderer2D {
         gl.clearColor(0, 0, 0, 1);
         gl.clear(gl.COLOR_BUFFER_BIT);
 
-        // Compute the orthographic bounds based on cameraX, cameraY, cameraZoom
-        const left = this.cameraX;
-        const right = this.cameraX + this.canvas.width / this.cameraZoom;
-        const top = this.cameraY;
-        const bottom = this.cameraY + this.canvas.height / this.cameraZoom;
+        const left = this.cameraX - (this.canvas.width / 2) / this.cameraZoom;
+        const right = this.cameraX + (this.canvas.width / 2) / this.cameraZoom;
+        const top = this.cameraY + (this.canvas.height / 2) / this.cameraZoom;
+        const bottom = this.cameraY - (this.canvas.height / 2) / this.cameraZoom;
         // near/far are -1,1
         this._projectionMatrix = this._makeOrtho(left, right, bottom, top, -1, 1);
 
-        // gather all items (normal or instanced) for zIndex sort
+        // zIndex sort
         const items = [];
-        // normal shapes
         for (const sh of this.normalShapes) {
             items.push({ type: 'normal', data: sh, zIndex: sh.zIndex, blend: sh.blendMode });
         }
-        // instanced groups
         for (const grp of this.instancedGroups) {
             items.push({ type: 'instanced', data: grp, zIndex: grp.zIndex, blend: grp.blendMode });
         }
         items.sort((a, b) => a.zIndex - b.zIndex);
 
-        // draw them in order
         for (const item of items) {
             if (item.type === 'normal') {
                 this._drawNormalShape(item.data);
@@ -1061,9 +1051,7 @@ class Renderer2D {
         }
     }
 
-    /****************************************
-     * Internal: draw a normal shape
-     ****************************************/
+
     _drawNormalShape(shape) {
         const gl = this.gl;
         // set blend
@@ -1084,7 +1072,6 @@ class Renderer2D {
         }
         gl.useProgram(this.normalProgram);
 
-        // compute transform => 4x4
         const model = this._computeModelMatrix(shape.position, shape.rotation, shape.scale);
         const mvp = this._multiplyMat4(this._projectionMatrix, model);
 
@@ -1106,14 +1093,11 @@ class Renderer2D {
         }
     }
 
-    /****************************************
-     * Internal: draw an instanced group
-     ****************************************/
+
     _drawInstancedGroup(group) {
         const gl = this.gl;
         if (group.instanceCount <= 0) return;
 
-        // set blend
         switch (group.blendMode) {
             case BlendMode.ADDITIVE:
                 gl.blendFunc(gl.SRC_ALPHA, gl.ONE);
@@ -1159,9 +1143,6 @@ class Renderer2D {
         gl.bindVertexArray(null);
     }
 
-    /****************************************
-     * Internal shape buffer uploads
-     ****************************************/
     _uploadShapeBuffers(shape) {
         const gl = this.gl;
         shape._vbo = gl.createBuffer();
@@ -1188,9 +1169,6 @@ class Renderer2D {
         gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, shape.indices, gl.STATIC_DRAW);
     }
 
-    /****************************************
-     * Internal Shaders
-     ****************************************/
     _normalVS() {
         return `
         attribute vec2 a_position;
@@ -1271,9 +1249,7 @@ class Renderer2D {
         return sh;
     }
 
-    /****************************************
-     * Camera & Matrix
-     ****************************************/
+
     _makeOrtho(left, right, bottom, top, near, far) {
         const out = new Float32Array(16);
         const lr = 1 / (left - right);
@@ -1338,15 +1314,20 @@ class Renderer2D {
         return out;
     }
 
-    /****************************************
-     * Resize
-     ****************************************/
     _resizeIfNeeded() {
-        const w = this.canvas.clientWidth | 0;
-        const h = this.canvas.clientHeight | 0;
-        if (this.canvas.width !== w || this.canvas.height !== h) {
-            this.canvas.width = w;
-            this.canvas.height = h;
+        const gl = this.gl;
+        const width = this.canvas.clientWidth;
+        const height = this.canvas.clientHeight;
+
+        if (this.canvas.width !== width || this.canvas.height !== height) {
+            this.canvas.width = width;
+            this.canvas.height = height;
+
+            const left = this.cameraX - (this.canvas.width / 2) / this.cameraZoom;
+            const right = this.cameraX + (this.canvas.width / 2) / this.cameraZoom;
+            const top = this.cameraY + (this.canvas.height / 2) / this.cameraZoom;
+            const bottom = this.cameraY - (this.canvas.height / 2) / this.cameraZoom;
+            this._projectionMatrix = this._makeOrtho(left, right, bottom, top, -1, 1);
         }
     }
 }
