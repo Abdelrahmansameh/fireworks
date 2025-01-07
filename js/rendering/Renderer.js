@@ -4,7 +4,7 @@ class Vector2 {
         this.y = y;
     }
 
-    set (x, y) {
+    set(x, y) {
         this.x = x;
         this.y = y;
     }
@@ -24,10 +24,10 @@ class Vector2 {
     }
 
     scale(scalar) {
-       this.x *= scalar; 
-       this.y *= scalar;
+        this.x *= scalar;
+        this.y *= scalar;
 
-       return this;
+        return this;
     }
 
     addScaledVector(v, scalar) {
@@ -45,9 +45,9 @@ class Vector2 {
         if (len === 0) return new Vector2(0, 0);
         let normalX = this.x / len;
         let normalY = this.y / len;
-        if (Math.abs(normalX) < 0.000001) 
+        if (Math.abs(normalX) < 0.000001)
             normalX = 0;
-        if (Math.abs(normalY) < 0.000001) 
+        if (Math.abs(normalY) < 0.000001)
             normalY = 0;
         this.x = normalX;
         this.y = normalY;
@@ -71,7 +71,7 @@ class Vector2 {
     getAngle() {
         return Math.atan2(this.y, this.x);
     }
-    
+
     static dot(v1, v2) {
         return v1.x * v2.x + v1.y * v2.y;
     }
@@ -99,6 +99,10 @@ class Color {
         this.a = a;
     }
 
+    setAlpha(a) {
+        this.a = a;
+    }
+
     multiply(scalar) {
         return new Color(
             this.r * scalar,
@@ -118,7 +122,7 @@ class Color {
         this.b = other.b;
         this.a = other.a;
     }
-    
+
     toArray() {
         return [this.r, this.g, this.b, this.a];
     }
@@ -680,6 +684,58 @@ function buildStrokeGeometry(points, strokeWidth = 5) {
     };
 }
 
+function invertMatrix(m) {
+    const inv = new Float32Array(16);
+    const det =
+        m[0] * m[5] * m[10] * m[15] -
+        m[0] * m[5] * m[11] * m[14] -
+        m[0] * m[9] * m[6] * m[15] +
+        m[0] * m[9] * m[7] * m[14] +
+        m[0] * m[13] * m[6] * m[11] -
+        m[0] * m[13] * m[7] * m[10] -
+        m[4] * m[1] * m[10] * m[15] +
+        m[4] * m[1] * m[11] * m[14] +
+        m[4] * m[9] * m[2] * m[15] -
+        m[4] * m[9] * m[3] * m[14] -
+        m[4] * m[13] * m[2] * m[11] +
+        m[4] * m[13] * m[3] * m[10] +
+        m[8] * m[1] * m[6] * m[15] -
+        m[8] * m[1] * m[7] * m[14] -
+        m[8] * m[5] * m[2] * m[15] +
+        m[8] * m[5] * m[3] * m[14] +
+        m[8] * m[13] * m[2] * m[7] -
+        m[8] * m[13] * m[3] * m[6] -
+        m[12] * m[1] * m[6] * m[11] +
+        m[12] * m[1] * m[7] * m[10] +
+        m[12] * m[5] * m[2] * m[11] -
+        m[12] * m[5] * m[3] * m[10] -
+        m[12] * m[9] * m[2] * m[7] +
+        m[12] * m[9] * m[3] * m[6];
+
+    if (det === 0) return null;
+
+    const invDet = 1 / det;
+
+    inv[0] = (m[5] * m[10] * m[15] - m[5] * m[11] * m[14] - m[9] * m[6] * m[15] + m[9] * m[7] * m[14] + m[13] * m[6] * m[11] - m[13] * m[7] * m[10]) * invDet;
+    inv[1] = (-m[1] * m[10] * m[15] + m[1] * m[11] * m[14] + m[9] * m[2] * m[15] - m[9] * m[3] * m[14] - m[13] * m[2] * m[11] + m[13] * m[3] * m[10]) * invDet;
+    inv[2] = (m[1] * m[6] * m[15] - m[1] * m[7] * m[14] - m[5] * m[2] * m[15] + m[5] * m[3] * m[14] + m[13] * m[2] * m[7] - m[13] * m[3] * m[6]) * invDet;
+    inv[3] = (-m[1] * m[6] * m[11] + m[1] * m[7] * m[10] + m[5] * m[2] * m[11] - m[5] * m[3] * m[10] - m[9] * m[2] * m[7] + m[9] * m[3] * m[6]) * invDet;
+    inv[4] = (-m[4] * m[10] * m[15] + m[4] * m[11] * m[14] + m[8] * m[6] * m[15] - m[8] * m[7] * m[14] - m[12] * m[6] * m[11] + m[12] * m[7] * m[10]) * invDet;
+    inv[5] = (m[0] * m[10] * m[15] - m[0] * m[11] * m[14] - m[8] * m[2] * m[15] + m[8] * m[3] * m[14] + m[12] * m[2] * m[11] - m[12] * m[3] * m[10]) * invDet;
+    inv[6] = (-m[0] * m[6] * m[15] + m[0] * m[7] * m[14] + m[4] * m[2] * m[15] - m[4] * m[3] * m[14] - m[12] * m[2] * m[7] + m[12] * m[3] * m[6]) * invDet;
+    inv[7] = (m[0] * m[6] * m[11] - m[0] * m[7] * m[10] - m[4] * m[2] * m[11] + m[4] * m[3] * m[10] + m[8] * m[2] * m[7] - m[8] * m[3] * m[6]) * invDet;
+    inv[8] = (m[4] * m[9] * m[15] - m[4] * m[11] * m[13] - m[8] * m[5] * m[15] + m[8] * m[7] * m[13] + m[12] * m[5] * m[11] - m[12] * m[7] * m[9]) * invDet;
+    inv[9] = (-m[0] * m[9] * m[15] + m[0] * m[11] * m[13] + m[8] * m[1] * m[15] - m[8] * m[3] * m[13] - m[12] * m[1] * m[11] + m[12] * m[3] * m[9]) * invDet;
+    inv[10] = (m[0] * m[5] * m[15] - m[0] * m[7] * m[13] - m[4] * m[1] * m[15] + m[4] * m[3] * m[13] + m[12] * m[1] * m[7] - m[12] * m[3] * m[5]) * invDet;
+    inv[11] = (-m[0] * m[5] * m[11] + m[0] * m[7] * m[9] + m[4] * m[1] * m[11] - m[4] * m[3] * m[9] - m[8] * m[1] * m[7] + m[8] * m[3] * m[5]) * invDet;
+    inv[12] = (-m[4] * m[9] * m[14] + m[4] * m[10] * m[13] + m[8] * m[5] * m[14] - m[8] * m[6] * m[13] - m[12] * m[5] * m[10] + m[12] * m[6] * m[9]) * invDet;
+    inv[13] = (m[0] * m[9] * m[14] - m[0] * m[10] * m[13] - m[8] * m[1] * m[14] + m[8] * m[2] * m[13] + m[12] * m[1] * m[10] - m[12] * m[2] * m[9]) * invDet;
+    inv[14] = (-m[0] * m[5] * m[14] + m[0] * m[6] * m[13] + m[4] * m[1] * m[14] - m[4] * m[2] * m[13] - m[12] * m[1] * m[6] + m[12] * m[2] * m[5]) * invDet;
+    inv[15] = (m[0] * m[5] * m[10] - m[0] * m[6] * m[9] - m[4] * m[1] * m[10] + m[4] * m[2] * m[9] + m[8] * m[1] * m[6] - m[8] * m[2] * m[5]) * invDet;
+
+    return inv;
+}
+
 const BlendMode = {
     NORMAL: 'normal',
     ADDITIVE: 'additive',
@@ -691,7 +747,7 @@ class Shape2D {
     constructor({
         vertices = null,
         indices = null,
-        color = new Color(1, 1, 1, 1), 
+        color = new Color(1, 1, 1, 1),
         position = new Vector2(0, 0),
         rotation = 0,
         scale = new Vector2(1, 1),
@@ -701,7 +757,7 @@ class Shape2D {
     }) {
         this.vertices = vertices;
         this.indices = indices;
-        this.color = color.clone(); 
+        this.color = color.clone();
         this.position = position.clone();
         this.rotation = rotation;
         this.scale = scale.clone();
@@ -718,7 +774,7 @@ class Shape2D {
 
 class InstancedGroup {
     constructor({ baseGeometry, maxInstances = 10000, zIndex = 0, blendMode = BlendMode.NORMAL }) {
-        this.baseGeometry = baseGeometry; 
+        this.baseGeometry = baseGeometry;
         this.maxInstances = maxInstances;
         this.zIndex = zIndex;
         this.blendMode = blendMode;
@@ -732,7 +788,7 @@ class InstancedGroup {
         this._instanceBuffer = null;
         this._vao = null;
     }
-    
+
     clear() {
         this.instanceCount = 0;
     }
@@ -760,8 +816,7 @@ class InstancedGroup {
         if (changes.scale !== undefined) this.updateInstanceScale(index, changes.scale.clone());
     }
 
-
-     removeInstance(index) {
+    removeInstance(index) {
         if (index < 0 || index >= this.instanceCount) {
             console.warn('Instance index out of bounds');
             return;
@@ -770,7 +825,7 @@ class InstancedGroup {
         const lastIndex = this.instanceCount - 1;
 
         //swap with last instance
-        
+
         if (index !== lastIndex) {
             const targetBase = index * this.instanceStrideFloats;
             const lastBase = lastIndex * this.instanceStrideFloats;
@@ -837,13 +892,33 @@ class InstancedGroup {
             console.warn('Instance index out of bounds');
             return;
         }
-        const base = index * this.instanceStrideFloats + 5; 
+        const base = index * this.instanceStrideFloats + 5;
         this.instanceData[base] = color.r;
         this.instanceData[base + 1] = color.g;
         this.instanceData[base + 2] = color.b;
         this.instanceData[base + 3] = color.a;
     }
 
+    moveInstance(index, delta) {
+        if (index < 0 || index >= this.instanceCount) {
+            console.warn('Instance index out of bounds');
+            return;
+        }
+
+        const base = index * this.instanceStrideFloats;
+        this.instanceData[base + 0] += delta.x;
+        this.instanceData[base + 1] += delta.y;
+    }
+
+    rotateInstance(index, delta) {
+        if (index < 0 || index >= this.instanceCount) {
+            console.warn('Instance index out of bounds');
+            return;
+        }
+
+        const base = index * this.instanceStrideFloats;
+        this.instanceData[base + 2] += delta;
+    }
 }
 
 class Renderer2D {
@@ -857,7 +932,7 @@ class Renderer2D {
         if (opts.height) canvas.height = opts.height;
 
         this.normalShapes = [];
-        this.instancedGroups = []; 
+        this.instancedGroups = [];
 
         this.cameraX = 0;
         this.cameraY = 0;
@@ -885,6 +960,16 @@ class Renderer2D {
         this.cameraX = x;
         this.cameraY = y;
         this.cameraZoom = zoom;
+        this._updateProjectionMatrix();
+    }
+
+    _updateProjectionMatrix() {
+        const left = this.cameraX - (this.canvas.width / 2) / this.cameraZoom;
+        const right = this.cameraX + (this.canvas.width / 2) / this.cameraZoom;
+        const bottom = this.cameraY - (this.canvas.height / 2) / this.cameraZoom;
+        const top = this.cameraY + (this.canvas.height / 2) / this.cameraZoom;
+        this._projectionMatrix = this._makeOrtho(left, right, bottom, top, -1, 1);
+        this._inverseProjectionMatrix = invertMatrix(this._projectionMatrix);
     }
 
     createNormalShape(params) {
@@ -951,7 +1036,7 @@ class Renderer2D {
         const group = new InstancedGroup({ baseGeometry: baseGeom, maxInstances, zIndex, blendMode });
         group._instanceBuffer = gl.createBuffer();
         gl.bindBuffer(gl.ARRAY_BUFFER, group._instanceBuffer);
-        const totalBytes = maxInstances * 9 * 4; 
+        const totalBytes = maxInstances * 9 * 4;
         gl.bufferData(gl.ARRAY_BUFFER, totalBytes, gl.DYNAMIC_DRAW);
 
         group._vao = gl.createVertexArray();
@@ -1025,12 +1110,7 @@ class Renderer2D {
         gl.clearColor(0, 0, 0, 1);
         gl.clear(gl.COLOR_BUFFER_BIT);
 
-        const left = this.cameraX - (this.canvas.width / 2) / this.cameraZoom;
-        const right = this.cameraX + (this.canvas.width / 2) / this.cameraZoom;
-        const top = this.cameraY + (this.canvas.height / 2) / this.cameraZoom;
-        const bottom = this.cameraY - (this.canvas.height / 2) / this.cameraZoom;
-        // near/far are -1,1
-        this._projectionMatrix = this._makeOrtho(left, right, bottom, top, -1, 1);
+        this._updateProjectionMatrix();
 
         // zIndex sort
         const items = [];
@@ -1051,6 +1131,25 @@ class Renderer2D {
         }
     }
 
+    screenToCanvas(eventX, eventY) {
+        const rect = this.canvas.getBoundingClientRect();
+        const mouseX = eventX - rect.left;
+        const mouseY = eventY - rect.top;
+
+        const dpr = window.devicePixelRatio || 1;
+        const x = mouseX * dpr;
+        const y = mouseY * dpr;
+
+        const canvasWidth = this.canvas.width;
+        const canvasHeight = this.canvas.height;
+        const centerX = canvasWidth / 2;
+        const centerY = canvasHeight / 2;
+
+        const worldX = (x - centerX) / this.cameraZoom + this.cameraX;
+        const worldY = (centerY - y) / this.cameraZoom + this.cameraY;
+
+        return new Vector2(worldX, worldY);
+    }
 
     _drawNormalShape(shape) {
         const gl = this.gl;
@@ -1316,18 +1415,14 @@ class Renderer2D {
 
     _resizeIfNeeded() {
         const gl = this.gl;
-        const width = this.canvas.clientWidth;
-        const height = this.canvas.clientHeight;
+        const dpr = window.devicePixelRatio || 1;
+        const width = Math.floor(this.canvas.clientWidth * dpr);
+        const height = Math.floor(this.canvas.clientHeight * dpr);
 
         if (this.canvas.width !== width || this.canvas.height !== height) {
             this.canvas.width = width;
             this.canvas.height = height;
-
-            const left = this.cameraX - (this.canvas.width / 2) / this.cameraZoom;
-            const right = this.cameraX + (this.canvas.width / 2) / this.cameraZoom;
-            const top = this.cameraY + (this.canvas.height / 2) / this.cameraZoom;
-            const bottom = this.cameraY - (this.canvas.height / 2) / this.cameraZoom;
-            this._projectionMatrix = this._makeOrtho(left, right, bottom, top, -1, 1);
+            this._updateProjectionMatrix();
         }
     }
 }

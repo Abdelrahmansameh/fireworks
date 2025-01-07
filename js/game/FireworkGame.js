@@ -142,6 +142,7 @@ class FireworkGame {
         });
 
         const linePoints = [
+            0, 0,
             200, 500,
             200, 450,
             300, 470,
@@ -154,8 +155,8 @@ class FireworkGame {
             indices: strokeData.indices,
             color: new Renderer2D.Color(1, 0, 0, 1),
             position: new Renderer2D.Vector2(0, 0),
-            rotation: Math.random() * Math.PI * 2,
-            scale: new Renderer2D.Vector2(1, 1),
+            rotation: Math.PI * 2,
+            scale: new Renderer2D.Vector2(10, 10),
             zIndex: 0,
             blendMode: Renderer2D.BlendMode.ADDITIVE,
             isStroke: true
@@ -183,7 +184,16 @@ class FireworkGame {
             blendMode: Renderer2D.BlendMode.ADDITIVE
         });
 
-
+        for (let i = 0; i < 50000; i++) {
+            const x = (Math.random() - 0.5) * 100;
+            const y = (Math.random() - 0.5) * 100;
+            const rot = Math.random() * Math.PI * 2;
+            const s = 2 + Math.random() * 20;
+            const r = Math.random();    
+            const g = Math.random();
+            const b = Math.random();
+            this.starGroup.addInstance(new Renderer2D.Vector2(x, y), rot, new Renderer2D.Vector2(s, s), new Renderer2D.Color(r, g, b, 0.8));
+        }
 
         //  game components
         this.particleSystem = new InstancedParticleSystem(this.scene, this.renderer2D, 50000, this.profiler);
@@ -301,7 +311,8 @@ class FireworkGame {
     }
 
     isPositionInsideUI(x, y) {
-        return document.elementFromPoint(x, y) !== this.renderer.domElement;
+        const gameCanvas = document.getElementById('game-canvas');
+        return document.elementFromPoint(x, y) !== gameCanvas;
     }
 
     isClickInsideUI(event) {
@@ -309,18 +320,7 @@ class FireworkGame {
     }
 
     screenToWorld(x, y) {
-        const mouse = new THREE.Vector2();
-        mouse.x = (x / window.innerWidth) * 2 - 1;
-        mouse.y = - (y / window.innerHeight) * 2 + 1;
-
-        const raycaster = new THREE.Raycaster();
-        raycaster.setFromCamera(mouse, this.camera);
-
-        const t = - (this.camera.position.z) / raycaster.ray.direction.z;
-        const worldPos = new THREE.Vector3();
-        worldPos.copy(raycaster.ray.direction).multiplyScalar(t).add(this.camera.position);
-
-        return worldPos;
+        return this.renderer2D.screenToCanvas(x, y);
     }
 
     getViewBounds() {
@@ -526,18 +526,14 @@ class FireworkGame {
         this.starShape.rotation -= 0.02;
         this.renderer2D.updateNormalShape(this.starShape, { rotation: this.starShape.rotation });
 
+        /*for (let i = 0; i < 50000; i++) {
+            const x = (Math.random() - 0.5) * 2000;
+            const y = (Math.random() - 0.5) * 2000;
+            const rot = Math.random() * Math.PI * 0.1;
+            this.starGroup.moveInstance(i, new Renderer2D.Vector2(x, y).scale(delta));
+            this.starGroup.rotateInstance(i, rot);
+        }*/
         this.starGroup.clear();
-        for (let i = 0; i < 10000; i++) {
-            const x = (Math.random() - 0.5) * 3000 + 400;
-            const y = (Math.random() - 0.5) * 3000 + 300;
-            const rot = Math.random() * Math.PI * 2;
-            const s = 2 + Math.random() * 6;
-            const r = Math.random();
-            const g = Math.random();
-            const b = Math.random();
-            this.starGroup.addInstance(new Renderer2D.Vector2(x, y), rot, new Renderer2D.Vector2(s, s), new Renderer2D.Color(r, g, b, 0.8));
-        }
-
 
         this.renderer2D.drawFrame();
 

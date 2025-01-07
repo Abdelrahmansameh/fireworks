@@ -17,9 +17,8 @@ class UIManager {
     }
 
     initializeRendererEvents() {
-        if (this.game.renderer && this.game.renderer.domElement) {
-            this.game.renderer.domElement.addEventListener('pointerdown', this.handlePointerDown, { passive: false });
-        }
+        const gameCanvas = document.getElementById('game-canvas');
+        gameCanvas.addEventListener('pointerdown', this.handlePointerDown, { passive: false });
     }
 
     bindUIEvents() {
@@ -103,7 +102,8 @@ class UIManager {
             this.game.saveCurrentRecipeComponents();
         });
 
-        this.game.renderer.domElement.addEventListener('pointerdown', (e) => {
+        const gameContainer = document.getElementById('game-canvas');
+        gameContainer.addEventListener('pointerdown', (e) => {
             if (!this.game.isClickInsideUI(e)) {
                 e.preventDefault();
                 if (e.pointerType === 'touch') {
@@ -219,19 +219,9 @@ class UIManager {
                 e.target.setPointerCapture(e.pointerId);
             }
 
-            const x = e.clientX;
-            const y = e.clientY;
-            const mouse = new THREE.Vector2();
-            mouse.x = (x / window.innerWidth) * 2 - 1;
-            mouse.y = - (y / window.innerHeight) * 2 + 1;
+            const intersectlauncher = false;
 
-            const raycaster = new THREE.Raycaster();
-            raycaster.setFromCamera(mouse, this.game.camera);
-
-            const launcherMeshes = this.game.levels[this.game.currentLevel].autoLaunchers.map(launcher => launcher.mesh);
-            const intersects = raycaster.intersectObjects(launcherMeshes);
-
-            if (intersects.length > 0) {
+            if (intersectlauncher) {
                 const intersectedMesh = intersects[0].object;
                 const launcherIndex = this.game.levels[this.game.currentLevel].autoLaunchers.findIndex(launcher => launcher.mesh === intersectedMesh);
                 if (launcherIndex !== -1) {
@@ -255,7 +245,7 @@ class UIManager {
                 }
             }
 
-            const worldPos = this.screenToWorld(x, y);
+            const worldPos = this.game.screenToWorld(e.clientX, e.clientY);
             this.handlePointerClick(worldPos, e);
         }
     }
@@ -265,16 +255,9 @@ class UIManager {
             return;
         }
 
-        const raycaster = new THREE.Raycaster();
-        const mouse = new THREE.Vector2();
-        mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-        mouse.y = - (event.clientY / window.innerHeight) * 2 + 1;
-        raycaster.setFromCamera(mouse, this.game.camera);
+        const intersectlauncher = false;
 
-        const launcherMeshes = this.game.levels[this.game.currentLevel].autoLaunchers.map(launcher => launcher.mesh);
-        const intersects = raycaster.intersectObjects(launcherMeshes);
-        
-        if (intersects.length > 0) {
+        if (intersectlauncher) {
             const clickedMesh = intersects[0].object;
             const launcherIndex = this.game.levels[this.game.currentLevel].autoLaunchers.findIndex(launcher => launcher.mesh === clickedMesh);
             if (launcherIndex !== -1) {
@@ -315,8 +298,6 @@ class UIManager {
             document.addEventListener('pointercancel', this.pointerUpHandler);
             return;
         }
-
-        this.game.launchFireworkAt(worldPos.x);
     }
 
     pointerMoveHandler(e) {
@@ -509,22 +490,8 @@ class UIManager {
     }
 
     isPositionInsideUI(x, y) {
-        return document.elementFromPoint(x, y) !== this.game.renderer.domElement;
-    }
-
-    screenToWorld(x, y) {
-        const mouse = new THREE.Vector2();
-        mouse.x = (x / window.innerWidth) * 2 - 1;
-        mouse.y = - (y / window.innerHeight) * 2 + 1;
-
-        const raycaster = new THREE.Raycaster();
-        raycaster.setFromCamera(mouse, this.game.camera);
-
-        const t = - (this.game.camera.position.z) / raycaster.ray.direction.z;
-        const worldPos = new THREE.Vector3();
-        worldPos.copy(raycaster.ray.direction).multiplyScalar(t).add(this.game.camera.position);
-
-        return worldPos;
+        const gameContainer = document.getElementById('game-canvas');
+        return document.elementFromPoint(x, y) !== gameContainer;
     }
 
     updateUI(sparklesCount, totalSparklesRate, levelSparklesRate, fireworkCount, autoLauncherLevel, trailEffect, nextCost) {
@@ -637,7 +604,7 @@ class UIManager {
                 </div>
                 <div class="recipes-option">
                     <label>Lifetime:</label>
-                    <input type="range" class="lifetime-select" data-index="${index}" min="1.5" max="5" step="0.1" value="${component.lifetime}">
+                    <input type="range" class="lifetime-select" data-index="${index}" min="1.5" max="5" step="0.1" value=1.5"${component.lifetime}">
                 </div>
                 <div class="recipes-option">
                     <label>Spread:</label>

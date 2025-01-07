@@ -32,7 +32,7 @@ class InstancedParticleSystem {
         this.frictions = {};
 
         const geometries = {
-            sphere: Renderer2D.buildCircle(50, 32),
+            sphere: Renderer2D.buildCircle(1),
             star: Renderer2D.buildStar(),
             ring: Renderer2D.buildRing(),
             crystalDroplet: Renderer2D.buildDroplet(),
@@ -254,7 +254,7 @@ class InstancedParticleSystem {
 
         this.meshes[shape].addInstance(position, this.rotations[shape][index], scale, color);
 
-        this.updateParticleTransform(shape, index);
+        this.updateParticle(shape, index);
 
         /* if (enableTrail) {
              this.createTrailForParticle(shape, index, position, velocity, color);
@@ -264,12 +264,12 @@ class InstancedParticleSystem {
         return index;
     }
 
-    updateParticleTransform(shape, index) {
+    updateParticle(shape, index) {
         const position = this.positions[shape][index];
         const rotation = this.rotations[shape][index];
         const scale = this.scales[shape][index];
-        const color = this.colors[shape][index];
-
+        let color = this.colors[shape][index];
+        color.setAlpha(this.alphas[shape][index]);
         this.meshes[shape].updateInstance(index, {
             position: position,
             rotation: rotation,
@@ -290,7 +290,7 @@ class InstancedParticleSystem {
             for (let i = 0; i < activeCount; i++) {
                 this.lifetimes[shape][i] -= delta;
 
-                if (this.lifetimes[shape][i] > 0) {
+                if (this.lifetimes[shape][i] > 0) { 
                     if (i !== nextFreeIndex) {
                         this.profiler.startFunction('shiftParticleMatrix');
                         this.positions[shape][nextFreeIndex].copy(this.positions[shape][i]);
@@ -335,9 +335,9 @@ class InstancedParticleSystem {
                         this.initialLifetimes[shape][nextFreeIndex];
                     this.alphas[shape][nextFreeIndex] = Math.pow(normalizedLifetime, 3);
 
-                    this.profiler.startFunction('updateParticleTransform');
-                    this.updateParticleTransform(shape, nextFreeIndex);
-                    this.profiler.endFunction('updateParticleTransform');
+                    this.profiler.startFunction('updateParticle');
+                    this.updateParticle(shape, nextFreeIndex);
+                    this.profiler.endFunction('updateParticle');
 
                     this.profiler.startFunction('updateParticleTrail');
 
@@ -366,6 +366,7 @@ class InstancedParticleSystem {
                     nextFreeIndex++;
                 } else {
                     this.removeTrail(shape, i);
+                    this.meshes[shape].removeInstance(i);
                 }
             }
 
