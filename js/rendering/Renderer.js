@@ -809,13 +809,6 @@ class InstancedGroup {
         this.instanceCount++;
     }
 
-    updateInstance(index, changes) {
-        if (changes.color !== undefined) this.updateInstanceColor(index, changes.color.clone());
-        if (changes.position !== undefined) this.updateInstancePosition(index, changes.position.clone());
-        if (changes.rotation !== undefined) this.updateInstanceRotation(index, changes.rotation);
-        if (changes.scale !== undefined) this.updateInstanceScale(index, changes.scale.clone());
-    }
-
     removeInstance(index) {
         if (index < 0 || index >= this.instanceCount) {
             console.warn('Instance index out of bounds');
@@ -858,14 +851,15 @@ class InstancedGroup {
         this.instanceCount--;
     }
 
-    updateInstancePosition(index, position) {
+
+    updateInstancePosition(index, x, y) {
         if (index < 0 || index >= this.instanceCount) {
             console.warn('Instance index out of bounds');
             return;
         }
         const base = index * this.instanceStrideFloats;
-        this.instanceData[base + 0] = position.x;
-        this.instanceData[base + 1] = position.y;
+        this.instanceData[base + 0] = x;
+        this.instanceData[base + 1] = y;
     }
 
     updateInstanceRotation(index, rotation) {
@@ -877,26 +871,26 @@ class InstancedGroup {
         this.instanceData[base + 2] = rotation;
     }
 
-    updateInstanceScale(index, scale) {
+    updateInstanceScale(index, scaleX, scaleY) {
         if (index < 0 || index >= this.instanceCount) {
             console.warn('Instance index out of bounds');
             return;
         }
         const base = index * this.instanceStrideFloats;
-        this.instanceData[base + 3] = scale.x;
-        this.instanceData[base + 4] = scale.y;
+        this.instanceData[base + 3] = scaleX;
+        this.instanceData[base + 4] = scaleY;
     }
 
-    updateInstanceColor(index, color) {
+    updateInstanceColor(index, colorR, colorG, colorB, colorA) {
         if (index < 0 || index >= this.instanceCount) {
             console.warn('Instance index out of bounds');
             return;
         }
         const base = index * this.instanceStrideFloats + 5;
-        this.instanceData[base] = color.r;
-        this.instanceData[base + 1] = color.g;
-        this.instanceData[base + 2] = color.b;
-        this.instanceData[base + 3] = color.a;
+        this.instanceData[base] = colorR;
+        this.instanceData[base + 1] = colorG;
+        this.instanceData[base + 2] = colorB;
+        this.instanceData[base + 3] = colorA;
     }
 
     moveInstance(index, delta) {

@@ -1,20 +1,20 @@
 export default class GameProfiler {
     constructor() {
         this.config = {
-            minFrameTimeMs: 16.67, 
-            minFunctionTimeMs: 0.1, 
-            maxFramesToStore: 1000, 
-            significantDigits: 3 
+            minFrameTimeMs: 10.67,
+            minFunctionTimeMs: 0.01,
+            maxFramesToStore: 1000,
+            significantDigits: 3
         };
 
         this.frameData = [];
         this.isRecording = false;
-        this.frameThreshold = this.config.minFrameTimeMs; 
+        this.frameThreshold = this.config.minFrameTimeMs;
         this.currentFrame = null;
         this.memorySnapshots = [];
         this.functionStack = [];
         this.startTime = null;
-        
+
         // Bind methods
         this.startFrame = this.startFrame.bind(this);
         this.endFrame = this.endFrame.bind(this);
@@ -47,29 +47,29 @@ export default class GameProfiler {
 
     endFrame() {
         if (!this.currentFrame) return;
-        
+
         this.currentFrame.totalTime = performance.now() - this.currentFrame.timestamp;
-        
-        if (this.currentFrame.totalTime >= this.config.minFrameTimeMs) {
-            this.frameData.push({
-                timestamp: this.currentFrame.timestamp,
-                totalTime: this.currentFrame.totalTime,
-                functions: Object.fromEntries(this.currentFrame.functions),
-                memory: this.currentFrame.memory
-            });
-            
-            // Trim old frames 
-            while (this.frameData.length > this.config.maxFramesToStore) {
-                this.frameData.shift();
-            }
+
+
+        this.frameData.push({
+            timestamp: this.currentFrame.timestamp,
+            totalTime: this.currentFrame.totalTime,
+            functions: Object.fromEntries(this.currentFrame.functions),
+            memory: this.currentFrame.memory
+        });
+
+        // Trim old frames 
+        while (this.frameData.length > this.config.maxFramesToStore) {
+            this.frameData.shift();
         }
-        
+
+
         this.currentFrame = null;
     }
 
     startFunction(name) {
         if (!this.currentFrame) return;
-        
+
         const funcData = this.currentFrame.functions.get(name) || {
             totalTime: 0,
             timePerFrame: 0,
@@ -78,25 +78,25 @@ export default class GameProfiler {
             parents: new Set(),
             startTime: 0
         };
-        
+
         funcData.startTime = performance.now();
         funcData.callCount++;
-        
+
         this.currentFrame.functions.set(name, funcData);
         this.functionStack.push(name);
     }
 
     endFunction(name) {
         if (!this.currentFrame) return;
-        
+
         const endTime = performance.now();
         const funcData = this.currentFrame.functions.get(name);
         if (!funcData) return;
-        
+
         const elapsed = endTime - funcData.startTime;
         funcData.totalTime += elapsed;
-        funcData.timePerFrame = elapsed; 
-        
+        funcData.timePerFrame = elapsed;
+
         const stackIndex = this.functionStack.lastIndexOf(name);
         if (stackIndex > 0) {
             const parentName = this.functionStack[stackIndex - 1];
@@ -106,7 +106,7 @@ export default class GameProfiler {
                 funcData.parents.add(parentName);
             }
         }
-        
+
         this.functionStack.pop();
     }
 
@@ -115,21 +115,21 @@ export default class GameProfiler {
             this.calculateSelfTime(child);
             return sum + child.totalTime;
         }, 0);
-        
+
         node.selfTime = node.totalTime - childrenTime;
-        
+
         // Update function stats if it's not the root frame node
         if (node.name !== 'frame' && this.currentFrame.functions[node.name]) {
             this.currentFrame.functions[node.name].selfTime = node.selfTime;
         }
-        
+
         return node.selfTime;
     }
 
     getFunctionStats() {
         const stats = {};
         let frameIndex = 0;
-        
+
         this.frameData.forEach(frame => {
             Object.entries(frame.functions).forEach(([funcName, data]) => {
                 if (!stats[funcName]) {
@@ -148,10 +148,10 @@ export default class GameProfiler {
                         standardDeviation: 0,
                         children: new Set([...data.children]),
                         parents: new Set([...data.parents]),
-                        callsPerParent: new Map() 
+                        callsPerParent: new Map()
                     };
                 }
-                
+
                 const timeThisFrame = data.timePerFrame;
                 stats[funcName].totalTime += data.totalTime;
                 stats[funcName].selfTime += data.selfTime;
@@ -160,7 +160,7 @@ export default class GameProfiler {
                 stats[funcName].minTime = Math.min(stats[funcName].minTime, timeThisFrame);
                 stats[funcName].maxTime = Math.max(stats[funcName].maxTime, timeThisFrame);
                 stats[funcName].timePerFrame[frameIndex] = timeThisFrame;
-                
+
                 // Update calls per parent
                 data.parents.forEach(parent => {
                     if (!stats[funcName].callsPerParent.has(parent)) {
@@ -175,7 +175,7 @@ export default class GameProfiler {
 
         const totalFrameTime = this.frameData.reduce((acc, frame) => acc + frame.totalTime, 0);
         const totalFrames = this.frameData.length;
-        
+
         Object.keys(stats).forEach(funcName => {
             const funcStats = stats[funcName];
             funcStats.averageTime = funcStats.totalTime / funcStats.totalCalls;
@@ -183,16 +183,16 @@ export default class GameProfiler {
             funcStats.percentageOfFrame = (funcStats.totalTime / totalFrameTime) * 100;
             funcStats.percentageOfSelfFrame = (funcStats.selfTime / totalFrameTime) * 100;
             funcStats.averageCallsPerFrame = funcStats.totalCalls / totalFrames;
-            
+
             funcStats.callsPerParent.forEach((stats, parent) => {
                 stats.averageCallsPerFrame = stats / totalFrames;
             });
-            
+
             const mean = funcStats.totalTime / totalFrames;
             const squaredDiffs = funcStats.timePerFrame.map(time => Math.pow(time - mean, 2));
             const avgSquaredDiff = squaredDiffs.reduce((acc, val) => acc + val, 0) / totalFrames;
             funcStats.standardDeviation = Math.sqrt(avgSquaredDiff);
-            
+
             funcStats.children = Array.from(funcStats.children);
             funcStats.parents = Array.from(funcStats.parents);
         });
@@ -214,7 +214,7 @@ export default class GameProfiler {
     exportData() {
         const processedFrameData = this.frameData.map(frame => {
             const processedFunctions = {};
-            
+
             for (const [name, data] of Object.entries(frame.functions)) {
                 if (data.totalTime >= this.config.minFunctionTimeMs) {
                     processedFunctions[name] = {
@@ -289,7 +289,7 @@ export default class GameProfiler {
         const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
         const timestamp = new Date().toISOString();
-        
+
         const a = document.createElement('a');
         a.href = url;
         a.download = `profile_${timestamp}.json`;

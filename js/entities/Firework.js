@@ -3,10 +3,11 @@ import InstancedParticleSystem from '../particles/InstancedParticleSystem.js';
 import * as Renderer2D from '../rendering/Renderer.js';
 
 class Firework {
-    constructor(x, y, components, scene, camera, trailEffect, particleSystem) {
+    constructor(x, y, components, scene, camera, renderer, trailEffect, particleSystem) {
         this.scene = scene;
         this.camera = camera;
         this.components = components;
+        this.renderer = renderer;
         this.trailEffect = trailEffect;
         this.particleSystem = particleSystem;
         this.exploded = false;

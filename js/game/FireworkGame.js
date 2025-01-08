@@ -78,7 +78,7 @@ class FireworkGame {
 
         this.canvas2D = document.getElementById('game-canvas');
         this.renderer2D = new Renderer2D.Renderer2D(this.canvas2D, {
-            width: window.innerWidth ,
+            width: window.innerWidth,
             height: window.innerHeight
         });
 
@@ -118,7 +118,7 @@ class FireworkGame {
             this.ringShape = this.renderer2D.createNormalShape({
                 vertices: ringData.vertices,
                 indices: ringData.indices,
-                color: new Renderer2D.Color(0.2, 1, 0.2 , 1),
+                color: new Renderer2D.Color(0.2, 1, 0.2, 1),
                 position: new Renderer2D.Vector2(400, 300),
                 rotation: 0,
                 scale: new Renderer2D.Vector2(2, 1),
@@ -189,7 +189,7 @@ class FireworkGame {
             const y = (Math.random() - 0.5) * 100;
             const rot = Math.random() * Math.PI * 2;
             const s = 2 + Math.random() * 20;
-            const r = Math.random();    
+            const r = Math.random();
             const g = Math.random();
             const b = Math.random();
             this.starGroup.addInstance(new Renderer2D.Vector2(x, y), rot, new Renderer2D.Vector2(s, s), new Renderer2D.Color(r, g, b, 0.8));
@@ -401,7 +401,6 @@ class FireworkGame {
         });
 
         // Update crowd based on sparkles per second
-        this.profiler.startFunction('crowdUpdate');
         const currentSps = this.calculateTotalSparklesPerSecond();
         if (currentSps > this.lastSparklesPerSecond) {
             for (const threshold of this.crowdThresholds) {
@@ -415,16 +414,11 @@ class FireworkGame {
         }
         this.lastSparklesPerSecond = currentSps;
         this.updateCrowdDisplay();
-        this.profiler.endFunction('crowdUpdate');
 
-        this.profiler.startFunction('resourceUpdate');
         this.resourceManager.updateGoldFromCrowd(this.crowdCount);
         this.resourceManager.update();
-        this.profiler.endFunction('resourceUpdate');
 
-        this.profiler.startFunction('crowdAnimation');
         this.crowd.update(deltaTime);
-        this.profiler.endFunction('crowdAnimation');
 
         //        this.profiler.startFunction('rendering');
         //        this.renderer.render(this.scene, this.camera);
@@ -535,7 +529,9 @@ class FireworkGame {
         }*/
         this.starGroup.clear();
 
+        this.profiler.startFunction('drawFrame');
         this.renderer2D.drawFrame();
+        this.profiler.endFunction('drawFrame');
 
     }
 
@@ -558,7 +554,7 @@ class FireworkGame {
     }
 
     launch(x, y, components, trailEffect) {
-        const firework = new Firework(x, y, components, this.scene, this.camera, trailEffect, this.particleSystem);
+        const firework = new Firework(x, y, components, this.scene, this.camera, this.renderer, trailEffect, this.particleSystem);
         this.levels[this.currentLevel].fireworks.push(firework);
     }
 
@@ -1005,8 +1001,9 @@ class FireworkGame {
     }
 
     updateLevelDisplay() {
+        /*
         const levelDisplay = document.getElementById('level-display');
-        levelDisplay.textContent = `Level: ${this.currentLevel + 1}`;
+        levelDisplay.textContent = `Level: ${this.currentLevel + 1}`;*/
     }
 
     updateLevelArrows() {

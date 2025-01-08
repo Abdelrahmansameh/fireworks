@@ -8,7 +8,7 @@ class UIManager {
         this.draggingLauncher = null;
         this.lastPointerX = 0;
         this.notificationTimeout = null;
-        
+
         this.pointerMoveHandler = this.pointerMoveHandler.bind(this);
         this.pointerUpHandler = this.pointerUpHandler.bind(this);
         this.handleWheelScroll = this.handleWheelScroll.bind(this);
@@ -92,10 +92,10 @@ class UIManager {
         document.getElementById('data-tab').addEventListener('click', () => {
             this.toggleTab('data');
         });
-        document.getElementById('levels-tab').addEventListener('click', () => {
+        /*document.getElementById('levels-tab').addEventListener('click', () => {
             this.toggleTab('levels');
             this.game.updateLevelsList();
-        });
+        });*/
 
         document.getElementById('recipe-trail-effect').addEventListener('change', (e) => {
             this.game.currentTrailEffect = e.target.value;
@@ -497,28 +497,28 @@ class UIManager {
     updateUI(sparklesCount, totalSparklesRate, levelSparklesRate, fireworkCount, autoLauncherLevel, trailEffect, nextCost) {
         const sparklesElement = document.getElementById('ressource-count');
         const isCompact = sparklesElement.classList.contains('compact');
-        
+
         const formatCompactNumber = (num) => {
             if (num >= 1e9) return (num / 1e9).toFixed(1) + 'B';
             if (num >= 1e6) return (num / 1e6).toFixed(1) + 'M';
             if (num >= 1e3) return (num / 1e3).toFixed(1) + 'K';
             return num.toString();
         };
-        
+
         const sparkleTotalElements = sparklesElement.querySelectorAll('.sparkle-total');
         sparkleTotalElements.forEach(el => {
-            el.textContent = isCompact ? 
-                `${formatCompactNumber(sparklesCount)} sp` : 
+            el.textContent = isCompact ?
+                `${formatCompactNumber(sparklesCount)} sp` :
                 `${sparklesCount} sp`;
         });
-        
+
         if (isCompact) {
-            sparklesElement.querySelector('.sparkle-rate').textContent = 
+            sparklesElement.querySelector('.sparkle-rate').textContent =
                 ` (+${formatCompactNumber(totalSparklesRate)}/s)`;
         } else {
-            sparklesElement.querySelector('.total-rate').textContent = 
+            sparklesElement.querySelector('.total-rate').textContent =
                 `${totalSparklesRate} sp/s`;
-            sparklesElement.querySelector('.level-rate').textContent = 
+            sparklesElement.querySelector('.level-rate').textContent =
                 `${levelSparklesRate} sp/s`;
         }
 

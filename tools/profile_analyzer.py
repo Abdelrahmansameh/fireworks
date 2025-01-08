@@ -585,6 +585,10 @@ def generate_html_report(data):
                         <p>{avg_frame_time:.2f}ms</p>
                     </div>
                     <div class="summary-item">
+                        <h3>Average FPS</h3>
+                        <p>{1000/avg_frame_time:.2f}</p>
+                    </div>
+                    <div class="summary-item">
                         <h3>Total Frames</h3>
                         <p>{total_frames}</p>
                     </div>
