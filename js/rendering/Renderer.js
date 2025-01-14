@@ -770,6 +770,14 @@ class Shape2D {
         this._ibo = null;
         this._vertexCount = 0;
     }
+
+    setScale(scaleX, scaleY) {
+        this.scale.set(scaleX, scaleY);
+    }
+
+    setAlpha(alpha) {
+        this.color.a = alpha;
+    }
 }
 
 class InstancedGroup {
@@ -791,6 +799,10 @@ class InstancedGroup {
 
     clear() {
         this.instanceCount = 0;
+    }
+
+    getInstanceCount() {
+        return this.instanceCount;
     }
 
     addInstance(pos, rotation, scale, color) {
@@ -893,15 +905,15 @@ class InstancedGroup {
         this.instanceData[base + 3] = colorA;
     }
 
-    moveInstance(index, delta) {
+    moveInstance(index, deltaX, deltaY) {
         if (index < 0 || index >= this.instanceCount) {
             console.warn('Instance index out of bounds');
             return;
         }
 
         const base = index * this.instanceStrideFloats;
-        this.instanceData[base + 0] += delta.x;
-        this.instanceData[base + 1] += delta.y;
+        this.instanceData[base + 0] += deltaX;
+        this.instanceData[base + 1] += deltaY;
     }
 
     rotateInstance(index, delta) {

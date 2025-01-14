@@ -381,9 +381,9 @@ class FireworkGame {
                 const x = launcher.x;
                 let recipe = this.recipes[launcher.assignedRecipeIndex];
                 if (recipe) {
-                    this.launchFireworkAt(x, GAME_BOUNDS.MIN_Y, recipe.components, recipe.trailEffect);
+                    this.launchFireworkAt(x, -window.innerHeight / 2 + GAME_BOUNDS.OFFSET_MIN_Y, recipe.components, recipe.trailEffect);
                 } else {
-                    this.launchFireworkAt(x, GAME_BOUNDS.MIN_Y, this.currentRecipeComponents, this.currentTrailEffect);
+                    this.launchFireworkAt(x, -window.innerHeight / 2 + GAME_BOUNDS.OFFSET_MIN_Y, this.currentRecipeComponents, this.currentTrailEffect);
                 }
                 launcher.accumulator -= launcher.spawnInterval;
             }
@@ -543,7 +543,7 @@ class FireworkGame {
             return;
         }
 
-        const y = minY || GAME_BOUNDS.MIN_Y;
+        const y = minY || -window.innerHeight / 2 + GAME_BOUNDS.OFFSET_MIN_Y
         const effect = trailEffect || this.currentTrailEffect;
 
         this.launch(x, y, components, effect);
@@ -554,7 +554,7 @@ class FireworkGame {
     }
 
     launch(x, y, components, trailEffect) {
-        const firework = new Firework(x, y, components, this.scene, this.camera, this.renderer, trailEffect, this.particleSystem);
+        const firework = new Firework(x, y, components, this.scene, this.camera, this.renderer2D, window.innerHeight, trailEffect, this.particleSystem);
         this.levels[this.currentLevel].fireworks.push(firework);
     }
 
