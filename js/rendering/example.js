@@ -43,10 +43,10 @@ window.addEventListener('DOMContentLoaded', () => {
     const opaqueRedCircle = renderer.createNormalShape({
         vertices: redcircleData.vertices,
         indices: redcircleData.indices,
-        color: [1, 0, 0, 1], 
-        position: [100, 100],
+        color: new Renderer2D.Color(1, 0, 0, 1), 
+        position: new Renderer2D.Vector2(100, 100),
         rotation: 0,
-        scale: [1, 1],
+        scale: new Renderer2D.Vector2(1, 1),
         zIndex: -1,
         blendMode: Renderer2D.BlendMode.NORMAL,
         isStroke: false
@@ -56,10 +56,10 @@ window.addEventListener('DOMContentLoaded', () => {
     const circleShape = renderer.createNormalShape({
         vertices: circleData.vertices,
         indices: circleData.indices,
-        color: [1, 0, 0, 1], // red
-        position: [200, 200],
+        color: new Renderer2D.Color(1, 0, 0, 1), // red
+        position: new Renderer2D.Vector2(200, 200),
         rotation: 0,
-        scale: [2, 1],
+        scale: new Renderer2D.Vector2(2, 1),
         zIndex: 1,
         blendMode: Renderer2D.BlendMode.NORMAL,
         isStroke: false
@@ -69,10 +69,10 @@ window.addEventListener('DOMContentLoaded', () => {
     const ringShape = renderer.createNormalShape({
         vertices: ringData.vertices,
         indices: ringData.indices,
-        color: [0, 1, 0, 0.8], 
-        position: [400, 300],
+        color: new Renderer2D.Color(0, 1, 0, 0.8), 
+        position: new Renderer2D.Vector2(400, 300),
         rotation: 0,
-        scale: [2, 1],
+        scale: new Renderer2D.Vector2(2, 1),
         zIndex: 2,
         blendMode: Renderer2D.BlendMode.NORMAL,
         isStroke: false
@@ -82,10 +82,10 @@ window.addEventListener('DOMContentLoaded', () => {
     const starShape = renderer.createNormalShape({
         vertices: starData.vertices,
         indices: starData.indices,
-        color: [0.8, 0.8, 0.2, 0.9],
-        position: [600, 200],
+        color: new Renderer2D.Color(0.8, 0.8, 0.2, 0.9),
+        position: new Renderer2D.Vector2(600, 200),
         rotation: 0,
-        scale: [1, 1],
+        scale: new Renderer2D.Vector2(1, 1),
         zIndex: 3,
         blendMode: Renderer2D.BlendMode.ADDITIVE, 
         isStroke: false
@@ -102,23 +102,23 @@ window.addEventListener('DOMContentLoaded', () => {
     const lineShape = renderer.createNormalShape({
         vertices: strokeData.vertices,
         indices: strokeData.indices,
-        color: [1, 0, 0, 1],
-        position: [0, 0],
+        color: new Renderer2D.Color(1, 0, 0, 1),
+        position: new Renderer2D.Vector2(0, 0),
         rotation: Math.random() * Math.PI * 2,
-        scale: [1, 1],
+        scale: new Renderer2D.Vector2(1, 1), 
         zIndex: 0,
         blendMode: Renderer2D.BlendMode.NORMAL,
         isStroke: true 
     });
 
-    const heartData = Renderer2D.buildHeart(50, 60);
+    const heartData = Renderer2D.buildDroplet(50, 60);
     const heartShape = renderer.createNormalShape({
         vertices: heartData.vertices,
         indices: heartData.indices,
-        color: [1, 0.2, 0.5, 0.9],
-        position: [150, 400],
+        color: new Renderer2D.Color(1, 0.2, 0.5, 0.9),
+        position: new Renderer2D.Vector2(150, 400),
         rotation: 0,
-        scale: [1, 1],
+        scale: new Renderer2D.Vector2(1, 1),
         zIndex: 5,
         blendMode: Renderer2D.BlendMode.NORMAL,
         isStroke: false
@@ -150,7 +150,7 @@ window.addEventListener('DOMContentLoaded', () => {
             const r = Math.random();
             const g = Math.random();
             const b = Math.random();
-            starGroup.addInstance([x, y], rot, [s, s], [r, g, b, 0.8]);
+            starGroup.addInstance(new Renderer2D.Vector2(x, y), rot, new Renderer2D.Vector2(s, s), new Renderer2D.Color(r, g, b, 0.8));
         }
 
         renderer.setCamera({ x: camX, y: camY, zoom: camZoom });

@@ -1,3 +1,144 @@
+class Vector2 {
+    constructor(x = 0, y = 0) {
+        this.x = x;
+        this.y = y;
+    }
+
+    set(x, y) {
+        this.x = x;
+        this.y = y;
+    }
+
+    add(v) {
+        this.x += v.x;
+        this.y += v.y;
+
+        return this;
+    }
+
+    subtract(v) {
+        this.x -= v.x;
+        this.y -= v.y;
+
+        return this;
+    }
+
+    scale(scalar) {
+        this.x *= scalar;
+        this.y *= scalar;
+
+        return this;
+    }
+
+    addScaledVector(v, scalar) {
+        this.x += v.x * scalar;
+        this.y += v.y * scalar;
+        return this;
+    }
+
+    length() {
+        return Math.hypot(this.x, this.y);
+    }
+
+    normalize() {
+        const len = this.length();
+        if (len === 0) return new Vector2(0, 0);
+        let normalX = this.x / len;
+        let normalY = this.y / len;
+        if (Math.abs(normalX) < 0.000001)
+            normalX = 0;
+        if (Math.abs(normalY) < 0.000001)
+            normalY = 0;
+        this.x = normalX;
+        this.y = normalY;
+
+        return this;
+    }
+
+    clone() {
+        return new Vector2(this.x, this.y);
+    }
+
+    copy(other) {
+        this.x = other.x;
+        this.y = other.y;
+    }
+
+    toArray() {
+        return [this.x, this.y];
+    }
+
+    getAngle() {
+        return Math.atan2(this.y, this.x);
+    }
+
+    static dot(v1, v2) {
+        return v1.x * v2.x + v1.y * v2.y;
+    }
+
+    static lerp(v1, v2, t) {
+        return new Vector2(
+            v1.x + (v2.x - v1.x) * t,
+            v1.y + (v2.y - v1.y) * t
+        );
+    }
+}
+
+class Color {
+    constructor(r = 1, g = 1, b = 1, a = 1) {
+        this.r = r;
+        this.g = g;
+        this.b = b;
+        this.a = a;
+    }
+
+    set(r, g, b, a = 1) {
+        this.r = r;
+        this.g = g;
+        this.b = b;
+        this.a = a;
+    }
+
+    setAlpha(a) {
+        this.a = a;
+    }
+
+    multiply(scalar) {
+        return new Color(
+            this.r * scalar,
+            this.g * scalar,
+            this.b * scalar,
+            this.a
+        );
+    }
+
+    clone() {
+        return new Color(this.r, this.g, this.b, this.a);
+    }
+
+    copy(other) {
+        this.r = other.r;
+        this.g = other.g;
+        this.b = other.b;
+        this.a = other.a;
+    }
+
+    toArray() {
+        return [this.r, this.g, this.b, this.a];
+    }
+
+
+    static lerp(c1, c2, t) {
+        return new Color(
+            c1.r + (c2.r - c1.r) * t,
+            c1.g + (c2.g - c1.g) * t,
+            c1.b + (c2.b - c1.b) * t,
+            c1.a + (c2.a - c1.a) * t
+        );
+    }
+}
+
+// Earcut Implementation
 function earcut(data, holeIndices, dim) {
     dim = dim || 2;
     var hasHoles = holeIndices && holeIndices.length,
@@ -384,7 +525,7 @@ function splitPolygon(a, b) {
 /*************************************************************
  * 2) Shape Builders
  *************************************************************/
-function buildCircle(radius = 50, segments = 32) {
+function buildCircle(radius = 1, segments = 32) {
     const verts = [0, 0];
     for (let i = 0; i <= segments; i++) {
         const th = (i / segments) * 2 * Math.PI;
@@ -400,7 +541,7 @@ function buildCircle(radius = 50, segments = 32) {
     };
 }
 
-function buildRing(outerR = 100, innerR = 50, segments = 32) {
+function buildRing(outerR = 2, innerR = 1, segments = 32) {
     const verts = [];
     for (let i = 0; i < segments; i++) {
         const t = (i / segments) * 2 * Math.PI;
@@ -425,7 +566,7 @@ function buildRing(outerR = 100, innerR = 50, segments = 32) {
     };
 }
 
-function buildStar(points = 5, outerR = 50, innerR = 25) {
+function buildStar(points = 5, outerR = 2, innerR = 1) {
     const verts = [0, 0];
     const step = Math.PI / points;
     for (let i = 0; i <= points * 2; i++) {
@@ -443,7 +584,7 @@ function buildStar(points = 5, outerR = 50, innerR = 25) {
     };
 }
 
-function buildHeart(scale = 50, steps = 100) {
+function buildDroplet(scale = 1, steps = 100) {
     const coords = [];
     for (let i = 0; i <= steps; i++) {
         const t = Math.PI * (i / steps);
@@ -453,9 +594,23 @@ function buildHeart(scale = 50, steps = 100) {
             5 * Math.cos(2 * t) -
             2 * Math.cos(3 * t) -
             Math.cos(4 * t);
-        coords.push(x * scale * 0.2, -y * scale * 0.2);
+        coords.push(x * scale * 0.2, y * scale * 0.2); // Removed the negation on y
     }
     coords.push(coords[0], coords[1]);
+    const triIndices = earcut(coords, null, 2);
+    return {
+        vertices: new Float32Array(coords),
+        indices: new Uint16Array(triIndices),
+    };
+}
+
+function buildTriangle(base = 1, height = 2) {
+    const coords = [];
+
+    coords.push(-base / 2, 0);
+    coords.push(base / 2, 0);
+    coords.push(0, height); // Removed the negation on y
+
     const triIndices = earcut(coords, null, 2);
     return {
         vertices: new Float32Array(coords),
@@ -529,34 +684,83 @@ function buildStrokeGeometry(points, strokeWidth = 5) {
     };
 }
 
-/*************************************************************
- * 3) Data Structures for Normal & Instanced
- *************************************************************/
+function invertMatrix(m) {
+    const inv = new Float32Array(16);
+    const det =
+        m[0] * m[5] * m[10] * m[15] -
+        m[0] * m[5] * m[11] * m[14] -
+        m[0] * m[9] * m[6] * m[15] +
+        m[0] * m[9] * m[7] * m[14] +
+        m[0] * m[13] * m[6] * m[11] -
+        m[0] * m[13] * m[7] * m[10] -
+        m[4] * m[1] * m[10] * m[15] +
+        m[4] * m[1] * m[11] * m[14] +
+        m[4] * m[9] * m[2] * m[15] -
+        m[4] * m[9] * m[3] * m[14] -
+        m[4] * m[13] * m[2] * m[11] +
+        m[4] * m[13] * m[3] * m[10] +
+        m[8] * m[1] * m[6] * m[15] -
+        m[8] * m[1] * m[7] * m[14] -
+        m[8] * m[5] * m[2] * m[15] +
+        m[8] * m[5] * m[3] * m[14] +
+        m[8] * m[13] * m[2] * m[7] -
+        m[8] * m[13] * m[3] * m[6] -
+        m[12] * m[1] * m[6] * m[11] +
+        m[12] * m[1] * m[7] * m[10] +
+        m[12] * m[5] * m[2] * m[11] -
+        m[12] * m[5] * m[3] * m[10] -
+        m[12] * m[9] * m[2] * m[7] +
+        m[12] * m[9] * m[3] * m[6];
+
+    if (det === 0) return null;
+
+    const invDet = 1 / det;
+
+    inv[0] = (m[5] * m[10] * m[15] - m[5] * m[11] * m[14] - m[9] * m[6] * m[15] + m[9] * m[7] * m[14] + m[13] * m[6] * m[11] - m[13] * m[7] * m[10]) * invDet;
+    inv[1] = (-m[1] * m[10] * m[15] + m[1] * m[11] * m[14] + m[9] * m[2] * m[15] - m[9] * m[3] * m[14] - m[13] * m[2] * m[11] + m[13] * m[3] * m[10]) * invDet;
+    inv[2] = (m[1] * m[6] * m[15] - m[1] * m[7] * m[14] - m[5] * m[2] * m[15] + m[5] * m[3] * m[14] + m[13] * m[2] * m[7] - m[13] * m[3] * m[6]) * invDet;
+    inv[3] = (-m[1] * m[6] * m[11] + m[1] * m[7] * m[10] + m[5] * m[2] * m[11] - m[5] * m[3] * m[10] - m[9] * m[2] * m[7] + m[9] * m[3] * m[6]) * invDet;
+    inv[4] = (-m[4] * m[10] * m[15] + m[4] * m[11] * m[14] + m[8] * m[6] * m[15] - m[8] * m[7] * m[14] - m[12] * m[6] * m[11] + m[12] * m[7] * m[10]) * invDet;
+    inv[5] = (m[0] * m[10] * m[15] - m[0] * m[11] * m[14] - m[8] * m[2] * m[15] + m[8] * m[3] * m[14] + m[12] * m[2] * m[11] - m[12] * m[3] * m[10]) * invDet;
+    inv[6] = (-m[0] * m[6] * m[15] + m[0] * m[7] * m[14] + m[4] * m[2] * m[15] - m[4] * m[3] * m[14] - m[12] * m[2] * m[7] + m[12] * m[3] * m[6]) * invDet;
+    inv[7] = (m[0] * m[6] * m[11] - m[0] * m[7] * m[10] - m[4] * m[2] * m[11] + m[4] * m[3] * m[10] + m[8] * m[2] * m[7] - m[8] * m[3] * m[6]) * invDet;
+    inv[8] = (m[4] * m[9] * m[15] - m[4] * m[11] * m[13] - m[8] * m[5] * m[15] + m[8] * m[7] * m[13] + m[12] * m[5] * m[11] - m[12] * m[7] * m[9]) * invDet;
+    inv[9] = (-m[0] * m[9] * m[15] + m[0] * m[11] * m[13] + m[8] * m[1] * m[15] - m[8] * m[3] * m[13] - m[12] * m[1] * m[11] + m[12] * m[3] * m[9]) * invDet;
+    inv[10] = (m[0] * m[5] * m[15] - m[0] * m[7] * m[13] - m[4] * m[1] * m[15] + m[4] * m[3] * m[13] + m[12] * m[1] * m[7] - m[12] * m[3] * m[5]) * invDet;
+    inv[11] = (-m[0] * m[5] * m[11] + m[0] * m[7] * m[9] + m[4] * m[1] * m[11] - m[4] * m[3] * m[9] - m[8] * m[1] * m[7] + m[8] * m[3] * m[5]) * invDet;
+    inv[12] = (-m[4] * m[9] * m[14] + m[4] * m[10] * m[13] + m[8] * m[5] * m[14] - m[8] * m[6] * m[13] - m[12] * m[5] * m[10] + m[12] * m[6] * m[9]) * invDet;
+    inv[13] = (m[0] * m[9] * m[14] - m[0] * m[10] * m[13] - m[8] * m[1] * m[14] + m[8] * m[2] * m[13] + m[12] * m[1] * m[10] - m[12] * m[2] * m[9]) * invDet;
+    inv[14] = (-m[0] * m[5] * m[14] + m[0] * m[6] * m[13] + m[4] * m[1] * m[14] - m[4] * m[2] * m[13] - m[12] * m[1] * m[6] + m[12] * m[2] * m[5]) * invDet;
+    inv[15] = (m[0] * m[5] * m[10] - m[0] * m[6] * m[9] - m[4] * m[1] * m[10] + m[4] * m[2] * m[9] + m[8] * m[1] * m[6] - m[8] * m[2] * m[5]) * invDet;
+
+    return inv;
+}
+
 const BlendMode = {
     NORMAL: 'normal',
     ADDITIVE: 'additive',
-    NO: 'no',
-    MULTIPL: 'multiply',
+    NO_BLENDING: 'no_blending',
+    MULTIPLY_BLENDING: 'multiply',
 };
 
 class Shape2D {
     constructor({
         vertices = null,
         indices = null,
-        color = [1, 1, 1, 1], 
-        position = [0, 0],
+        color = new Color(1, 1, 1, 1),
+        position = new Vector2(0, 0),
         rotation = 0,
-        scale = [1, 1],
+        scale = new Vector2(1, 1),
         zIndex = 0,
         blendMode = BlendMode.NORMAL,
         isStroke = false,
     }) {
         this.vertices = vertices;
         this.indices = indices;
-        this.color = color.slice(); 
-        this.position = position.slice();
+        this.color = color.clone();
+        this.position = position.clone();
         this.rotation = rotation;
-        this.scale = scale.slice();
+        this.scale = scale.clone();
         this.zIndex = zIndex;
         this.blendMode = blendMode;
         this.isStroke = isStroke;
@@ -566,17 +770,24 @@ class Shape2D {
         this._ibo = null;
         this._vertexCount = 0;
     }
-}
 
+    setScale(scaleX, scaleY) {
+        this.scale.set(scaleX, scaleY);
+    }
+
+    setAlpha(alpha) {
+        this.color.a = alpha;
+    }
+}
 
 class InstancedGroup {
     constructor({ baseGeometry, maxInstances = 10000, zIndex = 0, blendMode = BlendMode.NORMAL }) {
-        this.baseGeometry = baseGeometry; 
+        this.baseGeometry = baseGeometry;
         this.maxInstances = maxInstances;
         this.zIndex = zIndex;
         this.blendMode = blendMode;
 
-        // instance data
+        // number of floats per instance
         this.instanceStrideFloats = 9;
         this.instanceData = new Float32Array(maxInstances * this.instanceStrideFloats);
         this.instanceCount = 0;
@@ -585,36 +796,134 @@ class InstancedGroup {
         this._instanceBuffer = null;
         this._vao = null;
     }
+
     clear() {
         this.instanceCount = 0;
     }
+
+    getInstanceCount() {
+        return this.instanceCount;
+    }
+
     addInstance(pos, rotation, scale, color) {
         const i = this.instanceCount;
         if (i >= this.maxInstances) return;
         const base = i * this.instanceStrideFloats;
-        this.instanceData[base + 0] = pos[0];
-        this.instanceData[base + 1] = pos[1];
+        this.instanceData[base + 0] = pos.x;
+        this.instanceData[base + 1] = pos.y;
         this.instanceData[base + 2] = rotation;
-        this.instanceData[base + 3] = scale[0];
-        this.instanceData[base + 4] = scale[1];
-        this.instanceData[base + 5] = color[0];
-        this.instanceData[base + 6] = color[1];
-        this.instanceData[base + 7] = color[2];
-        this.instanceData[base + 8] = color[3];
+        this.instanceData[base + 3] = scale.x;
+        this.instanceData[base + 4] = scale.y;
+        this.instanceData[base + 5] = color.r;
+        this.instanceData[base + 6] = color.g;
+        this.instanceData[base + 7] = color.b;
+        this.instanceData[base + 8] = color.a;
         this.instanceCount++;
     }
 
-
-    updateInstanceColor(index, color) {
+    removeInstance(index) {
         if (index < 0 || index >= this.instanceCount) {
             console.warn('Instance index out of bounds');
             return;
         }
-        const base = index * this.instanceStrideFloats + 5; 
-        this.instanceData[base] = color[0];
-        this.instanceData[base + 1] = color[1];
-        this.instanceData[base + 2] = color[2];
-        this.instanceData[base + 3] = color[3];
+
+        const lastIndex = this.instanceCount - 1;
+
+        //swap with last instance
+
+        if (index !== lastIndex) {
+            const targetBase = index * this.instanceStrideFloats;
+            const lastBase = lastIndex * this.instanceStrideFloats;
+
+            this.instanceData[targetBase + 0] = this.instanceData[lastBase + 0];
+            this.instanceData[targetBase + 1] = this.instanceData[lastBase + 1];
+
+            this.instanceData[targetBase + 2] = this.instanceData[lastBase + 2];
+
+            this.instanceData[targetBase + 3] = this.instanceData[lastBase + 3];
+            this.instanceData[targetBase + 4] = this.instanceData[lastBase + 4];
+
+            this.instanceData[targetBase + 5] = this.instanceData[lastBase + 5];
+            this.instanceData[targetBase + 6] = this.instanceData[lastBase + 6];
+            this.instanceData[targetBase + 7] = this.instanceData[lastBase + 7];
+            this.instanceData[targetBase + 8] = this.instanceData[lastBase + 8];
+        }
+
+        const base = lastIndex * this.instanceStrideFloats;
+        this.instanceData[base + 0] = 0;
+        this.instanceData[base + 1] = 0;
+        this.instanceData[base + 2] = 0;
+        this.instanceData[base + 3] = 0;
+        this.instanceData[base + 4] = 0;
+        this.instanceData[base + 5] = 0;
+        this.instanceData[base + 6] = 0;
+        this.instanceData[base + 7] = 0;
+        this.instanceData[base + 8] = 0;
+
+        this.instanceCount--;
+    }
+
+
+    updateInstancePosition(index, x, y) {
+        if (index < 0 || index >= this.instanceCount) {
+            console.warn('Instance index out of bounds');
+            return;
+        }
+        const base = index * this.instanceStrideFloats;
+        this.instanceData[base + 0] = x;
+        this.instanceData[base + 1] = y;
+    }
+
+    updateInstanceRotation(index, rotation) {
+        if (index < 0 || index >= this.instanceCount) {
+            console.warn('Instance index out of bounds');
+            return;
+        }
+        const base = index * this.instanceStrideFloats;
+        this.instanceData[base + 2] = rotation;
+    }
+
+    updateInstanceScale(index, scaleX, scaleY) {
+        if (index < 0 || index >= this.instanceCount) {
+            console.warn('Instance index out of bounds');
+            return;
+        }
+        const base = index * this.instanceStrideFloats;
+        this.instanceData[base + 3] = scaleX;
+        this.instanceData[base + 4] = scaleY;
+    }
+
+    updateInstanceColor(index, colorR, colorG, colorB, colorA) {
+        if (index < 0 || index >= this.instanceCount) {
+            console.warn('Instance index out of bounds');
+            return;
+        }
+        const base = index * this.instanceStrideFloats + 5;
+        this.instanceData[base] = colorR;
+        this.instanceData[base + 1] = colorG;
+        this.instanceData[base + 2] = colorB;
+        this.instanceData[base + 3] = colorA;
+    }
+
+    moveInstance(index, deltaX, deltaY) {
+        if (index < 0 || index >= this.instanceCount) {
+            console.warn('Instance index out of bounds');
+            return;
+        }
+
+        const base = index * this.instanceStrideFloats;
+        this.instanceData[base + 0] += deltaX;
+        this.instanceData[base + 1] += deltaY;
+    }
+
+    rotateInstance(index, delta) {
+        if (index < 0 || index >= this.instanceCount) {
+            console.warn('Instance index out of bounds');
+            return;
+        }
+
+        const base = index * this.instanceStrideFloats;
+        this.instanceData[base + 2] += delta;
     }
 }
 
@@ -629,7 +938,7 @@ class Renderer2D {
         if (opts.height) canvas.height = opts.height;
 
         this.normalShapes = [];
-        this.instancedGroups = []; 
+        this.instancedGroups = [];
 
         this.cameraX = 0;
         this.cameraY = 0;
@@ -653,11 +962,20 @@ class Renderer2D {
         this.u_proj_Inst = gl.getUniformLocation(this.instancedProgram, 'u_proj');
     }
 
-
     setCamera({ x = 0, y = 0, zoom = 1.0 }) {
         this.cameraX = x;
         this.cameraY = y;
         this.cameraZoom = zoom;
+        this._updateProjectionMatrix();
+    }
+
+    _updateProjectionMatrix() {
+        const left = this.cameraX - (this.canvas.width / 2) / this.cameraZoom;
+        const right = this.cameraX + (this.canvas.width / 2) / this.cameraZoom;
+        const bottom = this.cameraY - (this.canvas.height / 2) / this.cameraZoom;
+        const top = this.cameraY + (this.canvas.height / 2) / this.cameraZoom;
+        this._projectionMatrix = this._makeOrtho(left, right, bottom, top, -1, 1);
+        this._inverseProjectionMatrix = invertMatrix(this._projectionMatrix);
     }
 
     createNormalShape(params) {
@@ -666,6 +984,7 @@ class Renderer2D {
         this.normalShapes.push(shape);
         return shape;
     }
+
     updateNormalShape(shape, changes) {
         let reuploadVerts = false,
             reuploadIdx = false;
@@ -677,10 +996,10 @@ class Renderer2D {
             shape.indices = changes.indices;
             reuploadIdx = true;
         }
-        if (changes.color !== undefined) shape.color = changes.color.slice();
-        if (changes.position !== undefined) shape.position = changes.position.slice();
+        if (changes.color !== undefined) shape.color = changes.color.clone();
+        if (changes.position !== undefined) shape.position = changes.position.clone();
         if (changes.rotation !== undefined) shape.rotation = changes.rotation;
-        if (changes.scale !== undefined) shape.scale = changes.scale.slice();
+        if (changes.scale !== undefined) shape.scale = changes.scale.clone();
         if (changes.zIndex !== undefined) shape.zIndex = changes.zIndex;
         if (changes.blendMode !== undefined) shape.blendMode = changes.blendMode;
         if (changes.isStroke !== undefined) shape.isStroke = changes.isStroke;
@@ -688,6 +1007,7 @@ class Renderer2D {
         if (reuploadVerts) this._uploadShapeVertices(shape);
         if (reuploadIdx) this._uploadShapeIndices(shape);
     }
+
     removeNormalShape(shape) {
         const idx = this.normalShapes.indexOf(shape);
         if (idx >= 0) this.normalShapes.splice(idx, 1);
@@ -700,7 +1020,6 @@ class Renderer2D {
             shape._ibo = null;
         }
     }
-
 
     createInstancedGroup({ vertices, indices, maxInstances = 10000, zIndex = 0, blendMode = BlendMode.NORMAL }) {
         const gl = this.gl;
@@ -723,7 +1042,7 @@ class Renderer2D {
         const group = new InstancedGroup({ baseGeometry: baseGeom, maxInstances, zIndex, blendMode });
         group._instanceBuffer = gl.createBuffer();
         gl.bindBuffer(gl.ARRAY_BUFFER, group._instanceBuffer);
-        const totalBytes = maxInstances * 9 * 4; 
+        const totalBytes = maxInstances * 9 * 4;
         gl.bufferData(gl.ARRAY_BUFFER, totalBytes, gl.DYNAMIC_DRAW);
 
         group._vao = gl.createVertexArray();
@@ -789,9 +1108,7 @@ class Renderer2D {
         }
     }
 
-    /****************************************
-     * The main rendering
-     ****************************************/
+
     drawFrame() {
         this._resizeIfNeeded();
         const gl = this.gl;
@@ -799,27 +1116,18 @@ class Renderer2D {
         gl.clearColor(0, 0, 0, 1);
         gl.clear(gl.COLOR_BUFFER_BIT);
 
-        // Compute the orthographic bounds based on cameraX, cameraY, cameraZoom
-        const left = this.cameraX;
-        const right = this.cameraX + this.canvas.width / this.cameraZoom;
-        const top = this.cameraY;
-        const bottom = this.cameraY + this.canvas.height / this.cameraZoom;
-        // near/far are -1,1
-        this._projectionMatrix = this._makeOrtho(left, right, bottom, top, -1, 1);
+        this._updateProjectionMatrix();
 
-        // gather all items (normal or instanced) for zIndex sort
+        // zIndex sort
         const items = [];
-        // normal shapes
         for (const sh of this.normalShapes) {
             items.push({ type: 'normal', data: sh, zIndex: sh.zIndex, blend: sh.blendMode });
         }
-        // instanced groups
         for (const grp of this.instancedGroups) {
             items.push({ type: 'instanced', data: grp, zIndex: grp.zIndex, blend: grp.blendMode });
         }
         items.sort((a, b) => a.zIndex - b.zIndex);
 
-        // draw them in order
         for (const item of items) {
             if (item.type === 'normal') {
                 this._drawNormalShape(item.data);
@@ -829,9 +1137,26 @@ class Renderer2D {
         }
     }
 
-    /****************************************
-     * Internal: draw a normal shape
-     ****************************************/
+    screenToCanvas(eventX, eventY) {
+        const rect = this.canvas.getBoundingClientRect();
+        const mouseX = eventX - rect.left;
+        const mouseY = eventY - rect.top;
+
+        const dpr = window.devicePixelRatio || 1;
+        const x = mouseX * dpr;
+        const y = mouseY * dpr;
+
+        const canvasWidth = this.canvas.width;
+        const canvasHeight = this.canvas.height;
+        const centerX = canvasWidth / 2;
+        const centerY = canvasHeight / 2;
+
+        const worldX = (x - centerX) / this.cameraZoom + this.cameraX;
+        const worldY = (centerY - y) / this.cameraZoom + this.cameraY;
+
+        return new Vector2(worldX, worldY);
+    }
+
     _drawNormalShape(shape) {
         const gl = this.gl;
         // set blend
@@ -852,12 +1177,11 @@ class Renderer2D {
         }
         gl.useProgram(this.normalProgram);
 
-        // compute transform => 4x4
         const model = this._computeModelMatrix(shape.position, shape.rotation, shape.scale);
         const mvp = this._multiplyMat4(this._projectionMatrix, model);
 
         gl.uniformMatrix4fv(this.u_matrix_Normal, false, mvp);
-        gl.uniform4fv(this.u_color_Normal, new Float32Array(shape.color));
+        gl.uniform4fv(this.u_color_Normal, shape.color.toArray());
 
         // bind shape buffers
         gl.bindBuffer(gl.ARRAY_BUFFER, shape._vbo);
@@ -874,14 +1198,11 @@ class Renderer2D {
         }
     }
 
-    /****************************************
-     * Internal: draw an instanced group
-     ****************************************/
+
     _drawInstancedGroup(group) {
         const gl = this.gl;
         if (group.instanceCount <= 0) return;
 
-        // set blend
         switch (group.blendMode) {
             case BlendMode.ADDITIVE:
                 gl.blendFunc(gl.SRC_ALPHA, gl.ONE);
@@ -927,9 +1248,6 @@ class Renderer2D {
         gl.bindVertexArray(null);
     }
 
-    /****************************************
-     * Internal shape buffer uploads
-     ****************************************/
     _uploadShapeBuffers(shape) {
         const gl = this.gl;
         shape._vbo = gl.createBuffer();
@@ -956,9 +1274,6 @@ class Renderer2D {
         gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, shape.indices, gl.STATIC_DRAW);
     }
 
-    /****************************************
-     * Internal Shaders
-     ****************************************/
     _normalVS() {
         return `
         attribute vec2 a_position;
@@ -1039,9 +1354,7 @@ class Renderer2D {
         return sh;
     }
 
-    /****************************************
-     * Camera & Matrix
-     ****************************************/
+
     _makeOrtho(left, right, bottom, top, near, far) {
         const out = new Float32Array(16);
         const lr = 1 / (left - right);
@@ -1069,8 +1382,8 @@ class Renderer2D {
     _computeModelMatrix(pos, rot, scl) {
         const cosr = Math.cos(rot),
             sinr = Math.sin(rot);
-        const [sx, sy] = scl;
-        const [px, py] = pos;
+        const [sx, sy] = [scl.x, scl.y];
+        const [px, py] = [pos.x, pos.y];
         const m = new Float32Array(16);
         // col-major
         m[0] = cosr * sx;
@@ -1106,27 +1419,84 @@ class Renderer2D {
         return out;
     }
 
-    /****************************************
-     * Resize
-     ****************************************/
     _resizeIfNeeded() {
-        const w = this.canvas.clientWidth | 0;
-        const h = this.canvas.clientHeight | 0;
-        if (this.canvas.width !== w || this.canvas.height !== h) {
-            this.canvas.width = w;
-            this.canvas.height = h;
+        const gl = this.gl;
+        const dpr = window.devicePixelRatio || 1;
+        const width = Math.floor(this.canvas.clientWidth * dpr);
+        const height = Math.floor(this.canvas.clientHeight * dpr);
+
+        if (this.canvas.width !== width || this.canvas.height !== height) {
+            this.canvas.width = width;
+            this.canvas.height = height;
+            this._updateProjectionMatrix();
         }
     }
+}
+
+// https://github.com/mrdoob/three.js/blob/master/src/core/Clock.js
+class Clock {
+    constructor(autoStart = true) {
+        this.autoStart = autoStart;
+        this.startTime = 0;
+        this.oldTime = 0;
+        this.elapsedTime = 0;
+        this.running = false;
+    }
+
+    start() {
+        this.startTime = now();
+        this.oldTime = this.startTime;
+        this.elapsedTime = 0;
+        this.running = true;
+    }
+
+    stop() {
+        this.getElapsedTime();
+        this.running = false;
+        this.autoStart = false;
+    }
+
+    getElapsedTime() {
+        this.getDelta();
+        return this.elapsedTime;
+    }
+
+    getDelta() {
+        let diff = 0;
+        if (this.autoStart && !this.running) {
+            this.start();
+            return 0;
+        }
+
+        if (this.running) {
+            const newTime = now();
+
+            diff = (newTime - this.oldTime) / 1000;
+            this.oldTime = newTime;
+
+            this.elapsedTime += diff;
+        }
+
+        return diff;
+    }
+}
+
+function now() {
+    return performance.now();
 }
 
 export {
     Renderer2D,
     BlendMode,
+    Clock,
+    Vector2,
+    Color,
     buildCircle,
     buildRing,
     buildStar,
-    buildHeart,
+    buildDroplet,
     buildHelix,
     buildPolygon,
     buildStrokeGeometry,
+    buildTriangle,
 };
