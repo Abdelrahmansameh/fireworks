@@ -3,23 +3,22 @@ import { createDebugCross } from '../utils/debug.js';
 import * as Renderer2D from '../rendering/Renderer.js';
 
 class InstancedParticleSystem {
-    constructor(scene, renderer, maxParticles = 10000, profiler) {
+    constructor(scene, renderer, maxParticles = 1000000, profiler) {
         this.profiler = profiler;
-
         this.scene = scene;
-
         this.renderer = renderer;
-
         this.maxParticles = maxParticles;
+
         this.meshes = {};
         this.activeCounts = {};
+        this.instanceData = {};
 
+                /*
         this.activeTrails = new Map();
         this.maxTrails = maxParticles * 2;
         this.maxTrailPoints = 8;
         this.trailUpdateInterval = 50;
-
-        this.instanceData = {};
+*/
 
         const geometries = {
             sphere: Renderer2D.buildCircle(1),
@@ -104,7 +103,7 @@ class InstancedParticleSystem {
         const geometry = new THREE.ShapeGeometry(shape);
         return geometry;
     }
-
+/*
     createTrailGeometry(points, explosionCenterPosition, maxCurveLength = 1) {
         const geometry = new THREE.BufferGeometry();
         this.fillTrailGeometryPositions(geometry, points, explosionCenterPosition, maxCurveLength);
@@ -194,7 +193,7 @@ class InstancedParticleSystem {
             this.activeTrails.delete(trailKey);
         }
     }
-
+*/
 
     addParticle(position, velocity, color, scale, lifetime, gravity, shape = 'sphere', acceleration = new THREE.Vector3(), enableTrail = true, friction = FIREWORK_CONFIG.baseFriction) {
         if (!FIREWORK_CONFIG.supportedShapes.includes(shape)) {
@@ -205,33 +204,34 @@ class InstancedParticleSystem {
         if (activeCount >= this.maxParticles) return -1;
 
         const index = activeCount;
-
         const base = index * this.instanceFloats;
 
 
-        this.instanceData[shape][base + this.positionIdx] = position.x;
-        this.instanceData[shape][base + this.positionIdx + 1] = position.y;
-        this.instanceData[shape][base + this.velocityIdx] = velocity.x;
-        this.instanceData[shape][base + this.velocityIdx + 1] = velocity.y;
-        this.instanceData[shape][base + this.accelerationIdx] = acceleration.x;
-        this.instanceData[shape][base + this.accelerationIdx + 1] = acceleration.y;
-        this.instanceData[shape][base + this.colorIdx] = color.r;
-        this.instanceData[shape][base + this.colorIdx + 1] = color.g;
-        this.instanceData[shape][base + this.colorIdx + 2] = color.b;
-        this.instanceData[shape][base + this.colorIdx + 3] = color.a;
-        this.instanceData[shape][base + this.scaleIdx] = scale;
-        this.instanceData[shape][base + this.lifetimeIdx] = lifetime;
-        this.instanceData[shape][base + this.initialLifetimeIdx] = lifetime;
-        this.instanceData[shape][base + this.gravityIdx] = gravity;
-        this.instanceData[shape][base + this.frictionIdx] = Math.max(0.0, Math.min(1.0, 1 - friction));
+       const data = this.instanceData[shape];
+        data[base + this.positionIdx]            = position.x;
+        data[base + this.positionIdx + 1]        = position.y;
+        data[base + this.velocityIdx]            = velocity.x;
+        data[base + this.velocityIdx + 1]        = velocity.y;
+        data[base + this.accelerationIdx]        = acceleration.x;
+        data[base + this.accelerationIdx + 1]    = acceleration.y;
+        data[base + this.colorIdx]               = color.r;
+        data[base + this.colorIdx + 1]           = color.g;
+        data[base + this.colorIdx + 2]           = color.b;
+        data[base + this.colorIdx + 3]           = color.a;
+        data[base + this.scaleIdx]               = scale;
+        data[base + this.lifetimeIdx]            = lifetime;
+        data[base + this.initialLifetimeIdx]     = lifetime;
+        data[base + this.gravityIdx]             = gravity;
+        data[base + this.frictionIdx]            = friction; 
+
+        const rot = velocity.clone().normalize().scale(-1).getAngle();
+        data[base + this.rotationIdx]            = rot;
 
         const normalizedVelocity = velocity.clone().normalize();
         const targetDir = normalizedVelocity.clone().scale(-1);
         this.instanceData[shape][base + this.rotationIdx] = targetDir.getAngle();
 
-        this.meshes[shape].addInstance(position, this.instanceData[shape][base + this.rotationIdx], scale, color);
-
-        this.updateParticle(shape, index);
+        this.meshes[shape].addInstance(position, rot, new Renderer2D.Vector2(scale, scale), color);
 
         /* if (enableTrail) {
              this.createTrailForParticle(shape, index, position, velocity, color);
@@ -241,140 +241,93 @@ class InstancedParticleSystem {
         return index;
     }
 
-    updateParticle(shape, index) {
+     updateParticle(shape, index) {
         const base = index * this.instanceFloats;
+        const group = this.meshes[shape];
+        const gBase = index * group.instanceStrideFloats;
+        const sim   = this.instanceData[shape];
+        const gpu   = group.instanceData;
 
-        this.meshes[shape].updateInstancePosition(index,
-            this.instanceData[shape][base + this.positionIdx],
-            this.instanceData[shape][base + this.positionIdx + 1]
-        );
-
-        this.meshes[shape].updateInstanceRotation(index,
-            this.instanceData[shape][base + this.rotationIdx]
-        );
-
-        this.meshes[shape].updateInstanceColor(index,
-            this.instanceData[shape][base + this.colorIdx],
-            this.instanceData[shape][base + this.colorIdx + 1],
-            this.instanceData[shape][base + this.colorIdx + 2],
-            this.instanceData[shape][base + this.colorIdx + 3]
-        );
-
-        this.meshes[shape].updateInstanceScale(index,
-            this.instanceData[shape][base + this.scaleIdx],
-            this.instanceData[shape][base + this.scaleIdx]
-        );
+        gpu[gBase + 0] = sim[base + this.positionIdx];
+        gpu[gBase + 1] = sim[base + this.positionIdx + 1];
+        gpu[gBase + 2] = sim[base + this.rotationIdx];
+        gpu[gBase + 3] = sim[base + this.scaleIdx];
+        gpu[gBase + 4] = sim[base + this.scaleIdx];
+        gpu[gBase + 5] = sim[base + this.colorIdx];
+        gpu[gBase + 6] = sim[base + this.colorIdx + 1];
+        gpu[gBase + 7] = sim[base + this.colorIdx + 2];
+        gpu[gBase + 8] = sim[base + this.colorIdx + 3];
     }
-
     update(delta) {
-        this.profiler.startFunction('particleSystemUpdate');
+        if (!delta) return;
         const now = performance.now();
 
+        this.profiler?.startFunction?.('particleSystemUpdate');
+
         FIREWORK_CONFIG.supportedShapes.forEach(shape => {
-            let activeCount = this.activeCounts[shape];
-            for (let i = 0; i < activeCount; i++) {
-                this.profiler.startFunction('particleProcessing');
+            const group       = this.meshes[shape];
+            const sim         = this.instanceData[shape];
+            const gpu         = group.instanceData;         
+            const simStride   = this.instanceFloats;        
+            const gpuStride   = group.instanceStrideFloats; 
 
-                const base = i * this.instanceFloats;
+            let active = this.activeCounts[shape];
 
-                this.instanceData[shape][base + this.lifetimeIdx] -= delta;
-                let isAlive = this.instanceData[shape][base + this.lifetimeIdx] > 0;
+            for (let i = 0; i < active; i++) {
+                const sBase = i * simStride;
+                const gBase = i * gpuStride;
 
-                this.profiler.startFunction('removeInstanceData');
-                if (!isAlive) {
-                    // swap with last instance data to match renderer instance
-                    const lastIndex = activeCount - 1;
-                    const lastIndexBase = lastIndex * this.instanceFloats;
-                    this.profiler.startFunction('shiftInstanceData');
-                    this.instanceData[shape][base + this.positionIdx] = this.instanceData[shape][lastIndexBase + this.positionIdx];
-                    this.instanceData[shape][base + this.positionIdx + 1] = this.instanceData[shape][lastIndexBase + this.positionIdx + 1];
-                    this.instanceData[shape][base + this.velocityIdx] = this.instanceData[shape][lastIndexBase + this.velocityIdx];
-                    this.instanceData[shape][base + this.velocityIdx + 1] = this.instanceData[shape][lastIndexBase + this.velocityIdx + 1];
-                    this.instanceData[shape][base + this.accelerationIdx] = this.instanceData[shape][lastIndexBase + this.accelerationIdx];
-                    this.instanceData[shape][base + this.accelerationIdx + 1] = this.instanceData[shape][lastIndexBase + this.accelerationIdx + 1];
-                    this.instanceData[shape][base + this.colorIdx] = this.instanceData[shape][lastIndexBase + this.colorIdx];
-                    this.instanceData[shape][base + this.colorIdx + 1] = this.instanceData[shape][lastIndexBase + this.colorIdx + 1];
-                    this.instanceData[shape][base + this.colorIdx + 2] = this.instanceData[shape][lastIndexBase + this.colorIdx + 2];
-                    this.instanceData[shape][base + this.colorIdx + 3] = this.instanceData[shape][lastIndexBase + this.colorIdx + 3];
-                    this.instanceData[shape][base + this.scaleIdx] = this.instanceData[shape][lastIndexBase + this.scaleIdx];
-                    this.instanceData[shape][base + this.lifetimeIdx] = this.instanceData[shape][lastIndexBase + this.lifetimeIdx];
-                    this.instanceData[shape][base + this.initialLifetimeIdx] = this.instanceData[shape][lastIndexBase + this.initialLifetimeIdx];
-                    this.instanceData[shape][base + this.gravityIdx] = this.instanceData[shape][lastIndexBase + this.gravityIdx];
-                    this.instanceData[shape][base + this.rotationIdx] = this.instanceData[shape][lastIndexBase + this.rotationIdx];
-                    this.instanceData[shape][base + this.frictionIdx] = this.instanceData[shape][lastIndexBase + this.frictionIdx];
-                    this.profiler.endFunction('shiftInstanceData');
+                sim[sBase + this.lifetimeIdx] -= delta;
+                if (sim[sBase + this.lifetimeIdx] <= 0) {
+                    const last = active - 1;
+                    const sLastBase = last * simStride;
+                    const gLastBase = last * gpuStride;
 
-                    const oldTrailKey = `${shape}-${lastIndex}`;
-                    const newTrailKey = `${shape}-${i}`;
-                    const trailData = this.activeTrails.get(oldTrailKey);
-                    if (trailData) {
-                        this.activeTrails.delete(oldTrailKey);
-                        this.activeTrails.set(newTrailKey, trailData);
+                    if (last !== i) {
+                        sim.set(sim.subarray(sLastBase, sLastBase + simStride), sBase);
+                        gpu.set(gpu.subarray(gLastBase, gLastBase + gpuStride), gBase);
                     }
-
-                    this.removeTrail(shape, i);
-                    this.meshes[shape].removeInstance(i);
-                    activeCount--;
+                    active--;
+                    i--;
+                    continue;
                 }
-                if (i >= activeCount) {
-                    break;
-                }
-                this.profiler.endFunction('removeInstanceData');
 
-                this.profiler.startFunction('particlePhysicsUpdate');
-                const frictionFactor = Math.pow(this.instanceData[shape][base + this.frictionIdx], delta);
+                const friction     = sim[sBase + this.frictionIdx]; 
+                const horizontalFrictionFac  = 1 - friction * delta;          
+                const verticalFrictionFact = 1 - friction * FIREWORK_CONFIG.verticalFrictionMultiplier * delta;
+                sim[sBase + this.velocityIdx]     += sim[sBase + this.accelerationIdx] * delta;
+                sim[sBase + this.velocityIdx + 1] += (sim[sBase + this.accelerationIdx + 1] - sim[sBase + this.gravityIdx]) * delta;
 
-                this.instanceData[shape][base + this.velocityIdx] +=
-                    (this.instanceData[shape][base + this.accelerationIdx] * delta) * frictionFactor;
+                sim[sBase + this.velocityIdx]     *= horizontalFrictionFac;
+                sim[sBase + this.velocityIdx + 1] *= verticalFrictionFact;
 
-                this.instanceData[shape][base + this.velocityIdx + 1] +=
-                    ((this.instanceData[shape][base + this.accelerationIdx + 1] * delta) - (this.instanceData[shape][base + this.gravityIdx] * delta)) * frictionFactor;
+                sim[sBase + this.positionIdx]     += sim[sBase + this.velocityIdx]     * delta;
+                sim[sBase + this.positionIdx + 1] += sim[sBase + this.velocityIdx + 1] * delta;
 
-                this.instanceData[shape][base + this.positionIdx] += this.instanceData[shape][base + this.velocityIdx] * delta;
-                this.instanceData[shape][base + this.positionIdx + 1] += this.instanceData[shape][base + this.velocityIdx + 1] * delta;
-                this.profiler.endFunction('particlePhysicsUpdate');
+                // ── alpha based on life³ ─────────────────────────────────────────
+                const lifeNorm = sim[sBase + this.lifetimeIdx] / sim[sBase + this.initialLifetimeIdx];
+                sim[sBase + this.colorIdx + 3] = lifeNorm * lifeNorm * lifeNorm; 
 
-                this.profiler.startFunction('alphaCalculation');
-                const normalizedLifetime = this.instanceData[shape][base + this.lifetimeIdx] /
-                    this.instanceData[shape][base + this.initialLifetimeIdx];
-                this.instanceData[shape][base + this.colorIdx + 3] = Math.pow(normalizedLifetime, 3);
-                this.profiler.endFunction('alphaCalculation');
+                gpu[gBase + 0] = sim[sBase + this.positionIdx];
+                gpu[gBase + 1] = sim[sBase + this.positionIdx + 1];
+                gpu[gBase + 2] = sim[sBase + this.rotationIdx];
+                gpu[gBase + 3] = sim[sBase + this.scaleIdx];
+                gpu[gBase + 4] = sim[sBase + this.scaleIdx];
+                gpu[gBase + 5] = sim[sBase + this.colorIdx];
+                gpu[gBase + 6] = sim[sBase + this.colorIdx + 1];
+                gpu[gBase + 7] = sim[sBase + this.colorIdx + 2];
+                gpu[gBase + 8] = sim[sBase + this.colorIdx + 3];
 
-                this.profiler.startFunction('updateParticle');
-                this.updateParticle(shape, i);
-                this.profiler.endFunction('updateParticle');
-
-                this.profiler.startFunction('trailKeyGeneration');
-                const trailKey = `${shape}-${i}`;
-                const trailData = this.activeTrails.get(trailKey);
-                this.profiler.endFunction('trailKeyGeneration');
-
-                this.profiler.startFunction('updateParticleTrail');
-                if (trailData && trailData.points.length > 0) {
-                    if (now - trailData.lastUpdate >= trailData.trailUpdateInterval) {
-                        trailData.points.push(this.instanceData[shape][base + this.positionIdx].clone());
-                        if (trailData.points.length > this.maxTrailPoints) {
-                            trailData.points.shift();
-                        }
-
-                        this.updateTrailGeometry(trailData.mesh, trailData.points, trailData.points[0], 1);
-
-                        trailData.offset = trailData.points[0].clone().sub(trailData.points[trailData.points.length - 1])
-                        trailData.lastUpdate = now;
-                    }
-
-                    trailData.mesh.material.opacity = normalizedLifetime;
-                    trailData.mesh.position.copy(this.instanceData[shape][base + this.positionIdx].clone().add(trailData.offset));
-                }
-                this.profiler.endFunction('updateParticleTrail');
-
-                this.profiler.endFunction('particleProcessing');
+                // const trailKey = `${shape}-${i}`; …
             }
-            this.activeCounts[shape] = activeCount;
+
+            this.activeCounts[shape] = active;
+            group.instanceCount = active; 
         });
 
-        this.profiler.endFunction('particleSystemUpdate');
+        this.profiler?.endFunction?.('particleSystemUpdate');
     }
+
 
     dispose() {
         /*
@@ -397,7 +350,7 @@ class InstancedParticleSystem {
         Object.keys(this.activeCounts).forEach(shape => {
             const activeCount = this.activeCounts[shape];
             for (let i = 0; i < activeCount; i++) {
-                this.removeTrail(shape, i);
+               // this.removeTrail(shape, i);
             }
 
             this.activeCounts[shape] = 0;

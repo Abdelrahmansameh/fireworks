@@ -14,12 +14,10 @@ export default class GameProfiler {
         this.memorySnapshots = [];
         this.functionStack = [];
         this.startTime = null;
-
-        // Bind methods
-        this.startFrame = this.startFrame.bind(this);
-        this.endFrame = this.endFrame.bind(this);
-        this.startFunction = this.startFunction.bind(this);
-        this.endFunction = this.endFunction.bind(this);
+        
+        // Add profiler overhead tracking
+        this.profilerOverhead = 0;
+        this.profilerCallCount = 0;
     }
 
     startRecording() {
@@ -69,6 +67,8 @@ export default class GameProfiler {
 
     startFunction(name) {
         if (!this.currentFrame) return;
+        
+        const startOverhead = performance.now();
 
         const funcData = this.currentFrame.functions.get(name) || {
             totalTime: 0,
@@ -84,10 +84,16 @@ export default class GameProfiler {
 
         this.currentFrame.functions.set(name, funcData);
         this.functionStack.push(name);
+        
+        // Track profiler overhead
+        this.profilerOverhead += performance.now() - startOverhead;
+        this.profilerCallCount++;
     }
 
     endFunction(name) {
         if (!this.currentFrame) return;
+        
+        const startOverhead = performance.now();
 
         const endTime = performance.now();
         const funcData = this.currentFrame.functions.get(name);
@@ -108,6 +114,10 @@ export default class GameProfiler {
         }
 
         this.functionStack.pop();
+        
+        // Track profiler overhead
+        this.profilerOverhead += performance.now() - startOverhead;
+        this.profilerCallCount++;
     }
 
     calculateSelfTime(node) {
@@ -279,6 +289,9 @@ export default class GameProfiler {
                 endTime: performance.now(),
                 totalFrames: processedFrameData.length,
                 averageFrameTime: processedFrameData.reduce((sum, frame) => sum + frame.totalTime, 0) / processedFrameData.length,
+                profilerOverhead: this.profilerOverhead,
+                profilerCallCount: this.profilerCallCount,
+                averageOverheadPerCall: this.profilerOverhead / this.profilerCallCount,
                 config: this.config
             },
             frameData: processedFrameData,

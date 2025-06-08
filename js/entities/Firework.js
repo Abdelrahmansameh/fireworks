@@ -45,7 +45,7 @@ class Firework {
             color: new Renderer2D.Color(1, 1, 1, 1),
             position: new Renderer2D.Vector2(x, y),
             rotation: 0,
-            scale: new Renderer2D.Vector2(1, 1),
+            scale: new Renderer2D.Vector2(FIREWORK_CONFIG.rocketSize, FIREWORK_CONFIG.rocketSize),
             zIndex: -1,
             blendMode: Renderer2D.BlendMode.ADDITIVE,
             isStroke: false
@@ -92,7 +92,7 @@ class Firework {
                 this.trailInstanceGroup.addInstance(
                     new Renderer2D.Vector2(offsetX, offsetY),
                     0,
-                    new Renderer2D.Vector2(1, 1),
+                    new Renderer2D.Vector2(FIREWORK_CONFIG.rocketSize, FIREWORK_CONFIG.rocketSize),
                     new Renderer2D.Color(1, 1, 1, 1)
                 );
 
@@ -112,7 +112,7 @@ class Firework {
                 this.trailInstanceGroup.addInstance(
                     new Renderer2D.Vector2(x, y),
                     0,
-                    new Renderer2D.Vector2(1, 1),
+                    new Renderer2D.Vector2(FIREWORK_CONFIG.rocketSize, FIREWORK_CONFIG.rocketSize),
                     new Renderer2D.Color(color.r, color.g, color.b, 1)
                 );
 
@@ -130,7 +130,7 @@ class Firework {
                 this.trailInstanceGroup.addInstance(
                     new Renderer2D.Vector2(x, y),
                     0,
-                    new Renderer2D.Vector2(1, 1),
+                    new Renderer2D.Vector2(FIREWORK_CONFIG.rocketSize, FIREWORK_CONFIG.rocketSize),
                     new Renderer2D.Color(1, 0.67, 0, 1)
                 );
 
@@ -149,7 +149,7 @@ class Firework {
                 this.trailInstanceGroup.addInstance(
                     new Renderer2D.Vector2(x, y),
                     0,
-                    new Renderer2D.Vector2(1, 1),
+                    new Renderer2D.Vector2(FIREWORK_CONFIG.rocketSize, FIREWORK_CONFIG.rocketSize),
                     new Renderer2D.Color(1, 1, 1, 0.8)
                 );
 

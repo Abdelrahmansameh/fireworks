@@ -86,115 +86,6 @@ class FireworkGame {
         this.cameraTargtY = 0;
         this.cameraTargetZoom = 1.0;
 
-
-        const redcircleData = Renderer2D.buildCircle(50, 32);
-        this.opaqueRedCircle = this.renderer2D.createNormalShape({
-            vertices: redcircleData.vertices,
-            indices: redcircleData.indices,
-            color: new Renderer2D.Color(1, 0, 0, 1),
-            position: new Renderer2D.Vector2(100, 100),
-            rotation: 0,
-            scale: new Renderer2D.Vector2(1, 1),
-            zIndex: -1,
-            blendMode: Renderer2D.BlendMode.ADDITIVE,
-            isStroke: false
-        });
-
-        const circleData = Renderer2D.buildCircle(50, 32);
-        this.circleShape = this.renderer2D.createNormalShape({
-            vertices: circleData.vertices,
-            indices: circleData.indices,
-            color: new Renderer2D.Color(1, 0, 0, 1), // red
-            position: new Renderer2D.Vector2(200, 200),
-            rotation: 0,
-            scale: new Renderer2D.Vector2(2, 1),
-            zIndex: 1,
-            blendMode: Renderer2D.BlendMode.ADDITIVE,
-            isStroke: false
-        });
-
-        for (let i = 0; i < 2; i++) {
-            const ringData = Renderer2D.buildRing(80, 50, 32);
-            this.ringShape = this.renderer2D.createNormalShape({
-                vertices: ringData.vertices,
-                indices: ringData.indices,
-                color: new Renderer2D.Color(0.2, 1, 0.2, 1),
-                position: new Renderer2D.Vector2(400, 300),
-                rotation: 0,
-                scale: new Renderer2D.Vector2(2, 1),
-                zIndex: 2,
-                blendMode: Renderer2D.BlendMode.ADDITIVE,
-                isStroke: false
-            });
-        }
-
-        const starData = Renderer2D.buildStar(5, 60, 30);
-        this.starShape = this.renderer2D.createNormalShape({
-            vertices: starData.vertices,
-            indices: starData.indices,
-            color: new Renderer2D.Color(0.8, 0.8, 0.2, 0.9),
-            position: new Renderer2D.Vector2(600, 200),
-            rotation: 0,
-            scale: new Renderer2D.Vector2(1, 1),
-            zIndex: 3,
-            blendMode: Renderer2D.BlendMode.ADDITIVE,
-            isStroke: false
-        });
-
-        const linePoints = [
-            0, 0,
-            200, 500,
-            200, 450,
-            300, 470,
-            400, 520,
-            500, 510
-        ];
-        const strokeData = Renderer2D.buildStrokeGeometry(linePoints, 8);
-        this.lineShape = this.renderer2D.createNormalShape({
-            vertices: strokeData.vertices,
-            indices: strokeData.indices,
-            color: new Renderer2D.Color(1, 0, 0, 1),
-            position: new Renderer2D.Vector2(0, 0),
-            rotation: Math.PI * 2,
-            scale: new Renderer2D.Vector2(10, 10),
-            zIndex: 0,
-            blendMode: Renderer2D.BlendMode.ADDITIVE,
-            isStroke: true
-        });
-
-        const heartData = Renderer2D.buildTriangle();
-        this.heartShape = this.renderer2D.createNormalShape({
-            vertices: heartData.vertices,
-            indices: heartData.indices,
-            color: new Renderer2D.Color(1, 0.2, 0.5, 0.9),
-            position: new Renderer2D.Vector2(150, 400),
-            rotation: 0,
-            scale: new Renderer2D.Vector2(1, 1),
-            zIndex: 5,
-            blendMode: Renderer2D.BlendMode.ADDITIVE,
-            isStroke: false
-        });
-
-        const smallStarData = Renderer2D.buildStar(5, 0.5, 0.25);
-        this.starGroup = this.renderer2D.createInstancedGroup({
-            vertices: smallStarData.vertices,
-            indices: smallStarData.indices,
-            maxInstances: 50000,
-            zIndex: 10,
-            blendMode: Renderer2D.BlendMode.ADDITIVE
-        });
-
-        for (let i = 0; i < 50000; i++) {
-            const x = (Math.random() - 0.5) * 100;
-            const y = (Math.random() - 0.5) * 100;
-            const rot = Math.random() * Math.PI * 2;
-            const s = 2 + Math.random() * 20;
-            const r = Math.random();
-            const g = Math.random();
-            const b = Math.random();
-            this.starGroup.addInstance(new Renderer2D.Vector2(x, y), rot, new Renderer2D.Vector2(s, s), new Renderer2D.Color(r, g, b, 0.8));
-        }
-
         //  game components
         this.particleSystem = new InstancedParticleSystem(this.scene, this.renderer2D, 50000, this.profiler);
         this.crowd = new Crowd(this.scene);
@@ -515,11 +406,6 @@ class FireworkGame {
         }
 
 
-        this.ringShape.rotation += 0.01;
-        this.renderer2D.updateNormalShape(this.ringShape, { rotation: this.ringShape.rotation });
-        this.starShape.rotation -= 0.02;
-        this.renderer2D.updateNormalShape(this.starShape, { rotation: this.starShape.rotation });
-
         /*for (let i = 0; i < 50000; i++) {
             const x = (Math.random() - 0.5) * 2000;
             const y = (Math.random() - 0.5) * 2000;
@@ -527,7 +413,6 @@ class FireworkGame {
             this.starGroup.moveInstance(i, new Renderer2D.Vector2(x, y).scale(delta));
             this.starGroup.rotateInstance(i, rot);
         }*/
-        this.starGroup.clear();
 
         this.profiler.startFunction('drawFrame');
         this.renderer2D.drawFrame();

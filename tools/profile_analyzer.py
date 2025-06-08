@@ -330,6 +330,9 @@ def generate_function_stats_table(data):
         # Calculate average time per frame
         avg_time_per_frame = func_data['totalTime'] / total_frames if total_frames > 0 else 0
         
+        # Calculate calls per frame
+        calls_per_frame = total_calls / total_frames if total_frames > 0 else 0
+        
         row = f"""
         <tr>
             <td>{name}</td>
@@ -337,6 +340,7 @@ def generate_function_stats_table(data):
             <td>{avg_time_per_call:.2f}ms</td>
             <td>{avg_time_per_frame:.2f}ms</td>
             <td>{total_calls}</td>
+            <td>{calls_per_frame:.1f}</td>
             <td>{func_data['percentOfTotal']:.1f}%</td>
         </tr>
         """
@@ -351,7 +355,8 @@ def generate_function_stats_table(data):
                 <th>Total Time</th>
                 <th>Avg Time/Call</th>
                 <th>Avg Time/Frame</th>
-                <th>Calls</th>
+                <th>Total Calls</th>
+                <th>Calls/Frame</th>
                 <th>% of Total</th>
             </tr>
             {''.join(table_rows)}
@@ -424,10 +429,10 @@ def generate_function_timeline(data):
         for i, frame in enumerate(frames):
             if func_name in frame['functions']:
                 x.append(i)
-                y.append(frame['functions'][func_name]['totalTime'])
+                y.append(frame['functions'][func_name]['totalTime']);
             else:
-                x.append(i)
-                y.append(0)
+                x.append(i);
+                y.append(0);
         
         traces.append(go.Scatter(
             name=func_name,

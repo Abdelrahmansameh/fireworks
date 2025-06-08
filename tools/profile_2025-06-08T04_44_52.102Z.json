@@ -1,0 +1,7535 @@
+{
+  "metadata": {
+    "startTime": 64544.800000190735,
+    "endTime": 73367.70000004768,
+    "totalFrames": 337,
+    "averageFrameTime": 5.324925816023738,
+    "profilerOverhead": 36.60000014305115,
+    "profilerCallCount": 23078,
+    "averageOverheadPerCall": 0.0015859259963190548,
+    "config": {
+      "minFrameTimeMs": 10.67,
+      "minFunctionTimeMs": 0.01,
+      "maxFramesToStore": 1000,
+      "significantDigits": 3
+    }
+  },
+  "frameData": [
+    {
+      "timestamp": 64555.10000014305,
+      "totalTime": 7.3,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.7,
+          "timePerFrame": 0.7,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 6.6,
+          "timePerFrame": 6.6,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 66673.80000019073,
+      "totalTime": 46.6,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 2.9,
+          "timePerFrame": 2.9,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 43.7,
+          "timePerFrame": 43.7,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 66739.10000014305,
+      "totalTime": 40.3,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.4,
+          "timePerFrame": 0.4,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 39.8,
+          "timePerFrame": 39.8,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 66801.10000014305,
+      "totalTime": 38.3,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.4,
+          "timePerFrame": 0.4,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 37.8,
+          "timePerFrame": 37.8,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 66863,
+      "totalTime": 37.7,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.4,
+          "timePerFrame": 0.4,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 37.3,
+          "timePerFrame": 37.3,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 66923.70000004768,
+      "totalTime": 41.2,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.5,
+          "timePerFrame": 0.5,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 40.7,
+          "timePerFrame": 40.7,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 66986.60000014305,
+      "totalTime": 40.4,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.5,
+          "timePerFrame": 0.5,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 39.9,
+          "timePerFrame": 39.9,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 67053.70000004768,
+      "totalTime": 40.2,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.5,
+          "timePerFrame": 0.5,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 39.7,
+          "timePerFrame": 39.7,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 67118.40000009537,
+      "totalTime": 39.1,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.5,
+          "timePerFrame": 0.5,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 38.5,
+          "timePerFrame": 38.5,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 67181.30000019073,
+      "totalTime": 40.7,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.5,
+          "timePerFrame": 0.5,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 40.1,
+          "timePerFrame": 40.1,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 67247,
+      "totalTime": 41.4,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.5,
+          "timePerFrame": 0.5,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 40.9,
+          "timePerFrame": 40.9,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 67312.40000009537,
+      "totalTime": 39.1,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.6,
+          "timePerFrame": 0.6,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 38.4,
+          "timePerFrame": 38.4,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 67376.40000009537,
+      "totalTime": 38.9,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.5,
+          "timePerFrame": 0.5,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 38.3,
+          "timePerFrame": 38.3,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 67442,
+      "totalTime": 39.3,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.3,
+          "timePerFrame": 0.3,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 39,
+          "timePerFrame": 39,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 67505,
+      "totalTime": 34.7,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.5,
+          "timePerFrame": 0.5,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 34.2,
+          "timePerFrame": 34.2,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 67567.10000014305,
+      "totalTime": 27.9,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.4,
+          "timePerFrame": 0.4,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 27.5,
+          "timePerFrame": 27.5,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 67620.40000009537,
+      "totalTime": 24.8,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.4,
+          "timePerFrame": 0.4,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 24.3,
+          "timePerFrame": 24.3,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 67665.90000009537,
+      "totalTime": 9.6,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.9,
+          "timePerFrame": 0.9,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 8.6,
+          "timePerFrame": 8.6,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 67694.10000014305,
+      "totalTime": 5.2,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.1,
+          "timePerFrame": 0.1,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 5.1,
+          "timePerFrame": 5.1,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 67715.30000019073,
+      "totalTime": 3,
+      "functions": {
+        "autoLaunchersUpdate": {
+          "totalTime": 3,
+          "timePerFrame": 3,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 67731.70000004768,
+      "totalTime": 2.6,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.1,
+          "timePerFrame": 0.1,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 2.4,
+          "timePerFrame": 2.4,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 67746.80000019073,
+      "totalTime": 2.7,
+      "functions": {
+        "autoLaunchersUpdate": {
+          "totalTime": 2.7,
+          "timePerFrame": 2.7,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 67762.20000004768,
+      "totalTime": 2.1,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.1,
+          "timePerFrame": 0.1,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 2,
+          "timePerFrame": 2,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 67777.20000004768,
+      "totalTime": 2.8,
+      "functions": {
+        "autoLaunchersUpdate": {
+          "totalTime": 2.8,
+          "timePerFrame": 2.8,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 67792.60000014305,
+      "totalTime": 2.4,
+      "functions": {
+        "autoLaunchersUpdate": {
+          "totalTime": 2.3,
+          "timePerFrame": 2.3,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 67807.80000019073,
+      "totalTime": 3.9,
+      "functions": {
+        "autoLaunchersUpdate": {
+          "totalTime": 3.9,
+          "timePerFrame": 3.9,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 67824.5,
+      "totalTime": 2.9,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.1,
+          "timePerFrame": 0.1,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 2.8,
+          "timePerFrame": 2.8,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 67840.10000014305,
+      "totalTime": 2,
+      "functions": {
+        "autoLaunchersUpdate": {
+          "totalTime": 2,
+          "timePerFrame": 2,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 67855.5,
+      "totalTime": 3.3,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.1,
+          "timePerFrame": 0.1,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 3.2,
+          "timePerFrame": 3.2,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 67872,
+      "totalTime": 3,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.1,
+          "timePerFrame": 0.1,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 2.9,
+          "timePerFrame": 2.9,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 67888.20000004768,
+      "totalTime": 2.2,
+      "functions": {
+        "autoLaunchersUpdate": {
+          "totalTime": 2.2,
+          "timePerFrame": 2.2,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 67903.30000019073,
+      "totalTime": 3,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.1,
+          "timePerFrame": 0.1,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 2.8,
+          "timePerFrame": 2.8,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 67919.80000019073,
+      "totalTime": 2.7,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.1,
+          "timePerFrame": 0.1,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 2.4,
+          "timePerFrame": 2.4,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 67935.70000004768,
+      "totalTime": 1.1,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.1,
+          "timePerFrame": 0.1,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 1,
+          "timePerFrame": 1,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 67949.40000009537,
+      "totalTime": 3.4,
+      "functions": {
+        "autoLaunchersUpdate": {
+          "totalTime": 3.4,
+          "timePerFrame": 3.4,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 67965.30000019073,
+      "totalTime": 3.7,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.1,
+          "timePerFrame": 0.1,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 3.5,
+          "timePerFrame": 3.5,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 67982.60000014305,
+      "totalTime": 2.8,
+      "functions": {
+        "autoLaunchersUpdate": {
+          "totalTime": 2.8,
+          "timePerFrame": 2.8,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 67998.70000004768,
+      "totalTime": 2.3,
+      "functions": {
+        "autoLaunchersUpdate": {
+          "totalTime": 2.3,
+          "timePerFrame": 2.3,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 68014,
+      "totalTime": 2.3,
+      "functions": {
+        "autoLaunchersUpdate": {
+          "totalTime": 2.3,
+          "timePerFrame": 2.3,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 68029.20000004768,
+      "totalTime": 2.3,
+      "functions": {
+        "autoLaunchersUpdate": {
+          "totalTime": 2.3,
+          "timePerFrame": 2.3,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 68045,
+      "totalTime": 2.8,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.1,
+          "timePerFrame": 0.1,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 2.7,
+          "timePerFrame": 2.7,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 68060.90000009537,
+      "totalTime": 1.9,
+      "functions": {
+        "autoLaunchersUpdate": {
+          "totalTime": 1.9,
+          "timePerFrame": 1.9,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 68076,
+      "totalTime": 1.5,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.1,
+          "timePerFrame": 0.1,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 1.3,
+          "timePerFrame": 1.3,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 68090.20000004768,
+      "totalTime": 2,
+      "functions": {
+        "autoLaunchersUpdate": {
+          "totalTime": 2,
+          "timePerFrame": 2,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 68105,
+      "totalTime": 2.5,
+      "functions": {
+        "autoLaunchersUpdate": {
+          "totalTime": 2.5,
+          "timePerFrame": 2.5,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 68121.40000009537,
+      "totalTime": 3.3,
+      "functions": {
+        "autoLaunchersUpdate": {
+          "totalTime": 3.3,
+          "timePerFrame": 3.3,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 68138.90000009537,
+      "totalTime": 2.6,
+      "functions": {
+        "autoLaunchersUpdate": {
+          "totalTime": 2.5,
+          "timePerFrame": 2.5,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 68155.90000009537,
+      "totalTime": 4.4,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.1,
+          "timePerFrame": 0.1,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 4.3,
+          "timePerFrame": 4.3,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 68174.5,
+      "totalTime": 4.1,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.1,
+          "timePerFrame": 0.1,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 4,
+          "timePerFrame": 4,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 68193.20000004768,
+      "totalTime": 2.6,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.1,
+          "timePerFrame": 0.1,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 2.5,
+          "timePerFrame": 2.5,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 68210.90000009537,
+      "totalTime": 2.7,
+      "functions": {
+        "autoLaunchersUpdate": {
+          "totalTime": 2.7,
+          "timePerFrame": 2.7,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 68227.60000014305,
+      "totalTime": 2.3,
+      "functions": {
+        "autoLaunchersUpdate": {
+          "totalTime": 2.3,
+          "timePerFrame": 2.3,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 68244.30000019073,
+      "totalTime": 3.1,
+      "functions": {
+        "autoLaunchersUpdate": {
+          "totalTime": 3.1,
+          "timePerFrame": 3.1,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 68262,
+      "totalTime": 1.7,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.1,
+          "timePerFrame": 0.1,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 1.6,
+          "timePerFrame": 1.6,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 68278.30000019073,
+      "totalTime": 1.1,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.1,
+          "timePerFrame": 0.1,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 1,
+          "timePerFrame": 1,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 68293,
+      "totalTime": 2.6,
+      "functions": {
+        "autoLaunchersUpdate": {
+          "totalTime": 2.5,
+          "timePerFrame": 2.5,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 68309.20000004768,
+      "totalTime": 1.2,
+      "functions": {
+        "autoLaunchersUpdate": {
+          "totalTime": 1.2,
+          "timePerFrame": 1.2,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 68325.60000014305,
+      "totalTime": 3.9,
+      "functions": {
+        "autoLaunchersUpdate": {
+          "totalTime": 3.9,
+          "timePerFrame": 3.9,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 68342.90000009537,
+      "totalTime": 3.1,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.2,
+          "timePerFrame": 0.2,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 2.9,
+          "timePerFrame": 2.9,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 68360.30000019073,
+      "totalTime": 2.6,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.1,
+          "timePerFrame": 0.1,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 2.5,
+          "timePerFrame": 2.5,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 68378.40000009537,
+      "totalTime": 3.9,
+      "functions": {
+        "autoLaunchersUpdate": {
+          "totalTime": 3.9,
+          "timePerFrame": 3.9,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 68396.80000019073,
+      "totalTime": 2.8,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.2,
+          "timePerFrame": 0.2,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 2.6,
+          "timePerFrame": 2.6,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 68414.20000004768,
+      "totalTime": 3,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.1,
+          "timePerFrame": 0.1,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 2.9,
+          "timePerFrame": 2.9,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 68431.70000004768,
+      "totalTime": 2.1,
+      "functions": {
+        "autoLaunchersUpdate": {
+          "totalTime": 2.1,
+          "timePerFrame": 2.1,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 68448.40000009537,
+      "totalTime": 3.4,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.2,
+          "timePerFrame": 0.2,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 3.2,
+          "timePerFrame": 3.2,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 68466.10000014305,
+      "totalTime": 1.9,
+      "functions": {
+        "autoLaunchersUpdate": {
+          "totalTime": 1.9,
+          "timePerFrame": 1.9,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 68483.30000019073,
+      "totalTime": 1.1,
+      "functions": {
+        "autoLaunchersUpdate": {
+          "totalTime": 1.1,
+          "timePerFrame": 1.1,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 68499.40000009537,
+      "totalTime": 1.7,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.1,
+          "timePerFrame": 0.1,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 1.5,
+          "timePerFrame": 1.5,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 68514.70000004768,
+      "totalTime": 2.1,
+      "functions": {
+        "autoLaunchersUpdate": {
+          "totalTime": 2.1,
+          "timePerFrame": 2.1,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 68530.90000009537,
+      "totalTime": 2.3,
+      "functions": {
+        "autoLaunchersUpdate": {
+          "totalTime": 2.3,
+          "timePerFrame": 2.3,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 68547.10000014305,
+      "totalTime": 3.8,
+      "functions": {
+        "autoLaunchersUpdate": {
+          "totalTime": 3.8,
+          "timePerFrame": 3.8,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 68566.20000004768,
+      "totalTime": 3.4,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.2,
+          "timePerFrame": 0.2,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 3.1,
+          "timePerFrame": 3.1,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 68585.90000009537,
+      "totalTime": 5.6,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.2,
+          "timePerFrame": 0.2,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 5.4,
+          "timePerFrame": 5.4,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 68606.60000014305,
+      "totalTime": 3.6,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.1,
+          "timePerFrame": 0.1,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 3.5,
+          "timePerFrame": 3.5,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 68626,
+      "totalTime": 3.4,
+      "functions": {
+        "autoLaunchersUpdate": {
+          "totalTime": 3.4,
+          "timePerFrame": 3.4,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 68644.60000014305,
+      "totalTime": 2.2,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.2,
+          "timePerFrame": 0.2,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 2,
+          "timePerFrame": 2,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 68662,
+      "totalTime": 1.9,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.1,
+          "timePerFrame": 0.1,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 1.8,
+          "timePerFrame": 1.8,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 68678.80000019073,
+      "totalTime": 2.5,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.1,
+          "timePerFrame": 0.1,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 2.4,
+          "timePerFrame": 2.4,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 68696.10000014305,
+      "totalTime": 0.7,
+      "functions": {
+        "autoLaunchersUpdate": {
+          "totalTime": 0.6,
+          "timePerFrame": 0.6,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 68710.90000009537,
+      "totalTime": 2.2,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.3,
+          "timePerFrame": 0.3,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 1.9,
+          "timePerFrame": 1.9,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 68726.80000019073,
+      "totalTime": 2.7,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.2,
+          "timePerFrame": 0.2,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 2.5,
+          "timePerFrame": 2.5,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 68743.5,
+      "totalTime": 3.7,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.2,
+          "timePerFrame": 0.2,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 3.5,
+          "timePerFrame": 3.5,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 68761.80000019073,
+      "totalTime": 4.4,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.2,
+          "timePerFrame": 0.2,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 4.2,
+          "timePerFrame": 4.2,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 68781.40000009537,
+      "totalTime": 2.2,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.1,
+          "timePerFrame": 0.1,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 2.1,
+          "timePerFrame": 2.1,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 68799,
+      "totalTime": 4,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.1,
+          "timePerFrame": 0.1,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 3.9,
+          "timePerFrame": 3.9,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 68818.10000014305,
+      "totalTime": 4.4,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.1,
+          "timePerFrame": 0.1,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 4.3,
+          "timePerFrame": 4.3,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 68838.5,
+      "totalTime": 2.7,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.1,
+          "timePerFrame": 0.1,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 2.6,
+          "timePerFrame": 2.6,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 68857.20000004768,
+      "totalTime": 1.7,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.1,
+          "timePerFrame": 0.1,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 1.6,
+          "timePerFrame": 1.6,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 68873.90000009537,
+      "totalTime": 2.4,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.1,
+          "timePerFrame": 0.1,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 2.2,
+          "timePerFrame": 2.2,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 68890.20000004768,
+      "totalTime": 1.6,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.1,
+          "timePerFrame": 0.1,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 1.5,
+          "timePerFrame": 1.5,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 68906,
+      "totalTime": 1.2,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.2,
+          "timePerFrame": 0.2,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 1,
+          "timePerFrame": 1,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 68921.10000014305,
+      "totalTime": 3.1,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.1,
+          "timePerFrame": 0.1,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 3,
+          "timePerFrame": 3,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 68938.40000009537,
+      "totalTime": 2.9,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.1,
+          "timePerFrame": 0.1,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 2.8,
+          "timePerFrame": 2.8,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 68956,
+      "totalTime": 5,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.2,
+          "timePerFrame": 0.2,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 4.8,
+          "timePerFrame": 4.8,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 68975.60000014305,
+      "totalTime": 4.3,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.1,
+          "timePerFrame": 0.1,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 4.2,
+          "timePerFrame": 4.2,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 68994.90000009537,
+      "totalTime": 3.6,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.3,
+          "timePerFrame": 0.3,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 3.3,
+          "timePerFrame": 3.3,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 69013.80000019073,
+      "totalTime": 5.3,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.2,
+          "timePerFrame": 0.2,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 5.1,
+          "timePerFrame": 5.1,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 69033.70000004768,
+      "totalTime": 2.8,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.3,
+          "timePerFrame": 0.3,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 2.5,
+          "timePerFrame": 2.5,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 69051.70000004768,
+      "totalTime": 2.8,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.1,
+          "timePerFrame": 0.1,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 2.7,
+          "timePerFrame": 2.7,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 69068.90000009537,
+      "totalTime": 1.2,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.1,
+          "timePerFrame": 0.1,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 1,
+          "timePerFrame": 1,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 69084.70000004768,
+      "totalTime": 1.8,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.3,
+          "timePerFrame": 0.3,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 1.5,
+          "timePerFrame": 1.5,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 69100.80000019073,
+      "totalTime": 2.6,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.2,
+          "timePerFrame": 0.2,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 2.4,
+          "timePerFrame": 2.4,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 69118.90000009537,
+      "totalTime": 2.7,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.2,
+          "timePerFrame": 0.2,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 2.4,
+          "timePerFrame": 2.4,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 69137.60000014305,
+      "totalTime": 3.7,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.3,
+          "timePerFrame": 0.3,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 3.4,
+          "timePerFrame": 3.4,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 69156.80000019073,
+      "totalTime": 3.2,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.2,
+          "timePerFrame": 0.2,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 3,
+          "timePerFrame": 3,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 69176.80000019073,
+      "totalTime": 5.8,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.3,
+          "timePerFrame": 0.3,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 5.5,
+          "timePerFrame": 5.5,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 69198.90000009537,
+      "totalTime": 4,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.3,
+          "timePerFrame": 0.3,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 3.6,
+          "timePerFrame": 3.6,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 69220.30000019073,
+      "totalTime": 6.8,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.3,
+          "timePerFrame": 0.3,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 6.4,
+          "timePerFrame": 6.4,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 69243.60000014305,
+      "totalTime": 3.1,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.3,
+          "timePerFrame": 0.3,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 2.8,
+          "timePerFrame": 2.8,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 69262,
+      "totalTime": 2.1,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.3,
+          "timePerFrame": 0.3,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 1.8,
+          "timePerFrame": 1.8,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 69278.60000014305,
+      "totalTime": 1,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.4,
+          "timePerFrame": 0.4,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 0.6,
+          "timePerFrame": 0.6,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 69293.40000009537,
+      "totalTime": 2.5,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.3,
+          "timePerFrame": 0.3,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 2.2,
+          "timePerFrame": 2.2,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 69309.30000019073,
+      "totalTime": 3.7,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.3,
+          "timePerFrame": 0.3,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 3.4,
+          "timePerFrame": 3.4,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 69327.30000019073,
+      "totalTime": 1.8,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.3,
+          "timePerFrame": 0.3,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 1.5,
+          "timePerFrame": 1.5,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 69343.80000019073,
+      "totalTime": 3.5,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.3,
+          "timePerFrame": 0.3,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 3.2,
+          "timePerFrame": 3.2,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 69360.80000019073,
+      "totalTime": 3.5,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.4,
+          "timePerFrame": 0.4,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 3.1,
+          "timePerFrame": 3.1,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 69378.80000019073,
+      "totalTime": 3.4,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.3,
+          "timePerFrame": 0.3,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 3.1,
+          "timePerFrame": 3.1,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 69396.70000004768,
+      "totalTime": 5.9,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.5,
+          "timePerFrame": 0.5,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 5.4,
+          "timePerFrame": 5.4,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 69416.60000014305,
+      "totalTime": 1.8,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.4,
+          "timePerFrame": 0.4,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 1.4,
+          "timePerFrame": 1.4,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 69433.30000019073,
+      "totalTime": 4.2,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.3,
+          "timePerFrame": 0.3,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 3.9,
+          "timePerFrame": 3.9,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 69452,
+      "totalTime": 2.2,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.4,
+          "timePerFrame": 0.4,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 1.8,
+          "timePerFrame": 1.8,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 69470.40000009537,
+      "totalTime": 2.4,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.4,
+          "timePerFrame": 0.4,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 1.9,
+          "timePerFrame": 1.9,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 69487.10000014305,
+      "totalTime": 2.6,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.4,
+          "timePerFrame": 0.4,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 2.2,
+          "timePerFrame": 2.2,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 69504.40000009537,
+      "totalTime": 4.2,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.6,
+          "timePerFrame": 0.6,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 3.6,
+          "timePerFrame": 3.6,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 69523.10000014305,
+      "totalTime": 3.5,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.4,
+          "timePerFrame": 0.4,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 3.1,
+          "timePerFrame": 3.1,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 69541.20000004768,
+      "totalTime": 2.7,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.5,
+          "timePerFrame": 0.5,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 2.2,
+          "timePerFrame": 2.2,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 69558.70000004768,
+      "totalTime": 4.1,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.4,
+          "timePerFrame": 0.4,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 3.7,
+          "timePerFrame": 3.7,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 69577,
+      "totalTime": 5.7,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.6,
+          "timePerFrame": 0.6,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 5.1,
+          "timePerFrame": 5.1,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 69598.10000014305,
+      "totalTime": 6.3,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.4,
+          "timePerFrame": 0.4,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 5.9,
+          "timePerFrame": 5.9,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 69618.80000019073,
+      "totalTime": 3,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.5,
+          "timePerFrame": 0.5,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 2.5,
+          "timePerFrame": 2.5,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 69636.90000009537,
+      "totalTime": 2.7,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.5,
+          "timePerFrame": 0.5,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 2.2,
+          "timePerFrame": 2.2,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 69653.90000009537,
+      "totalTime": 5.3,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.7,
+          "timePerFrame": 0.7,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 4.5,
+          "timePerFrame": 4.5,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 69672.70000004768,
+      "totalTime": 2.6,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.4,
+          "timePerFrame": 0.4,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 2.1,
+          "timePerFrame": 2.1,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 69692.20000004768,
+      "totalTime": 3.5,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.6,
+          "timePerFrame": 0.6,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 2.9,
+          "timePerFrame": 2.9,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 69713.90000009537,
+      "totalTime": 4,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.6,
+          "timePerFrame": 0.6,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 3.3,
+          "timePerFrame": 3.3,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 69736.20000004768,
+      "totalTime": 6.7,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.5,
+          "timePerFrame": 0.5,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 6.2,
+          "timePerFrame": 6.2,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 69761,
+      "totalTime": 4.1,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.6,
+          "timePerFrame": 0.6,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 3.4,
+          "timePerFrame": 3.4,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 69779.60000014305,
+      "totalTime": 6.2,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.5,
+          "timePerFrame": 0.5,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 5.6,
+          "timePerFrame": 5.6,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 69800.20000004768,
+      "totalTime": 3.6,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.6,
+          "timePerFrame": 0.6,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 3,
+          "timePerFrame": 3,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 69820.5,
+      "totalTime": 4.1,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.6,
+          "timePerFrame": 0.6,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 3.5,
+          "timePerFrame": 3.5,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 69838.70000004768,
+      "totalTime": 2.7,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.5,
+          "timePerFrame": 0.5,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 2.2,
+          "timePerFrame": 2.2,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 69854.90000009537,
+      "totalTime": 4,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.5,
+          "timePerFrame": 0.5,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 3.4,
+          "timePerFrame": 3.4,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 69871.60000014305,
+      "totalTime": 4.1,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.5,
+          "timePerFrame": 0.5,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 3.6,
+          "timePerFrame": 3.6,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 69890.40000009537,
+      "totalTime": 3.4,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.6,
+          "timePerFrame": 0.6,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 2.8,
+          "timePerFrame": 2.8,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 69907.10000014305,
+      "totalTime": 3.6,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.6,
+          "timePerFrame": 0.6,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 3,
+          "timePerFrame": 3,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 69925.10000014305,
+      "totalTime": 4.8,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 1,
+          "timePerFrame": 1,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 3.8,
+          "timePerFrame": 3.8,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 69949.10000014305,
+      "totalTime": 7.1,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.7,
+          "timePerFrame": 0.7,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 6.2,
+          "timePerFrame": 6.2,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 69973.20000004768,
+      "totalTime": 6.2,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.7,
+          "timePerFrame": 0.7,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 5.5,
+          "timePerFrame": 5.5,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 69996.70000004768,
+      "totalTime": 3.7,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.6,
+          "timePerFrame": 0.6,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 3.1,
+          "timePerFrame": 3.1,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 70014.10000014305,
+      "totalTime": 3.8,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.7,
+          "timePerFrame": 0.7,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 3.1,
+          "timePerFrame": 3.1,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 70031.10000014305,
+      "totalTime": 3.6,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.7,
+          "timePerFrame": 0.7,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 2.9,
+          "timePerFrame": 2.9,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 70048.30000019073,
+      "totalTime": 2.2,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.6,
+          "timePerFrame": 0.6,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 1.5,
+          "timePerFrame": 1.5,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 70063.80000019073,
+      "totalTime": 5.1,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.5,
+          "timePerFrame": 0.5,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 4.6,
+          "timePerFrame": 4.6,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 70081.20000004768,
+      "totalTime": 4.4,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.7,
+          "timePerFrame": 0.7,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 3.7,
+          "timePerFrame": 3.7,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 70098.80000019073,
+      "totalTime": 3.3,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.6,
+          "timePerFrame": 0.6,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 2.7,
+          "timePerFrame": 2.7,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 70114.90000009537,
+      "totalTime": 3.3,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.6,
+          "timePerFrame": 0.6,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 2.6,
+          "timePerFrame": 2.6,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 70133.80000019073,
+      "totalTime": 3.9,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.9,
+          "timePerFrame": 0.9,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 3,
+          "timePerFrame": 3,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 70151.90000009537,
+      "totalTime": 3.6,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.7,
+          "timePerFrame": 0.7,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 2.9,
+          "timePerFrame": 2.9,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 70169.20000004768,
+      "totalTime": 4.9,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.8,
+          "timePerFrame": 0.8,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 4.1,
+          "timePerFrame": 4.1,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 70187.80000019073,
+      "totalTime": 2.9,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.7,
+          "timePerFrame": 0.7,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 2.2,
+          "timePerFrame": 2.2,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 70204,
+      "totalTime": 3.5,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.7,
+          "timePerFrame": 0.7,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 2.8,
+          "timePerFrame": 2.8,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 70220.30000019073,
+      "totalTime": 3.1,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.8,
+          "timePerFrame": 0.8,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 2.3,
+          "timePerFrame": 2.3,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 70236.10000014305,
+      "totalTime": 3.6,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.7,
+          "timePerFrame": 0.7,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 2.9,
+          "timePerFrame": 2.9,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 70252.20000004768,
+      "totalTime": 3.7,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.6,
+          "timePerFrame": 0.6,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 3.1,
+          "timePerFrame": 3.1,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 70268.70000004768,
+      "totalTime": 3.1,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.7,
+          "timePerFrame": 0.7,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 2.4,
+          "timePerFrame": 2.4,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 70284,
+      "totalTime": 4.8,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.7,
+          "timePerFrame": 0.7,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 4.1,
+          "timePerFrame": 4.1,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 70301.20000004768,
+      "totalTime": 3.2,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.7,
+          "timePerFrame": 0.7,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 2.5,
+          "timePerFrame": 2.5,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 70317.30000019073,
+      "totalTime": 4,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.8,
+          "timePerFrame": 0.8,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 3.2,
+          "timePerFrame": 3.2,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 70333.60000014305,
+      "totalTime": 3.1,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.7,
+          "timePerFrame": 0.7,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 2.4,
+          "timePerFrame": 2.4,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 70349.70000004768,
+      "totalTime": 4.1,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.7,
+          "timePerFrame": 0.7,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 3.4,
+          "timePerFrame": 3.4,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 70366,
+      "totalTime": 2.6,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.7,
+          "timePerFrame": 0.7,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 1.8,
+          "timePerFrame": 1.8,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 70381.20000004768,
+      "totalTime": 1.8,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.7,
+          "timePerFrame": 0.7,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 1,
+          "timePerFrame": 1,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 70395.60000014305,
+      "totalTime": 2.7,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.8,
+          "timePerFrame": 0.8,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 1.8,
+          "timePerFrame": 1.8,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 70410.60000014305,
+      "totalTime": 3,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.7,
+          "timePerFrame": 0.7,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 2.3,
+          "timePerFrame": 2.3,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 70425.40000009537,
+      "totalTime": 3,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.8,
+          "timePerFrame": 0.8,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 2.1,
+          "timePerFrame": 2.1,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 70440.90000009537,
+      "totalTime": 5.4,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.8,
+          "timePerFrame": 0.8,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 4.6,
+          "timePerFrame": 4.6,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 70458.5,
+      "totalTime": 4.6,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.7,
+          "timePerFrame": 0.7,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 3.8,
+          "timePerFrame": 3.8,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 70476.40000009537,
+      "totalTime": 2.5,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.7,
+          "timePerFrame": 0.7,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 1.6,
+          "timePerFrame": 1.6,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 70491.80000019073,
+      "totalTime": 5.4,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.8,
+          "timePerFrame": 0.8,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 4.6,
+          "timePerFrame": 4.6,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 70509.70000004768,
+      "totalTime": 4.1,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.7,
+          "timePerFrame": 0.7,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 3.3,
+          "timePerFrame": 3.3,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 70527.5,
+      "totalTime": 5.3,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.6,
+          "timePerFrame": 0.6,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 4.6,
+          "timePerFrame": 4.6,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 70546.20000004768,
+      "totalTime": 3.5,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.7,
+          "timePerFrame": 0.7,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 2.7,
+          "timePerFrame": 2.7,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 70563.80000019073,
+      "totalTime": 3.3,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.7,
+          "timePerFrame": 0.7,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 2.6,
+          "timePerFrame": 2.6,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 70580.90000009537,
+      "totalTime": 3.8,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.8,
+          "timePerFrame": 0.8,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 3,
+          "timePerFrame": 3,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 70598.20000004768,
+      "totalTime": 1.6,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.8,
+          "timePerFrame": 0.8,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 0.7,
+          "timePerFrame": 0.7,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 70612.70000004768,
+      "totalTime": 2.5,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.8,
+          "timePerFrame": 0.8,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 1.6,
+          "timePerFrame": 1.6,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 70627.70000004768,
+      "totalTime": 3.4,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.7,
+          "timePerFrame": 0.7,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 2.7,
+          "timePerFrame": 2.7,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 70644,
+      "totalTime": 4.2,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.7,
+          "timePerFrame": 0.7,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 3.5,
+          "timePerFrame": 3.5,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 70660.60000014305,
+      "totalTime": 4.6,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.8,
+          "timePerFrame": 0.8,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 3.8,
+          "timePerFrame": 3.8,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 70678.40000009537,
+      "totalTime": 4.6,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.8,
+          "timePerFrame": 0.8,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 3.8,
+          "timePerFrame": 3.8,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 70697.10000014305,
+      "totalTime": 4.8,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.9,
+          "timePerFrame": 0.9,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 3.9,
+          "timePerFrame": 3.9,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 70716.5,
+      "totalTime": 7.4,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.7,
+          "timePerFrame": 0.7,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 6.5,
+          "timePerFrame": 6.5,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 70736.80000019073,
+      "totalTime": 3.8,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.8,
+          "timePerFrame": 0.8,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 3,
+          "timePerFrame": 3,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 70754.90000009537,
+      "totalTime": 2.5,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.6,
+          "timePerFrame": 0.6,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 1.9,
+          "timePerFrame": 1.9,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 70770.60000014305,
+      "totalTime": 2.9,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.8,
+          "timePerFrame": 0.8,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 2.1,
+          "timePerFrame": 2.1,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 70785.90000009537,
+      "totalTime": 1.9,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.8,
+          "timePerFrame": 0.8,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 1.1,
+          "timePerFrame": 1.1,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 70800.10000014305,
+      "totalTime": 2.6,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.7,
+          "timePerFrame": 0.7,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 1.9,
+          "timePerFrame": 1.9,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 70814.5,
+      "totalTime": 1.9,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.8,
+          "timePerFrame": 0.8,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 1.1,
+          "timePerFrame": 1.1,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 70828.30000019073,
+      "totalTime": 3.6,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.8,
+          "timePerFrame": 0.8,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 2.8,
+          "timePerFrame": 2.8,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 70843.80000019073,
+      "totalTime": 3.1,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.8,
+          "timePerFrame": 0.8,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 2.3,
+          "timePerFrame": 2.3,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 70859.30000019073,
+      "totalTime": 4.1,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.8,
+          "timePerFrame": 0.8,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 3.2,
+          "timePerFrame": 3.2,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 70875.90000009537,
+      "totalTime": 4.5,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.7,
+          "timePerFrame": 0.7,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 3.8,
+          "timePerFrame": 3.8,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 70893.10000014305,
+      "totalTime": 3.8,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.9,
+          "timePerFrame": 0.9,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 2.9,
+          "timePerFrame": 2.9,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 70909.90000009537,
+      "totalTime": 5,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.8,
+          "timePerFrame": 0.8,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 4.2,
+          "timePerFrame": 4.2,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 70928.10000014305,
+      "totalTime": 6.4,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.9,
+          "timePerFrame": 0.9,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 5.4,
+          "timePerFrame": 5.4,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 70948.5,
+      "totalTime": 3.2,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.9,
+          "timePerFrame": 0.9,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 2.3,
+          "timePerFrame": 2.3,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 70966.5,
+      "totalTime": 2.8,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.8,
+          "timePerFrame": 0.8,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 1.9,
+          "timePerFrame": 1.9,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 70985.20000004768,
+      "totalTime": 3.2,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.8,
+          "timePerFrame": 0.8,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 2.4,
+          "timePerFrame": 2.4,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 71001,
+      "totalTime": 2.7,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.9,
+          "timePerFrame": 0.9,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 1.7,
+          "timePerFrame": 1.7,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 71016.20000004768,
+      "totalTime": 3.7,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.9,
+          "timePerFrame": 0.9,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 2.7,
+          "timePerFrame": 2.7,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 71031.70000004768,
+      "totalTime": 2.2,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.8,
+          "timePerFrame": 0.8,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 1.3,
+          "timePerFrame": 1.3,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 71046.30000019073,
+      "totalTime": 3.1,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.8,
+          "timePerFrame": 0.8,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 2.3,
+          "timePerFrame": 2.3,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 71061.5,
+      "totalTime": 3.7,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.8,
+          "timePerFrame": 0.8,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 2.9,
+          "timePerFrame": 2.9,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 71078.20000004768,
+      "totalTime": 6.1,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.7,
+          "timePerFrame": 0.7,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 5.3,
+          "timePerFrame": 5.3,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 71097.30000019073,
+      "totalTime": 5.5,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.8,
+          "timePerFrame": 0.8,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 4.7,
+          "timePerFrame": 4.7,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 71117.20000004768,
+      "totalTime": 3.9,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.8,
+          "timePerFrame": 0.8,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 3,
+          "timePerFrame": 3,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 71134.60000014305,
+      "totalTime": 5,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.9,
+          "timePerFrame": 0.9,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 4.1,
+          "timePerFrame": 4.1,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 71152.60000014305,
+      "totalTime": 2.9,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.8,
+          "timePerFrame": 0.8,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 2,
+          "timePerFrame": 2,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 71168.60000014305,
+      "totalTime": 3.1,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.8,
+          "timePerFrame": 0.8,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 2.3,
+          "timePerFrame": 2.3,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 71184,
+      "totalTime": 1.5,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.9,
+          "timePerFrame": 0.9,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 0.6,
+          "timePerFrame": 0.6,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 71197.5,
+      "totalTime": 3.6,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.8,
+          "timePerFrame": 0.8,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 2.8,
+          "timePerFrame": 2.8,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 71212.70000004768,
+      "totalTime": 3.2,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.9,
+          "timePerFrame": 0.9,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 2.3,
+          "timePerFrame": 2.3,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 71228.30000019073,
+      "totalTime": 3.6,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.9,
+          "timePerFrame": 0.9,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 2.7,
+          "timePerFrame": 2.7,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 71244.30000019073,
+      "totalTime": 2.4,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.9,
+          "timePerFrame": 0.9,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 1.5,
+          "timePerFrame": 1.5,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 71258.80000019073,
+      "totalTime": 3.6,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.9,
+          "timePerFrame": 0.9,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 2.7,
+          "timePerFrame": 2.7,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 71274.20000004768,
+      "totalTime": 3.7,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.9,
+          "timePerFrame": 0.9,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 2.7,
+          "timePerFrame": 2.7,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 71290.20000004768,
+      "totalTime": 6.3,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.9,
+          "timePerFrame": 0.9,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 5.4,
+          "timePerFrame": 5.4,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 71309.10000014305,
+      "totalTime": 4.2,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.9,
+          "timePerFrame": 0.9,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 3.1,
+          "timePerFrame": 3.1,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 71327.10000014305,
+      "totalTime": 2.5,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.9,
+          "timePerFrame": 0.9,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 1.6,
+          "timePerFrame": 1.6,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 71343,
+      "totalTime": 4.9,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.8,
+          "timePerFrame": 0.8,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 4,
+          "timePerFrame": 4,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 71360,
+      "totalTime": 2.4,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 1,
+          "timePerFrame": 1,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 1.4,
+          "timePerFrame": 1.4,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 71374.90000009537,
+      "totalTime": 2.3,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.9,
+          "timePerFrame": 0.9,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 1.4,
+          "timePerFrame": 1.4,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 71389,
+      "totalTime": 3,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.9,
+          "timePerFrame": 0.9,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 2.1,
+          "timePerFrame": 2.1,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 71403.80000019073,
+      "totalTime": 3.2,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.9,
+          "timePerFrame": 0.9,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 2.3,
+          "timePerFrame": 2.3,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 71419.30000019073,
+      "totalTime": 3.3,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.9,
+          "timePerFrame": 0.9,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 2.4,
+          "timePerFrame": 2.4,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 71434.90000009537,
+      "totalTime": 3.3,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.9,
+          "timePerFrame": 0.9,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 2.4,
+          "timePerFrame": 2.4,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 71450.30000019073,
+      "totalTime": 2.8,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.8,
+          "timePerFrame": 0.8,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 2,
+          "timePerFrame": 2,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 71465.20000004768,
+      "totalTime": 4.2,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.8,
+          "timePerFrame": 0.8,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 3.4,
+          "timePerFrame": 3.4,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 71482,
+      "totalTime": 3.9,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.9,
+          "timePerFrame": 0.9,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 3,
+          "timePerFrame": 3,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 71498.60000014305,
+      "totalTime": 4,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.8,
+          "timePerFrame": 0.8,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 3.2,
+          "timePerFrame": 3.2,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 71515.60000014305,
+      "totalTime": 5.1,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.9,
+          "timePerFrame": 0.9,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 4.2,
+          "timePerFrame": 4.2,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 71533.30000019073,
+      "totalTime": 2,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.9,
+          "timePerFrame": 0.9,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 1.1,
+          "timePerFrame": 1.1,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 71547.90000009537,
+      "totalTime": 3,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.8,
+          "timePerFrame": 0.8,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 2.1,
+          "timePerFrame": 2.1,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 71562.30000019073,
+      "totalTime": 3.8,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.8,
+          "timePerFrame": 0.8,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 3,
+          "timePerFrame": 3,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 71578.30000019073,
+      "totalTime": 2.5,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.9,
+          "timePerFrame": 0.9,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 1.6,
+          "timePerFrame": 1.6,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 71593.20000004768,
+      "totalTime": 4,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 1,
+          "timePerFrame": 1,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 3,
+          "timePerFrame": 3,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 71609.70000004768,
+      "totalTime": 2.9,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.9,
+          "timePerFrame": 0.9,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 2,
+          "timePerFrame": 2,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 71625,
+      "totalTime": 3.7,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 1,
+          "timePerFrame": 1,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 2.6,
+          "timePerFrame": 2.6,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 71640.80000019073,
+      "totalTime": 3.1,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.9,
+          "timePerFrame": 0.9,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 2.2,
+          "timePerFrame": 2.2,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 71657.10000014305,
+      "totalTime": 3.2,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.9,
+          "timePerFrame": 0.9,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 2.3,
+          "timePerFrame": 2.3,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 71672.20000004768,
+      "totalTime": 3.8,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.9,
+          "timePerFrame": 0.9,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 2.9,
+          "timePerFrame": 2.9,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 71688.10000014305,
+      "totalTime": 4,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 1,
+          "timePerFrame": 1,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 2.9,
+          "timePerFrame": 2.9,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 71705.5,
+      "totalTime": 3.5,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.9,
+          "timePerFrame": 0.9,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 2.6,
+          "timePerFrame": 2.6,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 71725,
+      "totalTime": 4.8,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 1,
+          "timePerFrame": 1,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 3.8,
+          "timePerFrame": 3.8,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 71742.60000014305,
+      "totalTime": 2.5,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.9,
+          "timePerFrame": 0.9,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 1.6,
+          "timePerFrame": 1.6,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 71758,
+      "totalTime": 2.4,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.8,
+          "timePerFrame": 0.8,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 1.6,
+          "timePerFrame": 1.6,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 71773.5,
+      "totalTime": 6.2,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.9,
+          "timePerFrame": 0.9,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 5.3,
+          "timePerFrame": 5.3,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 71792.10000014305,
+      "totalTime": 4.2,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.9,
+          "timePerFrame": 0.9,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 3.3,
+          "timePerFrame": 3.3,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 71812,
+      "totalTime": 4.5,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 1,
+          "timePerFrame": 1,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 3.4,
+          "timePerFrame": 3.4,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 71835.20000004768,
+      "totalTime": 4.7,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 1,
+          "timePerFrame": 1,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 3.7,
+          "timePerFrame": 3.7,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 71855.40000009537,
+      "totalTime": 6.8,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 1,
+          "timePerFrame": 1,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 5.8,
+          "timePerFrame": 5.8,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 71877.40000009537,
+      "totalTime": 4.1,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 1,
+          "timePerFrame": 1,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 3,
+          "timePerFrame": 3,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 71896.40000009537,
+      "totalTime": 5,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 1,
+          "timePerFrame": 1,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 4,
+          "timePerFrame": 4,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 71915.10000014305,
+      "totalTime": 4,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 1,
+          "timePerFrame": 1,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 3,
+          "timePerFrame": 3,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 71935.40000009537,
+      "totalTime": 4.8,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 1,
+          "timePerFrame": 1,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 3.8,
+          "timePerFrame": 3.8,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 71954,
+      "totalTime": 3.3,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 1,
+          "timePerFrame": 1,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 2.3,
+          "timePerFrame": 2.3,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 71970.5,
+      "totalTime": 4.3,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 1,
+          "timePerFrame": 1,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 3.3,
+          "timePerFrame": 3.3,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 71988,
+      "totalTime": 6.5,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.9,
+          "timePerFrame": 0.9,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 5.5,
+          "timePerFrame": 5.5,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 72008.80000019073,
+      "totalTime": 4.6,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 1,
+          "timePerFrame": 1,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 3.6,
+          "timePerFrame": 3.6,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 72027.80000019073,
+      "totalTime": 4.5,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.9,
+          "timePerFrame": 0.9,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 3.6,
+          "timePerFrame": 3.6,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 72047.90000009537,
+      "totalTime": 5.7,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.9,
+          "timePerFrame": 0.9,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 4.7,
+          "timePerFrame": 4.7,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 72069.70000004768,
+      "totalTime": 7.3,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.9,
+          "timePerFrame": 0.9,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 6.3,
+          "timePerFrame": 6.3,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 72094,
+      "totalTime": 2.9,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.8,
+          "timePerFrame": 0.8,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 2.1,
+          "timePerFrame": 2.1,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 72112.80000019073,
+      "totalTime": 4.9,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.9,
+          "timePerFrame": 0.9,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 4,
+          "timePerFrame": 4,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 72131.5,
+      "totalTime": 3.2,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 1,
+          "timePerFrame": 1,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 2.2,
+          "timePerFrame": 2.2,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 72148.5,
+      "totalTime": 4.8,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.9,
+          "timePerFrame": 0.9,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 3.8,
+          "timePerFrame": 3.8,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 72166.40000009537,
+      "totalTime": 4,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.8,
+          "timePerFrame": 0.8,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 3.2,
+          "timePerFrame": 3.2,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 72184.20000004768,
+      "totalTime": 4.8,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 1,
+          "timePerFrame": 1,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 3.8,
+          "timePerFrame": 3.8,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 72203.80000019073,
+      "totalTime": 5.8,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 1,
+          "timePerFrame": 1,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 4.7,
+          "timePerFrame": 4.7,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 72224.60000014305,
+      "totalTime": 4.5,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 1,
+          "timePerFrame": 1,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 3.5,
+          "timePerFrame": 3.5,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 72245.30000019073,
+      "totalTime": 5.2,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.8,
+          "timePerFrame": 0.8,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 4.3,
+          "timePerFrame": 4.3,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 72264.60000014305,
+      "totalTime": 4.6,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.9,
+          "timePerFrame": 0.9,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 3.7,
+          "timePerFrame": 3.7,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 72284.80000019073,
+      "totalTime": 3.3,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.8,
+          "timePerFrame": 0.8,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 2.4,
+          "timePerFrame": 2.4,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 72303.60000014305,
+      "totalTime": 2.8,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.9,
+          "timePerFrame": 0.9,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 1.9,
+          "timePerFrame": 1.9,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 72319.70000004768,
+      "totalTime": 3.7,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.7,
+          "timePerFrame": 0.7,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 3,
+          "timePerFrame": 3,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 72336.80000019073,
+      "totalTime": 2.1,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.9,
+          "timePerFrame": 0.9,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 1.2,
+          "timePerFrame": 1.2,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 72352.90000009537,
+      "totalTime": 6.4,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.8,
+          "timePerFrame": 0.8,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 5.6,
+          "timePerFrame": 5.6,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 72373.70000004768,
+      "totalTime": 6.5,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 1.2,
+          "timePerFrame": 1.2,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 5.3,
+          "timePerFrame": 5.3,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 72399.10000014305,
+      "totalTime": 5.6,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.8,
+          "timePerFrame": 0.8,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 4.8,
+          "timePerFrame": 4.8,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 72426.60000014305,
+      "totalTime": 6.1,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.8,
+          "timePerFrame": 0.8,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 5.2,
+          "timePerFrame": 5.2,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 72446.90000009537,
+      "totalTime": 6.4,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.9,
+          "timePerFrame": 0.9,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 5.5,
+          "timePerFrame": 5.5,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 72467.80000019073,
+      "totalTime": 3.7,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.9,
+          "timePerFrame": 0.9,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 2.6,
+          "timePerFrame": 2.6,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 72485.60000014305,
+      "totalTime": 3.4,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.8,
+          "timePerFrame": 0.8,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 2.6,
+          "timePerFrame": 2.6,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 72502.5,
+      "totalTime": 2.2,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.9,
+          "timePerFrame": 0.9,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 1.3,
+          "timePerFrame": 1.3,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 72517.70000004768,
+      "totalTime": 1.6,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.9,
+          "timePerFrame": 0.9,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 0.7,
+          "timePerFrame": 0.7,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 72531.60000014305,
+      "totalTime": 3.7,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.8,
+          "timePerFrame": 0.8,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 2.9,
+          "timePerFrame": 2.9,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 72547.40000009537,
+      "totalTime": 3.2,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.9,
+          "timePerFrame": 0.9,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 2.3,
+          "timePerFrame": 2.3,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 72564.90000009537,
+      "totalTime": 6.9,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.8,
+          "timePerFrame": 0.8,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 6.1,
+          "timePerFrame": 6.1,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 72586.10000014305,
+      "totalTime": 4.5,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.9,
+          "timePerFrame": 0.9,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 3.6,
+          "timePerFrame": 3.6,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 72606,
+      "totalTime": 5.4,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.9,
+          "timePerFrame": 0.9,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 4.5,
+          "timePerFrame": 4.5,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 72633.80000019073,
+      "totalTime": 10.6,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.8,
+          "timePerFrame": 0.8,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 9.7,
+          "timePerFrame": 9.7,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 72664.40000009537,
+      "totalTime": 6.1,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.8,
+          "timePerFrame": 0.8,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 5.3,
+          "timePerFrame": 5.3,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 72685.60000014305,
+      "totalTime": 3.5,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.6,
+          "timePerFrame": 0.6,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 2.8,
+          "timePerFrame": 2.8,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 72704.30000019073,
+      "totalTime": 3.1,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.7,
+          "timePerFrame": 0.7,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 2.4,
+          "timePerFrame": 2.4,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 72727.20000004768,
+      "totalTime": 2.6,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.7,
+          "timePerFrame": 0.7,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 1.9,
+          "timePerFrame": 1.9,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 72750,
+      "totalTime": 7.1,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 1.2,
+          "timePerFrame": 1.2,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 5.9,
+          "timePerFrame": 5.9,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 72773.60000014305,
+      "totalTime": 5.7,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.7,
+          "timePerFrame": 0.7,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 4.9,
+          "timePerFrame": 4.9,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 72796.80000019073,
+      "totalTime": 7,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.8,
+          "timePerFrame": 0.8,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 6.2,
+          "timePerFrame": 6.2,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 72818.80000019073,
+      "totalTime": 5.3,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.6,
+          "timePerFrame": 0.6,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 4.6,
+          "timePerFrame": 4.6,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 72842.40000009537,
+      "totalTime": 5.3,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.7,
+          "timePerFrame": 0.7,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 4.6,
+          "timePerFrame": 4.6,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 72862.80000019073,
+      "totalTime": 4.4,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.8,
+          "timePerFrame": 0.8,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 3.6,
+          "timePerFrame": 3.6,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 72885.60000014305,
+      "totalTime": 2.7,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.6,
+          "timePerFrame": 0.6,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 2.1,
+          "timePerFrame": 2.1,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 72904.20000004768,
+      "totalTime": 3.5,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.6,
+          "timePerFrame": 0.6,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 2.7,
+          "timePerFrame": 2.7,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 72921.90000009537,
+      "totalTime": 4.5,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.6,
+          "timePerFrame": 0.6,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 3.9,
+          "timePerFrame": 3.9,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 72941.20000004768,
+      "totalTime": 3.5,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.7,
+          "timePerFrame": 0.7,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 2.8,
+          "timePerFrame": 2.8,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 72960,
+      "totalTime": 5.3,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.6,
+          "timePerFrame": 0.6,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 4.6,
+          "timePerFrame": 4.6,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 72984.30000019073,
+      "totalTime": 4.9,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.6,
+          "timePerFrame": 0.6,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 4.3,
+          "timePerFrame": 4.3,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 73004.20000004768,
+      "totalTime": 6.4,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.6,
+          "timePerFrame": 0.6,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 5.7,
+          "timePerFrame": 5.7,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 73025,
+      "totalTime": 3.5,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.7,
+          "timePerFrame": 0.7,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 2.8,
+          "timePerFrame": 2.8,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 73043.80000019073,
+      "totalTime": 6.2,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.5,
+          "timePerFrame": 0.5,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 5.7,
+          "timePerFrame": 5.7,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 73065.20000004768,
+      "totalTime": 4.4,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.8,
+          "timePerFrame": 0.8,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 3.6,
+          "timePerFrame": 3.6,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 73083.90000009537,
+      "totalTime": 3.1,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.6,
+          "timePerFrame": 0.6,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 2.5,
+          "timePerFrame": 2.5,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 73100.90000009537,
+      "totalTime": 2.3,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.6,
+          "timePerFrame": 0.6,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 1.7,
+          "timePerFrame": 1.7,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 73117.80000019073,
+      "totalTime": 4.7,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.6,
+          "timePerFrame": 0.6,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 4.1,
+          "timePerFrame": 4.1,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 73136.30000019073,
+      "totalTime": 3.9,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.6,
+          "timePerFrame": 0.6,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 3.2,
+          "timePerFrame": 3.2,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 73157.5,
+      "totalTime": 3.5,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.5,
+          "timePerFrame": 0.5,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 3,
+          "timePerFrame": 3,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 73175.60000014305,
+      "totalTime": 4.4,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.7,
+          "timePerFrame": 0.7,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 3.7,
+          "timePerFrame": 3.7,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 73193.60000014305,
+      "totalTime": 4.1,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.8,
+          "timePerFrame": 0.8,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 3.3,
+          "timePerFrame": 3.3,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 73209.90000009537,
+      "totalTime": 4.6,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.7,
+          "timePerFrame": 0.7,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 3.9,
+          "timePerFrame": 3.9,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 73229.20000004768,
+      "totalTime": 3.1,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.6,
+          "timePerFrame": 0.6,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 2.4,
+          "timePerFrame": 2.4,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 73252.90000009537,
+      "totalTime": 5.8,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.7,
+          "timePerFrame": 0.7,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 5.1,
+          "timePerFrame": 5.1,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 73273.60000014305,
+      "totalTime": 2.9,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.6,
+          "timePerFrame": 0.6,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 2.3,
+          "timePerFrame": 2.3,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 73291.70000004768,
+      "totalTime": 2.6,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.6,
+          "timePerFrame": 0.6,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 2,
+          "timePerFrame": 2,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 73308,
+      "totalTime": 3.7,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.6,
+          "timePerFrame": 0.6,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 3.1,
+          "timePerFrame": 3.1,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 73325.5,
+      "totalTime": 3.5,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.6,
+          "timePerFrame": 0.6,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 2.9,
+          "timePerFrame": 2.9,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 73343.10000014305,
+      "totalTime": 3.1,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.6,
+          "timePerFrame": 0.6,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 2.5,
+          "timePerFrame": 2.5,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    },
+    {
+      "timestamp": 73360.70000004768,
+      "totalTime": 3.2,
+      "functions": {
+        "particleSystemUpdate": {
+          "totalTime": 0.6,
+          "timePerFrame": 0.6,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        },
+        "autoLaunchersUpdate": {
+          "totalTime": 2.5,
+          "timePerFrame": 2.5,
+          "calls": 1,
+          "children": [],
+          "parents": []
+        }
+      },
+      "memory": null
+    }
+  ],
+  "functionStats": {
+    "particleSystemUpdate": {
+      "totalTime": 190.8,
+      "calls": 305,
+      "timePerFrame": [
+        0.7,
+        2.9,
+        0.4,
+        0.4,
+        0.4,
+        0.5,
+        0.5,
+        0.5,
+        0.5,
+        0.5,
+        0.5,
+        0.6,
+        0.5,
+        0.3,
+        0.5,
+        0.4,
+        0.4,
+        0.9,
+        0.1,
+        0.1,
+        0.1,
+        0.1,
+        0.1,
+        0.1,
+        0.1,
+        0.1,
+        0.1,
+        0.1,
+        0.1,
+        0.1,
+        0.1,
+        0.1,
+        0.1,
+        0.1,
+        0.1,
+        0.2,
+        0.1,
+        0.2,
+        0.1,
+        0.2,
+        0.1,
+        0.2,
+        0.2,
+        0.1,
+        0.2,
+        0.1,
+        0.1,
+        0.3,
+        0.2,
+        0.2,
+        0.2,
+        0.1,
+        0.1,
+        0.1,
+        0.1,
+        0.1,
+        0.1,
+        0.1,
+        0.2,
+        0.1,
+        0.1,
+        0.2,
+        0.1,
+        0.3,
+        0.2,
+        0.3,
+        0.1,
+        0.1,
+        0.3,
+        0.2,
+        0.2,
+        0.3,
+        0.2,
+        0.3,
+        0.3,
+        0.3,
+        0.3,
+        0.3,
+        0.4,
+        0.3,
+        0.3,
+        0.3,
+        0.3,
+        0.4,
+        0.3,
+        0.5,
+        0.4,
+        0.3,
+        0.4,
+        0.4,
+        0.4,
+        0.6,
+        0.4,
+        0.5,
+        0.4,
+        0.6,
+        0.4,
+        0.5,
+        0.5,
+        0.7,
+        0.4,
+        0.6,
+        0.6,
+        0.5,
+        0.6,
+        0.5,
+        0.6,
+        0.6,
+        0.5,
+        0.5,
+        0.5,
+        0.6,
+        0.6,
+        1,
+        0.7,
+        0.7,
+        0.6,
+        0.7,
+        0.7,
+        0.6,
+        0.5,
+        0.7,
+        0.6,
+        0.6,
+        0.9,
+        0.7,
+        0.8,
+        0.7,
+        0.7,
+        0.8,
+        0.7,
+        0.6,
+        0.7,
+        0.7,
+        0.7,
+        0.8,
+        0.7,
+        0.7,
+        0.7,
+        0.7,
+        0.8,
+        0.7,
+        0.8,
+        0.8,
+        0.7,
+        0.7,
+        0.8,
+        0.7,
+        0.6,
+        0.7,
+        0.7,
+        0.8,
+        0.8,
+        0.8,
+        0.7,
+        0.7,
+        0.8,
+        0.8,
+        0.9,
+        0.7,
+        0.8,
+        0.6,
+        0.8,
+        0.8,
+        0.7,
+        0.8,
+        0.8,
+        0.8,
+        0.8,
+        0.7,
+        0.9,
+        0.8,
+        0.9,
+        0.9,
+        0.8,
+        0.8,
+        0.9,
+        0.9,
+        0.8,
+        0.8,
+        0.8,
+        0.7,
+        0.8,
+        0.8,
+        0.9,
+        0.8,
+        0.8,
+        0.9,
+        0.8,
+        0.9,
+        0.9,
+        0.9,
+        0.9,
+        0.9,
+        0.9,
+        0.9,
+        0.9,
+        0.8,
+        1,
+        0.9,
+        0.9,
+        0.9,
+        0.9,
+        0.9,
+        0.8,
+        0.8,
+        0.9,
+        0.8,
+        0.9,
+        0.9,
+        0.8,
+        0.8,
+        0.9,
+        1,
+        0.9,
+        1,
+        0.9,
+        0.9,
+        0.9,
+        1,
+        0.9,
+        1,
+        0.9,
+        0.8,
+        0.9,
+        0.9,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        0.9,
+        1,
+        0.9,
+        0.9,
+        0.9,
+        0.8,
+        0.9,
+        1,
+        0.9,
+        0.8,
+        1,
+        1,
+        1,
+        0.8,
+        0.9,
+        0.8,
+        0.9,
+        0.7,
+        0.9,
+        0.8,
+        1.2,
+        0.8,
+        0.8,
+        0.9,
+        0.9,
+        0.8,
+        0.9,
+        0.9,
+        0.8,
+        0.9,
+        0.8,
+        0.9,
+        0.9,
+        0.8,
+        0.8,
+        0.6,
+        0.7,
+        0.7,
+        1.2,
+        0.7,
+        0.8,
+        0.6,
+        0.7,
+        0.8,
+        0.6,
+        0.6,
+        0.6,
+        0.7,
+        0.6,
+        0.6,
+        0.6,
+        0.7,
+        0.5,
+        0.8,
+        0.6,
+        0.6,
+        0.6,
+        0.6,
+        0.5,
+        0.7,
+        0.8,
+        0.7,
+        0.6,
+        0.7,
+        0.6,
+        0.6,
+        0.6,
+        0.6,
+        0.6,
+        0.6
+      ],
+      "averageTimePerFrame": 0.566,
+      "children": [],
+      "parents": []
+    },
+    "autoLaunchersUpdate": {
+      "totalTime": 1594.8,
+      "calls": 337,
+      "timePerFrame": [
+        6.6,
+        43.7,
+        39.8,
+        37.8,
+        37.3,
+        40.7,
+        39.9,
+        39.7,
+        38.5,
+        40.1,
+        40.9,
+        38.4,
+        38.3,
+        39,
+        34.2,
+        27.5,
+        24.3,
+        8.6,
+        5.1,
+        3,
+        2.4,
+        2.7,
+        2,
+        2.8,
+        2.3,
+        3.9,
+        2.8,
+        2,
+        3.2,
+        2.9,
+        2.2,
+        2.8,
+        2.4,
+        1,
+        3.4,
+        3.5,
+        2.8,
+        2.3,
+        2.3,
+        2.3,
+        2.7,
+        1.9,
+        1.3,
+        2,
+        2.5,
+        3.3,
+        2.5,
+        4.3,
+        4,
+        2.5,
+        2.7,
+        2.3,
+        3.1,
+        1.6,
+        1,
+        2.5,
+        1.2,
+        3.9,
+        2.9,
+        2.5,
+        3.9,
+        2.6,
+        2.9,
+        2.1,
+        3.2,
+        1.9,
+        1.1,
+        1.5,
+        2.1,
+        2.3,
+        3.8,
+        3.1,
+        5.4,
+        3.5,
+        3.4,
+        2,
+        1.8,
+        2.4,
+        0.6,
+        1.9,
+        2.5,
+        3.5,
+        4.2,
+        2.1,
+        3.9,
+        4.3,
+        2.6,
+        1.6,
+        2.2,
+        1.5,
+        1,
+        3,
+        2.8,
+        4.8,
+        4.2,
+        3.3,
+        5.1,
+        2.5,
+        2.7,
+        1,
+        1.5,
+        2.4,
+        2.4,
+        3.4,
+        3,
+        5.5,
+        3.6,
+        6.4,
+        2.8,
+        1.8,
+        0.6,
+        2.2,
+        3.4,
+        1.5,
+        3.2,
+        3.1,
+        3.1,
+        5.4,
+        1.4,
+        3.9,
+        1.8,
+        1.9,
+        2.2,
+        3.6,
+        3.1,
+        2.2,
+        3.7,
+        5.1,
+        5.9,
+        2.5,
+        2.2,
+        4.5,
+        2.1,
+        2.9,
+        3.3,
+        6.2,
+        3.4,
+        5.6,
+        3,
+        3.5,
+        2.2,
+        3.4,
+        3.6,
+        2.8,
+        3,
+        3.8,
+        6.2,
+        5.5,
+        3.1,
+        3.1,
+        2.9,
+        1.5,
+        4.6,
+        3.7,
+        2.7,
+        2.6,
+        3,
+        2.9,
+        4.1,
+        2.2,
+        2.8,
+        2.3,
+        2.9,
+        3.1,
+        2.4,
+        4.1,
+        2.5,
+        3.2,
+        2.4,
+        3.4,
+        1.8,
+        1,
+        1.8,
+        2.3,
+        2.1,
+        4.6,
+        3.8,
+        1.6,
+        4.6,
+        3.3,
+        4.6,
+        2.7,
+        2.6,
+        3,
+        0.7,
+        1.6,
+        2.7,
+        3.5,
+        3.8,
+        3.8,
+        3.9,
+        6.5,
+        3,
+        1.9,
+        2.1,
+        1.1,
+        1.9,
+        1.1,
+        2.8,
+        2.3,
+        3.2,
+        3.8,
+        2.9,
+        4.2,
+        5.4,
+        2.3,
+        1.9,
+        2.4,
+        1.7,
+        2.7,
+        1.3,
+        2.3,
+        2.9,
+        5.3,
+        4.7,
+        3,
+        4.1,
+        2,
+        2.3,
+        0.6,
+        2.8,
+        2.3,
+        2.7,
+        1.5,
+        2.7,
+        2.7,
+        5.4,
+        3.1,
+        1.6,
+        4,
+        1.4,
+        1.4,
+        2.1,
+        2.3,
+        2.4,
+        2.4,
+        2,
+        3.4,
+        3,
+        3.2,
+        4.2,
+        1.1,
+        2.1,
+        3,
+        1.6,
+        3,
+        2,
+        2.6,
+        2.2,
+        2.3,
+        2.9,
+        2.9,
+        2.6,
+        3.8,
+        1.6,
+        1.6,
+        5.3,
+        3.3,
+        3.4,
+        3.7,
+        5.8,
+        3,
+        4,
+        3,
+        3.8,
+        2.3,
+        3.3,
+        5.5,
+        3.6,
+        3.6,
+        4.7,
+        6.3,
+        2.1,
+        4,
+        2.2,
+        3.8,
+        3.2,
+        3.8,
+        4.7,
+        3.5,
+        4.3,
+        3.7,
+        2.4,
+        1.9,
+        3,
+        1.2,
+        5.6,
+        5.3,
+        4.8,
+        5.2,
+        5.5,
+        2.6,
+        2.6,
+        1.3,
+        0.7,
+        2.9,
+        2.3,
+        6.1,
+        3.6,
+        4.5,
+        9.7,
+        5.3,
+        2.8,
+        2.4,
+        1.9,
+        5.9,
+        4.9,
+        6.2,
+        4.6,
+        4.6,
+        3.6,
+        2.1,
+        2.7,
+        3.9,
+        2.8,
+        4.6,
+        4.3,
+        5.7,
+        2.8,
+        5.7,
+        3.6,
+        2.5,
+        1.7,
+        4.1,
+        3.2,
+        3,
+        3.7,
+        3.3,
+        3.9,
+        2.4,
+        5.1,
+        2.3,
+        2,
+        3.1,
+        2.9,
+        2.5,
+        2.5
+      ],
+      "averageTimePerFrame": 4.732,
+      "children": [],
+      "parents": []
+    }
+  },
+  "memoryStats": []
+}
