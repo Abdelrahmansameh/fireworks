@@ -1,24 +1,40 @@
 import { FIREWORK_CONFIG } from '../config/config.js';
-import { createDebugCross } from '../utils/debug.js';
 import * as Renderer2D from '../rendering/Renderer.js';
+const { BlendMode, Color, Vector2 } = Renderer2D;
 
 class InstancedParticleSystem {
     constructor(scene, renderer, profiler) {
         this.profiler = profiler;
         this.scene = scene;
         this.renderer = renderer;
-        this.maxParticles = FIREWORK_CONFIG.maxParticles || 1000000; // Default to 1 million if not set
 
+        this.maxParticles = FIREWORK_CONFIG.maxParticles;
+        this.maxTrailPoints = FIREWORK_CONFIG.trailMaxPoints;
+        this.trailWidth = FIREWORK_CONFIG.trailWidth;
+        this.trailDistBetweenPoints = FIREWORK_CONFIG.trailDistBetweenPoints;
         this.meshes = {};
         this.activeCounts = {};
         this.instanceData = {};
 
-                /*
+        // trails: Map< "shape-idx", { points: Vector2[], color: Color, lastUpdate:number } >
         this.activeTrails = new Map();
-        this.maxTrails = maxParticles * 2;
-        this.maxTrailPoints = 8;
-        this.trailUpdateInterval = 50;
-*/
+
+        const quadVerts = new Float32Array([
+            -0.5, 0,    // bottom-left
+            0.5, 0,    // bottom-right
+            0.5, 1,    // top-right
+            -0.5, 1,    // top-left
+        ]);
+        const quadIdx = new Uint16Array([0, 1, 2, 0, 2, 3]);
+
+        this.trailGroup = this.renderer.createInstancedGroup({
+            vertices: quadVerts,
+            indices: quadIdx,
+            maxInstances: this.maxParticles,
+            blendMode: BlendMode.ADDITIVE,
+            zIndex: 5,
+            useGlow: false,
+        });
 
         const geometries = {
             sphere: Renderer2D.buildCircle(1),
@@ -27,19 +43,17 @@ class InstancedParticleSystem {
             crystalDroplet: Renderer2D.buildDroplet(),
             sliceBurst: Renderer2D.buildTriangle(),
         };
-
         FIREWORK_CONFIG.supportedShapes.forEach(shape => {
-            const geometry = geometries[shape];
-
+            const g = geometries[shape];
             this.meshes[shape] = this.renderer.createInstancedGroup({
-                vertices: geometry.vertices,
-                indices: geometry.indices,
+                vertices: g.vertices,
+                indices: g.indices,
                 maxInstances: this.maxParticles,
+                blendMode: BlendMode.ADDITIVE,
                 zIndex: 10,
-                blendMode: Renderer2D.BlendMode.ADDITIVE
             });
-
             this.activeCounts[shape] = 0;
+            this.instanceData[shape] = new Float32Array(this.maxParticles * 17).fill(0);
         });
 
         this.positionIdx = 0;
@@ -52,314 +66,184 @@ class InstancedParticleSystem {
         this.gravityIdx = 14;
         this.rotationIdx = 15;
         this.frictionIdx = 16;
-        this.instanceFloats = this.frictionIdx + 1;
+        this.strideFloats = 17;
+    }
 
-        FIREWORK_CONFIG.supportedShapes.forEach(shape => {
-            this.instanceData[shape] = new Float32Array(this.maxParticles * this.instanceFloats).fill(0.0);
+    createTrailEntry(shape, idx, position, color) {
+        const key = `${shape}-${idx}`;
+        this.activeTrails.set(key, {
+            points: [position.clone(), position.clone()],
+            color: color.clone(),
+            lastUpdate: performance.now() - this.trailInterval
         });
     }
 
-    createStarGeometry() {
-        const shape = new THREE.Shape();
-        const outerRadius = 2;
-        const innerRadius = 1;
-        const spikes = 5;
-        const step = Math.PI / spikes;
+    addParticle(position, velocity, color, scale, lifetime, gravity,
+        shape = 'sphere', acceleration = new Vector2(),
+        enableTrail = true, friction = FIREWORK_CONFIG.baseFriction) {
+        if (!FIREWORK_CONFIG.supportedShapes.includes(shape)) shape = 'sphere';
+        const idx = this.activeCounts[shape];
+        if (idx >= this.maxParticles) return -1;
 
-        shape.moveTo(outerRadius, 0);
-        for (let i = 0; i < spikes * 2; i++) {
-            const radius = (i % 2 === 0) ? outerRadius : innerRadius;
-            const angle = i * step;
-            shape.lineTo(radius * Math.cos(angle), radius * Math.sin(angle));
-        }
-        shape.closePath();
+        const base = idx * this.strideFloats;
+        const d = this.instanceData[shape];
 
-        const geometry = new THREE.ShapeGeometry(shape);
-        return geometry;
-    }
+        d[base + this.positionIdx] = position.x;
+        d[base + this.positionIdx + 1] = position.y;
+        d[base + this.velocityIdx] = velocity.x;
+        d[base + this.velocityIdx + 1] = velocity.y;
+        d[base + this.accelerationIdx] = acceleration.x;
+        d[base + this.accelerationIdx + 1] = acceleration.y;
+        d[base + this.colorIdx] = color.r;
+        d[base + this.colorIdx + 1] = color.g;
+        d[base + this.colorIdx + 2] = color.b;
+        d[base + this.colorIdx + 3] = color.a;
+        d[base + this.scaleIdx] = scale;
+        d[base + this.lifetimeIdx] = lifetime;
+        d[base + this.initialLifetimeIdx] = lifetime;
+        d[base + this.gravityIdx] = gravity;
+        d[base + this.frictionIdx] = friction;
 
-    createCrystalDropletGeometry() {
-        const shape = new THREE.Shape();
-        const width = 2;
-        const height = 5;
+        const dir = velocity.clone().normalize().scale(-1);
+        d[base + this.rotationIdx] = dir.getAngle();
 
-        shape.moveTo(0, 0);
-        shape.bezierCurveTo(width / 2, height / 2, width / 2, height, 0, height);
-        shape.bezierCurveTo(-width / 2, height, -width / 2, height / 2, 0, 0);
-        shape.closePath();
+        this.meshes[shape].addInstance(
+            position,
+            d[base + this.rotationIdx],
+            new Vector2(scale, scale),
+            color
+        );
 
-        const geometry = new THREE.ShapeGeometry(shape);
-        return geometry;
-    }
-
-    createSliceBurstGeometry(base = 1, height = 5) {
-        const shape = new THREE.Shape();
-
-        shape.moveTo(-base / 2, 0);
-        shape.lineTo(base / 2, 0);
-        shape.lineTo(0, -height);
-        shape.closePath();
-
-        const geometry = new THREE.ShapeGeometry(shape);
-        return geometry;
-    }
-/*
-    createTrailGeometry(points, explosionCenterPosition, maxCurveLength = 1) {
-        const geometry = new THREE.BufferGeometry();
-        this.fillTrailGeometryPositions(geometry, points, explosionCenterPosition, maxCurveLength);
-        return geometry;
-    }
-
-    fillTrailGeometryPositions(geometry, points, explosionCenterPosition, maxCurveLength = 1) {
-        if (points.length < 2) return null;
-
-        const relativePoints = points.map(p => p.clone().sub(explosionCenterPosition));
-
-        const curve = new THREE.CatmullRomCurve3(relativePoints, false, 'centripetal');
-
-        const fullSegments = 50;
-        const usedSegments = Math.ceil(maxCurveLength * fullSegments);
-
-        const positions = new Float32Array((usedSegments + 1) * 3);
-
-        for (let i = 0; i <= usedSegments; i++) {
-            const t = i / fullSegments;
-            const point = curve.getPoint(t);
-            positions[i * 3] = point.x;
-            positions[i * 3 + 1] = point.y;
-            positions[i * 3 + 2] = point.z;
-        }
-
-        geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-
-        return geometry;
-    }
-
-    updateTrailGeometry(trail, points, explosionCenterPosition, maxCurveLength) {
-        this.profiler.startFunction('updateParticleTrailGeometry');
-        const newGeometry = this.createTrailGeometry(points, explosionCenterPosition, maxCurveLength);
-        if (newGeometry) {
-            trail.geometry.dispose();
-            trail.geometry = newGeometry;
-        }
-        this.profiler.endFunction('updateParticleTrailGeometry');
-    }
-
-    createTrailForParticle(shape, index, position, velocity, color) {
-        if (this.activeTrails.size >= this.maxTrails) {
-            return null;
-        }
-
-        const points = [
-            position.clone(),
-            position.clone(),
-        ];
-
-        const geometry = this.createTrailGeometry(points, points[0]);
-        if (!geometry) return null;
-
-        const material = new THREE.LineBasicMaterial({
-            transparent: true,
-            opacity: 0.5,
-            blending: THREE.AdditiveBlending,
-            color: color,
-            linewidth: 1
-        });
-
-        const trail = new THREE.Line(geometry, material);
-        trail.position.copy(position);
-
-        const trailKey = `${shape}-${index}`;
-        this.activeTrails.set(trailKey, {
-            mesh: trail,
-            points: points,
-            lastUpdate: performance.now(),
-            explosionCenterPosition: position.clone(),
-            trailUpdateInterval: this.trailUpdateInterval,
-            offset: 0,
-        });
-
-        this.scene.add(trail);
-        return trail;
-    }
-
-    removeTrail(shape, index) {
-        const trailKey = `${shape}-${index}`;
-        const trailData = this.activeTrails.get(trailKey);
-        if (trailData) {
-            this.scene.remove(trailData.mesh);
-            trailData.mesh.geometry.dispose();
-            trailData.mesh.material.dispose();
-            this.activeTrails.delete(trailKey);
-        }
-    }
-*/
-
-    addParticle(position, velocity, color, scale, lifetime, gravity, shape = 'sphere', acceleration = new THREE.Vector3(), enableTrail = true, friction = FIREWORK_CONFIG.baseFriction) {
-        if (!FIREWORK_CONFIG.supportedShapes.includes(shape)) {
-            shape = 'sphere';
-        }
-
-        const activeCount = this.activeCounts[shape];
-        if (activeCount >= this.maxParticles) 
-            return -1;
-
-        const index = activeCount;
-        const base = index * this.instanceFloats;
-
-
-       const data = this.instanceData[shape];
-        data[base + this.positionIdx]            = position.x;
-        data[base + this.positionIdx + 1]        = position.y;
-        data[base + this.velocityIdx]            = velocity.x;
-        data[base + this.velocityIdx + 1]        = velocity.y;
-        data[base + this.accelerationIdx]        = acceleration.x;
-        data[base + this.accelerationIdx + 1]    = acceleration.y;
-        data[base + this.colorIdx]               = color.r;
-        data[base + this.colorIdx + 1]           = color.g;
-        data[base + this.colorIdx + 2]           = color.b;
-        data[base + this.colorIdx + 3]           = color.a;
-        data[base + this.scaleIdx]               = scale;
-        data[base + this.lifetimeIdx]            = lifetime;
-        data[base + this.initialLifetimeIdx]     = lifetime;
-        data[base + this.gravityIdx]             = gravity;
-        data[base + this.frictionIdx]            = friction; 
-
-        const rot = velocity.clone().normalize().scale(-1).getAngle();
-        data[base + this.rotationIdx]            = rot;
-
-        const normalizedVelocity = velocity.clone().normalize();
-        const targetDir = normalizedVelocity.clone().scale(-1);
-        this.instanceData[shape][base + this.rotationIdx] = targetDir.getAngle();
-
-        this.meshes[shape].addInstance(position, rot, new Renderer2D.Vector2(scale, scale), color);
-
-        /* if (enableTrail) {
-             this.createTrailForParticle(shape, index, position, velocity, color);
-         }*/
-
+        if (enableTrail) this.createTrailEntry(shape, idx, position, color);
         this.activeCounts[shape]++;
-        return index;
+        return idx;
     }
 
-     updateParticle(shape, index) {
-        const base = index * this.instanceFloats;
-        const group = this.meshes[shape];
-        const gBase = index * group.instanceStrideFloats;
-        const sim   = this.instanceData[shape];
-        const gpu   = group.instanceData;
-
-        gpu[gBase + 0] = sim[base + this.positionIdx];
-        gpu[gBase + 1] = sim[base + this.positionIdx + 1];
-        gpu[gBase + 2] = sim[base + this.rotationIdx];
-        gpu[gBase + 3] = sim[base + this.scaleIdx];
-        gpu[gBase + 4] = sim[base + this.scaleIdx];
-        gpu[gBase + 5] = sim[base + this.colorIdx];
-        gpu[gBase + 6] = sim[base + this.colorIdx + 1];
-        gpu[gBase + 7] = sim[base + this.colorIdx + 2];
-        gpu[gBase + 8] = sim[base + this.colorIdx + 3];
-    }
     update(delta) {
         if (!delta) return;
-        const now = performance.now();
-
         this.profiler?.startFunction?.('particleSystemUpdate');
 
         FIREWORK_CONFIG.supportedShapes.forEach(shape => {
-            const group       = this.meshes[shape];
-            const sim         = this.instanceData[shape];
-            const gpu         = group.instanceData;         
-            const simStride   = this.instanceFloats;        
-            const gpuStride   = group.instanceStrideFloats; 
+            const d = this.instanceData[shape];
+            const grp = this.meshes[shape];
+            const gpu = grp.instanceData;
+            const sStr = this.strideFloats;
+            const gStr = grp.instanceStrideFloats;
 
-            let active = this.activeCounts[shape];
+            let count = this.activeCounts[shape];
+            for (let i = 0; i < count; i++) {
+                const sBase = i * sStr, gBase = i * gStr;
 
-            for (let i = 0; i < active; i++) {
-                const sBase = i * simStride;
-                const gBase = i * gpuStride;
+                d[sBase + this.lifetimeIdx] -= delta;
+                if (d[sBase + this.lifetimeIdx] <= 0) {
+                    const deadKey = `${shape}-${i}`;
+                    this.activeTrails.delete(deadKey);
 
-                sim[sBase + this.lifetimeIdx] -= delta;
-                if (sim[sBase + this.lifetimeIdx] <= 0) {
-                    const last = active - 1;
-                    const sLastBase = last * simStride;
-                    const gLastBase = last * gpuStride;
+                    const lastIdx = count - 1;
+                    const lastKey = `${shape}-${lastIdx}`;
+                    const lastTrail = this.activeTrails.get(lastKey);
 
-                    if (last !== i) {
-                        sim.set(sim.subarray(sLastBase, sLastBase + simStride), sBase);
-                        gpu.set(gpu.subarray(gLastBase, gLastBase + gpuStride), gBase);
+                    if (i !== lastIdx) {
+                        const sLast = lastIdx * sStr, gLast = lastIdx * gStr;
+                        d.set(d.subarray(sLast, sLast + sStr), sBase);
+                        gpu.set(gpu.subarray(gLast, gLast + gStr), gBase);
+                        if (lastTrail) {
+                            this.activeTrails.set(deadKey, lastTrail);
+                            this.activeTrails.delete(lastKey);
+                        }
                     }
-                    active--;
-                    i--;
+                    count--; i--;
                     continue;
                 }
 
-                const friction     = sim[sBase + this.frictionIdx]; 
-                const horizontalFrictionFac  = 1 - friction * delta;          
-                const verticalFrictionFact = 1 - friction * FIREWORK_CONFIG.verticalFrictionMultiplier * delta;
-                sim[sBase + this.velocityIdx]     += sim[sBase + this.accelerationIdx] * delta;
-                sim[sBase + this.velocityIdx + 1] += (sim[sBase + this.accelerationIdx + 1] - sim[sBase + this.gravityIdx]) * delta;
+                const f = d[sBase + this.frictionIdx];
+                const hf = 1 - f * delta;
+                const vf = 1 - f * FIREWORK_CONFIG.verticalFrictionMultiplier * delta;
+                d[sBase + this.velocityIdx] += d[sBase + this.accelerationIdx] * delta;
+                d[sBase + this.velocityIdx + 1] += (d[sBase + this.accelerationIdx + 1]
+                    - d[sBase + this.gravityIdx]) * delta;
+                d[sBase + this.velocityIdx] *= hf;
+                d[sBase + this.velocityIdx + 1] *= vf;
+                d[sBase + this.positionIdx] += d[sBase + this.velocityIdx] * delta;
+                d[sBase + this.positionIdx + 1] += d[sBase + this.velocityIdx + 1] * delta;
 
-                sim[sBase + this.velocityIdx]     *= horizontalFrictionFac;
-                sim[sBase + this.velocityIdx + 1] *= verticalFrictionFact;
+                const n = d[sBase + this.lifetimeIdx] / d[sBase + this.initialLifetimeIdx];
+                d[sBase + this.colorIdx + 3] = n * n * n;
 
-                sim[sBase + this.positionIdx]     += sim[sBase + this.velocityIdx]     * delta;
-                sim[sBase + this.positionIdx + 1] += sim[sBase + this.velocityIdx + 1] * delta;
+                gpu[gBase + 0] = d[sBase + this.positionIdx];
+                gpu[gBase + 1] = d[sBase + this.positionIdx + 1];
+                gpu[gBase + 2] = d[sBase + this.rotationIdx];
+                gpu[gBase + 3] = d[sBase + this.scaleIdx];
+                gpu[gBase + 4] = d[sBase + this.scaleIdx];
+                gpu[gBase + 5] = d[sBase + this.colorIdx];
+                gpu[gBase + 6] = d[sBase + this.colorIdx + 1];
+                gpu[gBase + 7] = d[sBase + this.colorIdx + 2];
+                gpu[gBase + 8] = d[sBase + this.colorIdx + 3];
 
-                // ── alpha based on life³ ─────────────────────────────────────────
-                const lifeNorm = sim[sBase + this.lifetimeIdx] / sim[sBase + this.initialLifetimeIdx];
-                sim[sBase + this.colorIdx + 3] = lifeNorm * lifeNorm * lifeNorm; 
-
-                gpu[gBase + 0] = sim[sBase + this.positionIdx];
-                gpu[gBase + 1] = sim[sBase + this.positionIdx + 1];
-                gpu[gBase + 2] = sim[sBase + this.rotationIdx];
-                gpu[gBase + 3] = sim[sBase + this.scaleIdx];
-                gpu[gBase + 4] = sim[sBase + this.scaleIdx];
-                gpu[gBase + 5] = sim[sBase + this.colorIdx];
-                gpu[gBase + 6] = sim[sBase + this.colorIdx + 1];
-                gpu[gBase + 7] = sim[sBase + this.colorIdx + 2];
-                gpu[gBase + 8] = sim[sBase + this.colorIdx + 3];
-
-                // const trailKey = `${shape}-${i}`; …
+                const key = `${shape}-${i}`;
+                const trail = this.activeTrails.get(key);
+                if (trail) {
+                    const now = performance.now();
+                    const lastPoint = trail.points[trail.points.length - 1];
+                    if (lastPoint && lastPoint.distanceTo(new Vector2(
+                        d[sBase + this.positionIdx],
+                        d[sBase + this.positionIdx + 1]
+                    )) > this.trailDistBetweenPoints) {
+                        trail.points.push(new Vector2(
+                            d[sBase + this.positionIdx],
+                            d[sBase + this.positionIdx + 1]
+                        ));
+                        if (trail.points.length > this.maxTrailPoints) {
+                            trail.points.shift();
+                        }
+                        trail.lastUpdate = now;
+                    };
+                }
             }
 
-            this.activeCounts[shape] = active;
-            group.instanceCount = active; 
+            this.activeCounts[shape] = count;
+            grp.instanceCount = count;
         });
+
+        this.profiler?.startFunction?.('updateTrails');
+        this.trailGroup.clear();
+        for (const { points, color } of this.activeTrails.values()) {
+            for (let j = 1; j < points.length; j++) {
+                const a = points[j - 1], b = points[j];
+                const dx = b.x - a.x, dy = b.y - a.y;
+                const len = Math.hypot(dx, dy);
+                const ang = Math.atan2(dx, dy);
+                const mx = (a.x + b.x) * 0.5;
+                const my = (a.y + b.y) * 0.5;
+
+                this.trailGroup.addInstance(
+                    new Vector2(mx, my),
+                    ang,
+                    new Vector2(this.trailWidth, len),
+                    new Color(color.r, color.g, color.b, color.a + 0.2)
+                );
+            }
+        }
+        this.profiler?.endFunction?.('updateTrails');
 
         this.profiler?.endFunction?.('particleSystemUpdate');
     }
 
-
-    dispose() {
-        /*
-        FIREWORK_CONFIG.supportedShapes.forEach(shape => {
-            this.scene.remove(this.meshes[shape]);
-            this.meshes[shape].geometry.dispose();
-            this.meshes[shape].material.dispose();
-            this.rotations[shape] = null;
-        });
-    
-        for (const trail of this.activeTrails.values()) {
-            this.scene.remove(trail.mesh);
-            trail.mesh.geometry.dispose();
-            trail.mesh.material.dispose();
-        }
-        this.activeTrails.clear();*/
-    }
-
     clear() {
         Object.keys(this.activeCounts).forEach(shape => {
-            const activeCount = this.activeCounts[shape];
-            for (let i = 0; i < activeCount; i++) {
-               // this.removeTrail(shape, i);
-            }
-
             this.activeCounts[shape] = 0;
-            this.meshes[shape].instanceMatrix.needsUpdate = true;
-            if (this.meshes[shape].instanceColor) {
-                this.meshes[shape].instanceColor.needsUpdate = true;
-            }
+            this.meshes[shape].instanceCount = 0;
         });
+        this.trailGroup.clear();
+        this.activeTrails.clear();
+    }
+
+    dispose() {
+        FIREWORK_CONFIG.supportedShapes.forEach(shape =>
+            this.renderer.removeInstancedGroup(this.meshes[shape])
+        );
+        this.renderer.removeInstancedGroup(this.trailGroup);
+        this.activeTrails.clear();
     }
 }
 

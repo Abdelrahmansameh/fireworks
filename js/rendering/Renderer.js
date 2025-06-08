@@ -82,6 +82,12 @@ class Vector2 {
             v1.y + (v2.y - v1.y) * t
         );
     }
+
+    distanceTo(v) {
+        const dx = this.x - v.x;
+        const dy = this.y - v.y;
+        return Math.sqrt(dx * dx + dy * dy);
+    }
 }
 
 class Color {
@@ -1024,7 +1030,7 @@ class Renderer2D {
         }
     }
 
-    createInstancedGroup({ vertices, indices, maxInstances = 10000, zIndex = 0, blendMode = BlendMode.NORMAL, useGlow = true, glowRadius = 0.5, glowSoftness = .05 }) {
+    createInstancedGroup({ vertices, indices, maxInstances = 10000, zIndex = 0, blendMode = BlendMode.NORMAL, useGlow = true, glowRadius = 0.9, glowSoftness = .2 }) {
         const gl = this.gl;
         const baseGeom = {};
         baseGeom.vertexBuffer = gl.createBuffer();

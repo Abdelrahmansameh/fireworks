@@ -2,14 +2,17 @@
 
 const FIREWORK_CONFIG = {
     maxParticles: 10000000,
-    baseSpeed: 200,
+    trailMaxPoints: 5,
+    trailDistBetweenPoints: 5,
+    trailWidth: 5.0,
+    baseSpeed: 150,
     baseFriction: 2.0,
     verticalFrictionMultiplier: .9,
     gravityMultiplier: 15,
     particleSize: 10.0,
     particleDensity: 100,
     ascentSpeed: 400,
-    rocketTrailLength: 50,
+    rocketTrailLength: 30,
     rocketSize: 0.6,
     minExplosionHeightPercent: 0.4,
     maxExplosionHeightPercent: 0.8,
@@ -29,8 +32,8 @@ const FIREWORK_CONFIG = {
 };
 
 const GAME_BOUNDS = {
-    LAUNCHER_MIN_X: -200,
-    LAUNCHER_MAX_X: 200,
+    LAUNCHER_MIN_X: -400,
+    LAUNCHER_MAX_X: 400,
     OFFSET_MIN_Y: 5,
     OFFSET_MAX_Y: -50,
     SCROLL_MIN_X: -100,
