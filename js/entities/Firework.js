@@ -418,9 +418,9 @@ class Firework {
                         const angleOffset = (Math.random() * 1.2 - 0.5) * emissionAngle;
                         const angle = (-Math.PI / 2) + angleOffset;
                         const horizontalDrift = (Math.random() - 0.5) * 30;
-                        const initialSpeed = speed * (0.7 + Math.random() * 0.3) * spread;
+                        const initialSpeed = speed * (0.7 + Math.random() * 0.3);
                         velocity.set(
-                            Math.cos(angle) * initialSpeed + horizontalDrift,
+                            (Math.cos(angle) * initialSpeed + horizontalDrift)  * spread,
                             Math.sin(angle) * initialSpeed
                         );
                         const index = this.particleSystem.addParticle(

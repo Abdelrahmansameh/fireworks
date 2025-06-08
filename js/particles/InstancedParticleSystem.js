@@ -72,7 +72,7 @@ class InstancedParticleSystem {
         const key = `${shape}-${idx}`;
         const particleBase = idx * this.strideFloats;
         const particleLifetime = this.instanceData[shape][particleBase + this.lifetimeIdx];
-        
+
         this.activeTrails.set(key, {
             points: [position.clone(), position.clone()],
             color: color.clone(),
@@ -172,7 +172,7 @@ class InstancedParticleSystem {
                 d[sBase + this.positionIdx + 1] += d[sBase + this.velocityIdx + 1] * delta;
 
                 const n = d[sBase + this.lifetimeIdx] / d[sBase + this.initialLifetimeIdx];
-                d[sBase + this.colorIdx + 3] = n * n * n;
+                d[sBase + this.colorIdx + 3] = (n * n) * (2 * Math.random());
 
                 gpu[gBase + 0] = d[sBase + this.positionIdx];
                 gpu[gBase + 1] = d[sBase + this.positionIdx + 1];
@@ -188,7 +188,7 @@ class InstancedParticleSystem {
                 const trail = this.activeTrails.get(key);
                 if (trail) {
                     trail.lifetime = d[sBase + this.lifetimeIdx];
-                    
+
                     const now = performance.now();
                     const lastPoint = trail.points[trail.points.length - 1];
                     if (lastPoint && lastPoint.distanceTo(new Vector2(
@@ -216,7 +216,7 @@ class InstancedParticleSystem {
         for (const { points, color, lifetime, initialLifetime } of this.activeTrails.values()) {
             const lifeNorm = lifetime / initialLifetime;
             const fadeAlpha = lifeNorm * lifeNorm * lifeNorm;
-            
+
             for (let j = 1; j < points.length; j++) {
                 const a = points[j - 1], b = points[j];
                 const dx = b.x - a.x, dy = b.y - a.y;
@@ -229,7 +229,7 @@ class InstancedParticleSystem {
                     new Vector2(mx, my),
                     ang,
                     new Vector2(this.trailWidth, len),
-                    new Color(color.r, color.g, color.b, fadeAlpha *1.2)
+                    new Color(color.r, color.g, color.b, fadeAlpha * ( 2 * Math.random()))
                 );
             }
         }
