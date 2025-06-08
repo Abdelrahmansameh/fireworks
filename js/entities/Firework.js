@@ -430,11 +430,11 @@ class Firework {
                     break;
 
                 case 'willow':
-                    const emissionAngle = 0.5;
+                    const emissionAngle = 1;
                     for (let i = 0; i < particleCount; i++) {
                         const angleOffset = (Math.random() * 1.2 - 0.5) * emissionAngle;
                         const angle = (-Math.PI / 2) + angleOffset;
-                        const horizontalDrift = (Math.random() - 0.5) * 10;
+                        const horizontalDrift = (Math.random() - 0.5) * 30;
                         const initialSpeed = speed * (0.7 + Math.random() * 0.3) * spread;
                         velocity.set(
                             Math.cos(angle) * initialSpeed + horizontalDrift,
