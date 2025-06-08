@@ -35,8 +35,8 @@ class InstancedParticleSystem {
                 vertices: geometry.vertices,
                 indices: geometry.indices,
                 maxInstances: this.maxParticles,
-                zIndex: 0,
-                blendMode: Renderer2D.BlendMode.NORMAL
+                zIndex: 10,
+                blendMode: Renderer2D.BlendMode.ADDITIVE
             });
 
             this.activeCounts[shape] = 0;

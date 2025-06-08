@@ -32,9 +32,45 @@ class Firework {
             vertices: geometry.vertices,
             indices: geometry.indices,
             maxInstances: FIREWORK_CONFIG.rocketTrailLength,
-            zIndex: 10,
-            blendMode: Renderer2D.BlendMode.ADDITIVE
+            zIndex: 0,
+            blendMode: Renderer2D.BlendMode.ADDITIVE, 
+            useGlow: false,
         });
+    }
+
+    _hexToRgbA(hex) {
+        if (!hex || typeof hex !== 'string') {
+            console.warn(`Invalid hex color input: ${hex}. Using default black.`);
+            return { r: 0, g: 0, b: 0, a: 1 };
+        }
+
+        let r = 0, g = 0, b = 0, a = 1;
+        let processedHex = hex.startsWith('#') ? hex.slice(1) : hex;
+
+        if (processedHex.length === 3) { // #RGB
+            r = parseInt(processedHex[0] + processedHex[0], 16);
+            g = parseInt(processedHex[1] + processedHex[1], 16);
+            b = parseInt(processedHex[2] + processedHex[2], 16);
+        } else if (processedHex.length === 4) { // #RGBA
+            r = parseInt(processedHex[0] + processedHex[0], 16);
+            g = parseInt(processedHex[1] + processedHex[1], 16);
+            b = parseInt(processedHex[2] + processedHex[2], 16);
+            a = parseInt(processedHex[3] + processedHex[3], 16);
+        } else if (processedHex.length === 6) { // #RRGGBB
+            r = parseInt(processedHex.substring(0, 2), 16);
+            g = parseInt(processedHex.substring(2, 4), 16);
+            b = parseInt(processedHex.substring(4, 6), 16);
+        } else if (processedHex.length === 8) { // #RRGGBBAA
+            r = parseInt(processedHex.substring(0, 2), 16);
+            g = parseInt(processedHex.substring(2, 4), 16);
+            b = parseInt(processedHex.substring(4, 6), 16);
+            a = parseInt(processedHex.substring(6, 8), 16);
+        } else {
+            console.warn(`Invalid hex color string format: #${processedHex}. Using default black.`);
+            return { r: 0, g: 0, b: 0, a: 1 };
+        }
+
+        return { r: r / 255, g: g / 255, b: b / 255, a: a / 255 };
     }
 
     createRocket(x, y) {
@@ -269,8 +305,20 @@ class Firework {
             const pattern = component.pattern;
             const gravity = FIREWORK_CONFIG.gravityMultiplier * FIREWORK_CONFIG.patternGravities[pattern] || FIREWORK_CONFIG.patternGravities.default;
             const speed = FIREWORK_CONFIG.baseSpeed * component.size;
-            const color = new Renderer2D.Color(0, 0, 1, .9);
-            const secondaryColor = new Renderer2D.Color(1, 0, 0, .9);
+
+            const primaryHex = component.color || '#FFFFFF'; // Use component.color or default to white
+            const parsedPrimaryColor = this._hexToRgbA(primaryHex);
+            const color = new Renderer2D.Color(parsedPrimaryColor.r, parsedPrimaryColor.g, parsedPrimaryColor.b, parsedPrimaryColor.a);
+
+            let secondaryColor;
+            if (component.secondaryColor) {
+                const parsedSecondaryColor = this._hexToRgbA(component.secondaryColor);
+                secondaryColor = new Renderer2D.Color(parsedSecondaryColor.r, parsedSecondaryColor.g, parsedSecondaryColor.b, parsedSecondaryColor.a);
+            } else {
+                // Default secondary color if not provided by component, matching previous hardcoded value
+                secondaryColor = new Renderer2D.Color(1, 0, 0, 0.9);
+            }
+
             const size = FIREWORK_CONFIG.particleSize * component.size;
             const rocketPos = this.rocket.position.clone();
             const velocity = new Renderer2D.Vector2();
@@ -435,7 +483,7 @@ class Firework {
                             const index = this.particleSystem.addParticle(
                                 rocketPos.clone(),
                                 velocity.clone(),
-                                secondaryColor,
+                                secondaryColor, // Use parsed or default secondaryColor
                                 size,
                                 component.lifetime,
                                 gravity,
@@ -641,17 +689,18 @@ class Firework {
                                 riseSpeed * (1 + randomSpread),
                                 Math.cos(angle) * rotationSpeed
                             );
-                            const particleColor = new THREE.Color();
+                            
+                            let particleColorToUse;
                             if (stream === 1) {
-                                particleColor.copy(secondaryColor);
+                                particleColorToUse = secondaryColor.clone();
                             } else {
-                                particleColor.copy(color);
+                                particleColorToUse = color.clone();
                             }
 
                             const index = this.particleSystem.addParticle(
                                 rocketPos.clone(),
-                                velocity.clone().add(offset),
-                                particleColor,
+                                velocity.clone().add(offset), // Note: offset is THREE.Vector3, velocity is Renderer2D.Vector2. This might need further adjustment.
+                                particleColorToUse,
                                 size,
                                 component.lifetime,
                                 gravity * 0.2,

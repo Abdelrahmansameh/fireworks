@@ -345,14 +345,18 @@ class UIManager {
 
             if (isTouch && !this.game.isClickInsideUI(e)) {
                 const worldPos = this.game.screenToWorld(e.clientX, e.clientY);
-                this.game.launchFireworkAt(worldPos.x);
+                for (let i = 0; i < 1; i++) {
+                    this.game.launchFireworkAt(worldPos.x);
+                }
             }
 
             if (this.isScrollDragging) {
                 const deltaX = Math.abs(e.clientX - this.lastPointerX);
                 if (!isTouch && deltaX < 20 && !this.game.isClickInsideUI(e)) {
                     const worldPos = this.game.screenToWorld(e.clientX, e.clientY);
-                    this.game.launchFireworkAt(worldPos.x);
+                    for (let i = 0; i < 1; i++) {
+                        this.game.launchFireworkAt(worldPos.x);
+                    }
                 }
                 document.body.style.cursor = 'default';
             }

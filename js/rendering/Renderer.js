@@ -960,6 +960,9 @@ class Renderer2D {
         this.a_scale_Inst = gl.getAttribLocation(this.instancedProgram, 'a_scale');
         this.a_color_Inst = gl.getAttribLocation(this.instancedProgram, 'a_color');
         this.u_proj_Inst = gl.getUniformLocation(this.instancedProgram, 'u_proj');
+        this.u_useGlowLoc = gl.getUniformLocation(this.instancedProgram, 'u_useGlow');
+        this.u_glowRadiusLoc = gl.getUniformLocation(this.instancedProgram, 'u_glowRadius');
+        this.u_glowSoftnessLoc = gl.getUniformLocation(this.instancedProgram, 'u_glowSoftness');
     }
 
     setCamera({ x = 0, y = 0, zoom = 1.0 }) {
@@ -1021,7 +1024,7 @@ class Renderer2D {
         }
     }
 
-    createInstancedGroup({ vertices, indices, maxInstances = 10000, zIndex = 0, blendMode = BlendMode.NORMAL }) {
+    createInstancedGroup({ vertices, indices, maxInstances = 10000, zIndex = 0, blendMode = BlendMode.NORMAL, useGlow = true, glowRadius = 0.5, glowSoftness = .05 }) {
         const gl = this.gl;
         const baseGeom = {};
         baseGeom.vertexBuffer = gl.createBuffer();
@@ -1080,6 +1083,10 @@ class Renderer2D {
         gl.vertexAttribDivisor(this.a_color_Inst, 1);
 
         gl.bindVertexArray(null);
+
+        group._useGlow = useGlow;
+        group._glowRadius = glowRadius;
+        group._glowSoftness = glowSoftness;
 
         this.instancedGroups.push(group);
         return group;
@@ -1219,6 +1226,11 @@ class Renderer2D {
                 break;
         }
         gl.useProgram(this.instancedProgram);
+
+        gl.uniform1i(this.u_useGlowLoc, group._useGlow ? 1 : 0);
+        gl.uniform1f(this.u_glowRadiusLoc, group._glowRadius);
+        gl.uniform1f(this.u_glowSoftnessLoc, group._glowSoftness);
+
         gl.uniformMatrix4fv(this.u_proj_Inst, false, this._projectionMatrix);
 
         // update instance buffer
@@ -1304,8 +1316,10 @@ class Renderer2D {
         uniform mat4 u_proj;
 
         out vec4 v_color;
+        out vec2 v_uv;
 
         void main(){
+            v_uv = a_position * 0.5 + vec2(0.5);
             float c = cos(a_rotation);
             float s = sin(a_rotation);
             vec2 scaled = a_position * a_scale;
@@ -1321,11 +1335,27 @@ class Renderer2D {
     _instancedFS() {
         return `#version 300 es
         precision mediump float;
+
         in vec4 v_color;
+        in vec2 v_uv;
+
+        uniform bool  u_useGlow;       // toggle glow on/off
+        uniform float u_glowRadius;    // where glow falls to zero (in UV space)
+        uniform float u_glowSoftness;  // how wide the fade‐band is
+       
         out vec4 outColor;
 
         void main(){
-            outColor = v_color;
+            float dist = distance(v_uv, vec2(0.5));
+            float glow = 1.0;
+            if(u_useGlow) {
+                float dist = distance(v_uv, vec2(0.5));
+                // smoothstep(edge0, edge1, x): 0 at x>=edge0, 1 at x<=edge1
+                 glow = smoothstep(u_glowRadius, u_glowRadius - u_glowSoftness, dist);
+                }
+            vec3 col = v_color.rgb * glow;
+            float a   = v_color.a   * glow;
+            outColor = vec4(col, a);
         }
         `;
     }

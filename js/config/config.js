@@ -6,11 +6,11 @@ const FIREWORK_CONFIG = {
     baseFriction: 2.0,
     verticalFrictionMultiplier: .9,
     gravityMultiplier: 15,
-    particleSize: 5.0,
+    particleSize: 10.0,
     particleDensity: 100,
     ascentSpeed: 400,
     rocketTrailLength: 50,
-    rocketSize: 0.3,
+    rocketSize: 0.6,
     minExplosionHeightPercent: 0.4,
     maxExplosionHeightPercent: 0.8,
     patternGravities: {
@@ -29,8 +29,8 @@ const FIREWORK_CONFIG = {
 };
 
 const GAME_BOUNDS = {
-    LAUNCHER_MIN_X: -300,
-    LAUNCHER_MAX_X: 300,
+    LAUNCHER_MIN_X: -200,
+    LAUNCHER_MAX_X: 200,
     OFFSET_MIN_Y: 5,
     OFFSET_MAX_Y: -50,
     SCROLL_MIN_X: -100,
