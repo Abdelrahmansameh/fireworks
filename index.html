@@ -6,10 +6,57 @@
     <title>Idle Fireworks</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <link rel="stylesheet" href="main.css">
+    <style>
+        /* Basic styles for full-page canvas and container */
+        body {
+            margin: 0;
+            overflow: hidden;
+            /* Prevent scrollbars from body */
+            background-color: #000;
+            /* Default background, can be overridden by JS */
+            color: #eee;
+            font-family: Arial, sans-serif;
+        }
+
+        #game-container {
+            position: fixed;
+            /* Or absolute, if body is the reference */
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 0;
+            /* Behind UI elements */
+        }
+
+        #game-canvas {
+            display: block;
+            /* Remove extra space below canvas */
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Ensure UI elements are above the canvas */
+        .top-bar-container,
+        .tab-content,
+        .level-navigation,
+        #notification,
+        #confirmation-dialog,
+        #overlay {
+            position: fixed;
+            /* Or absolute, depending on overall layout strategy */
+            z-index: 10;
+            /* Higher z-index for UI */
+        }
+
+        /* Add further responsive CSS in main.css */
+    </style>
 </head>
 
 <body>
-    <div id="game-container"></div>
+    <div id="game-container">
+        <canvas id="game-canvas"></canvas>
+    </div>
     <div class="top-bar-container">
         <div class="tab-bar">
             <button id="collapse-button" class="collapse-button">☰</button>
@@ -174,8 +221,6 @@
     <!-- <div class="level-display" id="level-display">Level: 1</div>-->
 
     <script type="module" src="js/main.js"></script>
-
-    <canvas id="game-canvas"></canvas>
 
 </body>
 

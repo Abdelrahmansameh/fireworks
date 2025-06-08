@@ -241,8 +241,15 @@ class UIManager {
 
             this.game.renderer2D.cameraX -= deltaX * dragScrollSpeed;
 
-            const maxScroll = (GAME_BOUNDS.SCROLL_MAX_X - GAME_BOUNDS.SCROLL_MIN_X) * 0.5;
-            this.game.renderer2D.cameraX = Math.max(-maxScroll, Math.min(maxScroll, this.game.renderer2D.cameraX));
+            const viewHalfWidth = (this.game.renderer2D.canvas.width / this.game.renderer2D.cameraZoom) / 2;
+            const minCameraX = GAME_BOUNDS.SCROLL_MIN_X + viewHalfWidth;
+            const maxCameraX = GAME_BOUNDS.SCROLL_MAX_X - viewHalfWidth;
+            // Ensure minCameraX is not greater than maxCameraX, can happen if view is wider than scroll area
+            if (minCameraX > maxCameraX) {
+                this.game.renderer2D.cameraX = (GAME_BOUNDS.SCROLL_MIN_X + GAME_BOUNDS.SCROLL_MAX_X) / 2;
+            } else {
+                this.game.renderer2D.cameraX = Math.max(minCameraX, Math.min(maxCameraX, this.game.renderer2D.cameraX));
+            }
             
             this.game.renderer2D.setCamera({
                 x: this.game.renderer2D.cameraX,
@@ -295,13 +302,21 @@ class UIManager {
             return;
         }
 
-        const wheelScrollSpeed = 0.05;
+        const wheelScrollSpeed = 0.05; 
         const scrollAmount = event.deltaY * wheelScrollSpeed;
 
         this.game.renderer2D.cameraX += scrollAmount;
 
-        const maxScroll = (GAME_BOUNDS.SCROLL_MAX_X - GAME_BOUNDS.SCROLL_MIN_X) * 0.5;
-        this.game.renderer2D.cameraX = Math.max(-maxScroll, Math.min(maxScroll, this.game.renderer2D.cameraX));
+        const viewHalfWidth = (this.game.renderer2D.canvas.width / this.game.renderer2D.cameraZoom) / 2;
+        const minCameraX = GAME_BOUNDS.SCROLL_MIN_X + viewHalfWidth;
+        const maxCameraX = GAME_BOUNDS.SCROLL_MAX_X - viewHalfWidth;
+        
+        // Ensure minCameraX is not greater than maxCameraX
+        if (minCameraX > maxCameraX) {
+            this.game.renderer2D.cameraX = (GAME_BOUNDS.SCROLL_MIN_X + GAME_BOUNDS.SCROLL_MAX_X) / 2;
+        } else {
+            this.game.renderer2D.cameraX = Math.max(minCameraX, Math.min(maxCameraX, this.game.renderer2D.cameraX));
+        }
         
         this.game.renderer2D.setCamera({
             x: this.game.renderer2D.cameraX,

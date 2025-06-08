@@ -127,8 +127,8 @@ class FireworkGame {
     initRenderer2D() {
         this.canvas2D = document.getElementById('game-canvas');
         this.renderer2D = new Renderer2D.Renderer2D(this.canvas2D, {
-            width: window.innerWidth,
-            height: window.innerHeight
+            // Initial size will be determined by CSS and _resizeIfNeeded in Renderer2D
+
         });
 
         this.cameraTargetX = 0;
@@ -144,13 +144,12 @@ class FireworkGame {
     }
 
     onWindowResize() {
-        this.canvas2D.width = window.innerWidth;
-        this.canvas2D.height = window.innerHeight;
-        this.renderer2D.setCamera({
-            x: this.renderer2D.cameraX,
-            y: this.renderer2D.cameraY,
-            zoom: this.renderer2D.cameraZoom
-        });
+        // Renderer2D._resizeIfNeeded will handle actual canvas.width/height update
+        // This function mainly ensures the projection matrix is updated if needed
+        // after a potential layout change affecting canvas clientWidth/Height.
+        // The renderer's internal resize logic already uses clientWidth/Height.
+        // We just need to ensure the camera projection is re-evaluated.
+        this.renderer2D._updateProjectionMatrix(); // Force update based on new canvas dimensions
     }
 
     bindEvents() {
@@ -235,15 +234,17 @@ class FireworkGame {
             if (launcher.accumulator >= launcher.spawnInterval) {
                 const x = launcher.x;
                 let recipe = this.recipes[launcher.assignedRecipeIndex];
-                let minY = null;
+                
                 let recipeComponents = null;
                 let trailEffect = null;
+                
+                const viewBottomWorldY = this.renderer2D.cameraY - (this.renderer2D.canvas.height / (2 * this.renderer2D.cameraZoom));
+                const launchY = viewBottomWorldY + GAME_BOUNDS.OFFSET_MIN_Y;
+
                 if (recipe) {
-                    minY = -window.innerHeight / 2 + GAME_BOUNDS.OFFSET_MIN_Y;
                     recipeComponents = recipe.components;
                     trailEffect = recipe.trailEffect;
                 } else {
-                    minY = -window.innerHeight / 2 + GAME_BOUNDS.OFFSET_MIN_Y;
                     recipeComponents = this.currentRecipeComponents;
                     trailEffect = this.currentTrailEffect;
                 }
@@ -251,14 +252,12 @@ class FireworkGame {
                 const components = recipeComponents || this.currentRecipeComponents;
 
                 if (components.length === 0) {
-                    this.showNotification("Add at least one component to launch a firework!");
-                    return;
+                    return; 
                 }
-
-                const y = minY || -window.innerHeight / 2 + GAME_BOUNDS.OFFSET_MIN_Y
+                
                 const effect = trailEffect || this.currentTrailEffect;
 
-                const firework = new Firework(x, y, components, this.renderer2D, window.innerHeight, trailEffect, this.particleSystem);
+                const firework = new Firework(x, launchY, components, this.renderer2D, this.renderer2D.canvas.height / this.renderer2D.cameraZoom, effect, this.particleSystem);
                 this.levels[this.currentLevel].fireworks.push(firework); this.fireworkCount++;
                 this.resourceManager.resources.sparkles.add(1);
                 this.updateUI();
@@ -401,7 +400,8 @@ class FireworkGame {
             return;
         }
 
-        const y = minY || -window.innerHeight / 2 + GAME_BOUNDS.OFFSET_MIN_Y
+        const viewBottomWorldY = this.renderer2D.cameraY - (this.renderer2D.canvas.height / (2 * this.renderer2D.cameraZoom));
+        const y = minY || viewBottomWorldY + GAME_BOUNDS.OFFSET_MIN_Y;
         const effect = trailEffect || this.currentTrailEffect;
 
         this.launch(x, y, components, effect);
@@ -412,7 +412,7 @@ class FireworkGame {
 
     // dont use every frame because js is weird 
     launch(x, y, components, trailEffect) {
-        const firework = new Firework(x, y, components, this.renderer2D, window.innerHeight, trailEffect, this.particleSystem);
+        const firework = new Firework(x, y, components, this.renderer2D, this.renderer2D.canvas.height / this.renderer2D.cameraZoom, trailEffect, this.particleSystem);
         this.levels[this.currentLevel].fireworks.push(firework);
     }
 
