@@ -222,7 +222,7 @@ class InstancedParticleSystem {
                 const a = points[j - 1], b = points[j];
                 const dx = b.x - a.x, dy = b.y - a.y;
                 const len = Math.hypot(dx, dy);
-                const ang = Math.atan2(dx, dy);
+                const ang = Math.atan2(dy, dx) - Math.PI * 0.5;
                 const mx = (a.x + b.x) * 0.5;
                 const my = (a.y + b.y) * 0.5;
 
