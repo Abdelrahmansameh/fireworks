@@ -3,9 +3,7 @@ import InstancedParticleSystem from '../particles/InstancedParticleSystem.js';
 import * as Renderer2D from '../rendering/Renderer.js';
 
 class Firework {
-    constructor(x, y, components, scene, camera, renderer, viewHeight, trailEffect, particleSystem) {
-        this.scene = scene;
-        this.camera = camera;
+    constructor(x, y, components, renderer, viewHeight, trailEffect, particleSystem) {
         this.components = components;
         this.renderer = renderer;
         this.trailEffect = trailEffect;
@@ -284,20 +282,10 @@ class Firework {
     }
 
     explode() {
-        this.scene.remove(this.rocket);
+        this.alive = false;
         if (this.rocket) this.renderer.removeNormalShape(this.rocket);
         if (this.trailInstanceGroup) { this.renderer.removeInstancedGroup(this.trailInstanceGroup); }
 
-        this.trailParticles.forEach(particle => {
-            if (particle.mesh) {
-                this.scene.remove(particle.mesh);
-                if (particle.mesh.geometry) particle.mesh.geometry.dispose();
-                if (particle.mesh.material) {
-                    if (particle.mesh.material.map) particle.mesh.material.map.dispose();
-                    particle.mesh.material.dispose();
-                }
-            }
-        });
         this.trailParticles = [];
 
         this.components.forEach(component => {
@@ -306,7 +294,7 @@ class Firework {
             const gravity = FIREWORK_CONFIG.gravityMultiplier * FIREWORK_CONFIG.patternGravities[pattern] || FIREWORK_CONFIG.patternGravities.default;
             const speed = FIREWORK_CONFIG.baseSpeed * component.size;
 
-            const primaryHex = component.color || '#FFFFFF'; // Use component.color or default to white
+            const primaryHex = component.color || '#FFFFFF';
             const parsedPrimaryColor = this._hexToRgbA(primaryHex);
             const color = new Renderer2D.Color(parsedPrimaryColor.r, parsedPrimaryColor.g, parsedPrimaryColor.b, parsedPrimaryColor.a);
 
@@ -315,7 +303,6 @@ class Firework {
                 const parsedSecondaryColor = this._hexToRgbA(component.secondaryColor);
                 secondaryColor = new Renderer2D.Color(parsedSecondaryColor.r, parsedSecondaryColor.g, parsedSecondaryColor.b, parsedSecondaryColor.a);
             } else {
-                // Default secondary color if not provided by component, matching previous hardcoded value
                 secondaryColor = new Renderer2D.Color(1, 0, 0, 0.9);
             }
 
@@ -333,8 +320,7 @@ class Firework {
                         const magnitude = speed * (0.8 + Math.random() * 0.4) * spread;
                         velocity.set(
                             Math.cos(angle) * magnitude,
-                            Math.sin(angle) * magnitude,
-                            0
+                            Math.sin(angle) * magnitude
                         );
                         const index = this.particleSystem.addParticle(
                             rocketPos.clone(),
@@ -357,8 +343,7 @@ class Firework {
                         const magnitude = speed * spread;
                         velocity.set(
                             Math.cos(angle) * magnitude,
-                            Math.sin(angle) * magnitude,
-                            0
+                            Math.sin(angle) * magnitude
                         );
                         const index = this.particleSystem.addParticle(
                             rocketPos.clone(),
@@ -381,8 +366,7 @@ class Firework {
                         const magnitude = speed * Math.random() * spread;
                         velocity.set(
                             Math.cos(angle) * magnitude,
-                            Math.sin(angle) * magnitude,
-                            0
+                            Math.sin(angle) * magnitude
                         );
                         const index = this.particleSystem.addParticle(
                             rocketPos.clone(),
@@ -411,8 +395,7 @@ class Firework {
                         const magnitude = speed * (1 + particleInBranch / particlesPerBranch) * spread;
                         velocity.set(
                             Math.cos(angle) * magnitude,
-                            Math.sin(angle) * magnitude,
-                            0
+                            Math.sin(angle) * magnitude
                         );
                         const index = this.particleSystem.addParticle(
                             rocketPos.clone(),
@@ -438,8 +421,7 @@ class Firework {
                         const initialSpeed = speed * (0.7 + Math.random() * 0.3) * spread;
                         velocity.set(
                             Math.cos(angle) * initialSpeed + horizontalDrift,
-                            Math.sin(angle) * initialSpeed,
-                            0
+                            Math.sin(angle) * initialSpeed
                         );
                         const index = this.particleSystem.addParticle(
                             rocketPos.clone(),
@@ -477,8 +459,7 @@ class Firework {
                             const y = (row / trunkRows) * trunkHeight;
                             velocity.set(
                                 x * speed,
-                                y * speed,
-                                0
+                                y * speed
                             );
                             const index = this.particleSystem.addParticle(
                                 rocketPos.clone(),
@@ -511,8 +492,7 @@ class Firework {
                             const y = baseY + progress * triangleHeight;
                             velocity.set(
                                 x * speed,
-                                y * speed,
-                                0
+                                y * speed
                             );
                             const index = this.particleSystem.addParticle(
                                 rocketPos.clone(),
@@ -535,8 +515,7 @@ class Firework {
                             const y = baseY + progress * triangleHeight;
                             velocity.set(
                                 x * speed,
-                                y * speed,
-                                0
+                                y * speed
                             );
                             const index = this.particleSystem.addParticle(
                                 rocketPos.clone(),
@@ -563,8 +542,7 @@ class Firework {
                                 const x = ((i / (lineParticles - 1)) - 0.5) * currentWidth;
                                 velocity.set(
                                     x * speed,
-                                    y * speed,
-                                    0
+                                    y * speed
                                 );
                                 const index = this.particleSystem.addParticle(
                                     rocketPos.clone(),
@@ -595,8 +573,7 @@ class Firework {
                         const magnitude = speed * Math.sqrt(xOffset * xOffset + yOffset * yOffset) * 0.05;
                         velocity.set(
                             Math.cos(angle) * magnitude,
-                            Math.sin(angle) * magnitude,
-                            0
+                            Math.sin(angle) * magnitude
                         );
                         const index = this.particleSystem.addParticle(
                             rocketPos.clone(),
@@ -610,107 +587,6 @@ class Firework {
                             component.enableTrail
                         );
                         if (index !== -1) this.particles[shape].add(index);
-                    }
-                    break;
-
-                case 'brokenHeart': {
-                    const heartScale = spread;
-
-                    const pivotOffset = new THREE.Vector3(0, -heartScale * 30, 0);
-                    const pivotPoint = rocketPos.clone().add(pivotOffset);
-
-                    const rotationAxis = new THREE.Vector3(0, 0, 1);
-
-                    for (let i = 0; i < particleCount; i++) {
-                        const t = (i / particleCount) * Math.PI * 2;
-                        const xOffset = heartScale * (16 * Math.pow(Math.sin(t), 3));
-                        const yOffset = heartScale * (
-                            13 * Math.cos(t)
-                            - 5 * Math.cos(2 * t)
-                            - 2 * Math.cos(3 * t)
-                            - Math.cos(4 * t)
-                        );
-
-                        const particlePos = rocketPos.clone().add(new THREE.Vector3(xOffset, yOffset, 0));
-
-                        const angle = Math.atan2(yOffset, xOffset);
-                        const magnitude = speed * Math.sqrt(xOffset * xOffset + yOffset * yOffset) * 0.05;
-                        const unbrokenHeartVelocity = new Renderer2D.Vector2(
-                            Math.cos(angle) * magnitude,
-                            Math.sin(angle) * magnitude,
-                        );
-
-                        const pivotToParticle = particlePos.clone().sub(pivotPoint);
-                        const rotation = new THREE.Vector3().crossVectors(pivotToParticle, rotationAxis);
-                        const sign = (i < particleCount / 2) ? 1 : -1;
-                        const rotationSpeed = 0.2 * sign;
-                        rotation.multiply(rotationSpeed);
-
-                        const index = this.particleSystem.addParticle(
-                            rocketPos.clone(),
-                            unbrokenHeartVelocity.clone(),
-                            color,
-                            size,
-                            component.lifetime,
-                            gravity,
-                            shape,
-                            rotation,
-                            component.enableTrail
-                        );
-                        if (index !== -1) {
-                            this.particles[shape].add(index);
-                        }
-                    }
-                    break;
-                }
-                case 'helix':
-                    const helixRadius = 0.5;
-                    const riseSpeed = speed * 0.1 * spread;
-                    const rotationSpeed = 2;
-                    const particlesPerStream = 100;
-                    const verticalSpacing = 0.1;
-                    const spreadFactor = 0.1;
-
-                    for (let stream = 0; stream < 2; stream++) {
-                        const streamOffset = stream * Math.PI;
-                        for (let i = 0; i < particlesPerStream; i++) {
-                            const t = (i / particlesPerStream) * Math.PI * 2;
-                            const angle = t + streamOffset;
-
-                            const randomSpread = (Math.random() - 0.5) * spreadFactor;
-                            const offset = new THREE.Vector3(
-                                Math.cos(angle) * helixRadius * (1 + randomSpread),
-                                -i * verticalSpacing,
-                                Math.sin(angle) * helixRadius * (1 + randomSpread)
-                            );
-
-                            velocity.set(
-                                -Math.sin(angle) * rotationSpeed,
-                                riseSpeed * (1 + randomSpread),
-                                Math.cos(angle) * rotationSpeed
-                            );
-                            
-                            let particleColorToUse;
-                            if (stream === 1) {
-                                particleColorToUse = secondaryColor.clone();
-                            } else {
-                                particleColorToUse = color.clone();
-                            }
-
-                            const index = this.particleSystem.addParticle(
-                                rocketPos.clone(),
-                                velocity.clone().add(offset), // Note: offset is THREE.Vector3, velocity is Renderer2D.Vector2. This might need further adjustment.
-                                particleColorToUse,
-                                size,
-                                component.lifetime,
-                                gravity * 0.2,
-                                shape,
-                                acceleration,
-                                component.enableTrail,
-                                0
-                            );
-                            if (index !== -1) this.particles[shape].add(index);
-                        }
                     }
                     break;
 
@@ -735,8 +611,7 @@ class Firework {
 
                         velocity.set(
                             Math.cos(angle + angleVariation) * radius * radiusVariation,
-                            Math.sin(angle + angleVariation) * radius * radiusVariation,
-                            0
+                            Math.sin(angle + angleVariation) * radius * radiusVariation
                         );
 
                         const index = this.particleSystem.addParticle(
@@ -760,8 +635,7 @@ class Firework {
                         const magnitude = speed * spread;
                         velocity.set(
                             Math.cos(angle) * magnitude,
-                            Math.sin(angle) * magnitude,
-                            0
+                            Math.sin(angle) * magnitude
                         );
                         const index = this.particleSystem.addParticle(
                             rocketPos.clone(),
@@ -783,22 +657,16 @@ class Firework {
 
     dispose() {
         if (this.rocket) {
-            this.scene.remove(this.rocket);
-            if (this.rocket.geometry) this.rocket.geometry.dispose();
-            if (this.rocket.material) this.rocket.material.dispose();
+            // Remove Three.js geometry and material disposal
+            this.renderer.removeNormalShape(this.rocket);
             this.rocket = null;
         }
 
-        this.trailParticles.forEach(particle => {
-            if (particle.mesh) {
-                this.scene.remove(particle.mesh);
-                if (particle.mesh.geometry) particle.mesh.geometry.dispose();
-                if (particle.mesh.material) {
-                    if (particle.mesh.material.map) particle.mesh.material.map.dispose();
-                    particle.mesh.material.dispose();
-                }
-            }
-        });
+        if (this.trailInstanceGroup) {
+            this.renderer.removeInstancedGroup(this.trailInstanceGroup);
+            this.trailInstanceGroup = null;
+        }
+
         this.trailParticles = [];
 
         FIREWORK_CONFIG.supportedShapes.forEach(shape => {

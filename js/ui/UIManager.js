@@ -1,4 +1,5 @@
 import { GAME_BOUNDS } from '../config/config.js';
+import * as Renderer2D from '../rendering/Renderer.js';
 
 class UIManager {
     constructor(game) {
@@ -107,39 +108,15 @@ class UIManager {
             if (!this.game.isClickInsideUI(e)) {
                 e.preventDefault();
                 if (e.pointerType === 'touch') {
-                    e.target.setPointerCapture(e.pointerId);
+                    // Handle touch events without Three.js
                 }
 
                 const x = e.clientX;
                 const y = e.clientY;
 
-                const mouse = new THREE.Vector2();
-                mouse.x = (x / window.innerWidth) * 2 - 1;
-                mouse.y = - (y / window.innerHeight) * 2 + 1;
-
-                const raycaster = new THREE.Raycaster();
-                raycaster.setFromCamera(mouse, this.game.camera);
-
-                const launcherMeshes = this.game.levels[this.game.currentLevel].autoLaunchers.map(launcher => launcher.mesh);
-                const intersects = raycaster.intersectObjects(launcherMeshes);
-
-                if (intersects.length > 0) {
-                    const intersectedMesh = intersects[0].object;
-                    const launcherIndex = this.game.levels[this.game.currentLevel].autoLaunchers.findIndex(launcher => launcher.mesh === intersectedMesh);
-                    if (launcherIndex !== -1) {
-                        this.game.selectLauncher(launcherIndex);
-                        this.showTab('auto-launcher');
-                        setTimeout(() => {
-                            const launcherList = document.getElementById('launcher-list');
-                            const launcherCards = launcherList.getElementsByClassName('launcher-card');
-                            if (launcherCards[launcherIndex]) {
-                                launcherCards[launcherIndex].scrollIntoView({ behavior: 'smooth' });
-                            }
-                        }, 100);
-                        this.game.draggingLauncher = this.game.levels[this.game.currentLevel].autoLaunchers[launcherIndex];
-                        this.game.isDragging = true;
-                    }
-                }
+                // Use 2D renderer coordinate conversion instead of Three.js
+                const worldPos = this.game.screenToWorld(x, y);
+                // Handle the click at worldPos if needed
             }
         });
     }
@@ -219,34 +196,15 @@ class UIManager {
                 e.target.setPointerCapture(e.pointerId);
             }
 
+            // Remove Three.js raycasting logic
             const intersectlauncher = false;
 
             if (intersectlauncher) {
-                const intersectedMesh = intersects[0].object;
-                const launcherIndex = this.game.levels[this.game.currentLevel].autoLaunchers.findIndex(launcher => launcher.mesh === intersectedMesh);
-                if (launcherIndex !== -1) {
-                    this.game.selectLauncher(launcherIndex);
-                    this.showTab('auto-launcher');
-                    setTimeout(() => {
-                        const launcherList = document.getElementById('launcher-list');
-                        const launcherCards = launcherList.getElementsByClassName('launcher-card');
-                        if (launcherCards[launcherIndex]) {
-                            launcherCards[launcherIndex].scrollIntoView({ behavior: 'smooth' });
-                        }
-                    }, 100);
-                    this.draggingLauncher = this.game.levels[this.game.currentLevel].autoLaunchers[launcherIndex];
-                    this.isDragging = true;
-
-                    document.addEventListener('pointermove', this.pointerMoveHandler, { passive: false });
-                    document.addEventListener('pointerup', this.pointerUpHandler);
-                    document.addEventListener('pointercancel', this.pointerUpHandler);
-
-                    return;
-                }
+                // Launcher interaction logic removed - handled differently in 2D
+            } else {
+                const worldPos = this.game.screenToWorld(e.clientX, e.clientY);
+                this.handlePointerClick(worldPos, e);
             }
-
-            const worldPos = this.game.screenToWorld(e.clientX, e.clientY);
-            this.handlePointerClick(worldPos, e);
         }
     }
 
@@ -255,34 +213,11 @@ class UIManager {
             return;
         }
 
+        // Remove Three.js raycasting
         const intersectlauncher = false;
 
         if (intersectlauncher) {
-            const clickedMesh = intersects[0].object;
-            const launcherIndex = this.game.levels[this.game.currentLevel].autoLaunchers.findIndex(launcher => launcher.mesh === clickedMesh);
-            if (launcherIndex !== -1) {
-                if (event.pointerType === 'touch' || event.button === 0) {
-                    this.game.selectLauncher(launcherIndex);
-                    setTimeout(() => {
-                        const launcherCards = document.querySelectorAll('.launcher-card');
-                        if (launcherCards[launcherIndex]) {
-                            launcherCards[launcherIndex].scrollIntoView({ behavior: 'smooth' });
-                        }
-                    }, 100);
-                    this.draggingLauncher = this.game.levels[this.game.currentLevel].autoLaunchers[launcherIndex];
-                    this.isDragging = true;
-
-                    if (event.pointerType === 'touch' && event.target) {
-                        event.target.setPointerCapture(event.pointerId);
-                    }
-
-                    document.addEventListener('pointermove', this.pointerMoveHandler, { passive: false });
-                    document.addEventListener('pointerup', this.pointerUpHandler);
-                    document.addEventListener('pointercancel', this.pointerUpHandler);
-
-                    return;
-                }
-            }
+            // Launcher selection logic removed
         } else {
             this.isScrollDragging = true;
             this.game.cameraTargetX = null;
@@ -303,33 +238,27 @@ class UIManager {
     pointerMoveHandler(e) {
         if (this.isDragging && this.draggingLauncher) {
             e.preventDefault();
-            const x = e.clientX;
-            const y = e.clientY;
-
-            const mouse = new THREE.Vector2();
-            mouse.x = (x / window.innerWidth) * 2 - 1;
-            mouse.y = - (y / window.innerHeight) * 2 + 1;
-
-            const raycaster = new THREE.Raycaster();
-            raycaster.setFromCamera(mouse, this.game.camera);
-
-            const t = - (this.game.camera.position.z) / raycaster.ray.direction.z;
-            const worldPos = new THREE.Vector3();
-            worldPos.copy(raycaster.ray.direction).multiplyScalar(t).add(this.game.camera.position);
-
+            const worldPos = this.game.screenToWorld(e.clientX, e.clientY);
             const clampedX = Math.max(GAME_BOUNDS.LAUNCHER_MIN_X, Math.min(worldPos.x, GAME_BOUNDS.LAUNCHER_MAX_X));
 
-            this.draggingLauncher.mesh.position.x = clampedX;
+            // Update launcher position without Three.js mesh
             this.draggingLauncher.x = clampedX;
             this.game.saveProgress();
         } else if (this.isScrollDragging) {
             const deltaX = e.clientX - this.lastPointerX;
             const dragScrollSpeed = 0.2;
 
-            this.game.camera.position.x -= deltaX * dragScrollSpeed;
+            // Update 2D camera position instead of Three.js camera
+            this.game.renderer2D.cameraX -= deltaX * dragScrollSpeed;
 
             const maxScroll = (GAME_BOUNDS.SCROLL_MAX_X - GAME_BOUNDS.SCROLL_MIN_X) * 0.5;
-            this.game.camera.position.x = Math.max(-maxScroll, Math.min(maxScroll, this.game.camera.position.x));
+            this.game.renderer2D.cameraX = Math.max(-maxScroll, Math.min(maxScroll, this.game.renderer2D.cameraX));
+            
+            this.game.renderer2D.setCamera({
+                x: this.game.renderer2D.cameraX,
+                y: this.game.renderer2D.cameraY,
+                zoom: this.game.renderer2D.cameraZoom
+            });
 
             this.lastPointerX = e.clientX;
         }
@@ -379,10 +308,17 @@ class UIManager {
         const wheelScrollSpeed = 0.05;
         const scrollAmount = event.deltaY * wheelScrollSpeed;
 
-        this.game.camera.position.x += scrollAmount;
+        // Update 2D camera instead of Three.js camera
+        this.game.renderer2D.cameraX += scrollAmount;
 
         const maxScroll = (GAME_BOUNDS.SCROLL_MAX_X - GAME_BOUNDS.SCROLL_MIN_X) * 0.5;
-        this.game.camera.position.x = Math.max(-maxScroll, Math.min(maxScroll, this.game.camera.position.x));
+        this.game.renderer2D.cameraX = Math.max(-maxScroll, Math.min(maxScroll, this.game.renderer2D.cameraX));
+        
+        this.game.renderer2D.setCamera({
+            x: this.game.renderer2D.cameraX,
+            y: this.game.renderer2D.cameraY,
+            zoom: this.game.renderer2D.cameraZoom
+        });
     }
 
     handleCollapseButton() {
@@ -777,8 +713,9 @@ class UIManager {
 
             launcherDiv.addEventListener('click', () => {
                 onSelect(index);
-                if (launcher && launcher.mesh) {
-                    this.game.setCameraTarget(launcher.mesh.position.x);
+                // Remove Three.js mesh camera targeting
+                if (launcher && launcher.x !== undefined) {
+                    this.game.setCameraTarget(launcher.x);
                 }
             });
         });

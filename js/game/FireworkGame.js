@@ -16,11 +16,6 @@ class FireworkGame {
             unlocked: true
         }];
 
-        this.scene = null;
-        this.camera = null;
-        this.renderer = null;
-        this.clock = null;
-
         this.recipes = [];
         this.currentRecipeComponents = [];
         this.currentTrailEffect = 'fade';
@@ -35,6 +30,8 @@ class FireworkGame {
         this.ui = new UIManager(this);
         this.profiler = new GameProfiler();
 
+        this.cameraTransitionSpeed = 2.0;
+
         this.init();
     }
 
@@ -44,7 +41,7 @@ class FireworkGame {
         this.autoLauncherCost = parseInt(localStorage.getItem('autoLauncherCost')) || 10;
         this.crowdCount = 0;
 
-        //  resources
+        // Load resources
         const savedResources = localStorage.getItem('resources');
         if (savedResources) {
             try {
@@ -55,7 +52,7 @@ class FireworkGame {
             }
         }
 
-        //  levels data
+        // Load levels data
         const savedLevels = JSON.parse(localStorage.getItem('levels'));
         if (savedLevels) {
             this.levels = savedLevels.map(levelData => ({
@@ -65,32 +62,22 @@ class FireworkGame {
             }));
         }
 
-        //  selected launcher
+        // Load selected launcher
         const savedSelectedIndex = parseInt(localStorage.getItem('selectedLauncherIndex'));
         if (!isNaN(savedSelectedIndex) && savedSelectedIndex < this.levels[this.currentLevel].autoLaunchers.length) {
             this.selectedLauncherIndex = savedSelectedIndex;
             this.selectLauncher(this.selectedLauncherIndex);
         }
 
-        //  three.js 
-        this.initThreeJS();
+        // Initialize 2D renderer
+        this.initRenderer2D();
         this.initBackgroundColor();
 
-        this.canvas2D = document.getElementById('game-canvas');
-        this.renderer2D = new Renderer2D.Renderer2D(this.canvas2D, {
-            width: window.innerWidth,
-            height: window.innerHeight
-        });
+        // Initialize game components
+        this.particleSystem = new InstancedParticleSystem(this.renderer2D, this.profiler);
+        this.crowd = new Crowd(); // Remove scene dependency
 
-        this.cameraTargetX = 0;
-        this.cameraTargtY = 0;
-        this.cameraTargetZoom = 1.0;
-
-        //  game components
-        this.particleSystem = new InstancedParticleSystem(this.scene, this.renderer2D, this.profiler);
-        this.crowd = new Crowd(this.scene);
-
-        //  launchers
+        // Initialize launchers
         this.levels.forEach(levelData => {
             levelData.autoLaunchers.forEach(launcher => {
                 if (!launcher.accumulator) {
@@ -105,11 +92,7 @@ class FireworkGame {
             });
         });
 
-        this.levels[this.currentLevel].autoLaunchers.forEach(launcher => {
-            this.createAutoLauncherMesh(launcher);
-        });
-
-        //  UI and events
+        // Load UI and events
         this.loadRecipes();
         this.loadCurrentRecipe();
         this.updateUI();
@@ -117,11 +100,11 @@ class FireworkGame {
         this.updateRecipeList();
         this.updateLauncherList();
 
-        //  game container
+        // Setup game container
         const gameContainer = document.getElementById('game-container');
         gameContainer.style.touchAction = 'none';
 
-        //  visibility change handler
+        // Setup visibility change handler
         document.addEventListener('visibilitychange', () => {
             if (document.visibilityState === 'hidden') {
                 this.pause();
@@ -130,49 +113,27 @@ class FireworkGame {
             }
         });
 
-        // UI displays
+        // Update UI displays
         this.updateLevelDisplay();
         this.updateLevelsList();
         this.updateLevelArrows();
 
-        //   loop
+        // Start game loop
         this.animate();
 
         this.ui.bindEvents();
     }
 
-    initThreeJS() {
-        this.scene = new THREE.Scene();
-        this.camera = new THREE.PerspectiveCamera(
-            75,
-            window.innerWidth / window.innerHeight,
-            0.1,
-            1000
-        );
-
-        const aspectRatio = window.innerWidth / window.innerHeight;
-        const verticalSize = GAME_BOUNDS.MAX_Y - GAME_BOUNDS.MIN_Y;
-        const desiredDistance = (verticalSize / 2) / Math.tan((this.camera.fov * Math.PI / 180) / 2);
-        this.camera.position.z = desiredDistance * 1.5;
-
-        this.visibleHeight = 2 * Math.tan((this.camera.fov * Math.PI / 180) / 2) * this.camera.position.z;
-        this.visibleWidth = this.visibleHeight * aspectRatio;
-
-        GAME_BOUNDS.MIN_Y = -this.visibleHeight / 2;
-
-        this.cameraTargetX = null;
-        this.cameraTransitionSpeed = 5.0;
-
-        this.renderer = new THREE.WebGLRenderer({
-            antialias: true,
-            alpha: true
+    initRenderer2D() {
+        this.canvas2D = document.getElementById('game-canvas');
+        this.renderer2D = new Renderer2D.Renderer2D(this.canvas2D, {
+            width: window.innerWidth,
+            height: window.innerHeight
         });
-        this.renderer.setClearColor(0x000000, 0);
-        this.renderer.setPixelRatio(window.devicePixelRatio);
-        this.renderer.setSize(window.innerWidth, window.innerHeight);
 
-        const gameContainer = document.getElementById('game-container');
-        gameContainer.appendChild(this.renderer.domElement);
+        this.cameraTargetX = 0;
+        this.cameraTargetY = 0;
+        this.cameraTargetZoom = 1.0;
 
         this.clock = new Renderer2D.Clock();
 
@@ -183,10 +144,14 @@ class FireworkGame {
     }
 
     onWindowResize() {
-        this.camera.aspect = window.innerWidth / window.innerHeight;
-        this.camera.updateProjectionMatrix();
-        this.renderer.setSize(window.innerWidth, window.innerHeight);
-        this.renderer.setPixelRatio(window.devicePixelRatio);
+        // Remove Three.js renderer resize, keep only canvas resize
+        this.canvas2D.width = window.innerWidth;
+        this.canvas2D.height = window.innerHeight;
+        this.renderer2D.setCamera({
+            x: this.renderer2D.cameraX,
+            y: this.renderer2D.cameraY,
+            zoom: this.renderer2D.cameraZoom
+        });
     }
 
     bindEvents() {
@@ -294,7 +259,7 @@ class FireworkGame {
                 const y = minY || -window.innerHeight / 2 + GAME_BOUNDS.OFFSET_MIN_Y
                 const effect = trailEffect || this.currentTrailEffect;
 
-                const firework = new Firework(x, y, components, this.scene, this.camera, this.renderer2D, window.innerHeight, trailEffect, this.particleSystem);
+                const firework = new Firework(x, y, components, this.renderer2D, window.innerHeight, trailEffect, this.particleSystem);
                 this.levels[this.currentLevel].fireworks.push(firework); this.fireworkCount++;
                 this.resourceManager.resources.sparkles.add(1);
                 this.updateUI();
@@ -346,11 +311,12 @@ class FireworkGame {
             const colorPicker = document.getElementById('background-color');
             if (colorPicker) {
                 colorPicker.value = savedColor;
-                this.renderer.setClearColor(new THREE.Color(savedColor));
+                // Set background color on canvas or document body instead of Three.js renderer
+                document.body.style.backgroundColor = savedColor;
 
                 colorPicker.addEventListener('input', (e) => {
                     const color = e.target.value;
-                    this.renderer.setClearColor(new THREE.Color(color));
+                    document.body.style.backgroundColor = color;
                     localStorage.setItem('backgroundColor', color);
                 });
             } else {
@@ -420,25 +386,12 @@ class FireworkGame {
             }
 
             this.update(delta);
-
             this.crowd.update(delta);
-
-            //            this.renderer.render(this.scene, this.camera);
         }
-
-
-        /*for (let i = 0; i < 50000; i++) {
-            const x = (Math.random() - 0.5) * 2000;
-            const y = (Math.random() - 0.5) * 2000;
-            const rot = Math.random() * Math.PI * 0.1;
-            this.starGroup.moveInstance(i, new Renderer2D.Vector2(x, y).scale(delta));
-            this.starGroup.rotateInstance(i, rot);
-        }*/
 
         this.profiler.startFunction('drawFrame');
         this.renderer2D.drawFrame();
         this.profiler.endFunction('drawFrame');
-
     }
 
     // dont use every frame because js is weird 
@@ -461,7 +414,7 @@ class FireworkGame {
 
     // dont use every frame because js is weird 
     launch(x, y, components, trailEffect) {
-        const firework = new Firework(x, y, components, this.scene, this.camera, this.renderer2D, window.innerHeight, trailEffect, this.particleSystem);
+        const firework = new Firework(x, y, components, this.renderer2D, window.innerHeight, trailEffect, this.particleSystem);
         this.levels[this.currentLevel].fireworks.push(firework);
     }
 
@@ -496,20 +449,8 @@ class FireworkGame {
     }
 
     createAutoLauncherMesh(launcher) {
-        const width = 2;
-        const height = 4;
-        const geometry = new THREE.PlaneGeometry(width, height);
-        const material = new THREE.MeshBasicMaterial({
-            color: 0xffffff,
-            side: THREE.DoubleSide
-        });
-        const launcherMesh = new THREE.Mesh(geometry, material);
-
-        const y = GAME_BOUNDS.MIN_Y + (height / 2);
-        launcherMesh.position.set(launcher.x, y, 0);
-        this.scene.add(launcherMesh);
-
-        launcher.mesh = launcherMesh;
+        // Remove Three.js mesh creation completely
+        // Auto-launchers are now purely data-driven and UI-only
     }
 
     resetAutoLaunchers() {
@@ -523,24 +464,13 @@ class FireworkGame {
                     cost += launcher.upgradeCost * (i - 1);
                 }
                 refundAmount += cost;
-
-                if (launcher.mesh) {
-                    this.scene.remove(launcher.mesh);
-                    if (launcher.mesh.geometry) launcher.mesh.geometry.dispose();
-                    if (launcher.mesh.material) {
-                        if (launcher.mesh.material.map) launcher.mesh.material.map.dispose();
-                        launcher.mesh.material.dispose();
-                    }
-                    launcher.mesh = null;
-                }
+                // Remove Three.js mesh cleanup - no longer needed
             });
             level.autoLaunchers = [];
         });
 
         this.addSparkles(Math.floor(refundAmount));
-
         this.autoLauncherCost = 10;
-
         this.updateUI();
         this.updateLauncherList();
         return refundAmount;
@@ -562,7 +492,6 @@ class FireworkGame {
                 firework.dispose();
             });
             levelData.fireworks = [];
-            this.disposeAutoLaunchers(levelData);
             levelData.autoLaunchers = [];
         });
 
@@ -579,7 +508,7 @@ class FireworkGame {
 
         if (this.particleSystem) {
             this.particleSystem.dispose();
-            this.particleSystem = new InstancedParticleSystem(this.scene, this.renderer2D,this.profiler);
+            this.particleSystem = new InstancedParticleSystem(this.renderer2D, this.profiler);
         }
 
         this.lastSparklesPerSecond = 0;
@@ -593,16 +522,12 @@ class FireworkGame {
         this.updateLauncherList();
         this.showNotification("Game has been reset.");
 
-        this.renderer.setClearColor(new THREE.Color('#000000'));
+        document.body.style.backgroundColor = '#000000';
         document.getElementById('background-color').value = '#000000';
         this.updateLevelDisplay();
         this.updateLevelsList();
         this.updateLevelArrows();
         this.updateCrowdDisplay();
-
-        this.levels.forEach(levelData => {
-            levelData.autoLaunchers = [];
-        });
     }
 
     eraseAllRecipes() {
@@ -846,7 +771,7 @@ class FireworkGame {
         this.crowdCount = data.crowdCount || 0;
 
         const bgColor = data.backgroundColor || '#000000';
-        this.renderer.setClearColor(new THREE.Color(bgColor));
+        document.body.style.backgroundColor = bgColor;
         localStorage.setItem('backgroundColor', bgColor);
         document.getElementById('background-color').value = bgColor;
 
@@ -881,25 +806,8 @@ class FireworkGame {
                     launcher.upgradeCost = 15;
                 }
                 launcher.x = this.clampToLauncherBounds(launcher.x);
+                // Remove createAutoLauncherMesh call
             });
-        });
-
-        this.levels[this.currentLevel].autoLaunchers.forEach(launcher => {
-            this.createAutoLauncherMesh(launcher);
-        });
-    }
-
-    disposeAutoLaunchers(levelData) {
-        levelData.autoLaunchers.forEach(launcher => {
-            if (launcher.mesh) {
-                this.scene.remove(launcher.mesh);
-                if (launcher.mesh.geometry) launcher.mesh.geometry.dispose();
-                if (launcher.mesh.material) {
-                    if (launcher.mesh.material.map) launcher.mesh.material.map.dispose();
-                    launcher.mesh.material.dispose();
-                }
-                launcher.mesh = null;
-            }
         });
     }
 
@@ -949,22 +857,9 @@ class FireworkGame {
             firework.dispose();
         });
         this.levels[this.currentLevel].fireworks = [];
-        this.disposeAutoLaunchers(this.levels[this.currentLevel]);
         this.particleSystem.clear();
         this.currentLevel = newLevel;
         this.updateLevelDisplay();
-        this.levels[this.currentLevel].autoLaunchers.forEach(launcher => {
-            if (launcher.mesh) {
-                this.scene.remove(launcher.mesh);
-                if (launcher.mesh.geometry) launcher.mesh.geometry.dispose();
-                if (launcher.mesh.material) {
-                    if (launcher.mesh.material.map) launcher.mesh.material.map.dispose();
-                    launcher.mesh.material.dispose();
-                }
-                launcher.mesh = null;
-            }
-            this.createAutoLauncherMesh(launcher);
-        });
         this.updateLauncherList();
         this.updateLevelArrows();
         this.updateLevelsList();
@@ -1014,11 +909,17 @@ class FireworkGame {
     }
 
     updateCameraPosition(deltaTime) {
-        // we can use null as an invalid value for vectors because javascript will coerce it to 0 because its weird like that
         if (this.cameraTargetX !== null) {
             const t = Math.min(this.cameraTransitionSpeed * deltaTime, 1.0);
-            this.camera.position.x += (this.cameraTargetX - this.camera.position.x) * t;
-            if (Math.abs(this.camera.position.x - this.cameraTargetX) < 0.1) {
+            this.renderer2D.cameraX += (this.cameraTargetX - this.renderer2D.cameraX) * t;
+            
+            this.renderer2D.setCamera({
+                x: this.renderer2D.cameraX,
+                y: this.renderer2D.cameraY,
+                zoom: this.renderer2D.cameraZoom
+            });
+            
+            if (Math.abs(this.renderer2D.cameraX - this.cameraTargetX) < 0.1) {
                 this.cameraTargetX = null;
             }
         }
@@ -1086,7 +987,7 @@ class FireworkGame {
         launchers.forEach((launcher, index) => {
             const newX = GAME_BOUNDS.LAUNCHER_MIN_X + spacing * (index + 1);
             launcher.x = newX;
-            launcher.mesh.position.x = newX;
+            // Remove Three.js mesh position update
         });
 
         this.showNotification("Launchers spread evenly!");

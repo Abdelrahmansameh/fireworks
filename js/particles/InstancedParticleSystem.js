@@ -3,9 +3,8 @@ import * as Renderer2D from '../rendering/Renderer.js';
 const { BlendMode, Color, Vector2 } = Renderer2D;
 
 class InstancedParticleSystem {
-    constructor(scene, renderer, profiler) {
+    constructor(renderer, profiler) {
         this.profiler = profiler;
-        this.scene = scene;
         this.renderer = renderer;
 
         this.maxParticles = FIREWORK_CONFIG.maxParticles;
