@@ -1,8 +1,8 @@
 // Game Configuration Constants
 
 const FIREWORK_CONFIG = {
-    maxParticles: 10000000,
-    trailMaxPoints: 5,
+    maxParticles: 500000,
+    trailMaxPoints: 10,
     trailDistBetweenPoints: 5,
     trailWidth: 2.0,
     baseSpeed: 150,
@@ -23,7 +23,7 @@ const FIREWORK_CONFIG = {
         star: 7.0,
         burst: 9.81,
         palm: 5.0,
-        willow: 2.0,
+        willow: 0.5,
         helix: 3.0,
         brokenHeart: 6.0,
         christmasTree: 7.0
