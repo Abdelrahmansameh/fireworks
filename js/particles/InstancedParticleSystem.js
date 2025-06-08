@@ -71,10 +71,15 @@ class InstancedParticleSystem {
 
     createTrailEntry(shape, idx, position, color) {
         const key = `${shape}-${idx}`;
+        const particleBase = idx * this.strideFloats;
+        const particleLifetime = this.instanceData[shape][particleBase + this.lifetimeIdx];
+        
         this.activeTrails.set(key, {
             points: [position.clone(), position.clone()],
             color: color.clone(),
-            lastUpdate: performance.now() - this.trailInterval
+            lastUpdate: performance.now() - this.trailInterval,
+            lifetime: particleLifetime,
+            initialLifetime: particleLifetime
         });
     }
 
@@ -183,6 +188,8 @@ class InstancedParticleSystem {
                 const key = `${shape}-${i}`;
                 const trail = this.activeTrails.get(key);
                 if (trail) {
+                    trail.lifetime = d[sBase + this.lifetimeIdx];
+                    
                     const now = performance.now();
                     const lastPoint = trail.points[trail.points.length - 1];
                     if (lastPoint && lastPoint.distanceTo(new Vector2(
@@ -207,7 +214,10 @@ class InstancedParticleSystem {
 
         this.profiler?.startFunction?.('updateTrails');
         this.trailGroup.clear();
-        for (const { points, color } of this.activeTrails.values()) {
+        for (const { points, color, lifetime, initialLifetime } of this.activeTrails.values()) {
+            const lifeNorm = lifetime / initialLifetime;
+            const fadeAlpha = lifeNorm * lifeNorm * lifeNorm;
+            
             for (let j = 1; j < points.length; j++) {
                 const a = points[j - 1], b = points[j];
                 const dx = b.x - a.x, dy = b.y - a.y;
@@ -220,7 +230,7 @@ class InstancedParticleSystem {
                     new Vector2(mx, my),
                     ang,
                     new Vector2(this.trailWidth, len),
-                    new Color(color.r, color.g, color.b, color.a + 0.2)
+                    new Color(color.r, color.g, color.b, fadeAlpha *1.2)
                 );
             }
         }

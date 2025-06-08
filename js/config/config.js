@@ -3,8 +3,8 @@
 const FIREWORK_CONFIG = {
     maxParticles: 10000000,
     trailMaxPoints: 5,
-    trailDistBetweenPoints: 5,
-    trailWidth: 5.0,
+    trailDistBetweenPoints: 2,
+    trailWidth: 2.0,
     baseSpeed: 150,
     baseFriction: 2.0,
     verticalFrictionMultiplier: .9,
