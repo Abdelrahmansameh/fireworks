@@ -464,7 +464,7 @@ class Firework {
                             const index = this.particleSystem.addParticle(
                                 rocketPos.clone(),
                                 velocity.clone(),
-                                secondaryColor, // Use parsed or default secondaryColor
+                                secondaryColor, 
                                 size,
                                 component.lifetime,
                                 gravity,
@@ -657,7 +657,6 @@ class Firework {
 
     dispose() {
         if (this.rocket) {
-            // Remove Three.js geometry and material disposal
             this.renderer.removeNormalShape(this.rocket);
             this.rocket = null;
         }

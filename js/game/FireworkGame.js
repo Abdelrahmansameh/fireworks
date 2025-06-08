@@ -144,7 +144,6 @@ class FireworkGame {
     }
 
     onWindowResize() {
-        // Remove Three.js renderer resize, keep only canvas resize
         this.canvas2D.width = window.innerWidth;
         this.canvas2D.height = window.innerHeight;
         this.renderer2D.setCamera({
@@ -311,7 +310,6 @@ class FireworkGame {
             const colorPicker = document.getElementById('background-color');
             if (colorPicker) {
                 colorPicker.value = savedColor;
-                // Set background color on canvas or document body instead of Three.js renderer
                 document.body.style.backgroundColor = savedColor;
 
                 colorPicker.addEventListener('input', (e) => {
@@ -449,8 +447,7 @@ class FireworkGame {
     }
 
     createAutoLauncherMesh(launcher) {
-        // Remove Three.js mesh creation completely
-        // Auto-launchers are now purely data-driven and UI-only
+        // make auto launcher mesh
     }
 
     resetAutoLaunchers() {
@@ -464,7 +461,6 @@ class FireworkGame {
                     cost += launcher.upgradeCost * (i - 1);
                 }
                 refundAmount += cost;
-                // Remove Three.js mesh cleanup - no longer needed
             });
             level.autoLaunchers = [];
         });
@@ -987,7 +983,6 @@ class FireworkGame {
         launchers.forEach((launcher, index) => {
             const newX = GAME_BOUNDS.LAUNCHER_MIN_X + spacing * (index + 1);
             launcher.x = newX;
-            // Remove Three.js mesh position update
         });
 
         this.showNotification("Launchers spread evenly!");

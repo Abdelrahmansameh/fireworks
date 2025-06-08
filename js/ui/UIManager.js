@@ -93,10 +93,7 @@ class UIManager {
         document.getElementById('data-tab').addEventListener('click', () => {
             this.toggleTab('data');
         });
-        /*document.getElementById('levels-tab').addEventListener('click', () => {
-            this.toggleTab('levels');
-            this.game.updateLevelsList();
-        });*/
+
 
         document.getElementById('recipe-trail-effect').addEventListener('change', (e) => {
             this.game.currentTrailEffect = e.target.value;
@@ -108,15 +105,12 @@ class UIManager {
             if (!this.game.isClickInsideUI(e)) {
                 e.preventDefault();
                 if (e.pointerType === 'touch') {
-                    // Handle touch events without Three.js
                 }
 
                 const x = e.clientX;
                 const y = e.clientY;
 
-                // Use 2D renderer coordinate conversion instead of Three.js
                 const worldPos = this.game.screenToWorld(x, y);
-                // Handle the click at worldPos if needed
             }
         });
     }
@@ -196,11 +190,10 @@ class UIManager {
                 e.target.setPointerCapture(e.pointerId);
             }
 
-            // Remove Three.js raycasting logic
             const intersectlauncher = false;
 
             if (intersectlauncher) {
-                // Launcher interaction logic removed - handled differently in 2D
+                // todo move and select launcher
             } else {
                 const worldPos = this.game.screenToWorld(e.clientX, e.clientY);
                 this.handlePointerClick(worldPos, e);
@@ -213,7 +206,6 @@ class UIManager {
             return;
         }
 
-        // Remove Three.js raycasting
         const intersectlauncher = false;
 
         if (intersectlauncher) {
@@ -241,14 +233,12 @@ class UIManager {
             const worldPos = this.game.screenToWorld(e.clientX, e.clientY);
             const clampedX = Math.max(GAME_BOUNDS.LAUNCHER_MIN_X, Math.min(worldPos.x, GAME_BOUNDS.LAUNCHER_MAX_X));
 
-            // Update launcher position without Three.js mesh
             this.draggingLauncher.x = clampedX;
             this.game.saveProgress();
         } else if (this.isScrollDragging) {
             const deltaX = e.clientX - this.lastPointerX;
             const dragScrollSpeed = 0.2;
 
-            // Update 2D camera position instead of Three.js camera
             this.game.renderer2D.cameraX -= deltaX * dragScrollSpeed;
 
             const maxScroll = (GAME_BOUNDS.SCROLL_MAX_X - GAME_BOUNDS.SCROLL_MIN_X) * 0.5;
@@ -308,7 +298,6 @@ class UIManager {
         const wheelScrollSpeed = 0.05;
         const scrollAmount = event.deltaY * wheelScrollSpeed;
 
-        // Update 2D camera instead of Three.js camera
         this.game.renderer2D.cameraX += scrollAmount;
 
         const maxScroll = (GAME_BOUNDS.SCROLL_MAX_X - GAME_BOUNDS.SCROLL_MIN_X) * 0.5;
@@ -713,7 +702,6 @@ class UIManager {
 
             launcherDiv.addEventListener('click', () => {
                 onSelect(index);
-                // Remove Three.js mesh camera targeting
                 if (launcher && launcher.x !== undefined) {
                     this.game.setCameraTarget(launcher.x);
                 }
