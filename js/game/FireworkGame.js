@@ -87,7 +87,7 @@ class FireworkGame {
         this.cameraTargetZoom = 1.0;
 
         //  game components
-        this.particleSystem = new InstancedParticleSystem(this.scene, this.renderer2D, 50000, this.profiler);
+        this.particleSystem = new InstancedParticleSystem(this.scene, this.renderer2D, this.profiler);
         this.crowd = new Crowd(this.scene);
 
         //  launchers
@@ -271,11 +271,33 @@ class FireworkGame {
             if (launcher.accumulator >= launcher.spawnInterval) {
                 const x = launcher.x;
                 let recipe = this.recipes[launcher.assignedRecipeIndex];
+                let minY = null;
+                let recipeComponents = null;
+                let trailEffect = null;
                 if (recipe) {
-                    this.launchFireworkAt(x, -window.innerHeight / 2 + GAME_BOUNDS.OFFSET_MIN_Y, recipe.components, recipe.trailEffect);
+                    minY = -window.innerHeight / 2 + GAME_BOUNDS.OFFSET_MIN_Y;
+                    recipeComponents = recipe.components;
+                    trailEffect = recipe.trailEffect;
                 } else {
-                    this.launchFireworkAt(x, -window.innerHeight / 2 + GAME_BOUNDS.OFFSET_MIN_Y, this.currentRecipeComponents, this.currentTrailEffect);
+                    minY = -window.innerHeight / 2 + GAME_BOUNDS.OFFSET_MIN_Y;
+                    recipeComponents = this.currentRecipeComponents;
+                    trailEffect = this.currentTrailEffect;
                 }
+
+                const components = recipeComponents || this.currentRecipeComponents;
+
+                if (components.length === 0) {
+                    this.showNotification("Add at least one component to launch a firework!");
+                    return;
+                }
+
+                const y = minY || -window.innerHeight / 2 + GAME_BOUNDS.OFFSET_MIN_Y
+                const effect = trailEffect || this.currentTrailEffect;
+
+                const firework = new Firework(x, y, components, this.scene, this.camera, this.renderer2D, window.innerHeight, trailEffect, this.particleSystem);
+                this.levels[this.currentLevel].fireworks.push(firework); this.fireworkCount++;
+                this.resourceManager.resources.sparkles.add(1);
+                this.updateUI();
                 launcher.accumulator -= launcher.spawnInterval;
             }
         });
@@ -286,7 +308,6 @@ class FireworkGame {
             if (index !== this.currentLevel && level.unlocked) {
                 const sparklesPerSecond = this.calculateSparklesPerSecond(level);
                 this.addSparkles(sparklesPerSecond * deltaTime);
-                this.saveProgress();
                 this.updateUI();
             }
         });
@@ -298,7 +319,6 @@ class FireworkGame {
                 if (currentSps >= threshold && this.lastSparklesPerSecond < threshold) {
                     this.crowdCount++;
                     this.crowd.addPerson();
-                    this.saveProgress();
                     this.updateCrowdDisplay();
                 }
             }
@@ -314,6 +334,7 @@ class FireworkGame {
         //        this.profiler.startFunction('rendering');
         //        this.renderer.render(this.scene, this.camera);
         //       this.profiler.endFunction('rendering');
+        this.saveProgress();
 
         this.profiler.endFrame();
     }
@@ -420,6 +441,7 @@ class FireworkGame {
 
     }
 
+    // dont use every frame because js is weird 
     launchFireworkAt(x, minY = null, recipeComponents = null, trailEffect = null) {
         const components = recipeComponents || this.currentRecipeComponents;
 
@@ -434,10 +456,10 @@ class FireworkGame {
         this.launch(x, y, components, effect);
         this.fireworkCount++;
         this.addSparkles(1);
-        this.saveProgress();
         this.updateUI();
     }
 
+    // dont use every frame because js is weird 
     launch(x, y, components, trailEffect) {
         const firework = new Firework(x, y, components, this.scene, this.camera, this.renderer2D, window.innerHeight, trailEffect, this.particleSystem);
         this.levels[this.currentLevel].fireworks.push(firework);
@@ -461,7 +483,6 @@ class FireworkGame {
             };
             this.createAutoLauncherMesh(launcher);
             this.levels[this.currentLevel].autoLaunchers.push(launcher);
-            this.saveProgress();
             this.updateUI();
             this.updateLauncherList();
             this.showNotification("Auto-Launcher purchased!");
@@ -522,7 +543,6 @@ class FireworkGame {
 
         this.updateUI();
         this.updateLauncherList();
-        this.saveProgress();
         return refundAmount;
     }
 
@@ -559,7 +579,7 @@ class FireworkGame {
 
         if (this.particleSystem) {
             this.particleSystem.dispose();
-            this.particleSystem = new InstancedParticleSystem(this.scene, this.renderer2D, 50000, this.profiler);
+            this.particleSystem = new InstancedParticleSystem(this.scene, this.renderer2D,this.profiler);
         }
 
         this.lastSparklesPerSecond = 0;
@@ -742,7 +762,6 @@ class FireworkGame {
             launcher.spawnInterval = launcher.spawnInterval * 0.9;
             launcher.upgradeCost = Math.floor(launcher.upgradeCost * 1.2);
 
-            this.saveProgress();
             this.updateUI();
             this.updateLauncherList();
             this.showNotification(`Auto-Launcher ${index + 1} upgraded to level ${launcher.level}!`);
@@ -841,7 +860,6 @@ class FireworkGame {
             }));
         }
 
-        this.saveProgress();
 
         this.updateUI();
         this.updateComponentsList();
@@ -914,7 +932,6 @@ class FireworkGame {
                 autoLaunchers: [],
                 unlocked: true
             });
-            this.saveProgress();
             this.updateUI();
             this.showNotification("New level unlocked!");
             this.updateLevelsList();
@@ -1072,7 +1089,6 @@ class FireworkGame {
             launcher.mesh.position.x = newX;
         });
 
-        this.saveProgress();
         this.showNotification("Launchers spread evenly!");
     }
 }

@@ -1,6 +1,7 @@
 // Game Configuration Constants
 
 const FIREWORK_CONFIG = {
+    maxParticles: 10000000,
     baseSpeed: 200,
     baseFriction: 2.0,
     verticalFrictionMultiplier: .9,

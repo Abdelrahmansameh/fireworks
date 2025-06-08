@@ -3,11 +3,11 @@ import { createDebugCross } from '../utils/debug.js';
 import * as Renderer2D from '../rendering/Renderer.js';
 
 class InstancedParticleSystem {
-    constructor(scene, renderer, maxParticles = 1000000, profiler) {
+    constructor(scene, renderer, profiler) {
         this.profiler = profiler;
         this.scene = scene;
         this.renderer = renderer;
-        this.maxParticles = maxParticles;
+        this.maxParticles = FIREWORK_CONFIG.maxParticles || 1000000; // Default to 1 million if not set
 
         this.meshes = {};
         this.activeCounts = {};
@@ -34,7 +34,7 @@ class InstancedParticleSystem {
             this.meshes[shape] = this.renderer.createInstancedGroup({
                 vertices: geometry.vertices,
                 indices: geometry.indices,
-                maxInstances: maxParticles,
+                maxInstances: this.maxParticles,
                 zIndex: 0,
                 blendMode: Renderer2D.BlendMode.NORMAL
             });
@@ -55,7 +55,7 @@ class InstancedParticleSystem {
         this.instanceFloats = this.frictionIdx + 1;
 
         FIREWORK_CONFIG.supportedShapes.forEach(shape => {
-            this.instanceData[shape] = new Float32Array(maxParticles * this.instanceFloats).fill(0.0);
+            this.instanceData[shape] = new Float32Array(this.maxParticles * this.instanceFloats).fill(0.0);
         });
     }
 
@@ -201,7 +201,8 @@ class InstancedParticleSystem {
         }
 
         const activeCount = this.activeCounts[shape];
-        if (activeCount >= this.maxParticles) return -1;
+        if (activeCount >= this.maxParticles) 
+            return -1;
 
         const index = activeCount;
         const base = index * this.instanceFloats;
