@@ -39,7 +39,6 @@
         /* Ensure UI elements are above the canvas */
         .top-bar-container,
         .tab-content,
-        .level-navigation,
         #notification,
         #confirmation-dialog,
         #overlay {
@@ -85,7 +84,6 @@
                         <div class="ressource-total">Sparkles: <span class="sparkle-total"></span></div>
                         <div class="ressource-count-rates">
                             <span class="ressource-count-main">Total:</span> <span class="total-rate"></span><br>
-                            <span class="ressource-count-main">Level:</span> <span class="level-rate"></span>
                         </div>
                     </div>
                     <div class="ressource-count-main">
@@ -195,30 +193,16 @@
         </div>
     </div>
 
-    <div class="tab-content" id="levels-content">
-        <div class="panel scrollable-panel">
-            <h2 class="panel-title">Levels</h2>
-            <button id="unlock-next-level">Unlock Next Level (Cost: 100000 Sparkles)</button>
-            <div id="levels-list"></div>
-        </div>
-    </div>
 
     <div id="notification" class="notification" role="alert" aria-live="assertive"></div>
 
+        <div id="overlay" class="overlay"></div>
     <div id="confirmation-dialog" class="confirmation-dialog">
         <h3 id="confirmation-title">Confirm</h3>
         <p id="confirmation-message">Are you sure?</p>
         <button id="confirm-action">Yes</button>
         <button id="cancel-action">No</button>
     </div>
-    <div id="overlay" class="overlay"></div>
-
-    <!-- Level Navigation Arrows -->
-    <div class="level-navigation">
-        <button class="level-arrow level-arrow-left" id="prev-level">&lt;</button>
-        <button class="level-arrow level-arrow-right" id="next-level">&gt;</button>
-    </div>
-    <!-- <div class="level-display" id="level-display">Level: 1</div>-->
 
     <script type="module" src="js/main.js"></script>
 

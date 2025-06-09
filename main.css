@@ -593,66 +593,6 @@ textarea {
     padding: 2px 5px;
 }
 
-/* Level Navigation Arrows */
-.level-navigation {
-    position: fixed;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 100%;
-    pointer-events: none;
-    z-index: 1200;
-}
-
-.level-arrow {
-    pointer-events: all;
-    position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
-    background: #2e3f57;
-    border: none;
-    color: white;
-    padding: 10px;
-    cursor: pointer;
-    font-size: 24px;
-    border-radius: 50%;
-    opacity: 0.7;
-}
-
-.level-arrow:hover {
-    background: #1a1f2a;
-    opacity: 1.0;
-}
-
-.level-arrow-left {
-    left: 30px;
-}
-
-.level-arrow-right {
-    right: 30px;
-}
-
-.level-display {
-    position: fixed;
-    bottom: 20px;
-    left: 50%;
-    transform: translateX(-50%);
-    background: #2e3f57;
-    padding: 5px 15px;
-    border-radius: 20px;
-    opacity: 0.8;
-    font-weight: bold;
-    z-index: 1200;
-}
-
-#levels-list {
-    max-height: 60vh;
-    /* Set maximum height */
-    overflow-y: auto;
-    /* Enable vertical scrolling */
-    margin-top: 10px;
-    padding-right: 5px;
-}
-
 .danger-button {
     background-color: #ab362a;
     color: white;

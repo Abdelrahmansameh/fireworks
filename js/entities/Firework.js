@@ -126,7 +126,7 @@ class Firework {
                 this.trailInstanceGroup.addInstance(
                     new Renderer2D.Vector2(offsetX, offsetY),
                     0,
-                    new Renderer2D.Vector2(FIREWORK_CONFIG.rocketSize, FIREWORK_CONFIG.rocketSize),
+                    new Renderer2D.Vector2(FIREWORK_CONFIG.rocketTrailSize, FIREWORK_CONFIG.rocketTrailSize),
                     new Renderer2D.Color(1, 1, 1, 1)
                 );
 
@@ -146,7 +146,7 @@ class Firework {
                 this.trailInstanceGroup.addInstance(
                     new Renderer2D.Vector2(x, y),
                     0,
-                    new Renderer2D.Vector2(FIREWORK_CONFIG.rocketSize, FIREWORK_CONFIG.rocketSize),
+                    new Renderer2D.Vector2(FIREWORK_CONFIG.rocketTrailSize, FIREWORK_CONFIG.rocketTrailSize),
                     new Renderer2D.Color(color.r, color.g, color.b, 1)
                 );
 
@@ -164,7 +164,7 @@ class Firework {
                 this.trailInstanceGroup.addInstance(
                     new Renderer2D.Vector2(x, y),
                     0,
-                    new Renderer2D.Vector2(FIREWORK_CONFIG.rocketSize, FIREWORK_CONFIG.rocketSize),
+                    new Renderer2D.Vector2(FIREWORK_CONFIG.rocketTrailSize, FIREWORK_CONFIG.rocketTrailSize),
                     new Renderer2D.Color(1, 0.67, 0, 1)
                 );
 
@@ -183,7 +183,7 @@ class Firework {
                 this.trailInstanceGroup.addInstance(
                     new Renderer2D.Vector2(x, y),
                     0,
-                    new Renderer2D.Vector2(FIREWORK_CONFIG.rocketSize, FIREWORK_CONFIG.rocketSize),
+                    new Renderer2D.Vector2(FIREWORK_CONFIG.rocketTrailSize, FIREWORK_CONFIG.rocketTrailSize),
                     new Renderer2D.Color(1, 1, 1, 0.8)
                 );
 
@@ -208,8 +208,8 @@ class Firework {
                 case 'sparkle':
                     this.trailInstanceGroup.updateInstanceScale(
                         particle.index,
-                        (0.3 + Math.random() * 0.3) * (age),
-                        (0.3 + Math.random() * 0.3) * (age)
+                        FIREWORK_CONFIG.rocketTrailSize * (0.3 + Math.random() * 0.3) * (age),
+                        FIREWORK_CONFIG.rocketTrailSize * (0.3 + Math.random() * 0.3) * (age)
                     );
                     this.trailInstanceGroup.updateInstanceColor(
                         particle.index,
@@ -231,7 +231,7 @@ class Firework {
                     break;
 
                 case 'comet':
-                    const scale = 1.0 - (age * 0.5);
+                    const scale = FIREWORK_CONFIG.rocketTrailSize * (1.0 - (age * 0.5));
                     this.trailInstanceGroup.updateInstanceScale(
                         particle.index,
                         scale,

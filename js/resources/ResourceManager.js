@@ -22,10 +22,6 @@ export default class ResourceManager {
         this.resources.gold.updateFromCrowd(crowdSize);
     }
 
-    updateSparklesFromLevel(levelSparklesPerSecond) {
-        this.resources.sparkles.updateFromLevel(levelSparklesPerSecond);
-    }
-
     reset() {
         this.resources = {
             sparkles: new Sparkles(),

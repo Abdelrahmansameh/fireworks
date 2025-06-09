@@ -14,6 +14,7 @@ const FIREWORK_CONFIG = {
     ascentSpeed: 400,
     rocketTrailLength: 70,
     rocketSize: 1,
+    rocketTrailSize: 2,
     minExplosionHeightPercent: 0.4,
     maxExplosionHeightPercent: 0.8,
     patternGravities: {

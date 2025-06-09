@@ -71,7 +71,7 @@ class UIManager {
                 'Reset Auto-Launchers',
                 'Are you sure you want to reset all auto-launchers? This will remove all launchers and refund 100% of their cost.',
                 () => {
-                    const refundAmount = this.game.resetAutoLaunchers();
+                    const refundAmount = this.game.resetAutoLaunchers(); // Method in game needs adjustment
                     this.showNotification(`Auto-launchers reset! Refunded ${Math.floor(refundAmount)} sparkles`);
                 }
             );
@@ -144,21 +144,6 @@ class UIManager {
             }
         });
 
-        document.getElementById('prev-level').addEventListener('click', () => {
-            if (this.game.currentLevel > 0) {
-                this.game.switchLevel(this.game.currentLevel - 1);
-            }
-        });
-
-        document.getElementById('next-level').addEventListener('click', () => {
-            if (this.game.currentLevel < this.game.levels.length - 1 && this.game.levels[this.game.currentLevel + 1].unlocked) {
-                this.game.switchLevel(this.game.currentLevel + 1);
-            }
-        });
-
-        document.getElementById('unlock-next-level').addEventListener('click', () => {
-            this.game.unlockNextLevel();
-        });
 
         document.addEventListener('wheel', this.handleWheelScroll, { passive: false });
 
@@ -438,7 +423,7 @@ class UIManager {
         return document.elementFromPoint(x, y) !== gameContainer;
     }
 
-    updateUI(sparklesCount, totalSparklesRate, levelSparklesRate, fireworkCount, autoLauncherLevel, trailEffect, nextCost) {
+    updateUI(sparklesCount, totalSparklesRate, fireworkCount, autoLauncherCount, trailEffect, nextCost) {
         const sparklesElement = document.getElementById('ressource-count');
         const isCompact = sparklesElement.classList.contains('compact');
 
@@ -462,8 +447,7 @@ class UIManager {
         } else {
             sparklesElement.querySelector('.total-rate').textContent =
                 `${totalSparklesRate} sp/s`;
-            sparklesElement.querySelector('.level-rate').textContent =
-                `${levelSparklesRate} sp/s`;
+
         }
 
         const gold = this.game.resourceManager.resources.gold;
@@ -481,12 +465,12 @@ class UIManager {
             sparklesElement._hasClickHandler = true;
             sparklesElement.addEventListener('click', () => {
                 sparklesElement.classList.toggle('compact');
-                this.updateUI(sparklesCount, totalSparklesRate, levelSparklesRate, fireworkCount, autoLauncherLevel, trailEffect, nextCost);
+                this.updateUI(sparklesCount, totalSparklesRate, fireworkCount, autoLauncherCount, trailEffect, nextCost);
             });
         }
 
         document.getElementById('firework-count').textContent = fireworkCount;
-        document.getElementById('auto-launcher-level').textContent = autoLauncherLevel;
+        document.getElementById('auto-launcher-level').textContent = autoLauncherCount; // Renamed from autoLauncherLevel
         document.getElementById('recipe-trail-effect').value = trailEffect;
         document.getElementById('auto-launcher-cost').textContent = nextCost;
     }
@@ -705,9 +689,9 @@ class UIManager {
                 const idx = e.target.getAttribute('data-index');
                 const selectedRecipeIndex = parseInt(e.target.value);
                 if (!isNaN(selectedRecipeIndex)) {
-                    this.game.levels[this.game.currentLevel].autoLaunchers[idx].assignedRecipeIndex = selectedRecipeIndex;
+                    this.game.gameState.autoLaunchers[idx].assignedRecipeIndex = selectedRecipeIndex;
                 } else {
-                    this.game.levels[this.game.currentLevel].autoLaunchers[idx].assignedRecipeIndex = null;
+                    this.game.gameState.autoLaunchers[idx].assignedRecipeIndex = null;
                 }
                 this.game.saveProgress();
             });
