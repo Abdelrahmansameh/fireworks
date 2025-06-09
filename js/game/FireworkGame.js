@@ -869,6 +869,27 @@ class FireworkGame {
 
         this.showNotification("Launchers spread evenly!");
     }
+
+    randomizeLauncherRecipes() {
+        const launchers = this.gameState.autoLaunchers;
+        if (launchers.length === 0) {
+            this.showNotification("No auto-launchers to assign recipes to!");
+            return;
+        }
+        if (this.recipes.length === 0) {
+            this.showNotification("No recipes available to assign!");
+            return;
+        }
+
+        launchers.forEach(launcher => {
+            const randomIndex = Math.floor(Math.random() * this.recipes.length);
+            launcher.assignedRecipeIndex = randomIndex;
+        });
+
+        this.updateLauncherList();
+        this.saveProgress();
+        this.showNotification("Recipes randomly assigned to all auto-launchers!");
+    }
 }
 
 export default FireworkGame;

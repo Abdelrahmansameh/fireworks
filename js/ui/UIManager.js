@@ -155,6 +155,10 @@ class UIManager {
             this.game.upgradeAllLaunchers();
         });
 
+        document.getElementById('randomize-launcher-recipes').addEventListener('click', () => {
+            this.game.randomizeLauncherRecipes();
+        });
+
         document.addEventListener('keydown', (e) => {
             if ((e.key === 'P' || e.key === 'p') && e.shiftKey) {
                 if (!this.game.profiler.isRecording) {
