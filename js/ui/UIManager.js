@@ -198,7 +198,7 @@ class UIManager {
         const intersectlauncher = false;
 
         if (intersectlauncher) {
-            // Launcher selection logic removed
+            
         } else {
             this.isScrollDragging = true;
             this.game.cameraTargetX = null;

@@ -971,6 +971,43 @@ class Renderer2D {
         this.u_glowSoftnessLoc = gl.getUniformLocation(this.instancedProgram, 'u_glowSoftness');
     }
 
+    // Helper function to parse hex color, similar to Firework's one
+    _hexToRgbA(hex) {
+        if (!hex || typeof hex !== 'string') {
+            // console.warn(`Invalid hex color input: ${hex}. Using default black.`);
+            return { r: 0, g: 0, b: 0, a: 1 };
+        }
+
+        let r = 0, g = 0, b = 0, a = 1;
+        let processedHex = hex.startsWith('#') ? hex.slice(1) : hex;
+
+        if (processedHex.length === 3) { // #RGB
+            r = parseInt(processedHex[0] + processedHex[0], 16);
+            g = parseInt(processedHex[1] + processedHex[1], 16);
+            b = parseInt(processedHex[2] + processedHex[2], 16);
+        } else if (processedHex.length === 4) { // #RGBA
+            r = parseInt(processedHex[0] + processedHex[0], 16);
+            g = parseInt(processedHex[1] + processedHex[1], 16);
+            b = parseInt(processedHex[2] + processedHex[2], 16);
+            a = parseInt(processedHex[3] + processedHex[3], 16);
+        } else if (processedHex.length === 6) { // #RRGGBB
+            r = parseInt(processedHex.substring(0, 2), 16);
+            g = parseInt(processedHex.substring(2, 4), 16);
+            b = parseInt(processedHex.substring(4, 6), 16);
+        } else if (processedHex.length === 8) { // #RRGGBBAA
+            r = parseInt(processedHex.substring(0, 2), 16);
+            g = parseInt(processedHex.substring(2, 4), 16);
+            b = parseInt(processedHex.substring(4, 6), 16);
+            a = parseInt(processedHex.substring(6, 8), 16);
+        } else {
+            // console.warn(`Invalid hex color string format: #${processedHex}. Using default black.`);
+            return { r: 0, g: 0, b: 0, a: 1 };
+        }
+
+        return { r: r / 255, g: g / 255, b: b / 255, a: a / 255 };
+    }
+
+
     setCamera({ x = 0, y = 0, zoom = 1.0 }) {
         this.cameraX = x;
         this.cameraY = y;

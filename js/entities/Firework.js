@@ -42,33 +42,8 @@ class Firework {
             return { r: 0, g: 0, b: 0, a: 1 };
         }
 
-        let r = 0, g = 0, b = 0, a = 1;
-        let processedHex = hex.startsWith('#') ? hex.slice(1) : hex;
-
-        if (processedHex.length === 3) { // #RGB
-            r = parseInt(processedHex[0] + processedHex[0], 16);
-            g = parseInt(processedHex[1] + processedHex[1], 16);
-            b = parseInt(processedHex[2] + processedHex[2], 16);
-        } else if (processedHex.length === 4) { // #RGBA
-            r = parseInt(processedHex[0] + processedHex[0], 16);
-            g = parseInt(processedHex[1] + processedHex[1], 16);
-            b = parseInt(processedHex[2] + processedHex[2], 16);
-            a = parseInt(processedHex[3] + processedHex[3], 16);
-        } else if (processedHex.length === 6) { // #RRGGBB
-            r = parseInt(processedHex.substring(0, 2), 16);
-            g = parseInt(processedHex.substring(2, 4), 16);
-            b = parseInt(processedHex.substring(4, 6), 16);
-        } else if (processedHex.length === 8) { // #RRGGBBAA
-            r = parseInt(processedHex.substring(0, 2), 16);
-            g = parseInt(processedHex.substring(2, 4), 16);
-            b = parseInt(processedHex.substring(4, 6), 16);
-            a = parseInt(processedHex.substring(6, 8), 16);
-        } else {
-            console.warn(`Invalid hex color string format: #${processedHex}. Using default black.`);
-            return { r: 0, g: 0, b: 0, a: 1 };
-        }
-
-        return { r: r / 255, g: g / 255, b: b / 255, a: a / 255 };
+        var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+        return { r: parseInt(result[1], 16) / 255, g: parseInt(result[2], 16) / 255, b: parseInt(result[3], 16) / 255, a: 1 };
     }
 
     createRocket(x, y) {

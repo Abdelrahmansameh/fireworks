@@ -17,6 +17,9 @@ const FIREWORK_CONFIG = {
     rocketTrailSize: 1.5,
     minExplosionHeightPercent: 0.4,
     maxExplosionHeightPercent: 0.8,
+    autoLauncherMeshWidth: 30,
+    autoLauncherMeshHeight: 50,
+    autoLauncherMeshColor: { r: 136 / 255, g: 136 / 255, b: 136 / 255, a: 1 },
     patternGravities: {
         spherical: 9.81,
         ring: 8.0,
@@ -35,6 +38,7 @@ const FIREWORK_CONFIG = {
 const GAME_BOUNDS = {
     LAUNCHER_MIN_X: -100,
     LAUNCHER_MAX_X: 3000,
+    LAUNCHER_Y_POSITION: 0, // Y position for the base of the launcher mesh
     OFFSET_MIN_Y: 5,
     OFFSET_MAX_Y: -50,
     SCROLL_MIN_X: -400,

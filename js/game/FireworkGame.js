@@ -81,6 +81,7 @@ class FireworkGame {
                 launcher.upgradeCost = 15;
             }
             launcher.x = this.clampToLauncherBounds(launcher.x);
+            this.createAutoLauncherMesh(launcher); // Create mesh for existing launchers
         });
 
         // Load UI and events
@@ -95,7 +96,7 @@ class FireworkGame {
         const gameContainer = document.getElementById('game-container');
         gameContainer.style.touchAction = 'none';
 
-        // Setup visibility change handler
+        // Setup visibility change handler\
         document.addEventListener('visibilitychange', () => {
             if (document.visibilityState === 'hidden') {
                 this.pause();
@@ -113,9 +114,9 @@ class FireworkGame {
     initRenderer2D() {
         this.canvas2D = document.getElementById('game-canvas');
         this.renderer2D = new Renderer2D.Renderer2D(this.canvas2D, {
-            // Initial size will be determined by CSS and _resizeIfNeeded in Renderer2D
 
         });
+        this.renderer2D._resizeIfNeeded();
 
         this.cameraTargetX = 0;
         this.cameraTargetY = 0;
@@ -136,6 +137,15 @@ class FireworkGame {
         // The renderer's internal resize logic already uses clientWidth/Height.
         // We just need to ensure the camera projection is re-evaluated.
         this.renderer2D._updateProjectionMatrix(); // Force update based on new canvas dimensions
+        // update auto launcher y positions
+        const viewBottomWorldY = this.renderer2D.cameraY - (this.renderer2D.canvas.height / (2 * this.renderer2D.cameraZoom));
+        const yPos = viewBottomWorldY + GAME_BOUNDS.OFFSET_MIN_Y;
+        for (const launcher of this.gameState.autoLaunchers) {
+            launcher.y = yPos;
+            if (launcher.mesh) {
+                launcher.mesh.position.y = yPos; 
+            }
+        }
     }
 
     bindEvents() {
@@ -218,10 +228,10 @@ class FireworkGame {
             if (launcher.accumulator >= launcher.spawnInterval) {
                 const x = launcher.x;
                 let recipe = this.recipes[launcher.assignedRecipeIndex];
-                
+
                 let recipeComponents = null;
                 let trailEffect = null;
-                
+
                 const viewBottomWorldY = this.renderer2D.cameraY - (this.renderer2D.canvas.height / (2 * this.renderer2D.cameraZoom));
                 const launchY = viewBottomWorldY + GAME_BOUNDS.OFFSET_MIN_Y;
 
@@ -236,9 +246,9 @@ class FireworkGame {
                 const components = recipeComponents || this.currentRecipeComponents;
 
                 if (components.length === 0) {
-                    return; 
+                    return;
                 }
-                
+
                 const effect = trailEffect || this.currentTrailEffect;
 
                 const firework = new Firework(x, launchY, components, this.renderer2D, this.renderer2D.canvas.height / this.renderer2D.cameraZoom, effect, this.particleSystem);
@@ -407,10 +417,11 @@ class FireworkGame {
                 assignedRecipeIndex: null,
                 level: 1,
                 spawnInterval: 5,
-                upgradeCost: 15
+                upgradeCost: 15,
+                mesh: null // Initialize mesh property
             };
-            this.createAutoLauncherMesh(launcher);
             this.gameState.autoLaunchers.push(launcher);
+            this.createAutoLauncherMesh(launcher); // Create mesh for the new launcher
             this.updateUI();
             this.updateLauncherList();
             this.showNotification("Auto-Launcher purchased!");
@@ -424,13 +435,44 @@ class FireworkGame {
     }
 
     createAutoLauncherMesh(launcher) {
-        // make auto launcher mesh
+
+        const width = FIREWORK_CONFIG.autoLauncherMeshWidth;
+        const height = FIREWORK_CONFIG.autoLauncherMeshHeight;
+        const viewBottomWorldY = this.renderer2D.cameraY - (this.renderer2D.canvas.height / (2 * this.renderer2D.cameraZoom));
+        const yPos = viewBottomWorldY + GAME_BOUNDS.OFFSET_MIN_Y;
+
+        // Define vertices for a rectangle centered at (0,0)
+        const rectVertices = [
+            -width / 2, -height / 2,
+            width / 2, -height / 2,
+            width / 2, height / 2,
+            -width / 2, height / 2
+        ];
+
+        const rectGeom = Renderer2D.buildPolygon(rectVertices);
+        const color = FIREWORK_CONFIG.autoLauncherMeshColor;
+
+        launcher.mesh = this.renderer2D.createNormalShape({
+            vertices: rectGeom.vertices,
+            indices: rectGeom.indices,
+            color: new Renderer2D.Color(color.r, color.g, color.b, 1),
+            position: new Renderer2D.Vector2(launcher.x, yPos),
+            rotation: 0,
+            scale: new Renderer2D.Vector2(1, 1),
+            zIndex: -5, // Behind fireworks and particles
+            blendMode: Renderer2D.BlendMode.NORMAL,
+            isStroke: false
+        });
     }
 
     resetAutoLaunchers() {
         let refundAmount = 0;
 
         this.gameState.autoLaunchers.forEach(launcher => {
+            if (launcher.mesh) {
+                this.renderer2D.removeNormalShape(launcher.mesh);
+                launcher.mesh = null;
+            }
             let cost = 0;
             cost += this.calculateAutoLauncherCost(0); // Cost of the first launcher
             // Calculate cost of upgrades for this launcher
@@ -468,6 +510,11 @@ class FireworkGame {
             });
         }
         this.gameState.fireworks = [];
+        this.gameState.autoLaunchers.forEach(launcher => {
+            if (launcher.mesh) {
+                this.renderer2D.removeNormalShape(launcher.mesh);
+            }
+        });
         this.gameState.autoLaunchers = [];
 
 
@@ -719,7 +766,7 @@ class FireworkGame {
     deserializeGameData(jsonString) {
         const data = JSON.parse(jsonString);
 
-        this.resetGame(); 
+        this.resetGame();
 
         if (data.resources) {
             const resourceData = typeof data.resources === 'string' ? JSON.parse(data.resources) : data.resources;
@@ -745,8 +792,20 @@ class FireworkGame {
 
         if (data.gameState && data.gameState.autoLaunchers) {
             this.gameState.autoLaunchers = data.gameState.autoLaunchers;
+            // Recreate meshes for deserialized launchers
+            this.gameState.autoLaunchers.forEach(launcher => {
+                if (!launcher.accumulator) {
+                    launcher.accumulator = Math.random() * 5;
+                }
+                if (launcher.level === undefined) {
+                    launcher.level = 1;
+                    launcher.spawnInterval = 5;
+                    launcher.upgradeCost = 15;
+                }
+                launcher.x = this.clampToLauncherBounds(launcher.x);
+                this.createAutoLauncherMesh(launcher); // Create mesh
+            });
         }
-        // Removed: if (data.levels) { ... }
 
 
         this.updateUI();
@@ -755,19 +814,6 @@ class FireworkGame {
         this.updateLauncherList();
 
         this.updateCrowdDisplay();
-
-        this.gameState.autoLaunchers.forEach(launcher => {
-            if (!launcher.accumulator) {
-                launcher.accumulator = Math.random() * 5;
-            }
-            if (launcher.level === undefined) {
-                launcher.level = 1;
-                launcher.spawnInterval = 5;
-                launcher.upgradeCost = 15;
-            }
-            launcher.x = this.clampToLauncherBounds(launcher.x);
-            // Remove createAutoLauncherMesh call
-        });
     }
 
 
@@ -782,7 +828,6 @@ class FireworkGame {
     }
 
     calculateTotalSparklesPerSecond() {
-        // Now only calculates for the single gameState
         return this.calculateSparklesPerSecond(this.gameState.autoLaunchers);
     }
 
@@ -790,13 +835,13 @@ class FireworkGame {
         if (this.cameraTargetX !== null) {
             const t = Math.min(this.cameraTransitionSpeed * deltaTime, 1.0);
             this.renderer2D.cameraX += (this.cameraTargetX - this.renderer2D.cameraX) * t;
-            
+
             this.renderer2D.setCamera({
                 x: this.renderer2D.cameraX,
                 y: this.renderer2D.cameraY,
                 zoom: this.renderer2D.cameraZoom
             });
-            
+
             if (Math.abs(this.renderer2D.cameraX - this.cameraTargetX) < 0.1) {
                 this.cameraTargetX = null;
             }
@@ -860,11 +905,14 @@ class FireworkGame {
         }
 
         const totalWidth = GAME_BOUNDS.LAUNCHER_MAX_X - GAME_BOUNDS.LAUNCHER_MIN_X;
-        const spacing = totalWidth / (launchers.length + 1);
+        const spacing = Math.min(totalWidth / (launchers.length + 1), 200);
 
         launchers.forEach((launcher, index) => {
             const newX = GAME_BOUNDS.LAUNCHER_MIN_X + spacing * (index + 1);
             launcher.x = newX;
+            if (launcher.mesh) {
+                launcher.mesh.position.x = newX;
+            }
         });
 
         this.showNotification("Launchers spread evenly!");
