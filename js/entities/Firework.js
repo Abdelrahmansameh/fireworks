@@ -396,9 +396,9 @@ class Firework {
                         const initialSpeed = speed * (0.7 + Math.random() * 0.3);
                         velocity.set(
                             (Math.cos(angle) * initialSpeed + horizontalDrift)  * spread,
-                            -Math.sin(angle) * initialSpeed * 0.5 
+                            -Math.sin(angle) * initialSpeed * 0.8
                         );
-                        const initialOffset = new Renderer2D.Vector2( i * 0.2, 0);
+                        const initialOffset = new Renderer2D.Vector2( i * 0.2 + (Math.random() - 0.5) * 10, (Math.random() - 0.5) * 20);
                         const index = this.particleSystem.addParticle(
                             rocketPos.clone().add(initialOffset),
                             velocity.clone(),
