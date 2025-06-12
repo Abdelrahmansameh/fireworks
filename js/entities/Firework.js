@@ -396,10 +396,11 @@ class Firework {
                         const initialSpeed = speed * (0.7 + Math.random() * 0.3);
                         velocity.set(
                             (Math.cos(angle) * initialSpeed + horizontalDrift)  * spread,
-                            Math.sin(angle) * initialSpeed
+                            -Math.sin(angle) * initialSpeed * 0.5 
                         );
+                        const initialOffset = new Renderer2D.Vector2( i * 0.2, 0);
                         const index = this.particleSystem.addParticle(
-                            rocketPos.clone(),
+                            rocketPos.clone().add(initialOffset),
                             velocity.clone(),
                             color,
                             size,
