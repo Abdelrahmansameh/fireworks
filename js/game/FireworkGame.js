@@ -366,6 +366,24 @@ class FireworkGame {
         this.profiler.endFunction('drawFrame');
     }
 
+    getLauncherAt(x, y) {
+        for (const launcher of this.gameState.autoLaunchers) {
+            if (launcher.mesh) {
+                const halfWidth = (launcher.mesh.scale.x * FIREWORK_CONFIG.autoLauncherMeshWidth) / 2;
+                const halfHeight = (launcher.mesh.scale.y * FIREWORK_CONFIG.autoLauncherMeshHeight) / 2;
+                if (
+                    x >= launcher.x - halfWidth &&
+                    x <= launcher.x + halfWidth &&
+                    y >= launcher.mesh.position.y - halfHeight &&
+                    y <= launcher.mesh.position.y + halfHeight
+                ) {
+                    return launcher;
+                }
+            }
+        }
+        return null;
+    }
+
     // dont use every frame because js is weird 
     launchFireworkAt(x, minY = null, recipeComponents = null, trailEffect = null) {
         const components = recipeComponents || this.currentRecipeComponents;

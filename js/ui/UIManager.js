@@ -180,15 +180,8 @@ class UIManager {
             if (e.pointerType === 'touch') {
                 e.target.setPointerCapture(e.pointerId);
             }
-
-            const intersectlauncher = false;
-
-            if (intersectlauncher) {
-                // todo move and select launcher
-            } else {
-                const worldPos = this.game.screenToWorld(e.clientX, e.clientY);
-                this.handlePointerClick(worldPos, e);
-            }
+            const worldPos = this.game.screenToWorld(e.clientX, e.clientY);
+            this.handlePointerClick(worldPos, e);
         }
     }
 
@@ -197,10 +190,25 @@ class UIManager {
             return;
         }
 
-        const intersectlauncher = false;
+        const intersectedLauncher = this.game.getLauncherAt(worldPos.x, worldPos.y);
 
-        if (intersectlauncher) {
-            
+        if (intersectedLauncher) {
+            this.isDragging = true;
+            this.draggingLauncher = intersectedLauncher;
+            const launcherIndex = this.game.gameState.autoLaunchers.indexOf(intersectedLauncher);
+            if (launcherIndex > -1) {
+                this.game.selectLauncher(launcherIndex);
+            }
+
+            document.body.style.cursor = 'grabbing';
+
+            if (event.pointerType === 'touch' && event.target) {
+                event.target.setPointerCapture(event.pointerId);
+            }
+
+            document.addEventListener('pointermove', this.pointerMoveHandler, { passive: false });
+            document.addEventListener('pointerup', this.pointerUpHandler);
+            document.addEventListener('pointercancel', this.pointerUpHandler);
         } else {
             this.isScrollDragging = true;
             this.game.cameraTargetX = null;
@@ -225,6 +233,7 @@ class UIManager {
             const clampedX = Math.max(GAME_BOUNDS.LAUNCHER_MIN_X, Math.min(worldPos.x, GAME_BOUNDS.LAUNCHER_MAX_X));
 
             this.draggingLauncher.x = clampedX;
+            this.draggingLauncher.mesh.position.x = clampedX;
             this.game.saveProgress();
         } else if (this.isScrollDragging) {
             const deltaX = e.clientX - this.lastPointerX;
