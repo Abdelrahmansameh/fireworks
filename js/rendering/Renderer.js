@@ -969,6 +969,10 @@ class Renderer2D {
         this.u_useGlowLoc = gl.getUniformLocation(this.instancedProgram, 'u_useGlow');
         this.u_glowRadiusLoc = gl.getUniformLocation(this.instancedProgram, 'u_glowRadius');
         this.u_glowSoftnessLoc = gl.getUniformLocation(this.instancedProgram, 'u_glowSoftness');
+
+        this.virtualWidth = opts.virtualWidth || 1920;
+        this.virtualHeight = opts.virtualHeight || 1080;
+        this.scaleFactor = 1.0;
     }
 
     // Helper function to parse hex color, similar to Firework's one
@@ -1016,10 +1020,20 @@ class Renderer2D {
     }
 
     _updateProjectionMatrix() {
-        const left = this.cameraX - (this.canvas.width / 2) / this.cameraZoom;
-        const right = this.cameraX + (this.canvas.width / 2) / this.cameraZoom;
-        const bottom = this.cameraY - (this.canvas.height / 2) / this.cameraZoom;
-        const top = this.cameraY + (this.canvas.height / 2) / this.cameraZoom;
+        const dpr = window.devicePixelRatio || 1;
+        const physicalWidth = this.canvas.clientWidth * dpr;
+        const physicalHeight = this.canvas.clientHeight * dpr;
+
+        this.scaleFactor = physicalHeight / this.virtualHeight;
+
+        const viewWidth = physicalWidth / this.scaleFactor;
+        const viewHeight = physicalHeight / this.scaleFactor;
+
+        const left = this.cameraX - viewWidth / 2 / this.cameraZoom;
+        const right = this.cameraX + viewWidth / 2 / this.cameraZoom;
+        const bottom = this.cameraY - viewHeight / 2 / this.cameraZoom;
+        const top = this.cameraY + viewHeight / 2 / this.cameraZoom;
+
         this._projectionMatrix = this._makeOrtho(left, right, bottom, top, -1, 1);
         this._inverseProjectionMatrix = invertMatrix(this._projectionMatrix);
     }
@@ -1192,17 +1206,8 @@ class Renderer2D {
         const mouseX = eventX - rect.left;
         const mouseY = eventY - rect.top;
 
-        const dpr = window.devicePixelRatio || 1;
-        const x = mouseX * dpr;
-        const y = mouseY * dpr;
-
-        const canvasWidth = this.canvas.width;
-        const canvasHeight = this.canvas.height;
-        const centerX = canvasWidth / 2;
-        const centerY = canvasHeight / 2;
-
-        const worldX = (x - centerX) / this.cameraZoom + this.cameraX;
-        const worldY = (centerY - y) / this.cameraZoom + this.cameraY;
+        const worldX = this.cameraX + (mouseX - this.canvas.clientWidth / 2) / this.scaleFactor / this.cameraZoom;
+        const worldY = this.cameraY - (mouseY - this.canvas.clientHeight / 2) / this.scaleFactor / this.cameraZoom;
 
         return new Vector2(worldX, worldY);
     }

@@ -131,14 +131,9 @@ class FireworkGame {
     }
 
     onWindowResize() {
-        // Renderer2D._resizeIfNeeded will handle actual canvas.width/height update
-        // This function mainly ensures the projection matrix is updated if needed
-        // after a potential layout change affecting canvas clientWidth/Height.
-        // The renderer's internal resize logic already uses clientWidth/Height.
-        // We just need to ensure the camera projection is re-evaluated.
-        this.renderer2D._updateProjectionMatrix(); // Force update based on new canvas dimensions
-        // update auto launcher y positions
-        const viewBottomWorldY = this.renderer2D.cameraY - (this.renderer2D.canvas.height / (2 * this.renderer2D.cameraZoom));
+
+        this.renderer2D._updateProjectionMatrix(); 
+        const viewBottomWorldY = this.renderer2D.cameraY - (this.renderer2D.virtualHeight / (2 * this.renderer2D.cameraZoom));
         const yPos = viewBottomWorldY + GAME_BOUNDS.OFFSET_MIN_Y;
         for (const launcher of this.gameState.autoLaunchers) {
             launcher.y = yPos;
@@ -232,7 +227,7 @@ class FireworkGame {
                 let recipeComponents = null;
                 let trailEffect = null;
 
-                const viewBottomWorldY = this.renderer2D.cameraY - (this.renderer2D.canvas.height / (2 * this.renderer2D.cameraZoom));
+                const viewBottomWorldY = this.renderer2D.cameraY - (this.renderer2D.virtualHeight / 2 / this.renderer2D.cameraZoom);
                 const launchY = viewBottomWorldY + GAME_BOUNDS.OFFSET_MIN_Y;
 
                 if (recipe) {
@@ -251,7 +246,7 @@ class FireworkGame {
 
                 const effect = trailEffect || this.currentTrailEffect;
 
-                const firework = new Firework(x, launchY, components, this.renderer2D, this.renderer2D.canvas.height / this.renderer2D.cameraZoom, effect, this.particleSystem);
+                const firework = new Firework(x, launchY, components, this.renderer2D, this.renderer2D.virtualHeight / this.renderer2D.cameraZoom, effect, this.particleSystem);
                 this.gameState.fireworks.push(firework); this.fireworkCount++;
                 this.resourceManager.resources.sparkles.add(1);
                 this.updateUI();
@@ -260,7 +255,6 @@ class FireworkGame {
         });
         this.profiler.endFunction('autoLaunchersUpdate');
 
-        // Removed: Generate sparkles in other unlocked levels
 
         // Update crowd based on sparkles per second
         const currentSps = this.calculateTotalSparklesPerSecond();
@@ -281,9 +275,6 @@ class FireworkGame {
 
         this.crowd.update(deltaTime);
 
-        //        this.profiler.startFunction('rendering');
-        //        this.renderer.render(this.scene, this.camera);
-        //       this.profiler.endFunction('rendering');
         this.saveProgress();
 
         this.profiler.endFrame();
@@ -317,20 +308,17 @@ class FireworkGame {
         localStorage.setItem('sparkles', this.getSparkles());
         localStorage.setItem('fireworkRecipes', JSON.stringify(this.recipes));
         localStorage.setItem('currentTrailEffect', this.currentTrailEffect);
-        // localStorage.setItem('currentLevel', this.currentLevel); // Removed
 
         const gameStateData = {
             autoLaunchers: this.gameState.autoLaunchers
         };
         localStorage.setItem('gameState', JSON.stringify(gameStateData));
-        // localStorage.setItem('levels', JSON.stringify(levelsData)); // Removed
 
         localStorage.setItem('currentRecipeComponents', JSON.stringify(this.currentRecipeComponents));
         localStorage.setItem('backgroundColor', document.getElementById('background-color').value);
         localStorage.setItem('selectedLauncherIndex', this.selectedLauncherIndex || '');
         localStorage.setItem('crowdCount', this.crowdCount);
 
-        // Save resources
         localStorage.setItem('resources', JSON.stringify(this.resourceManager.save()));
     }
 
@@ -387,7 +375,7 @@ class FireworkGame {
             return;
         }
 
-        const viewBottomWorldY = this.renderer2D.cameraY - (this.renderer2D.canvas.height / (2 * this.renderer2D.cameraZoom));
+        const viewBottomWorldY = this.renderer2D.cameraY - (this.renderer2D.virtualHeight / 2 / this.renderer2D.cameraZoom);
         const y = minY || viewBottomWorldY + GAME_BOUNDS.OFFSET_MIN_Y;
         const effect = trailEffect || this.currentTrailEffect;
 
@@ -399,7 +387,7 @@ class FireworkGame {
 
     // dont use every frame because js is weird 
     launch(x, y, components, trailEffect) {
-        const firework = new Firework(x, y, components, this.renderer2D, this.renderer2D.canvas.height / this.renderer2D.cameraZoom, trailEffect, this.particleSystem);
+        const firework = new Firework(x, y, components, this.renderer2D, this.renderer2D.virtualHeight / this.renderer2D.cameraZoom, trailEffect, this.particleSystem);
         this.gameState.fireworks.push(firework);
     }
 
@@ -438,7 +426,7 @@ class FireworkGame {
 
         const width = FIREWORK_CONFIG.autoLauncherMeshWidth;
         const height = FIREWORK_CONFIG.autoLauncherMeshHeight;
-        const viewBottomWorldY = this.renderer2D.cameraY - (this.renderer2D.canvas.height / (2 * this.renderer2D.cameraZoom));
+        const viewBottomWorldY = this.renderer2D.cameraY - (this.renderer2D.virtualHeight / (2 * this.renderer2D.cameraZoom));
         const yPos = viewBottomWorldY + GAME_BOUNDS.OFFSET_MIN_Y;
 
         // Define vertices for a rectangle centered at (0,0)
