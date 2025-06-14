@@ -4,6 +4,7 @@ from datetime import datetime
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import os
+import glob
 
 def process_profile_data(data):
     """Process raw profile data into statistics and metrics"""
@@ -648,25 +649,52 @@ def generate_html_report(data):
     
     return html
 
+def analyze_and_generate_report(input_file):
+    """Analyzes a single profile data file and generates a report."""
+    print(f"Analyzing {input_file}...")
+    try:
+        with open(input_file, 'r') as f:
+            profile_data = json.load(f)
+    
+        profile_data = process_profile_data(profile_data)
+    
+        html_report = generate_html_report(profile_data)
+        output_file = os.path.splitext(input_file)[0] + '_report.html'
+    
+        with open(output_file, 'w', encoding='utf-8') as f:
+            f.write(html_report)
+    
+        print(f"Report generated: {output_file}")
+    except json.JSONDecodeError as e:
+        print(f"Error decoding JSON from {input_file}: {e}")
+    except Exception as e:
+        print(f"An error occurred while processing {input_file}: {e}")
+
 def main():
-    if len(sys.argv) != 2:
-        print("Usage: python profile_analyzer.py <profile_data.json>")
+    if len(sys.argv) < 2:
+        print("Usage: python profile_analyzer.py <profile_data.json> | --all-traces [directory]")
         sys.exit(1)
     
-    input_file = sys.argv[1]
-    
-    with open(input_file, 'r') as f:
-        profile_data = json.load(f)
-    
-    profile_data = process_profile_data(profile_data)
-    
-    html_report = generate_html_report(profile_data)
-    output_file = os.path.splitext(input_file)[0] + '_report.html'
-    
-    with open(output_file, 'w', encoding='utf-8') as f:
-        f.write(html_report)
-    
-    print(f"Report generated: {output_file}")
+    if sys.argv[1] == '--all-traces':
+        traces_dir = sys.argv[2] if len(sys.argv) > 2 else 'traces'
+        if not os.path.isdir(traces_dir):
+            print(f"Error: Traces directory '{traces_dir}' not found.")
+            sys.exit(1)
+        
+        json_files = glob.glob(os.path.join(traces_dir, '*.json'))
+        
+        if not json_files:
+            print(f"No .json profile data found in '{traces_dir}'.")
+            sys.exit(0)
+
+        for input_file in json_files:
+            analyze_and_generate_report(input_file)
+    else:
+        input_file = sys.argv[1]
+        if not os.path.isfile(input_file):
+            print(f"Error: file '{input_file}' not found.")
+            sys.exit(1)
+        analyze_and_generate_report(input_file)
 
 if __name__ == "__main__":
     main()
