@@ -306,7 +306,9 @@ class Firework {
                             gravity * (0.8 + Math.random() * 0.4),
                             shape,
                             acceleration,
-                            component.enableTrail
+                            component.enableTrail,
+                            component.trailLength,
+                            component.trailWidth
                         );
                         if (index !== -1) this.particles[shape].add(index);
                     }
@@ -329,7 +331,9 @@ class Firework {
                             gravity * (0.9 + Math.random() * 0.1),
                             shape,
                             acceleration,
-                            component.enableTrail
+                            component.enableTrail,
+                            component.trailLength,
+                            component.trailWidth,
                         );
                         if (index !== -1) this.particles[shape].add(index);
                     }
@@ -352,7 +356,9 @@ class Firework {
                             gravity,
                             shape,
                             acceleration,
-                            component.enableTrail
+                            component.enableTrail,
+                            component.trailLength,
+                            component.trailWidth
                         );
                         if (index !== -1) this.particles[shape].add(index);
                     }
@@ -381,7 +387,9 @@ class Firework {
                             gravity,
                             shape,
                             acceleration,
-                            component.enableTrail
+                            component.enableTrail,
+                            component.trailLength,
+                            component.trailWidth
                         );
                         if (index !== -1) this.particles[shape].add(index);
                     }
@@ -409,7 +417,9 @@ class Firework {
                             shape,
                             acceleration,
                             component.enableTrail,
-                            0.7,
+                            component.trailLength,
+                            component.trailWidth, 
+                            0.7
                         );
                         if (index !== -1) this.particles[shape].add(index);
                     }
@@ -446,7 +456,9 @@ class Firework {
                                 gravity,
                                 shape,
                                 acceleration,
-                                component.enableTrail
+                                component.enableTrail,
+                                component.trailLength,
+                                component.trailWidth
                             );
                             if (index !== -1) this.particles[shape].add(index);
                         }
@@ -479,7 +491,9 @@ class Firework {
                                 gravity * (0.8 + Math.random() * 0.4),
                                 shape,
                                 acceleration,
-                                component.enableTrail
+                                component.enableTrail,
+                                component.trailLength,
+                                component.trailWidth
                             );
                             if (index !== -1) this.particles[shape].add(index);
                         }
@@ -502,7 +516,9 @@ class Firework {
                                 gravity * (0.9 + Math.random() * 0.1),
                                 shape,
                                 acceleration,
-                                component.enableTrail
+                                component.enableTrail,
+                                component.trailLength,
+                                component.trailWidth
                             );
                             if (index !== -1) this.particles[shape].add(index);
                         }
@@ -529,7 +545,9 @@ class Firework {
                                     gravity,
                                     shape,
                                     acceleration,
-                                    component.enableTrail
+                                    component.enableTrail,
+                                    component.trailLength,
+                                    component.trailWidth
                                 );
                                 if (index !== -1) this.particles[shape].add(index);
                             }
@@ -560,7 +578,9 @@ class Firework {
                             gravity * (0.9 + Math.random() * 0.1),
                             shape,
                             acceleration,
-                            component.enableTrail
+                            component.enableTrail,
+                            component.trailLength,
+                            component.trailWidth
                         );
                         if (index !== -1) this.particles[shape].add(index);
                     }
@@ -599,7 +619,9 @@ class Firework {
                             gravity,
                             shape,
                             acceleration,
-                            component.enableTrail
+                            component.enableTrail,
+                            component.trailLength,
+                            component.trailWidth
                         );
                         if (index !== -1) this.particles[shape].add(index);
                     }
@@ -622,7 +644,9 @@ class Firework {
                             gravity,
                             shape,
                             acceleration,
-                            component.enableTrail
+                            component.enableTrail,
+                            component.trailLength,
+                            component.trailWidth
                         );
                         if (index !== -1) this.particles[shape].add(index);
                     }

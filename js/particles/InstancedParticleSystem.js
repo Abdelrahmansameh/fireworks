@@ -68,7 +68,7 @@ class InstancedParticleSystem {
         this.strideFloats = 17;
     }
 
-    createTrailEntry(shape, idx, position, color) {
+    createTrailEntry(shape, idx, position, color, trailLength, trailWidth) {
         const key = `${shape}-${idx}`;
         const particleBase = idx * this.strideFloats;
         const particleLifetime = this.instanceData[shape][particleBase + this.lifetimeIdx];
@@ -78,13 +78,24 @@ class InstancedParticleSystem {
             color: color.clone(),
             lastUpdate: performance.now() - this.trailInterval,
             lifetime: particleLifetime,
-            initialLifetime: particleLifetime
+            initialLifetime: particleLifetime,
+            trailLength: trailLength,
+            trailWidth: trailWidth
         });
     }
 
-    addParticle(position, velocity, color, scale, lifetime, gravity,
-        shape = 'sphere', acceleration = new Vector2(),
-        enableTrail = true, friction = FIREWORK_CONFIG.baseFriction) {
+    addParticle(position, 
+        velocity, 
+        color, 
+        scale, 
+        lifetime, 
+        gravity,
+        shape = 'sphere', 
+        acceleration = new Vector2(),
+        enableTrail = true,
+        trailLength = 4, 
+        trailWidth = 1.5, 
+        friction = FIREWORK_CONFIG.baseFriction) {
         if (!FIREWORK_CONFIG.supportedShapes.includes(shape)) shape = 'sphere';
         const idx = this.activeCounts[shape];
         if (idx >= this.maxParticles) return -1;
@@ -118,7 +129,7 @@ class InstancedParticleSystem {
             color
         );
 
-        if (enableTrail) this.createTrailEntry(shape, idx, position, color);
+        if (enableTrail) this.createTrailEntry(shape, idx, position, color, trailLength, trailWidth);
         this.activeCounts[shape]++;
         return idx;
     }
@@ -199,7 +210,7 @@ class InstancedParticleSystem {
                             d[sBase + this.positionIdx],
                             d[sBase + this.positionIdx + 1]
                         ));
-                        if (trail.points.length > this.maxTrailPoints) {
+                        if (trail.points.length > trail.trailLength) {
                             trail.points.shift();
                         }
                         trail.lastUpdate = now;
@@ -213,7 +224,7 @@ class InstancedParticleSystem {
 
         this.profiler?.startFunction?.('updateTrails');
         this.trailGroup.clear();
-        for (const { points, color, lifetime, initialLifetime } of this.activeTrails.values()) {
+        for (const { points, color, lifetime, initialLifetime, trailWidth } of this.activeTrails.values()) {
             const lifeNorm = lifetime / initialLifetime;
             const fadeAlpha = lifeNorm * lifeNorm * lifeNorm;
 
@@ -228,8 +239,8 @@ class InstancedParticleSystem {
                 this.trailGroup.addInstance(
                     new Vector2(mx, my),
                     ang,
-                    new Vector2(this.trailWidth, len),
-                    new Color(color.r, color.g, color.b, fadeAlpha * ( 2 * Math.random()))
+                    new Vector2(trailWidth, len),
+                    new Color(color.r, color.g, color.b, fadeAlpha * (2 * Math.random()))
                 );
             }
         }

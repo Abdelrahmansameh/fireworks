@@ -27,7 +27,7 @@ const FIREWORK_CONFIG = {
         star: 7.0,
         burst: 9.81,
         palm: 5.0,
-        willow: 10,
+        willow: 20,
         helix: 3.0,
         brokenHeart: 6.0,
         christmasTree: 7.0
@@ -37,12 +37,12 @@ const FIREWORK_CONFIG = {
 
 const GAME_BOUNDS = {
     LAUNCHER_MIN_X: -100,
-    LAUNCHER_MAX_X: 3000,
-    LAUNCHER_Y_POSITION: 0, // Y position for the base of the launcher mesh
+    LAUNCHER_MAX_X: 4000,
+    LAUNCHER_Y_POSITION: 0, 
     OFFSET_MIN_Y: 5,
     OFFSET_MAX_Y: -50,
     SCROLL_MIN_X: -400,
-    SCROLL_MAX_X: 3200,
+    SCROLL_MAX_X: 4200,
     CROWD_RIGHT_X: -10,
     CROWD_LEFT_X: -60
 };

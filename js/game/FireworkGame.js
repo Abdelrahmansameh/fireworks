@@ -246,7 +246,7 @@ class FireworkGame {
 
                 const effect = trailEffect || this.currentTrailEffect;
 
-                const firework = new Firework(x, launchY, components, this.renderer2D, this.renderer2D.virtualHeight / this.renderer2D.cameraZoom, effect, this.particleSystem);
+                const firework = new Firework(x + (Math.random() - 0.5) * FIREWORK_CONFIG.autoLauncherMeshWidth, launchY, components, this.renderer2D, this.renderer2D.virtualHeight / this.renderer2D.cameraZoom, effect, this.particleSystem);
                 this.gameState.fireworks.push(firework); this.fireworkCount++;
                 this.resourceManager.resources.sparkles.add(1);
                 this.updateUI();
@@ -379,7 +379,7 @@ class FireworkGame {
         const y = minY || viewBottomWorldY + GAME_BOUNDS.OFFSET_MIN_Y;
         const effect = trailEffect || this.currentTrailEffect;
 
-        this.launch(x, y, components, effect);
+        this.launch(x + (Math.random() - 0.5) * FIREWORK_CONFIG.autoLauncherMeshWidth, y, components, effect);
         this.fireworkCount++;
         this.addSparkles(1);
         this.updateUI();
@@ -569,6 +569,15 @@ class FireworkGame {
                 if (!('secondaryColor' in component)) {
                     component.secondaryColor = '#00ff00';
                 }
+                if (!('enableTrail' in component)) {
+                    component.enableTrail = false;
+                }
+                if (!('trailLength' in component)) {
+                    component.trailLength = 4;
+                }
+                if (!('trailWidth' in component)) {
+                    component.trailWidth = 1.5;
+                }
             });
         } else {
             this.currentRecipeComponents = [{
@@ -634,6 +643,15 @@ class FireworkGame {
                     }
                     if (!('secondaryColor' in component)) {
                         component.secondaryColor = '#00ff00';
+                    }
+                    if (!('enableTrail' in component)) {
+                        component.enableTrail = false;
+                    }
+                    if (!('trailLength' in component)) {
+                        component.trailLength = 4;
+                    }
+                    if (!('trailWidth' in component)) {
+                        component.trailWidth = 1.5;
                     }
                 });
             });
@@ -893,7 +911,7 @@ class FireworkGame {
         }
 
         const totalWidth = GAME_BOUNDS.LAUNCHER_MAX_X - GAME_BOUNDS.LAUNCHER_MIN_X;
-        const spacing = Math.min(totalWidth / (launchers.length + 1), 200);
+        const spacing = Math.min(totalWidth / (launchers.length + 1), 400);
 
         launchers.forEach((launcher, index) => {
             const newX = GAME_BOUNDS.LAUNCHER_MIN_X + spacing * (index + 1);

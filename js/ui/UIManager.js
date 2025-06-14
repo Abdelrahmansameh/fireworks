@@ -32,7 +32,9 @@ class UIManager {
                 shape: 'sphere',
                 spread: 1.0,
                 secondaryColor: '#00ff00',
-                enableTrail: false
+                enableTrail: false,
+                trailLength: 4,
+                trailWidth: 1.5,
             });
             this.game.updateComponentsList();
             this.game.saveCurrentRecipeComponents();
@@ -226,7 +228,7 @@ class UIManager {
             this.game.saveProgress();
         } else if (this.isScrollDragging) {
             const deltaX = e.clientX - this.lastPointerX;
-            const dragScrollSpeed = 0.2;
+            const dragScrollSpeed = 1;
 
             this.game.renderer2D.cameraX -= deltaX * dragScrollSpeed;
 
@@ -490,6 +492,12 @@ class UIManager {
             if (!('enableTrail' in component)) {
                 component.enableTrail = false;
             }
+            if (!('trailLength' in component)) {
+                component.trailLength = 4;
+            }
+            if (!('trailWidth' in component)) {
+                component.trailWidth = 1.5;
+            }
             const componentDiv = document.createElement('div');
             componentDiv.classList.add('component');
 
@@ -536,15 +544,21 @@ class UIManager {
                 </div>
                 <div class="recipes-option">
                     <label>Lifetime:</label>
-                    <input type="range" class="lifetime-select" data-index="${index}" min="1.5" max="5" step="0.1" value=1.5"${component.lifetime}">
+                    <input type="range" class="lifetime-select" data-index="${index}" min="1.5" max="5" step="0.1" value="${component.lifetime}">
                 </div>
                 <div class="recipes-option">
                     <label>Spread:</label>
                     <input type="range" class="spread-select" data-index="${index}" min="0.5" max="2" step="0.1" value="${component.spread}">
                 </div>
                 <div class="recipes-option">
-                    <label>Trail (Pretty but will kill your FPS):</label>
+                    <label>Trail:</label>
                     <input type="checkbox" class="trail-toggle" data-index="${index}" ${component.enableTrail ? 'checked' : ''}>
+                </div>
+                <div class="recipes-option trail-options" style="display: ${component.enableTrail ? 'block' : 'none'};">
+                    <label>Trail Length:</label>
+                    <input type="range" class="trail-length-select" data-index="${index}" min="1" max="15" step="0.5" value="${component.trailLength}">
+                    <label>Trail Width:</label>
+                    <input type="range" class="trail-width-select" data-index="${index}" min="0.5" max="7" step="0.1" value="${component.trailWidth}">
                 </div>
                 <button class="remove-component" data-index="${index}">Remove Component</button>
             `;
@@ -564,6 +578,9 @@ class UIManager {
             const lifetimeSelect = componentDiv.querySelector('.lifetime-select');
             const spreadSelect = componentDiv.querySelector('.spread-select');
             const trailToggle = componentDiv.querySelector('.trail-toggle');
+            const trailOptions = componentDiv.querySelector('.trail-options');
+            const trailLengthSelect = componentDiv.querySelector('.trail-length-select');
+            const trailWidthSelect = componentDiv.querySelector('.trail-width-select');
 
             const updateSecondaryColorVisibility = () => {
                 if (patternSelect.value === 'helix' || patternSelect.value === 'christmasTree') {
@@ -621,6 +638,19 @@ class UIManager {
             trailToggle.addEventListener('change', (e) => {
                 const idx = e.target.getAttribute('data-index');
                 components[idx].enableTrail = e.target.checked;
+                trailOptions.style.display = e.target.checked ? 'block' : 'none';
+                onUpdate();
+            });
+
+            trailLengthSelect.addEventListener('input', (e) => {
+                const idx = e.target.getAttribute('data-index');
+                components[idx].trailLength = parseFloat(e.target.value);
+                onUpdate();
+            });
+
+            trailWidthSelect.addEventListener('input', (e) => {
+                const idx = e.target.getAttribute('data-index');
+                components[idx].trailWidth = parseFloat(e.target.value);
                 onUpdate();
             });
 
