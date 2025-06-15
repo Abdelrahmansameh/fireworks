@@ -627,11 +627,11 @@ class Firework {
                     }
                     break;
                 case 'helix':
-                    const helixRadius = 0.5;
+                    const helixRadius = 3 * spread;
                     const riseSpeed = speed * 0.1 * spread;
                     const rotationSpeed = 2;
                     const particlesPerStream = 100;
-                    const verticalSpacing = 0.1;
+                    const verticalSpacing = 0.7 * spread;
                     const spreadFactor = 0.1;
 
                     for (let stream = 0; stream < 2; stream++) {
@@ -641,14 +641,11 @@ class Firework {
                             const angle = t + streamOffset;
 
                             const randomSpread = (Math.random() - 0.5) * spreadFactor;
-                            const offset = new Renderer2D.Vector2(
-                                Math.cos(angle) * helixRadius * (1 + randomSpread),
-                                -i * verticalSpacing
-                            );
+
 
                             velocity.set(
-                                -Math.sin(angle) * rotationSpeed,
-                                riseSpeed * (1 + randomSpread)
+                                -Math.sin(angle) * rotationSpeed + Math.cos(angle) * helixRadius * (1 + randomSpread),
+                                riseSpeed * 10
                             );
                             const particleColor = new Renderer2D.Color();
                             if (stream === 1) {
@@ -656,17 +653,19 @@ class Firework {
                             } else {
                                 particleColor.copy(color);
                             }
-
+                            acceleration.set(
+                                -Math.sin(angle) * rotationSpeed + Math.cos(angle) * helixRadius * (1 + randomSpread) * 3,
+                                riseSpeed * (1 + randomSpread) - i * verticalSpacing
+                            );
                             const index = this.particleSystem.addParticle(
-                                rocketPos.clone().add(offset),
-                                velocity.clone(),
+                                rocketPos,
+                                velocity,
                                 particleColor,
                                 size,
                                 component.lifetime,
                                 gravity * 0.2,
                                 shape,
                                 acceleration,
-                                component.enableTrail,
                                 0
                             );
                             if (index !== -1) this.particles[shape].add(index);

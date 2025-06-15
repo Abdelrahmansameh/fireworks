@@ -542,7 +542,7 @@ class UIManager {
                         <label>Spread:</label>
                         <input type="range" class="spread-select" data-index="${index}" min="0.5" max="2" step="0.1" value="${component.spread}">
                     </div>
-                    <div class="recipes-option">
+                    <div class="recipes-option trail-container">
                         <label>Trail:</label>
                         <input type="checkbox" class="trail-toggle" data-index="${index}" ${component.enableTrail ? 'checked' : ''}>
                     </div>
@@ -577,6 +577,7 @@ class UIManager {
             const sizeSelect = componentDiv.querySelector('.size-select');
             const lifetimeSelect = componentDiv.querySelector('.lifetime-select');
             const spreadSelect = componentDiv.querySelector('.spread-select');
+            const trailContainer = componentDiv.querySelector('.trail-container');
             const trailToggle = componentDiv.querySelector('.trail-toggle');
             const trailOptions = componentDiv.querySelector('.trail-options');
             const trailLengthSelect = componentDiv.querySelector('.trail-length-select');
@@ -590,12 +591,30 @@ class UIManager {
                 }
             };
 
+            const updateTrailAvailability = () => {
+                const idx = patternSelect.getAttribute('data-index');
+                if (patternSelect.value === 'helix') {
+                    trailContainer.style.display = 'none';
+                    trailOptions.style.display = 'none';
+                    if (components[idx].enableTrail) {
+                        components[idx].enableTrail = false;
+                        trailToggle.checked = false;
+                        onUpdate();
+                    }
+                } else {
+                    trailContainer.style.display = 'block';
+                    trailOptions.style.display = trailToggle.checked ? 'block' : 'none';
+                }
+            };
+
             updateSecondaryColorVisibility();
+            updateTrailAvailability();
 
             patternSelect.addEventListener('change', (e) => {
                 const idx = e.target.getAttribute('data-index');
                 components[idx].pattern = e.target.value;
                 updateSecondaryColorVisibility();
+                updateTrailAvailability();
                 onUpdate();
             });
 
