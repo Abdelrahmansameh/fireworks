@@ -673,35 +673,41 @@ class Firework {
                     break;
                 case 'spinner':
                     {
+                        const explosionCenter = this.rocket.position.clone();
                         const numArms = 15;
-                        const armAngleWidth = 0.1;
+                        const particlesPerArm = Math.floor(particleCount / numArms);
 
                         for (let i = 0; i < particleCount; i++) {
-                            const armIndex = i % numArms;
-                            const armBaseAngle = (armIndex / numArms) * Math.PI * 2;
+                            const armIndex = Math.floor(i / particlesPerArm);
+                            let currentAngle = (armIndex / numArms) * Math.PI * 2;
                             
-                            const angle = armBaseAngle + (Math.random() - 0.5) * armAngleWidth;
+                            const radialSpeed = speed  * 2 *(0.1 + Math.random() * 0.4);
+                            let currentRadius = (i % particlesPerArm) * 0.1;
+                            
+                            const spinSpeed = 1;
 
-                            const radialSpeed = speed * 1 * (0.8 + Math.random() * 0.4);
-                            const velocity = new Renderer2D.Vector2(Math.cos(angle), Math.sin(angle));
-                            velocity.scale(radialSpeed);
+                            const updateFn = (pState, delta) => {
+                                currentRadius += radialSpeed * delta;
+                                currentAngle += spinSpeed * delta;
 
-                            const spinForce = spread * 50;
-                            const acceleration = new Renderer2D.Vector2(-Math.sin(angle), Math.cos(angle));
-                            acceleration.scale(spinForce);
+                                pState.position.x = explosionCenter.x + Math.cos(currentAngle) * currentRadius;
+                                pState.position.y = explosionCenter.y + Math.sin(currentAngle) * currentRadius;
+                            };
 
                             const index = this.particleSystem.addParticle(
                                 rocketPos.clone(),
-                                velocity,
+                                new Renderer2D.Vector2(0,0),
                                 color,
                                 size,
                                 component.lifetime,
-                                gravity,
+                                gravity * 100,
                                 shape,
-                                acceleration,
+                                new Renderer2D.Vector2(),
                                 component.enableTrail,
                                 component.trailLength,
-                                component.trailWidth
+                                component.trailWidth,
+                                FIREWORK_CONFIG.baseFriction,
+                                updateFn
                             );
                             if (index !== -1) this.particles[shape].add(index);
                         }

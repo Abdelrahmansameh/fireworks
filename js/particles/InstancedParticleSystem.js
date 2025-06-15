@@ -15,7 +15,8 @@ class InstancedParticleSystem {
         this.activeCounts = {};
         this.instanceData = {};
         this.trailPoints = {};
-
+        this.particleUpdateFns = {};
+        this.particleState = {};
 
         const quadVerts = new Float32Array([
             -0.5, 0,    // bottom-left
@@ -35,14 +36,15 @@ class InstancedParticleSystem {
         });
 
         const geometries = {
-            sphere: Renderer2D.buildCircle(1),
+            circle: Renderer2D.buildCircle(1),
             star: Renderer2D.buildStar(),
-            ring: Renderer2D.buildRing(),
-            crystalDroplet: Renderer2D.buildDroplet(),
-            sliceBurst: Renderer2D.buildTriangle(),
+            triangle: Renderer2D.buildTriangle(),
+            square: Renderer2D.buildRing(0.7,0.7), // hack for a square
+            droplet: Renderer2D.buildDroplet(),
         };
+
         FIREWORK_CONFIG.supportedShapes.forEach(shape => {
-            const g = geometries[shape];
+            const g = geometries[shape] || geometries.circle;
             this.meshes[shape] = this.renderer.createInstancedGroup({
                 vertices: g.vertices,
                 indices: g.indices,
@@ -53,6 +55,19 @@ class InstancedParticleSystem {
             this.activeCounts[shape] = 0;
             this.instanceData[shape] = new Float32Array(this.maxParticles * 22).fill(0);
             this.trailPoints[shape] = new Float32Array(this.maxParticles * this.maxTrailPoints * 2);
+            this.particleUpdateFns[shape] = new Array(this.maxParticles).fill(null);
+            this.particleState[shape] = {
+                position: new Vector2(),
+                velocity: new Vector2(),
+                acceleration: new Vector2(),
+                color: new Color(),
+                scale: 0,
+                lifetime: 0,
+                initialLifetime: 0,
+                gravity: 0,
+                friction: 0,
+                rotation: 0,
+            };
         });
 
         this.positionIdx = 0;
@@ -82,13 +97,14 @@ class InstancedParticleSystem {
         scale, 
         lifetime, 
         gravity,
-        shape = 'sphere', 
+        shape = 'circle', 
         acceleration = new Vector2(),
         enableTrail = true,
         trailLength = 4, 
         trailWidth = 1.5, 
-        friction = FIREWORK_CONFIG.baseFriction) {
-        if (!FIREWORK_CONFIG.supportedShapes.includes(shape)) shape = 'sphere';
+        friction = FIREWORK_CONFIG.baseFriction,
+        updateFn = null) {
+        if (!this.meshes[shape]) shape = 'circle';
         const idx = this.activeCounts[shape];
         if (idx >= this.maxParticles) return -1;
 
@@ -143,6 +159,7 @@ class InstancedParticleSystem {
             d[base + this.hasTrailIdx] = 0.0;
         }
 
+        this.particleUpdateFns[shape][idx] = updateFn;
         this.activeCounts[shape]++;
         return idx;
     }
@@ -152,16 +169,34 @@ class InstancedParticleSystem {
         this.profiler?.startFunction?.('particleSystemUpdate');
 
         FIREWORK_CONFIG.supportedShapes.forEach(shape => {
+            if (!this.instanceData[shape]) return;
+
             const d = this.instanceData[shape];
             const trailBuffer = this.trailPoints[shape];
             const grp = this.meshes[shape];
             const gpu = grp.instanceData;
             const sStr = this.strideFloats;
             const gStr = grp.instanceStrideFloats;
+            const updateFns = this.particleUpdateFns[shape];
+            const state = this.particleState[shape];
 
             let count = this.activeCounts[shape];
             for (let i = 0; i < count; i++) {
                 const sBase = i * sStr, gBase = i * gStr;
+
+                const updateFn = updateFns[i];
+                if (updateFn) {
+                    state.position.set(d[sBase + this.positionIdx], d[sBase + this.positionIdx + 1]);
+                    state.velocity.set(d[sBase + this.velocityIdx], d[sBase + this.velocityIdx + 1]);
+                    state.acceleration.set(d[sBase + this.accelerationIdx], d[sBase + this.accelerationIdx + 1]);
+                    updateFn(state, delta);
+                    d[sBase + this.positionIdx] = state.position.x;
+                    d[sBase + this.positionIdx + 1] = state.position.y;
+                    d[sBase + this.velocityIdx] = state.velocity.x;
+                    d[sBase + this.velocityIdx + 1] = state.velocity.y;
+                    d[sBase + this.accelerationIdx] = state.acceleration.x;
+                    d[sBase + this.accelerationIdx + 1] = state.acceleration.y;
+                }
 
                 d[sBase + this.lifetimeIdx] -= delta;
                 if (d[sBase + this.lifetimeIdx] <= 0) {
@@ -176,10 +211,12 @@ class InstancedParticleSystem {
                         const lastTrailOffset = lastIdx * trailSegmentSize;
                         const deadTrailOffset = i * trailSegmentSize;
                         trailBuffer.copyWithin(deadTrailOffset, lastTrailOffset, lastTrailOffset + trailSegmentSize);
+                        updateFns[i] = updateFns[lastIdx];
                     }
                     
                     const lastTrailOffset = lastIdx * trailSegmentSize;
                     trailBuffer.fill(0, lastTrailOffset, lastTrailOffset + trailSegmentSize);
+                    updateFns[lastIdx] = null;
 
                     count--; i--;
                     continue;
@@ -239,6 +276,7 @@ class InstancedParticleSystem {
         this.profiler?.startFunction?.('updateTrails');
         this.trailGroup.clear();
         FIREWORK_CONFIG.supportedShapes.forEach(shape => {
+            if (!this.instanceData[shape]) return;
             const d = this.instanceData[shape];
             const trailBuffer = this.trailPoints[shape];
             const count = this.activeCounts[shape];
@@ -300,9 +338,12 @@ class InstancedParticleSystem {
     clear() {
         Object.keys(this.activeCounts).forEach(shape => {
             this.activeCounts[shape] = 0;
-            this.meshes[shape].instanceCount = 0;
+            if (this.meshes[shape]) this.meshes[shape].instanceCount = 0;
             if (this.trailPoints[shape]) {
                 this.trailPoints[shape].fill(0);
+            }
+            if (this.particleUpdateFns[shape]) {
+                this.particleUpdateFns[shape].fill(null);
             }
         });
         this.trailGroup.clear();
