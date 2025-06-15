@@ -674,20 +674,20 @@ class Firework {
                 case 'spinner':
                     {
                         const explosionCenter = this.rocket.position.clone();
-                        const numArms = 15;
+                        const numArms = 20;
                         const particlesPerArm = Math.floor(particleCount / numArms);
 
                         for (let i = 0; i < particleCount; i++) {
                             const armIndex = Math.floor(i / particlesPerArm);
                             let currentAngle = (armIndex / numArms) * Math.PI * 2;
                             
-                            const radialSpeed = speed  * 2 *(0.1 + Math.random() * 0.4);
+                            const radialSpeed = speed *(0.1 + Math.random() * 0.4);
                             let currentRadius = (i % particlesPerArm) * 0.1;
                             
                             const spinSpeed = 1;
 
                             const updateFn = (pState, delta) => {
-                                currentRadius += radialSpeed * delta;
+                                currentRadius += pState.velocity.length() * delta ;
                                 currentAngle += spinSpeed * delta;
 
                                 pState.position.x = explosionCenter.x + Math.cos(currentAngle) * currentRadius;
