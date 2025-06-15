@@ -827,6 +827,22 @@ class InstancedGroup {
         this.instanceCount++;
     }
 
+    addInstanceRaw(posX, posY, rotation, scaleX, scaleY, colorR, colorG, colorB, colorA) {
+        const i = this.instanceCount;
+        if (i >= this.maxInstances) return;
+        const base = i * this.instanceStrideFloats;
+        this.instanceData[base + 0] = posX;
+        this.instanceData[base + 1] = posY;
+        this.instanceData[base + 2] = rotation;
+        this.instanceData[base + 3] = scaleX;
+        this.instanceData[base + 4] = scaleY;
+        this.instanceData[base + 5] = colorR;
+        this.instanceData[base + 6] = colorG;
+        this.instanceData[base + 7] = colorB;
+        this.instanceData[base + 8] = colorA;
+        this.instanceCount++;
+    }
+
     removeInstance(index) {
         if (index < 0 || index >= this.instanceCount) {
             console.warn('Instance index out of bounds');
