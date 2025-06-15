@@ -690,6 +690,37 @@ function buildStrokeGeometry(points, strokeWidth = 5) {
     };
 }
 
+function buildTexturedSquare(width = 1, height = 1) {
+    const halfW = width / 2;
+    const halfH = height / 2;
+    
+    const vertices = new Float32Array([
+        -halfW, -halfH, // bottom-left
+         halfW, -halfH, // bottom-right
+         halfW,  halfH, // top-right
+        -halfW,  halfH  // top-left
+    ]);
+    
+    // Texture coordinates (UV)
+    const texCoords = new Float32Array([
+        0, 1, // bottom-left
+        1, 1, // bottom-right
+        1, 0, // top-right
+        0, 0  // top-left
+    ]);
+    
+    const indices = new Uint16Array([
+        0, 1, 2, 
+        0, 2, 3  
+    ]);
+    
+    return {
+        vertices: vertices,
+        texCoords: texCoords,
+        indices: indices
+    };
+}
+
 function invertMatrix(m) {
     const inv = new Float32Array(16);
     const det =
@@ -753,6 +784,8 @@ class Shape2D {
     constructor({
         vertices = null,
         indices = null,
+        texCoords = null,
+        texture = null,
         color = new Color(1, 1, 1, 1),
         position = new Vector2(0, 0),
         rotation = 0,
@@ -763,6 +796,8 @@ class Shape2D {
     }) {
         this.vertices = vertices;
         this.indices = indices;
+        this.texCoords = texCoords;
+        this.texture = texture;
         this.color = color.clone();
         this.position = position.clone();
         this.rotation = rotation;
@@ -773,6 +808,7 @@ class Shape2D {
 
         // GPU buffers
         this._vbo = null;
+        this._texCoordVbo = null;
         this._ibo = null;
         this._vertexCount = 0;
     }
@@ -787,11 +823,12 @@ class Shape2D {
 }
 
 class InstancedGroup {
-    constructor({ baseGeometry, maxInstances = 10000, zIndex = 0, blendMode = BlendMode.NORMAL }) {
+    constructor({ baseGeometry, maxInstances = 10000, zIndex = 0, blendMode = BlendMode.NORMAL, texture = null }) {
         this.baseGeometry = baseGeometry;
         this.maxInstances = maxInstances;
         this.zIndex = zIndex;
         this.blendMode = blendMode;
+        this.texture = texture;
 
         // number of floats per instance
         this.instanceStrideFloats = 9;
@@ -962,6 +999,9 @@ class Renderer2D {
         this.normalShapes = [];
         this.instancedGroups = [];
 
+        this.textures = new Map();
+        this.whiteTexture = null;
+
         this.cameraX = 0;
         this.cameraY = 0;
         this.cameraZoom = 1.0;
@@ -970,18 +1010,26 @@ class Renderer2D {
         gl.enable(gl.BLEND);
         gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 
+        this._createWhiteTexture();
+
         this.normalProgram = this._initProgram(this._normalVS(), this._normalFS());
         this.a_position_Normal = gl.getAttribLocation(this.normalProgram, 'a_position');
+        this.a_texCoord_Normal = gl.getAttribLocation(this.normalProgram, 'a_texCoord');
         this.u_matrix_Normal = gl.getUniformLocation(this.normalProgram, 'u_matrix');
         this.u_color_Normal = gl.getUniformLocation(this.normalProgram, 'u_color');
+        this.u_texture_Normal = gl.getUniformLocation(this.normalProgram, 'u_texture');
+        this.u_useTexture_Normal = gl.getUniformLocation(this.normalProgram, 'u_useTexture');
 
         this.instancedProgram = this._initProgram(this._instancedVS(), this._instancedFS());
         this.a_position_Inst = gl.getAttribLocation(this.instancedProgram, 'a_position');
+        this.a_texCoord_Inst = gl.getAttribLocation(this.instancedProgram, 'a_texCoord');
         this.a_offset_Inst = gl.getAttribLocation(this.instancedProgram, 'a_offset');
         this.a_rotation_Inst = gl.getAttribLocation(this.instancedProgram, 'a_rotation');
         this.a_scale_Inst = gl.getAttribLocation(this.instancedProgram, 'a_scale');
         this.a_color_Inst = gl.getAttribLocation(this.instancedProgram, 'a_color');
         this.u_proj_Inst = gl.getUniformLocation(this.instancedProgram, 'u_proj');
+        this.u_texture_Inst = gl.getUniformLocation(this.instancedProgram, 'u_texture');
+        this.u_useTexture_Inst = gl.getUniformLocation(this.instancedProgram, 'u_useTexture');
         this.u_useGlowLoc = gl.getUniformLocation(this.instancedProgram, 'u_useGlow');
         this.u_glowRadiusLoc = gl.getUniformLocation(this.instancedProgram, 'u_glowRadius');
         this.u_glowSoftnessLoc = gl.getUniformLocation(this.instancedProgram, 'u_glowSoftness');
@@ -991,10 +1039,66 @@ class Renderer2D {
         this.scaleFactor = 1.0;
     }
 
-    // Helper function to parse hex color, similar to Firework's one
+    _createWhiteTexture() {
+        const gl = this.gl;
+        this.whiteTexture = gl.createTexture();
+        gl.bindTexture(gl.TEXTURE_2D, this.whiteTexture);
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array([255, 255, 255, 255]));
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+    }
+
+    async loadTexture(url, name = null) {
+        const textureName = name || url;
+        
+        if (this.textures.has(textureName)) {
+            return this.textures.get(textureName);
+        }
+
+        return new Promise((resolve, reject) => {
+            const gl = this.gl;
+            const texture = gl.createTexture();
+            const image = new Image();
+            
+            image.onload = () => {
+                gl.bindTexture(gl.TEXTURE_2D, texture);
+                gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
+                
+                const isPowerOf2 = (value) => (value & (value - 1)) === 0;
+                if (isPowerOf2(image.width) && isPowerOf2(image.height)) {
+                    gl.generateMipmap(gl.TEXTURE_2D);
+                } else {
+                    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+                    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+                    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+                }
+                gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+                
+                const textureInfo = {
+                    texture: texture,
+                    width: image.width,
+                    height: image.height
+                };
+                
+                this.textures.set(textureName, textureInfo);
+                resolve(textureInfo);
+            };
+            
+            image.onerror = () => {
+                reject(new Error(`Failed to load texture: ${url}`));
+            };
+            
+            image.crossOrigin = 'anonymous';
+            image.src = url;
+        });
+    }
+
+    getTexture(name) {
+        return this.textures.get(name);
+    }
+
     _hexToRgbA(hex) {
         if (!hex || typeof hex !== 'string') {
-            // console.warn(`Invalid hex color input: ${hex}. Using default black.`);
             return { r: 0, g: 0, b: 0, a: 1 };
         }
 
@@ -1026,7 +1130,6 @@ class Renderer2D {
 
         return { r: r / 255, g: g / 255, b: b / 255, a: a / 255 };
     }
-
 
     setCamera({ x = 0, y = 0, zoom = 1.0 }) {
         this.cameraX = x;
@@ -1063,7 +1166,8 @@ class Renderer2D {
 
     updateNormalShape(shape, changes) {
         let reuploadVerts = false,
-            reuploadIdx = false;
+            reuploadIdx = false,
+            reuploadTexCoords = false;
         if (changes.vertices !== undefined) {
             shape.vertices = changes.vertices;
             reuploadVerts = true;
@@ -1072,6 +1176,11 @@ class Renderer2D {
             shape.indices = changes.indices;
             reuploadIdx = true;
         }
+        if (changes.texCoords !== undefined) {
+            shape.texCoords = changes.texCoords;
+            reuploadTexCoords = true;
+        }
+        if (changes.texture !== undefined) shape.texture = changes.texture;
         if (changes.color !== undefined) shape.color = changes.color.clone();
         if (changes.position !== undefined) shape.position = changes.position.clone();
         if (changes.rotation !== undefined) shape.rotation = changes.rotation;
@@ -1082,6 +1191,7 @@ class Renderer2D {
 
         if (reuploadVerts) this._uploadShapeVertices(shape);
         if (reuploadIdx) this._uploadShapeIndices(shape);
+        if (reuploadTexCoords) this._uploadShapeTexCoords(shape);
     }
 
     removeNormalShape(shape) {
@@ -1091,19 +1201,31 @@ class Renderer2D {
             this.gl.deleteBuffer(shape._vbo);
             shape._vbo = null;
         }
+        if (shape._texCoordVbo) {
+            this.gl.deleteBuffer(shape._texCoordVbo);
+            shape._texCoordVbo = null;
+        }
         if (shape._ibo) {
             this.gl.deleteBuffer(shape._ibo);
             shape._ibo = null;
         }
     }
 
-    createInstancedGroup({ vertices, indices, maxInstances = 10000, zIndex = 0, blendMode = BlendMode.NORMAL, useGlow = true, glowRadius = 0.9, glowSoftness = .2 }) {
+    createInstancedGroup({ vertices, indices, texCoords = null, texture = null, maxInstances = 10000, zIndex = 0, blendMode = BlendMode.NORMAL, useGlow = true, glowRadius = 0.9, glowSoftness = .2 }) {
         const gl = this.gl;
         const baseGeom = {};
         baseGeom.vertexBuffer = gl.createBuffer();
         gl.bindBuffer(gl.ARRAY_BUFFER, baseGeom.vertexBuffer);
         gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
         baseGeom.numVerts = vertices.length / 2;
+
+        if (texCoords) {
+            baseGeom.texCoordBuffer = gl.createBuffer();
+            gl.bindBuffer(gl.ARRAY_BUFFER, baseGeom.texCoordBuffer);
+            gl.bufferData(gl.ARRAY_BUFFER, texCoords, gl.STATIC_DRAW);
+        } else {
+            baseGeom.texCoordBuffer = null;
+        }
 
         if (indices) {
             baseGeom.indexBuffer = gl.createBuffer();
@@ -1115,7 +1237,7 @@ class Renderer2D {
             baseGeom.numIndices = 0;
         }
 
-        const group = new InstancedGroup({ baseGeometry: baseGeom, maxInstances, zIndex, blendMode });
+        const group = new InstancedGroup({ baseGeometry: baseGeom, maxInstances, zIndex, blendMode, texture });
         group._instanceBuffer = gl.createBuffer();
         gl.bindBuffer(gl.ARRAY_BUFFER, group._instanceBuffer);
         const totalBytes = maxInstances * 9 * 4;
@@ -1124,9 +1246,17 @@ class Renderer2D {
         group._vao = gl.createVertexArray();
         gl.bindVertexArray(group._vao);
 
+        //  position buffer
         gl.bindBuffer(gl.ARRAY_BUFFER, baseGeom.vertexBuffer);
         gl.enableVertexAttribArray(this.a_position_Inst);
         gl.vertexAttribPointer(this.a_position_Inst, 2, gl.FLOAT, false, 0, 0);
+
+        //  texture coordinate buffer
+        if (baseGeom.texCoordBuffer && this.a_texCoord_Inst !== -1) {
+            gl.bindBuffer(gl.ARRAY_BUFFER, baseGeom.texCoordBuffer);
+            gl.enableVertexAttribArray(this.a_texCoord_Inst);
+            gl.vertexAttribPointer(this.a_texCoord_Inst, 2, gl.FLOAT, false, 0, 0);
+        }
 
         if (baseGeom.indexBuffer) {
             gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, baseGeom.indexBuffer);
@@ -1135,22 +1265,24 @@ class Renderer2D {
         // instance buffer => offset(2), rotation(1), scale(2), color(4)
         gl.bindBuffer(gl.ARRAY_BUFFER, group._instanceBuffer);
         const stride = 9 * 4;
-        // offset => loc= a_offset_Inst
+        
+        // Update attribute locations based on the new shader layout
+        // offset => loc= a_offset_Inst (location 2)
         gl.enableVertexAttribArray(this.a_offset_Inst);
         gl.vertexAttribPointer(this.a_offset_Inst, 2, gl.FLOAT, false, stride, 0);
         gl.vertexAttribDivisor(this.a_offset_Inst, 1);
 
-        // rotation => a_rotation_Inst
+        // rotation => a_rotation_Inst (location 3)
         gl.enableVertexAttribArray(this.a_rotation_Inst);
         gl.vertexAttribPointer(this.a_rotation_Inst, 1, gl.FLOAT, false, stride, 2 * 4);
         gl.vertexAttribDivisor(this.a_rotation_Inst, 1);
 
-        // scale => a_scale_Inst
+        // scale => a_scale_Inst (location 4)
         gl.enableVertexAttribArray(this.a_scale_Inst);
         gl.vertexAttribPointer(this.a_scale_Inst, 2, gl.FLOAT, false, stride, 3 * 4);
         gl.vertexAttribDivisor(this.a_scale_Inst, 1);
 
-        // color => a_color_Inst
+        // color => a_color_Inst (location 5)
         gl.enableVertexAttribArray(this.a_color_Inst);
         gl.vertexAttribPointer(this.a_color_Inst, 4, gl.FLOAT, false, stride, 5 * 4);
         gl.vertexAttribDivisor(this.a_color_Inst, 1);
@@ -1180,6 +1312,10 @@ class Renderer2D {
             if (group.baseGeometry.vertexBuffer) {
                 gl.deleteBuffer(group.baseGeometry.vertexBuffer);
                 group.baseGeometry.vertexBuffer = null;
+            }
+            if (group.baseGeometry.texCoordBuffer) {
+                gl.deleteBuffer(group.baseGeometry.texCoordBuffer);
+                group.baseGeometry.texCoordBuffer = null;
             }
             if (group.baseGeometry.indexBuffer) {
                 gl.deleteBuffer(group.baseGeometry.indexBuffer);
@@ -1256,10 +1392,29 @@ class Renderer2D {
         gl.uniformMatrix4fv(this.u_matrix_Normal, false, mvp);
         gl.uniform4fv(this.u_color_Normal, shape.color.toArray());
 
+        // Handle texture
+        const useTexture = shape.texture !== null;
+        gl.uniform1i(this.u_useTexture_Normal, useTexture);
+        
+        if (useTexture) {
+            gl.activeTexture(gl.TEXTURE0);
+            gl.bindTexture(gl.TEXTURE_2D, shape.texture.texture);
+            gl.uniform1i(this.u_texture_Normal, 0);
+        }
+
         // bind shape buffers
         gl.bindBuffer(gl.ARRAY_BUFFER, shape._vbo);
         gl.enableVertexAttribArray(this.a_position_Normal);
         gl.vertexAttribPointer(this.a_position_Normal, 2, gl.FLOAT, false, 0, 0);
+
+        // bind texture coordinates if available
+        if (shape._texCoordVbo && this.a_texCoord_Normal !== -1) {
+            gl.bindBuffer(gl.ARRAY_BUFFER, shape._texCoordVbo);
+            gl.enableVertexAttribArray(this.a_texCoord_Normal);
+            gl.vertexAttribPointer(this.a_texCoord_Normal, 2, gl.FLOAT, false, 0, 0);
+        } else if (this.a_texCoord_Normal !== -1) {
+            gl.disableVertexAttribArray(this.a_texCoord_Normal);
+        }
 
         if (shape.indices) {
             gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, shape._ibo);
@@ -1297,6 +1452,16 @@ class Renderer2D {
         gl.uniform1f(this.u_glowRadiusLoc, group._glowRadius);
         gl.uniform1f(this.u_glowSoftnessLoc, group._glowSoftness);
 
+        // Handle texture
+        const useTexture = group.texture !== null;
+        gl.uniform1i(this.u_useTexture_Inst, useTexture);
+        
+        if (useTexture) {
+            gl.activeTexture(gl.TEXTURE0);
+            gl.bindTexture(gl.TEXTURE_2D, group.texture.texture);
+            gl.uniform1i(this.u_texture_Inst, 0);
+        }
+
         gl.uniformMatrix4fv(this.u_proj_Inst, false, this._projectionMatrix);
 
         // update instance buffer
@@ -1333,6 +1498,13 @@ class Renderer2D {
         gl.bufferData(gl.ARRAY_BUFFER, shape.vertices, gl.STATIC_DRAW);
         shape._vertexCount = shape.vertices.length / 2;
 
+        // Upload texture coordinates if available
+        if (shape.texCoords) {
+            shape._texCoordVbo = gl.createBuffer();
+            gl.bindBuffer(gl.ARRAY_BUFFER, shape._texCoordVbo);
+            gl.bufferData(gl.ARRAY_BUFFER, shape.texCoords, gl.STATIC_DRAW);
+        }
+
         if (shape.indices) {
             shape._ibo = gl.createBuffer();
             gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, shape._ibo);
@@ -1351,14 +1523,29 @@ class Renderer2D {
         gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, shape._ibo);
         gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, shape.indices, gl.STATIC_DRAW);
     }
+    
+    _uploadShapeTexCoords(shape) {
+        const gl = this.gl;
+        if (shape.texCoords) {
+            if (!shape._texCoordVbo) shape._texCoordVbo = gl.createBuffer();
+            gl.bindBuffer(gl.ARRAY_BUFFER, shape._texCoordVbo);
+            gl.bufferData(gl.ARRAY_BUFFER, shape.texCoords, gl.STATIC_DRAW);
+        } else if (shape._texCoordVbo) {
+            gl.deleteBuffer(shape._texCoordVbo);
+            shape._texCoordVbo = null;
+        }
+    }
 
     _normalVS() {
         return `
         attribute vec2 a_position;
+        attribute vec2 a_texCoord;
         uniform mat4 u_matrix;
         uniform vec4 u_color; // not used in vertex, but we unify usage
+        varying vec2 v_texCoord;
         void main(){
             gl_Position = u_matrix * vec4(a_position, 0.0, 1.0);
+            v_texCoord = a_texCoord;
         }
         `;
     }
@@ -1366,18 +1553,27 @@ class Renderer2D {
         return `
         precision mediump float;
         uniform vec4 u_color;
+        uniform sampler2D u_texture;
+        uniform bool u_useTexture;
+        varying vec2 v_texCoord;
         void main(){
-            gl_FragColor = u_color;
+            if (u_useTexture) {
+                vec4 texColor = texture2D(u_texture, v_texCoord);
+                gl_FragColor = texColor * u_color;
+            } else {
+                gl_FragColor = u_color;
+            }
         }
         `;
     }
     _instancedVS() {
         return `#version 300 es
         layout(location=0) in vec2 a_position; 
-        layout(location=1) in vec2 a_offset; 
-        layout(location=2) in float a_rotation;
-        layout(location=3) in vec2 a_scale;
-        layout(location=4) in vec4 a_color;
+        layout(location=1) in vec2 a_texCoord;
+        layout(location=2) in vec2 a_offset; 
+        layout(location=3) in float a_rotation;
+        layout(location=4) in vec2 a_scale;
+        layout(location=5) in vec4 a_color;
 
         uniform mat4 u_proj;
 
@@ -1385,7 +1581,7 @@ class Renderer2D {
         out vec2 v_uv;
 
         void main(){
-            v_uv = a_position * 0.5 + vec2(0.5);
+            v_uv = a_texCoord;
             float c = cos(a_rotation);
             float s = sin(a_rotation);
             vec2 scaled = a_position * a_scale;
@@ -1408,19 +1604,28 @@ class Renderer2D {
         uniform bool  u_useGlow;       // toggle glow on/off
         uniform float u_glowRadius;    // where glow falls to zero (in UV space)
         uniform float u_glowSoftness;  // how wide the fade‐band is
+        uniform sampler2D u_texture;
+        uniform bool u_useTexture;
        
         out vec4 outColor;
 
         void main(){
-            float dist = distance(v_uv, vec2(0.5));
+            vec4 baseColor = v_color;
+            
+            if (u_useTexture) {
+                vec4 texColor = texture(u_texture, v_uv);
+                baseColor = texColor * v_color;
+            }
+            
             float glow = 1.0;
             if(u_useGlow) {
                 float dist = distance(v_uv, vec2(0.5));
                 // smoothstep(edge0, edge1, x): 0 at x>=edge0, 1 at x<=edge1
                  glow = smoothstep(u_glowRadius, u_glowRadius - u_glowSoftness, dist);
-                }
-            vec3 col = v_color.rgb * glow;
-            float a   = v_color.a   * glow;
+            }
+            
+            vec3 col = baseColor.rgb * glow;
+            float a   = baseColor.a   * glow;
             outColor = vec4(col, a);
         }
         `;
@@ -1595,4 +1800,5 @@ export {
     buildPolygon,
     buildStrokeGeometry,
     buildTriangle,
+    buildTexturedSquare,
 };

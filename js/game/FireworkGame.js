@@ -20,8 +20,6 @@ class FireworkGame {
         this.fireworkCount = 0;
         this.autoLauncherCost = 10;
         this.selectedLauncherIndex = null;
-        this.crowdCount = 0;
-        this.lastSparklesPerSecond = 0;
         this.crowdThresholds = [1, 2, 3, 4, 5, 10, 15];
 
         this.resourceManager = new ResourceManager(this);
@@ -36,7 +34,6 @@ class FireworkGame {
     init() {
         this.fireworkCount = parseInt(localStorage.getItem('fireworkCount')) || 0;
         this.autoLauncherCost = parseInt(localStorage.getItem('autoLauncherCost')) || 10;
-        this.crowdCount = 0;
 
         // Load resources
         const savedResources = localStorage.getItem('resources');
@@ -68,7 +65,7 @@ class FireworkGame {
 
         // Initialize game components
         this.particleSystem = new InstancedParticleSystem(this.renderer2D, this.profiler);
-        this.crowd = new Crowd();
+        this.crowd = new Crowd(this.renderer2D);
 
         // Initialize launchers
         this.gameState.autoLaunchers.forEach(launcher => {
@@ -83,6 +80,12 @@ class FireworkGame {
             launcher.x = this.clampToLauncherBounds(launcher.x);
             this.createAutoLauncherMesh(launcher); // Create mesh for existing launchers
         });
+
+        // Initialize crowd
+        const initialSps = this.calculateTotalSparklesPerSecond();
+        const initialCrowd = this._calculateTargetCrowdCount(initialSps);
+        this.crowd.setCount(initialCrowd);
+        this.updateCrowdDisplay();
 
         // Load UI and events
         this.loadRecipes();
@@ -132,13 +135,13 @@ class FireworkGame {
 
     onWindowResize() {
 
-        this.renderer2D._updateProjectionMatrix(); 
+        this.renderer2D._updateProjectionMatrix();
         const viewBottomWorldY = this.renderer2D.cameraY - (this.renderer2D.virtualHeight / (2 * this.renderer2D.cameraZoom));
         const yPos = viewBottomWorldY + GAME_BOUNDS.OFFSET_MIN_Y;
         for (const launcher of this.gameState.autoLaunchers) {
             launcher.y = yPos;
             if (launcher.mesh) {
-                launcher.mesh.position.y = yPos; 
+                launcher.mesh.position.y = yPos;
             }
         }
     }
@@ -234,8 +237,14 @@ class FireworkGame {
                     recipeComponents = recipe.components;
                     trailEffect = recipe.trailEffect;
                 } else {
-                    recipeComponents = this.recipes[Math.floor(Math.random() * this.recipes.length)].components;
-                    trailEffect = this.recipes[Math.floor(Math.random() * this.recipes.length)].trailEffect;
+                    if (!this.recipes.length) {
+                        recipeComponents = this.currentRecipeComponents;
+                        trailEffect = this.currentTrailEffect;
+                    }
+                    else {
+                        recipeComponents = this.recipes[Math.floor(Math.random() * this.recipes.length)].components;
+                        trailEffect = this.recipes[Math.floor(Math.random() * this.recipes.length)].trailEffect;
+                    }
                 }
 
                 const components = recipeComponents || this.currentRecipeComponents;
@@ -258,19 +267,10 @@ class FireworkGame {
 
         // Update crowd based on sparkles per second
         const currentSps = this.calculateTotalSparklesPerSecond();
-        if (currentSps > this.lastSparklesPerSecond) {
-            for (const threshold of this.crowdThresholds) {
-                if (currentSps >= threshold && this.lastSparklesPerSecond < threshold) {
-                    this.crowdCount++;
-                    this.crowd.addPerson();
-                    this.updateCrowdDisplay();
-                }
-            }
-        }
-        this.lastSparklesPerSecond = currentSps;
-        this.updateCrowdDisplay();
+        const targetCrowdSize = this._calculateTargetCrowdCount(currentSps);
+        this.crowd.setCount(targetCrowdSize);
 
-        this.resourceManager.updateGoldFromCrowd(this.crowdCount);
+        this.resourceManager.updateGoldFromCrowd(this.crowd.people.length);
         this.resourceManager.update();
 
         this.crowd.update(deltaTime);
@@ -278,6 +278,16 @@ class FireworkGame {
         this.saveProgress();
 
         this.profiler.endFrame();
+    }
+
+    _calculateTargetCrowdCount(sps) {
+        let count = 0;
+        for (const threshold of this.crowdThresholds) {
+            if (sps >= threshold) {
+                count++;
+            }
+        }
+        return count;
     }
 
     initBackgroundColor() {
@@ -317,7 +327,6 @@ class FireworkGame {
         localStorage.setItem('currentRecipeComponents', JSON.stringify(this.currentRecipeComponents));
         localStorage.setItem('backgroundColor', document.getElementById('background-color').value);
         localStorage.setItem('selectedLauncherIndex', this.selectedLauncherIndex || '');
-        localStorage.setItem('crowdCount', this.crowdCount);
 
         localStorage.setItem('resources', JSON.stringify(this.resourceManager.save()));
     }
@@ -502,7 +511,6 @@ class FireworkGame {
     resetGame() {
         this.fireworkCount = 0;
         this.recipes = [];
-        this.crowdCount = 0;
         this.currentTrailEffect = 'fade';
         this.currentRecipeComponents = [{
             pattern: 'spherical', color: '#ff0000', size: 0.5, lifetime: 1.2, shape: 'sphere', spread: 1.0, secondaryColor: '#00ff00'
@@ -526,7 +534,7 @@ class FireworkGame {
 
         if (this.crowd) {
             this.crowd.dispose();
-            this.crowd = new Crowd(); // Re-initialize crowd
+            this.crowd = new Crowd(this.renderer2D); 
         }
 
 
@@ -536,7 +544,6 @@ class FireworkGame {
             this.particleSystem = new InstancedParticleSystem(this.renderer2D, this.profiler);
         }
 
-        this.lastSparklesPerSecond = 0;
         this.autoLauncherCost = 10;
 
         localStorage.clear();
@@ -642,6 +649,44 @@ class FireworkGame {
 
         localStorage.setItem('fireworkRecipes', JSON.stringify(this.recipes));
         this.updateRecipeList();
+    }
+
+    randomizeRecipe() {
+        for (let i = 0; i < this.currentRecipeComponents.length; i++) {
+            const possiblePatterns = ['spherical', 'ring', 'heart', 'burst', 'palm', 'willow', 'helix', 'spinner', 'star', 'brokenHeart', 'christmasTree'];
+            const possibleShapes = ['sphere', 'star'];
+            const randomHex = `#${Math.floor(Math.random() * 0xFFFFFF)
+                .toString(16)
+                .padStart(6, '0')}`;
+            const randomSecondaryHex = `#${Math.floor(Math.random() * 0xFFFFFF)
+                .toString(16)
+                .padStart(6, '0')}`;
+            const maxSize = 0.7;
+            const minSize = 0.3;
+            const size = Math.random() * (maxSize - minSize) + minSize;
+            const maxLifetime = 5.0;
+            const minLifetime = 1.5;
+            const lifetime = Math.random() * (maxLifetime - minLifetime) + minLifetime;
+            const maxSpread = 2.0;
+            const minSpread = 0.5;
+            const spread = Math.random() * (maxSpread - minSpread) + minSpread;
+            this.currentRecipeComponents[i] = {
+                pattern: possiblePatterns[Math.floor(Math.random() * possiblePatterns.length)],
+                color: randomHex,
+                secondaryColor: randomSecondaryHex,
+                size: size,
+                lifetime: lifetime,
+                shape: possibleShapes[Math.floor(Math.random() * possibleShapes.length)],
+                spread: spread,
+                enableTrail: Math.random() < 0.8,
+                trailLength: Math.floor(Math.random() * 10) + 1,
+                trailWidth: Math.random() * 2 + 0.5,
+            };
+        }
+        this.updateComponentsList();
+        this.updateUI();
+        this.saveCurrentRecipeComponents();
+        this.showNotification("Recipe randomized!");
     }
 
     loadRecipes() {
@@ -781,7 +826,6 @@ class FireworkGame {
             currentRecipeComponents: this.currentRecipeComponents,
             backgroundColor: localStorage.getItem('backgroundColor') || '#000000',
             selectedLauncherIndex: this.selectedLauncherIndex,
-            crowdCount: this.crowdCount,
             resources: this.resourceManager.save()
         };
         return JSON.stringify(data);
@@ -805,7 +849,6 @@ class FireworkGame {
         this.currentRecipeComponents = data.currentRecipeComponents || [{
             pattern: 'spherical', color: '#ff0000', size: 0.5, lifetime: 1.2, shape: 'sphere', spread: 1.0, secondaryColor: '#00ff00'
         }];
-        this.crowdCount = data.crowdCount || 0;
 
         const bgColor = data.backgroundColor || '#000000';
         document.body.style.backgroundColor = bgColor;
@@ -891,12 +934,12 @@ class FireworkGame {
         const progressBar = document.getElementById('threshold-progress');
 
         if (crowdCountElement) {
-            crowdCountElement.textContent = this.crowdCount;
+            crowdCountElement.textContent = this.crowd ? this.crowd.people.length : 0;
         }
 
         const currentSps = this.calculateTotalSparklesPerSecond();
         if (currentSpsElement) {
-            currentSpsElement.textContent = currentSps;
+            currentSpsElement.textContent = currentSps.toFixed(2);
         }
 
         const nextThreshold = this.crowdThresholds.find(t => t > currentSps) || 'Max';

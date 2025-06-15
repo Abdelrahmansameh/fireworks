@@ -44,6 +44,10 @@ class UIManager {
             this.game.saveCurrentRecipe();
         });
 
+        document.getElementById('randomize-recipe').addEventListener('click', () => {
+            this.game.randomizeRecipe();
+        });
+
         document.getElementById('erase-recipes').addEventListener('click', () => {
             this.showConfirmation(
                 "Confirm Erase Recipes",
