@@ -558,34 +558,79 @@ class Firework {
                     break;
 
                 case 'heart':
-                    const heartScale = spread;
-                    for (let i = 0; i < particleCount; i++) {
-                        const t = (i / particleCount) * Math.PI * 2;
-                        const xOffset = heartScale * (16 * Math.pow(Math.sin(t), 3));
-                        const yOffset = heartScale * (13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t));
-                        const angle = Math.atan2(yOffset, xOffset);
-                        const magnitude = speed * Math.sqrt(xOffset * xOffset + yOffset * yOffset) * 0.05;
-                        velocity.set(
-                            Math.cos(angle) * magnitude,
-                            Math.sin(angle) * magnitude
-                        );
-                        const index = this.particleSystem.addParticle(
-                            rocketPos.clone(),
-                            velocity.clone(),
-                            color,
-                            size,
-                            component.lifetime,
-                            gravity * (0.9 + Math.random() * 0.1),
-                            shape,
-                            acceleration,
-                            component.enableTrail,
-                            component.trailLength,
-                            component.trailWidth
-                        );
-                        if (index !== -1) this.particles[shape].add(index);
+                    {
+                        const heartScale = spread;
+                        for (let i = 0; i < particleCount; i++) {
+                            const t = (i / particleCount) * Math.PI * 2;
+                            const xOffset = heartScale * (16 * Math.pow(Math.sin(t), 3));
+                            const yOffset = heartScale * (13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t));
+                            const angle = Math.atan2(yOffset, xOffset);
+                            const magnitude = speed * Math.sqrt(xOffset * xOffset + yOffset * yOffset) * 0.05;
+                            velocity.set(
+                                Math.cos(angle) * magnitude,
+                                Math.sin(angle) * magnitude
+                            );
+                            const index = this.particleSystem.addParticle(
+                                rocketPos.clone(),
+                                velocity.clone(),
+                                color,
+                                size,
+                                component.lifetime,
+                                gravity * (0.9 + Math.random() * 0.1),
+                                shape,
+                                acceleration,
+                                component.enableTrail,
+                                component.trailLength,
+                                component.trailWidth
+                            );
+                            if (index !== -1) this.particles[shape].add(index);
+                        }
+                        break;
                     }
-                    break;
+                case 'brokenHeart':
+                    {
+                        const heartScale = spread;
+                        const pivotOffset = new Renderer2D.Vector2(0, -heartScale * 30);
 
+                        for (let i = 0; i < particleCount; i++) {
+                            const t = (i / particleCount) * Math.PI * 2;
+                            const xOffset = heartScale * (16 * Math.pow(Math.sin(t), 3));
+                            const yOffset = heartScale * (13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t));
+                            
+                            const particleOffset = new Renderer2D.Vector2(xOffset, yOffset);
+                            
+                            const angle = Math.atan2(yOffset, xOffset);
+                            const magnitude = speed * Math.sqrt(xOffset * xOffset + yOffset * yOffset) * 0.05;
+                            const unbrokenHeartVelocity = new Renderer2D.Vector2(
+                                Math.cos(angle) * magnitude,
+                                Math.sin(angle) * magnitude
+                            );
+
+                            const pivotToParticle = particleOffset.clone();
+                            pivotToParticle.subtract(pivotOffset);
+                            const rotation = new Renderer2D.Vector2(pivotToParticle.y, -pivotToParticle.x);
+                            
+                            const sign = (xOffset > 0) ? 1 : -1;
+                            const rotationSpeed = sign;
+                            rotation.scale(rotationSpeed);
+
+                            const index = this.particleSystem.addParticle(
+                                rocketPos.clone(),
+                                unbrokenHeartVelocity,
+                                color,
+                                size,
+                                component.lifetime,
+                                gravity * 1.3,
+                                shape,
+                                rotation,
+                                component.enableTrail,
+                                component.trailLength,
+                                component.trailWidth
+                            );
+                            if (index !== -1) this.particles[shape].add(index);
+                        }
+                        break;
+                    }
                 case 'star':
                     const spikes = 5;
                     const outerRadius = speed * spread;
@@ -672,6 +717,7 @@ class Firework {
                         }
                     }
                     break;
+
                 default:
                     for (let i = 0; i < particleCount; i++) {
                         const angle = Math.random() * Math.PI * 2;
