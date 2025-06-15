@@ -239,10 +239,11 @@ body {
 .component {
     border: none;
     padding: 0;
-    margin-bottom: 0;
+    margin-bottom: 15px;
     background: none;
-    border-radius: 0;
+    border-radius: 8px;
     box-shadow: none;
+    border: 1px solid #2e3f57;
 }
 
 .component h3 {
@@ -264,6 +265,28 @@ body {
     color: #c0392b;
 }
 
+.component-header {
+    background-color: #1a1f2a;
+    color: #45a29e;
+    padding: 8px 12px;
+    cursor: pointer;
+    border-radius: 5px;
+    margin-bottom: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: bold;
+}
+
+.component-header:hover {
+    background-color: #2e3f57;
+}
+
+.component-body {
+    padding: 0 10px 10px 10px;
+
+}
+
 #components-list {
     max-height: none;
     overflow: visible;
@@ -282,15 +305,12 @@ body {
     background: #3b4f6b;
 }
 
-
-
 #launcher-list {
     display: flex;
     flex-direction: column;
     gap: 10px;
     margin-bottom: 10px;
 }
-
 
 .launcher-card {
     background: #2a2f3a;
@@ -463,8 +483,6 @@ body {
     scrollbar-color: rgba(255, 255, 255, 0.2) rgba(0, 0, 0, 0.1);
 }
 
-
-
 .tab-content {
     position: absolute;
     top: 90px;
@@ -581,6 +599,45 @@ textarea {
     border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
+fieldset {
+    border: 1px solid #34495e;
+    border-radius: 5px;
+    padding: 10px;
+    margin-bottom: 15px;
+}
+
+legend {
+    color: #45a29e;
+    font-weight: bold;
+    padding: 0 5px;
+}
+
+.recipe-settings {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+.recipe-settings .recipes-option {
+    flex: 1 1 150px;
+}
+
+.recipe-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 5px;
+    border-bottom: 1px solid #2c3e50;
+}
+
+.recipe-item:last-child {
+    border-bottom: none;
+}
+
+.recipe-item button {
+    margin: 0;
+}
+
 .scrollable-panel {
     max-height: inherit;
     overflow-y: auto;
@@ -603,6 +660,16 @@ textarea {
 
 .danger-button:hover {
     background-color: #761f16;
+}
+
+.flex-row {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.flex-item {
+    flex: 1;
 }
 
 .crowd-info {

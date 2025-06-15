@@ -1222,8 +1222,10 @@ class Renderer2D {
         const mouseX = eventX - rect.left;
         const mouseY = eventY - rect.top;
 
-        const worldX = this.cameraX + (mouseX - this.canvas.clientWidth / 2) / this.scaleFactor / this.cameraZoom;
-        const worldY = this.cameraY - (mouseY - this.canvas.clientHeight / 2) / this.scaleFactor / this.cameraZoom;
+        const css_to_world_ratio = this.virtualHeight / this.canvas.clientHeight;
+
+        const worldX = this.cameraX + (mouseX - this.canvas.clientWidth / 2) * css_to_world_ratio / this.cameraZoom;
+        const worldY = this.cameraY - (mouseY - this.canvas.clientHeight / 2) * css_to_world_ratio / this.cameraZoom;
 
         return new Vector2(worldX, worldY);
     }

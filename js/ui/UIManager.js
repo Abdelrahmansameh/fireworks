@@ -106,9 +106,7 @@ class UIManager {
         gameContainer.addEventListener('pointerdown', (e) => {
             if (!this.game.isClickInsideUI(e)) {
                 e.preventDefault();
-                if (e.pointerType === 'touch') {
-                }
-
+    
                 const x = e.clientX;
                 const y = e.clientY;
 
@@ -177,9 +175,7 @@ class UIManager {
     handlePointerDown(e) {
         if (!this.game.isClickInsideUI(e)) {
             e.preventDefault();
-            if (e.pointerType === 'touch') {
-                e.target.setPointerCapture(e.pointerId);
-            }
+
             const worldPos = this.game.screenToWorld(e.clientX, e.clientY);
             this.handlePointerClick(worldPos, e);
         }
@@ -202,10 +198,6 @@ class UIManager {
 
             document.body.style.cursor = 'grabbing';
 
-            if (event.pointerType === 'touch' && event.target) {
-                event.target.setPointerCapture(event.pointerId);
-            }
-
             document.addEventListener('pointermove', this.pointerMoveHandler, { passive: false });
             document.addEventListener('pointerup', this.pointerUpHandler);
             document.addEventListener('pointercancel', this.pointerUpHandler);
@@ -215,9 +207,7 @@ class UIManager {
             this.lastPointerX = event.clientX;
             document.body.style.cursor = 'grabbing';
 
-            if (event.pointerType === 'touch' && event.target) {
-                event.target.setPointerCapture(event.pointerId);
-            }
+
 
             document.addEventListener('pointermove', this.pointerMoveHandler, { passive: false });
             document.addEventListener('pointerup', this.pointerUpHandler);
@@ -263,22 +253,11 @@ class UIManager {
 
     pointerUpHandler(e) {
         if (this.isDragging || this.isScrollDragging) {
-            const isTouch = e.pointerType === 'touch';
 
-            if (isTouch && e.target) {
-                e.target.releasePointerCapture(e.pointerId);
-            }
-
-            if (isTouch && !this.game.isClickInsideUI(e)) {
-                const worldPos = this.game.screenToWorld(e.clientX, e.clientY);
-                for (let i = 0; i < 1; i++) {
-                    this.game.launchFireworkAt(worldPos.x);
-                }
-            }
 
             if (this.isScrollDragging) {
                 const deltaX = Math.abs(e.clientX - this.lastPointerX);
-                if (!isTouch && deltaX < 20 && !this.game.isClickInsideUI(e)) {
+                if (deltaX < 20 && !this.game.isClickInsideUI(e)) {
                     const worldPos = this.game.screenToWorld(e.clientX, e.clientY);
                     for (let i = 0; i < 1; i++) {
                         this.game.launchFireworkAt(worldPos.x);
@@ -511,67 +490,79 @@ class UIManager {
             componentDiv.classList.add('component');
 
             componentDiv.innerHTML = `
-                <h3>Component ${index + 1}</h3>
-                <div class="recipes-option flex-row">
-                    <div class="flex-item">
-                        <label>Pattern:</label>
-                        <select class="pattern-select" data-index="${index}">
-                            <option value="spherical">Spherical</option>
-                            <option value="ring">Ring</option>
-                            <option value="heart">Heart</option>
-                            <option value="burst">Burst</option>
-                            <option value="palm">Palm</option>
-                            <option value="willow">Willow</option>
-                            <option value="helix">Helix</option>
-                            <option value="star">Star</option>
-                            <option value="brokenHeart">Broken Heart</option>
-                            <option value="christmasTree">Christmas Tree</option>
-                        </select>
+                <div class="component-header">
+                    <span>Component ${index + 1}</span>
+                    <button class="remove-component" data-index="${index}">Remove</button>
+                </div>
+                <div class="component-body">
+                    <div class="recipes-option flex-row">
+                        <div class="flex-item">
+                            <label>Pattern:</label>
+                            <select class="pattern-select" data-index="${index}">
+                                <option value="spherical">Spherical</option>
+                                <option value="ring">Ring</option>
+                                <option value="heart">Heart</option>
+                                <option value="burst">Burst</option>
+                                <option value="palm">Palm</option>
+                                <option value="willow">Willow</option>
+                                <option value="helix">Helix</option>
+                                <option value="star">Star</option>
+                                <option value="brokenHeart">Broken Heart</option>
+                                <option value="christmasTree">Christmas Tree</option>
+                            </select>
+                        </div>
+                        <div class="flex-item">
+                            <label>Particle:</label>
+                            <select class="shape-select" data-index="${index}">
+                                <option value="sphere">Sphere</option>
+                                <option value="star">Star</option>
+                                <option value="ring">Ring</option>
+                                <option value="crystalDroplet">Crystal Droplet</option>
+                                <option value="sliceBurst">Slice Burst</option>
+                            </select>
+                        </div>
                     </div>
-                    <div class="flex-item">
-                        <label>Shape:</label>
-                        <select class="shape-select" data-index="${index}">
-                            <option value="sphere">Sphere</option>
-                            <option value="star">Star</option>
-                            <option value="ring">Ring</option>
-                            <option value="crystalDroplet">Crystal Droplet</option>
-                            <option value="sliceBurst">Slice Burst</option>
-                        </select>
+                    <div class="recipes-option">
+                        <label>Primary Color:</label>
+                        <input type="color" class="color-input" data-index="${index}" value="${component.color}">
+                    </div>
+                    <div class="recipes-option secondary-color-container" style="display:none;">
+                        <label>Secondary Color:</label>
+                        <input type="color" class="secondary-color-input" data-index="${index}" value="${component.secondaryColor}">
+                    </div>
+                    <div class="recipes-option">
+                        <label>Shell Size:</label>
+                        <input type="range" class="size-select" data-index="${index}" min="0.3" max="0.7" step="0.05" value="${component.size}">
+                    </div>
+                    <div class="recipes-option">
+                        <label>Lifetime:</label>
+                        <input type="range" class="lifetime-select" data-index="${index}" min="1.5" max="5" step="0.1" value="${component.lifetime}">
+                    </div>
+                    <div class="recipes-option">
+                        <label>Spread:</label>
+                        <input type="range" class="spread-select" data-index="${index}" min="0.5" max="2" step="0.1" value="${component.spread}">
+                    </div>
+                    <div class="recipes-option">
+                        <label>Trail:</label>
+                        <input type="checkbox" class="trail-toggle" data-index="${index}" ${component.enableTrail ? 'checked' : ''}>
+                    </div>
+                    <div class="recipes-option trail-options" style="display: ${component.enableTrail ? 'block' : 'none'};">
+                        <label>Trail Length:</label>
+                        <input type="range" class="trail-length-select" data-index="${index}" min="1" max="15" step="0.5" value="${component.trailLength}">
+                        <label>Trail Width:</label>
+                        <input type="range" class="trail-width-select" data-index="${index}" min="0.5" max="7" step="0.1" value="${component.trailWidth}">
                     </div>
                 </div>
-                <div class="recipes-option">
-                    <label>Primary Color:</label>
-                    <input type="color" class="color-input" data-index="${index}" value="${component.color}">
-                </div>
-                <div class="recipes-option secondary-color-container" style="display:none;">
-                    <label>Secondary Color:</label>
-                    <input type="color" class="secondary-color-input" data-index="${index}" value="${component.secondaryColor}">
-                </div>
-                <div class="recipes-option">
-                    <label>Shell Size:</label>
-                    <input type="range" class="size-select" data-index="${index}" min="0.3" max="0.7" step="0.05" value="${component.size}">
-                </div>
-                <div class="recipes-option">
-                    <label>Lifetime:</label>
-                    <input type="range" class="lifetime-select" data-index="${index}" min="1.5" max="5" step="0.1" value="${component.lifetime}">
-                </div>
-                <div class="recipes-option">
-                    <label>Spread:</label>
-                    <input type="range" class="spread-select" data-index="${index}" min="0.5" max="2" step="0.1" value="${component.spread}">
-                </div>
-                <div class="recipes-option">
-                    <label>Trail:</label>
-                    <input type="checkbox" class="trail-toggle" data-index="${index}" ${component.enableTrail ? 'checked' : ''}>
-                </div>
-                <div class="recipes-option trail-options" style="display: ${component.enableTrail ? 'block' : 'none'};">
-                    <label>Trail Length:</label>
-                    <input type="range" class="trail-length-select" data-index="${index}" min="1" max="15" step="0.5" value="${component.trailLength}">
-                    <label>Trail Width:</label>
-                    <input type="range" class="trail-width-select" data-index="${index}" min="0.5" max="7" step="0.1" value="${component.trailWidth}">
-                </div>
-                <button class="remove-component" data-index="${index}">Remove Component</button>
             `;
             componentsList.appendChild(componentDiv);
+
+            const header = componentDiv.querySelector('.component-header');
+            const body = componentDiv.querySelector('.component-body');
+
+            header.addEventListener('click', (e) => {
+                if (e.target.classList.contains('remove-component')) return;
+                body.style.display = body.style.display === 'none' ? 'grid' : 'none';
+            });
 
             const patternSelect = componentDiv.querySelector('.pattern-select');
             patternSelect.value = component.pattern;
@@ -712,7 +703,7 @@ class UIManager {
                 <div class="recipes-option">
                     <label>Assign Recipe:</label>
                     <select class="recipe-select" data-index="${index}">
-                        <option value="">-- Select a Recipe --</option>
+                        <option value="">-- Shoot a random recipe --</option>
                         ${this.game.recipes.map((recipe, rIndex) => `
                             <option value="${rIndex}" ${launcher.assignedRecipeIndex === rIndex ? 'selected' : ''}>${recipe.name}</option>
                         `).join('')}

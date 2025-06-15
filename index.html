@@ -99,10 +99,18 @@
 
     <div class="tab-content" id="recipes-content">
         <div class="panel scrollable-panel">
-            <h2 class="panel-title">Recipes</h2>
+            <h2 class="panel-title">Recipe Editor</h2>
 
+            <fieldset class="recipe-settings">
+                <legend>Name</legend>
+                <div class="recipes-option">
+                    <input type="text" id="recipe-name" placeholder="Enter recipe name">
+                </div>
+            </fieldset>
+
+            <fieldset class="recipe-settings">
+            <legend>Rocket</legend>
             <div class="recipes-option">
-                <label>Rocket Effect:</label>
                 <select id="recipe-trail-effect">
                     <option value="fade">Fade</option>
                     <option value="sparkle">Sparkle</option>
@@ -111,27 +119,30 @@
                     <option value="none">None</option>
                 </select>
             </div>
-
-            <div id="components-list"></div>
-            <button id="add-component">Add Component</button>
-
-            <div class="recipes-option">
-                <label>Recipe Name:</label>
-                <input type="text" id="recipe-name" placeholder="Enter recipe name">
-            </div>
-
-            <button id="save-recipe">Save Recipe</button>
-            <button id="erase-recipes">Erase All Recipes</button>
+            </fieldset>
+            <fieldset>
+                <legend>Explosion</legend>
+                <div id="components-list"></div>
+                <button id="add-component">Add Component</button>
+            </fieldset>
+            
+            <fieldset class="recipe-actions">
+                <button id="save-recipe">Save Recipe</button>
+                <button id="erase-recipes" class="danger-button">Erase All Recipes</button>
+            </fieldset>
 
             <div class="saved-recipes">
                 <h3>Saved Recipes</h3>
                 <div id="recipe-list"></div>
             </div>
 
-            <div class="recipes-option" style="margin-top: 20px; border-top: 1px solid #34495e; padding-top: 20px;">
-                <label>Background Color:</label>
-                <input type="color" id="background-color" value="#000000">
-            </div>
+            <fieldset>
+                <legend>Scene</legend>
+                <div class="recipes-option" style="margin-top: 10px;">
+                    <label for="background-color">Background Color:</label>
+                    <input type="color" id="background-color" value="#000000">
+                </div>
+            </fieldset>
         </div>
     </div>
 
@@ -157,7 +168,7 @@
                 <button id="buy-auto-launcher">Buy Auto-Launcher</button>
                 <button id="upgrade-all-launchers">Upgrade All</button>
                 <button id="spread-launchers">Spread Launchers Evenly</button>
-                <button id="randomize-launcher-recipes">Assign recipees at random</button>
+                <button id="randomize-launcher-recipes">Assign random to all Launchers</button>
             </div>
             <br>
             <div id="launcher-list"></div>

@@ -234,8 +234,8 @@ class FireworkGame {
                     recipeComponents = recipe.components;
                     trailEffect = recipe.trailEffect;
                 } else {
-                    recipeComponents = this.currentRecipeComponents;
-                    trailEffect = this.currentTrailEffect;
+                    recipeComponents = this.recipes[Math.floor(Math.random() * this.recipes.length)].components;
+                    trailEffect = this.recipes[Math.floor(Math.random() * this.recipes.length)].trailEffect;
                 }
 
                 const components = recipeComponents || this.currentRecipeComponents;
@@ -929,7 +929,7 @@ class FireworkGame {
         }
 
         const totalWidth = GAME_BOUNDS.LAUNCHER_MAX_X - GAME_BOUNDS.LAUNCHER_MIN_X;
-        const spacing = Math.min(totalWidth / (launchers.length + 1), 400);
+        const spacing = Math.min(totalWidth / (launchers.length + 1), 200);
 
         launchers.forEach((launcher, index) => {
             const newX = GAME_BOUNDS.LAUNCHER_MIN_X + spacing * (index + 1);
@@ -944,23 +944,15 @@ class FireworkGame {
 
     randomizeLauncherRecipes() {
         const launchers = this.gameState.autoLaunchers;
-        if (launchers.length === 0) {
-            this.showNotification("No auto-launchers to assign recipes to!");
-            return;
-        }
-        if (this.recipes.length === 0) {
-            this.showNotification("No recipes available to assign!");
-            return;
-        }
+
 
         launchers.forEach(launcher => {
-            const randomIndex = Math.floor(Math.random() * this.recipes.length);
-            launcher.assignedRecipeIndex = randomIndex;
+            launcher.assignedRecipeIndex = -1;
         });
 
         this.updateLauncherList();
         this.saveProgress();
-        this.showNotification("Recipes randomly assigned to all auto-launchers!");
+        this.showNotification("All auto-launchers are now shooting random recipes!");
     }
 }
 

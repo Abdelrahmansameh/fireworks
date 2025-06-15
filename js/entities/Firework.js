@@ -31,7 +31,7 @@ class Firework {
             indices: geometry.indices,
             maxInstances: FIREWORK_CONFIG.rocketTrailLength,
             zIndex: 0,
-            blendMode: Renderer2D.BlendMode.ADDITIVE, 
+            blendMode: Renderer2D.BlendMode.ADDITIVE,
             useGlow: false,
         });
     }
@@ -403,10 +403,10 @@ class Firework {
                         const horizontalDrift = (Math.random() - 0.5) * 30;
                         const initialSpeed = speed * (0.7 + Math.random() * 0.3);
                         velocity.set(
-                            (Math.cos(angle) * initialSpeed + horizontalDrift)  * spread,
+                            (Math.cos(angle) * initialSpeed + horizontalDrift) * spread,
                             -Math.sin(angle) * initialSpeed * 0.8
                         );
-                        const initialOffset = new Renderer2D.Vector2( i * 0.2 + (Math.random() - 0.5) * 10, (Math.random() - 0.5) * 20);
+                        const initialOffset = new Renderer2D.Vector2(i * 0.2 + (Math.random() - 0.5) * 10, (Math.random() - 0.5) * 20);
                         const index = this.particleSystem.addParticle(
                             rocketPos.clone().add(initialOffset),
                             velocity.clone(),
@@ -418,7 +418,7 @@ class Firework {
                             acceleration,
                             component.enableTrail,
                             component.trailLength,
-                            component.trailWidth, 
+                            component.trailWidth,
                             0.7
                         );
                         if (index !== -1) this.particles[shape].add(index);
@@ -450,7 +450,7 @@ class Firework {
                             const index = this.particleSystem.addParticle(
                                 rocketPos.clone(),
                                 velocity.clone(),
-                                secondaryColor, 
+                                secondaryColor,
                                 size,
                                 component.lifetime,
                                 gravity,
@@ -626,7 +626,53 @@ class Firework {
                         if (index !== -1) this.particles[shape].add(index);
                     }
                     break;
+                case 'helix':
+                    const helixRadius = 0.5;
+                    const riseSpeed = speed * 0.1 * spread;
+                    const rotationSpeed = 2;
+                    const particlesPerStream = 100;
+                    const verticalSpacing = 0.1;
+                    const spreadFactor = 0.1;
 
+                    for (let stream = 0; stream < 2; stream++) {
+                        const streamOffset = stream * Math.PI;
+                        for (let i = 0; i < particlesPerStream; i++) {
+                            const t = (i / particlesPerStream) * Math.PI * 2;
+                            const angle = t + streamOffset;
+
+                            const randomSpread = (Math.random() - 0.5) * spreadFactor;
+                            const offset = new Renderer2D.Vector2(
+                                Math.cos(angle) * helixRadius * (1 + randomSpread),
+                                -i * verticalSpacing
+                            );
+
+                            velocity.set(
+                                -Math.sin(angle) * rotationSpeed,
+                                riseSpeed * (1 + randomSpread)
+                            );
+                            const particleColor = new Renderer2D.Color();
+                            if (stream === 1) {
+                                particleColor.copy(secondaryColor);
+                            } else {
+                                particleColor.copy(color);
+                            }
+
+                            const index = this.particleSystem.addParticle(
+                                rocketPos.clone().add(offset),
+                                velocity.clone(),
+                                particleColor,
+                                size,
+                                component.lifetime,
+                                gravity * 0.2,
+                                shape,
+                                acceleration,
+                                component.enableTrail,
+                                0
+                            );
+                            if (index !== -1) this.particles[shape].add(index);
+                        }
+                    }
+                    break;
                 default:
                     for (let i = 0; i < particleCount; i++) {
                         const angle = Math.random() * Math.PI * 2;
