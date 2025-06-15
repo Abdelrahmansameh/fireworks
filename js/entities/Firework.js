@@ -671,6 +671,42 @@ class Firework {
                         if (index !== -1) this.particles[shape].add(index);
                     }
                     break;
+                case 'spinner':
+                    {
+                        const numArms = 15;
+                        const armAngleWidth = 0.1;
+
+                        for (let i = 0; i < particleCount; i++) {
+                            const armIndex = i % numArms;
+                            const armBaseAngle = (armIndex / numArms) * Math.PI * 2;
+                            
+                            const angle = armBaseAngle + (Math.random() - 0.5) * armAngleWidth;
+
+                            const radialSpeed = speed * 1 * (0.8 + Math.random() * 0.4);
+                            const velocity = new Renderer2D.Vector2(Math.cos(angle), Math.sin(angle));
+                            velocity.scale(radialSpeed);
+
+                            const spinForce = spread * 50;
+                            const acceleration = new Renderer2D.Vector2(-Math.sin(angle), Math.cos(angle));
+                            acceleration.scale(spinForce);
+
+                            const index = this.particleSystem.addParticle(
+                                rocketPos.clone(),
+                                velocity,
+                                color,
+                                size,
+                                component.lifetime,
+                                gravity,
+                                shape,
+                                acceleration,
+                                component.enableTrail,
+                                component.trailLength,
+                                component.trailWidth
+                            );
+                            if (index !== -1) this.particles[shape].add(index);
+                        }
+                        break;
+                    }
                 case 'helix':
                     const helixRadius = 3 * spread;
                     const riseSpeed = speed * 0.1 * spread;

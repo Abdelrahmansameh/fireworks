@@ -506,6 +506,7 @@ class UIManager {
                                 <option value="palm">Palm</option>
                                 <option value="willow">Willow</option>
                                 <option value="helix">Helix</option>
+                                <option value="spinner">Spinner</option>
                                 <option value="star">Star</option>
                                 <option value="brokenHeart">Broken Heart</option>
                                 <option value="christmasTree">Christmas Tree</option>

@@ -12,7 +12,7 @@ const FIREWORK_CONFIG = {
     particleSize: 5.0,
     particleDensity: 100,
     ascentSpeed: 350,
-    rocketTrailLength: 20,
+    rocketTrailLength: 60,
     rocketSize: .5,
     rocketTrailSize: 1.2,
     minExplosionHeightPercent: 0.4,
@@ -23,14 +23,15 @@ const FIREWORK_CONFIG = {
     patternGravities: {
         spherical: 9.81,
         ring: 8.0,
-        heart: 6.0,
-        star: 7.0,
+        heart: 0.3,
+        star: 0.5,
         burst: 9.81,
         palm: 5.0,
-        willow: 20,
-        helix: 3.0,
-        brokenHeart: 6.0,
-        christmasTree: 7.0
+        willow: 0.2,
+        christmasTree: 0.4,
+        brokenHeart: 0.3,
+        spinner: 0.3,
+        default: 0.7
     },
     supportedShapes: ['sphere', 'star', 'ring', 'crystalDroplet', 'sliceBurst']
 };
