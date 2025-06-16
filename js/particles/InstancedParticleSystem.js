@@ -108,6 +108,10 @@ class InstancedParticleSystem {
         const idx = this.activeCounts[shape];
         if (idx >= this.maxParticles) return -1;
 
+        if (enableTrail) {
+            trailLength = Math.max(1, Math.round(trailLength));
+        }
+
         trailLength = Math.min(trailLength, this.maxTrailPoints);
 
         const base = idx * this.strideFloats;
