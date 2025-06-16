@@ -657,8 +657,8 @@ class Firework {
                             radius = outerRadius * (1 + (Math.random() * 0.2 - 0.1));
                         }
 
-                        const radiusVariation = 1 + (Math.random() * 0.2 - 0.2) * (starCopy > 0 ? 1 : 0);
-                        const angleVariation = (Math.random() * 0.1 - 0.1) * (starCopy > 0 ? 1 : 0);
+                        const radiusVariation = 1 + (Math.random() * 0.5 - 0.2) * (starCopy > 0 ? 1 : 0);
+                        const angleVariation = (Math.random() * 0.2 - 0.2) * (starCopy > 0 ? 1 : 0);
 
                         velocity.set(
                             Math.cos(angle + angleVariation) * radius * radiusVariation,
