@@ -745,3 +745,7 @@ body {
     position: fixed;
     z-index: 10;
 }
+
+* {
+    touch-action: manipulation;
+}
