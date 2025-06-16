@@ -28,7 +28,9 @@ body {
     background: none;
     z-index: 1000;
     height: 10vh;
+    pointer-events: none;
 }
+
 
 .tab-bar {
     position: relative;
@@ -42,6 +44,11 @@ body {
     flex-shrink: 0;
     max-width: calc(100vw - 20px);
     align-self: flex-start;
+    pointer-events: none;
+}
+
+.top-bar-container > * {
+    pointer-events: auto;
 }
 
 .collapse-button {
