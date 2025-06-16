@@ -26,15 +26,15 @@ class UIManager {
         document.getElementById('add-component').addEventListener('click', () => {
             this.game.currentRecipeComponents.push({
                 pattern: 'spherical',
-                color: '#ff0000',
+                color: '#d07916',
                 size: 0.5,
-                lifetime: 1.2,
+                lifetime: 3.7,
                 shape: 'sphere',
-                spread: 1.0,
+                spread: 1.5,
                 secondaryColor: '#00ff00',
-                enableTrail: false,
-                trailLength: 4,
-                trailWidth: 1.5,
+                enableTrail: true,
+                trailLength: 11,
+                trailWidth: 2.6,
             });
             this.game.updateComponentsList();
             this.game.saveCurrentRecipeComponents();

@@ -1541,7 +1541,6 @@ class Renderer2D {
         attribute vec2 a_position;
         attribute vec2 a_texCoord;
         uniform mat4 u_matrix;
-        uniform vec4 u_color; // not used in vertex, but we unify usage
         varying vec2 v_texCoord;
         void main(){
             gl_Position = u_matrix * vec4(a_position, 0.0, 1.0);

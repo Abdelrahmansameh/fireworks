@@ -39,6 +39,18 @@ const FIREWORK_CONFIG = {
     supportedShapes: ['sphere', 'star', 'ring', 'crystalDroplet', 'sliceBurst']
 };
 
+const DEFAULT_RECIPE_COMPONENTS = [{
+    pattern: 'spherical',
+    color: '#d07916',
+    size: 0.5,
+    lifetime: 3.7,
+    shape: 'sphere',
+    spread: 1.5,
+    secondaryColor: '#00ff00',
+    enableTrail: true,
+    trailLength: 11,
+    trailWidth: 2.6,}];
+
 const GAME_BOUNDS = {
     LAUNCHER_MIN_X: 100,
     LAUNCHER_MAX_X: 4000,
@@ -51,4 +63,4 @@ const GAME_BOUNDS = {
     CROWD_Y: -510
 };
 
-export { FIREWORK_CONFIG, GAME_BOUNDS };
+export { FIREWORK_CONFIG, GAME_BOUNDS, DEFAULT_RECIPE_COMPONENTS };

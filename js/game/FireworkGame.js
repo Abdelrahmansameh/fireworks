@@ -1,4 +1,4 @@
-import { FIREWORK_CONFIG, GAME_BOUNDS } from '../config/config.js';
+import { FIREWORK_CONFIG, GAME_BOUNDS, DEFAULT_RECIPE_COMPONENTS } from '../config/config.js';
 import InstancedParticleSystem from '../particles/InstancedParticleSystem.js';
 import Crowd from '../entities/Crowd.js';
 import Firework from '../entities/Firework.js';
@@ -512,9 +512,7 @@ class FireworkGame {
         this.fireworkCount = 0;
         this.recipes = [];
         this.currentTrailEffect = 'fade';
-        this.currentRecipeComponents = [{
-            pattern: 'spherical', color: '#ff0000', size: 0.5, lifetime: 1.2, shape: 'sphere', spread: 1.0, secondaryColor: '#00ff00'
-        }];
+        this.currentRecipeComponents = [...DEFAULT_RECIPE_COMPONENTS];
 
         this.resourceManager.reset();
 
@@ -605,9 +603,7 @@ class FireworkGame {
                 }
             });
         } else {
-            this.currentRecipeComponents = [{
-                pattern: 'spherical', color: '#ff0000', size: 0.5, lifetime: 1.2, shape: 'sphere', spread: 1.0, secondaryColor: '#00ff00'
-            }];
+            this.currentRecipeComponents = [...DEFAULT_RECIPE_COMPONENTS];
         }
         if (savedTrailEffect) {
             this.currentTrailEffect = savedTrailEffect;
@@ -846,9 +842,7 @@ class FireworkGame {
         this.autoLauncherCost = data.autoLauncherCost || 10;
         this.recipes = data.recipes || [];
         this.currentTrailEffect = data.currentTrailEffect || 'fade';
-        this.currentRecipeComponents = data.currentRecipeComponents || [{
-            pattern: 'spherical', color: '#ff0000', size: 0.5, lifetime: 1.2, shape: 'sphere', spread: 1.0, secondaryColor: '#00ff00'
-        }];
+        this.currentRecipeComponents = data.currentRecipeComponents || [...DEFAULT_RECIPE_COMPONENTS];
 
         const bgColor = data.backgroundColor || '#000000';
         document.body.style.backgroundColor = bgColor;
