@@ -12,7 +12,7 @@ const FIREWORK_CONFIG = {
     particleSize: 5.0,
     particleDensity: 100,
     ascentSpeed: 350,
-    rocketTrailLength: 60,
+    rocketTrailLength: 30,
     rocketSize: .5,
     rocketTrailSize: 1.2,
     minExplosionHeightPercent: 0.4,

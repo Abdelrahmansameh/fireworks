@@ -291,7 +291,7 @@ class FireworkGame {
     }
 
     initBackgroundColor() {
-        const savedColor = localStorage.getItem('backgroundColor') || '#000000';
+        const savedColor = localStorage.getItem('backgroundColor') || '#171717';
 
         const initColorPicker = () => {
             const colorPicker = document.getElementById('background-color');
