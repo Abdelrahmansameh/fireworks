@@ -689,9 +689,9 @@ class Firework {
 
                         for (let i = 0; i < particleCount; i++) {
                             const armIndex = Math.floor(i / particlesPerArm) ;
-                            let currentAngle = (armIndex / numArms) * Math.PI * 2 + ( Math.random() - 0.5) * 20;
+                            let currentAngle = (armIndex / numArms) * Math.PI * 2 + ( Math.random() - 0.5) * 10;
 
-                            const radialSpeed = spread * 30 + ( Math.random() - 0.5) * 20;
+                            const radialSpeed = spread * 30 + ( Math.random() - 0.5) * 10;
                             let currentRadius = 0;
 
                             const spinSpeed = 2;
