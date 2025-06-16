@@ -29,7 +29,7 @@ const FIREWORK_CONFIG = {
         brocade: 10,
         burst: 9.81,
         palm: 5.0,
-        willow: 0.2,
+        willow: 20,
         christmasTree: 0.4,
         brokenHeart: 2,
         spinner: 2,
