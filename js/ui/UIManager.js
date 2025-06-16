@@ -110,13 +110,17 @@ class UIManager {
         gameContainer.addEventListener('pointerdown', (e) => {
             if (!this.game.isClickInsideUI(e)) {
                 e.preventDefault();
-    
+
                 const x = e.clientX;
                 const y = e.clientY;
 
                 const worldPos = this.game.screenToWorld(x, y);
             }
         });
+
+        document.addEventListener('gesturestart', e => e.preventDefault());
+        document.addEventListener('gesturechange', e => e.preventDefault());
+        document.addEventListener('gestureend', e => e.preventDefault());
     }
 
     bindEvents() {
@@ -244,7 +248,7 @@ class UIManager {
             } else {
                 this.game.renderer2D.cameraX = Math.max(minCameraX, Math.min(maxCameraX, this.game.renderer2D.cameraX));
             }
-            
+
             this.game.renderer2D.setCamera({
                 x: this.game.renderer2D.cameraX,
                 y: this.game.renderer2D.cameraY,
@@ -285,7 +289,7 @@ class UIManager {
             return;
         }
 
-        const wheelScrollSpeed = 0.05; 
+        const wheelScrollSpeed = 0.05;
         const scrollAmount = event.deltaY * wheelScrollSpeed;
 
         this.game.renderer2D.cameraX += scrollAmount;
@@ -293,14 +297,14 @@ class UIManager {
         const viewHalfWidth = (this.game.renderer2D.canvas.width / this.game.renderer2D.cameraZoom) / 2;
         const minCameraX = GAME_BOUNDS.SCROLL_MIN_X + viewHalfWidth;
         const maxCameraX = GAME_BOUNDS.SCROLL_MAX_X - viewHalfWidth;
-        
+
         // Ensure minCameraX is not greater than maxCameraX
         if (minCameraX > maxCameraX) {
             this.game.renderer2D.cameraX = (GAME_BOUNDS.SCROLL_MIN_X + GAME_BOUNDS.SCROLL_MAX_X) / 2;
         } else {
             this.game.renderer2D.cameraX = Math.max(minCameraX, Math.min(maxCameraX, this.game.renderer2D.cameraX));
         }
-        
+
         this.game.renderer2D.setCamera({
             x: this.game.renderer2D.cameraX,
             y: this.game.renderer2D.cameraY,

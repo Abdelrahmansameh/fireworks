@@ -729,6 +729,7 @@ body {
     background-color: #000;
     color: #eee;
     font-family: Arial, sans-serif;
+    touch-action: manipulation;
 }
 
 #game-container {
