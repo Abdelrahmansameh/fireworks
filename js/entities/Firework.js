@@ -686,7 +686,7 @@ class Firework {
                         const explosionCenter = this.rocket.position.clone();
                         const numArms = 20;
                         const particlesPerArm = Math.floor(particleCount / numArms);
-
+                        const maxRadius = spread * 50;
                         for (let i = 0; i < particleCount; i++) {
                             const armIndex = Math.floor(i / particlesPerArm) ;
                             let currentAngle = (armIndex / numArms) * Math.PI * 2 + ( Math.random() - 0.5) * 10;
@@ -697,7 +697,11 @@ class Firework {
                             const spinSpeed = 2;
 
                             const updateFn = (pState, delta) => {
-                                currentRadius += radialSpeed * delta;
+                                // soft ease into  max radius
+                                currentRadius = currentRadius + (maxRadius - currentRadius) * delta;
+                                if (currentRadius >- maxRadius) {
+                                    currentRadius += radialSpeed * delta * 0.1;
+                                }
                                 currentAngle += spinSpeed * delta;
 
                                 pState.position.x = explosionCenter.x + Math.cos(currentAngle) * currentRadius;
@@ -735,11 +739,14 @@ class Firework {
 
                             const radialSpeed = speed * 2 * (0.1 + Math.random() * 0.4);
                             let currentRadius = (i % particlesPerArm) * 0.02 * spread;
-
+                            const maxRadius = spread * 50 + (i % particlesPerArm) * 5 ;
                             const spinSpeed = 2.5;
 
                             const updateFn = (pState, delta) => {
                                 currentRadius += pState.velocity.length() * delta * (i + 1 % particlesPerArm + 1) * 0.02;
+                                if (currentRadius > maxRadius) {
+                                    currentRadius = maxRadius;
+                                }
                                 currentAngle += spinSpeed * delta;
 
                                 pState.position.x = explosionCenter.x + Math.cos(currentAngle + i * 2) * currentRadius;
@@ -749,7 +756,7 @@ class Firework {
 
                             const index = this.particleSystem.addParticle(
                                 rocketPos.clone(),
-                                new Renderer2D.Vector2(0, 0),
+                                new Renderer2D.Vector2(10, 10),
                                 color,
                                 size,
                                 component.lifetime,
