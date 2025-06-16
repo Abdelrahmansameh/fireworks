@@ -653,7 +653,7 @@ class FireworkGame {
 
     randomizeRecipe() {
         for (let i = 0; i < this.currentRecipeComponents.length; i++) {
-            const possiblePatterns = ['spherical', 'ring', 'heart', 'burst', 'palm', 'willow', 'helix', 'spinner', 'star', 'brokenHeart', 'christmasTree'];
+            const possiblePatterns = ['spherical', 'ring', 'heart', 'burst', 'palm', 'willow', 'helix', 'spinner', 'spinningtails', 'star', 'brokenHeart', 'christmasTree'];
             const possibleShapes = ['sphere', 'star'];
             const randomHex = `#${Math.floor(Math.random() * 0xFFFFFF)
                 .toString(16)

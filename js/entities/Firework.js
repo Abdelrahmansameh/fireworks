@@ -264,7 +264,7 @@ class Firework {
         this.trailParticles = [];
 
         this.components.forEach(component => {
-            const particleCount = Math.floor(FIREWORK_CONFIG.particleDensity * component.size);
+            const particleCount = Math.floor(FIREWORK_CONFIG.particleDensity);
             const pattern = component.pattern;
             const gravity = FIREWORK_CONFIG.gravityMultiplier * FIREWORK_CONFIG.patternGravities[pattern] || FIREWORK_CONFIG.patternGravities.default;
             const speed = FIREWORK_CONFIG.baseSpeed * component.size;
@@ -289,31 +289,40 @@ class Firework {
             const spread = component.spread;
 
             switch (pattern) {
+                case 'solidsphere':
                 case 'spherical':
-                    for (let i = 0; i < particleCount; i++) {
-                        const angle = (i / particleCount) * Math.PI * 2;
-                        const magnitude = speed * (0.8 + Math.random() * 0.4) * spread;
-                        velocity.set(
-                            Math.cos(angle) * magnitude,
-                            Math.sin(angle) * magnitude
-                        );
-                        const index = this.particleSystem.addParticle(
-                            rocketPos.clone(),
-                            velocity.clone(),
-                            color,
-                            size,
-                            component.lifetime,
-                            gravity * (0.8 + Math.random() * 0.4),
-                            shape,
-                            acceleration,
-                            component.enableTrail,
-                            component.trailLength,
-                            component.trailWidth
-                        );
-                        if (index !== -1) this.particles[shape].add(index);
-                    }
-                    break;
+                    {
+                        const layers = pattern === 'solidsphere' ? 6 : 1;
+                        const radius = pattern === 'solidsphere' ? spread * 0.5 : spread * 1.5;
+                        for (let layer = 0; layer < layers; layer++) {
+                            // distribute less particles in the inner layers from the max particles count
+                            const particlesThisLayer = (particleCount  / layers) * (layer+1 / layers);
 
+                            for (let i = 0; i < particlesThisLayer; i++) {
+                                const angle = (i / particlesThisLayer) * Math.PI * 2;
+                                const magnitude = (speed * (0.8 + Math.random() * 0.4) * radius) * (layer+1 / layers);
+                                velocity.set(
+                                    Math.cos(angle) * magnitude,
+                                    Math.sin(angle) * magnitude
+                                );
+                                const index = this.particleSystem.addParticle(
+                                    rocketPos.clone(),
+                                    velocity.clone(),
+                                    color,
+                                    size,
+                                    component.lifetime,
+                                    gravity * (0.8 + Math.random() * 0.4),
+                                    shape,
+                                    acceleration,
+                                    component.enableTrail,
+                                    component.trailLength,
+                                    component.trailWidth
+                                );
+                                if (index !== -1) this.particles[shape].add(index);
+                            }
+                        }
+                        break;
+                    }
                 case 'ring':
                     for (let i = 0; i < particleCount; i++) {
                         const angle = (i / particleCount) * Math.PI * 2;
@@ -596,9 +605,9 @@ class Firework {
                             const t = (i / particleCount) * Math.PI * 2;
                             const xOffset = heartScale * (16 * Math.pow(Math.sin(t), 3));
                             const yOffset = heartScale * (13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t));
-                            
+
                             const particleOffset = new Renderer2D.Vector2(xOffset, yOffset);
-                            
+
                             const angle = Math.atan2(yOffset, xOffset);
                             const magnitude = speed * Math.sqrt(xOffset * xOffset + yOffset * yOffset) * 0.05;
                             const unbrokenHeartVelocity = new Renderer2D.Vector2(
@@ -609,7 +618,7 @@ class Firework {
                             const pivotToParticle = particleOffset.clone();
                             pivotToParticle.subtract(pivotOffset);
                             const rotation = new Renderer2D.Vector2(pivotToParticle.y, -pivotToParticle.x);
-                            
+
                             const sign = (xOffset > 0) ? 1 : -1;
                             const rotationSpeed = sign;
                             rotation.scale(rotationSpeed);
@@ -631,8 +640,9 @@ class Firework {
                         }
                         break;
                     }
+                case 'brocade':
                 case 'star':
-                    const spikes = 5;
+                    const spikes = pattern === 'brocade' ? 10 : 5;
                     const outerRadius = speed * spread;
                     const innerRadius = speed * 0.5 * spread;
                     const pointsPerStar = spikes * 2;
@@ -647,8 +657,8 @@ class Firework {
                             radius = outerRadius * (1 + (Math.random() * 0.2 - 0.1));
                         }
 
-                        const radiusVariation = 1 + (Math.random() * 0.2 - 0.1) * (starCopy > 0 ? 1 : 0);
-                        const angleVariation = (Math.random() * 0.1 - 0.05) * (starCopy > 0 ? 1 : 0);
+                        const radiusVariation = 1 + (Math.random() * 0.2 - 0.2) * (starCopy > 0 ? 1 : 0);
+                        const angleVariation = (Math.random() * 0.1 - 0.1) * (starCopy > 0 ? 1 : 0);
 
                         velocity.set(
                             Math.cos(angle + angleVariation) * radius * radiusVariation,
@@ -680,14 +690,14 @@ class Firework {
                         for (let i = 0; i < particleCount; i++) {
                             const armIndex = Math.floor(i / particlesPerArm);
                             let currentAngle = (armIndex / numArms) * Math.PI * 2;
-                            
-                            const radialSpeed = speed *(0.1 + Math.random() * 0.4);
+
+                            const radialSpeed = spread * (0.1 + Math.random() * 0.4);
                             let currentRadius = (i % particlesPerArm) * 0.1;
-                            
-                            const spinSpeed = 1;
+
+                            const spinSpeed = 1.5;
 
                             const updateFn = (pState, delta) => {
-                                currentRadius += pState.velocity.length() * delta ;
+                                currentRadius += radialSpeed * delta;
                                 currentAngle += spinSpeed * delta;
 
                                 pState.position.x = explosionCenter.x + Math.cos(currentAngle) * currentRadius;
@@ -696,7 +706,50 @@ class Firework {
 
                             const index = this.particleSystem.addParticle(
                                 rocketPos.clone(),
-                                new Renderer2D.Vector2(0,0),
+                                new Renderer2D.Vector2(0, 0),
+                                color,
+                                size,
+                                component.lifetime,
+                                gravity * 100,
+                                shape,
+                                new Renderer2D.Vector2(),
+                                component.enableTrail,
+                                component.trailLength,
+                                component.trailWidth,
+                                FIREWORK_CONFIG.baseFriction,
+                                updateFn
+                            );
+                            if (index !== -1) this.particles[shape].add(index);
+                        }
+                        break;
+                    }
+                case 'spinningtails':
+                    {
+                        const explosionCenter = this.rocket.position.clone();
+                        const numArms = 7;
+                        const particlesPerArm = Math.floor(particleCount / numArms);
+
+                        for (let i = 0; i < particleCount; i++) {
+                            const armIndex = Math.floor(i / particlesPerArm);
+                            let currentAngle = (armIndex / numArms) * Math.PI * 2;
+
+                            const radialSpeed = speed * 2 * (0.1 + Math.random() * 0.4);
+                            let currentRadius = (i % particlesPerArm) * 0.02 * spread;
+
+                            const spinSpeed = 2.5;
+
+                            const updateFn = (pState, delta) => {
+                                currentRadius += pState.velocity.length() * delta * (i + 1 % particlesPerArm + 1) * 0.02;
+                                currentAngle += spinSpeed * delta;
+
+                                pState.position.x = explosionCenter.x + Math.cos(currentAngle + i * 2) * currentRadius;
+                                pState.position.y = explosionCenter.y + Math.sin(currentAngle + i * 2) * currentRadius;
+
+                            };
+
+                            const index = this.particleSystem.addParticle(
+                                rocketPos.clone(),
+                                new Renderer2D.Vector2(0, 0),
                                 color,
                                 size,
                                 component.lifetime,

@@ -504,6 +504,7 @@ class UIManager {
                             <label>Pattern:</label>
                             <select class="pattern-select" data-index="${index}">
                                 <option value="spherical">Spherical</option>
+                                <option value="solidsphere">Solid Sphere</option>
                                 <option value="ring">Ring</option>
                                 <option value="heart">Heart</option>
                                 <option value="burst">Burst</option>
@@ -511,7 +512,9 @@ class UIManager {
                                 <option value="willow">Willow</option>
                                 <option value="helix">Helix</option>
                                 <option value="spinner">Spinner</option>
+                                <option value="spinningtails">Spinning Tails</option>
                                 <option value="star">Star</option>
+                                <option value="brocade">Brocade</option>
                                 <option value="brokenHeart">Broken Heart</option>
                                 <option value="christmasTree">Christmas Tree</option>
                             </select>

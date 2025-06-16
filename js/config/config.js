@@ -2,7 +2,7 @@
 
 const FIREWORK_CONFIG = {
     maxParticles: 500000,
-    trailMaxPoints: 10,
+    trailMaxPoints: 15,
     trailDistBetweenPoints: 5,
     trailWidth: 2.0,
     baseSpeed: 150,
@@ -22,15 +22,18 @@ const FIREWORK_CONFIG = {
     autoLauncherMeshColor: { r: 136 / 255, g: 136 / 255, b: 136 / 255, a: 1 },
     patternGravities: {
         spherical: 9.81,
+        solidsphere: 20,
         ring: 8.0,
-        heart: 0.3,
-        star: 0.5,
+        heart: 1,
+        star: 10,
+        brocade: 10,
         burst: 9.81,
         palm: 5.0,
         willow: 0.2,
         christmasTree: 0.4,
-        brokenHeart: 0.3,
-        spinner: 0.3,
+        brokenHeart: 2,
+        spinner: 2,
+        spinningtails: 0.3,
         default: 0.7
     },
     supportedShapes: ['sphere', 'star', 'ring', 'crystalDroplet', 'sliceBurst']
