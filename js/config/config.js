@@ -2,7 +2,7 @@
 
 const FIREWORK_CONFIG = {
     maxParticles: 500000,
-    trailMaxPoints: 10,
+    trailMaxPoints: 20,
     trailDistBetweenPoints: 5,
     trailWidth: 2.0,
     baseSpeed: 150,
@@ -28,7 +28,7 @@ const FIREWORK_CONFIG = {
         star: 13,
         brocade: 10,
         burst: 15,
-        palm: 10.0,
+        palm: 25.0,
         willow: 30,
         christmasTree: 20.4,
         brokenHeart: 2,
@@ -45,7 +45,7 @@ const FIREWORK_CONFIG = {
         star: 2.0,
         brocade: 2.0,
         burst: 2.0,
-        palm: 2.0,
+        palm: 3.0,
         willow: -1.3,
         christmasTree: 1.5,
         brokenHeart: 2.0,

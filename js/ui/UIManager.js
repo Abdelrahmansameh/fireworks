@@ -568,7 +568,7 @@ class UIManager {
                     </div>                    
                     <div class="recipes-option trail-options" style="display: ${component.enableTrail ? 'block' : 'none'};">
                         <label>Trail Length:</label>
-                        <input type="range" class="trail-length-select" data-index="${index}" min="1" max="15" step="0.5" value="${component.trailLength}">
+                        <input type="range" class="trail-length-select" data-index="${index}" min="1" max="25" step="0.5" value="${component.trailLength}">
                         <label>Trail Width:</label>
                         <input type="range" class="trail-width-select" data-index="${index}" min="0.5" max="7" step="0.1" value="${component.trailWidth}">
                     </div>
