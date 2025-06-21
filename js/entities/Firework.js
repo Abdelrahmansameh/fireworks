@@ -273,7 +273,8 @@ class Firework {
             const primaryHex = component.color || '#FFFFFF';
             const parsedPrimaryColor = this._hexToRgbA(primaryHex);
             const color = new Renderer2D.Color(parsedPrimaryColor.r, parsedPrimaryColor.g, parsedPrimaryColor.b, parsedPrimaryColor.a);
-
+            const parsedGradientFinalColor = this._hexToRgbA(component.gradientFinalColor || primaryHex);
+            const gradientFinalColor = new Renderer2D.Color(parsedGradientFinalColor.r, parsedGradientFinalColor.g, parsedGradientFinalColor.b, parsedGradientFinalColor.a);
             let secondaryColor;
             if (component.secondaryColor) {
                 const parsedSecondaryColor = this._hexToRgbA(component.secondaryColor);
@@ -321,7 +322,12 @@ class Firework {
                                     component.trailWidth,
                                     friction,
                                     component.glowStrength,
-                                    component.blurStrength
+                                    component.blurStrength,
+                                    null,
+                                    component.enableColorGradient,
+                                    gradientFinalColor,
+                                    component.gradientStartTime,
+                                    component.gradientDuration
                                 );
                                 if (index !== -1) this.particles[shape].add(index);
                             }
@@ -352,7 +358,12 @@ class Firework {
                                 component.trailWidth,
                                 friction,
                                 component.glowStrength,
-                                component.blurStrength
+                                component.blurStrength,
+                                null,
+                                component.enableColorGradient,
+                                gradientFinalColor,
+                                component.gradientStartTime,
+                                component.gradientDuration
                             );
                             if (index !== -1) this.particles[shape].add(index);
                         }
@@ -382,7 +393,12 @@ class Firework {
                                 component.trailWidth,
                                 friction,
                                 component.glowStrength,
-                                component.blurStrength
+                                component.blurStrength,
+                                null,
+                                component.enableColorGradient,
+                                gradientFinalColor,
+                                component.gradientStartTime,
+                                component.gradientDuration
                             );
                             if (index !== -1) this.particles[shape].add(index);
                         }
@@ -417,7 +433,12 @@ class Firework {
                                 component.trailWidth,
                                 friction,
                                 component.glowStrength,
-                                component.blurStrength
+                                component.blurStrength,
+                                null,
+                                component.enableColorGradient,
+                                gradientFinalColor,
+                                component.gradientStartTime,
+                                component.gradientDuration
                             );
                             if (index !== -1) this.particles[shape].add(index);
                         }
@@ -450,7 +471,12 @@ class Firework {
                                 component.trailWidth,
                                 friction,
                                 component.glowStrength,
-                                component.blurStrength
+                                component.blurStrength,
+                                null,
+                                component.enableColorGradient,
+                                gradientFinalColor,
+                                component.gradientStartTime,
+                                component.gradientDuration
                             );
                             if (index !== -1) this.particles[shape].add(index);
                         }
@@ -493,7 +519,12 @@ class Firework {
                                     component.trailWidth,
                                     friction,
                                     component.glowStrength,
-                                    component.blurStrength
+                                    component.blurStrength,
+                                    null,
+                                    component.enableColorGradient,
+                                    gradientFinalColor,
+                                    component.gradientStartTime,
+                                    component.gradientDuration
                                 );
                                 if (index !== -1) this.particles[shape].add(index);
                             }
@@ -531,7 +562,12 @@ class Firework {
                                     component.trailWidth,
                                     friction,
                                     component.glowStrength,
-                                    component.blurStrength
+                                    component.blurStrength,
+                                    null,
+                                    component.enableColorGradient,
+                                    gradientFinalColor,
+                                    component.gradientStartTime,
+                                    component.gradientDuration
                                 );
                                 if (index !== -1) this.particles[shape].add(index);
                             }                       
@@ -558,7 +594,12 @@ class Firework {
                                     component.trailWidth,
                                     friction,
                                     component.glowStrength,
-                                    component.blurStrength
+                                    component.blurStrength,
+                                    null,
+                                    component.enableColorGradient,
+                                    gradientFinalColor,
+                                    component.gradientStartTime,
+                                    component.gradientDuration
                                 );
                                 if (index !== -1) this.particles[shape].add(index);
                             }
@@ -588,7 +629,12 @@ class Firework {
                                         component.trailWidth,
                                         friction,
                                         component.glowStrength,
-                                        component.blurStrength
+                                        component.blurStrength,
+                                        null,
+                                        component.enableColorGradient,
+                                        gradientFinalColor,
+                                        component.gradientStartTime,
+                                        component.gradientDuration
                                     );
                                     if (index !== -1) this.particles[shape].add(index);
                                 }
@@ -626,7 +672,12 @@ class Firework {
                                 component.trailWidth,
                                 friction,
                                 component.glowStrength,
-                                component.blurStrength
+                                component.blurStrength,
+                                null,
+                                component.enableColorGradient,
+                                gradientFinalColor,
+                                component.gradientStartTime,
+                                component.gradientDuration
                             );
                             if (index !== -1) this.particles[shape].add(index);
                         }
@@ -672,7 +723,12 @@ class Firework {
                                 component.trailWidth,
                                 friction,
                                 component.glowStrength,
-                                component.blurStrength
+                                component.blurStrength,
+                                null,
+                                component.enableColorGradient,
+                                gradientFinalColor,
+                                component.gradientStartTime,
+                                component.gradientDuration
                             );
                             if (index !== -1) this.particles[shape].add(index);
                         }
@@ -716,7 +772,12 @@ class Firework {
                                 component.trailWidth,
                                 friction,
                                 component.glowStrength,
-                                component.blurStrength
+                                component.blurStrength,
+                                null,
+                                component.enableColorGradient,
+                                gradientFinalColor,
+                                component.gradientStartTime,
+                                component.gradientDuration
                             );
                             if (index !== -1) this.particles[shape].add(index);
                         }
@@ -764,7 +825,11 @@ class Firework {
                                 friction,
                                 component.glowStrength,
                                 component.blurStrength,
-                                updateFn
+                                updateFn,
+                                component.enableColorGradient,
+                                gradientFinalColor,
+                                component.gradientStartTime,
+                                component.gradientDuration
                             );
                             if (index !== -1) this.particles[shape].add(index);
                         }
@@ -810,7 +875,11 @@ class Firework {
                                 friction,
                                 component.glowStrength,
                                 component.blurStrength,
-                                updateFn
+                                updateFn,
+                                component.enableColorGradient,
+                                gradientFinalColor,
+                                component.gradientStartTime,
+                                component.gradientDuration
                             );
                             if (index !== -1) this.particles[shape].add(index);
                         }
@@ -861,7 +930,12 @@ class Firework {
                                 0,
                                 friction,
                                 component.glowStrength,
-                                component.blurStrength
+                                component.blurStrength,
+                                null,
+                                component.enableColorGradient,
+                                gradientFinalColor,
+                                component.gradientStartTime,
+                                component.gradientDuration
                             );
                             if (index !== -1) this.particles[shape].add(index);
                         }
@@ -889,7 +963,12 @@ class Firework {
                             component.trailWidth,
                             friction,
                             component.glowStrength,
-                            component.blurStrength
+                            component.blurStrength,
+                            null,
+                            component.enableColorGradient,
+                            gradientFinalColor,
+                            component.gradientStartTime,
+                            component.gradientDuration
                         );
                         if (index !== -1) this.particles[shape].add(index);
                     }

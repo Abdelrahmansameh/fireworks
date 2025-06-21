@@ -22,7 +22,7 @@ class UIManager {
         gameCanvas.addEventListener('pointerdown', this.handlePointerDown, { passive: false });
     }
 
-    bindUIEvents() {
+    bindUIEvents() {        
         document.getElementById('add-component').addEventListener('click', () => {
             this.game.currentRecipeComponents.push({
                 pattern: 'spherical',
@@ -36,7 +36,11 @@ class UIManager {
                 trailLength: 11,
                 trailWidth: 2.6,
                 glowStrength: 0.3,
-                blurStrength: 0.3
+                blurStrength: 0.3,
+                enableColorGradient: false,
+                gradientFinalColor: '#ff0000',
+                gradientStartTime: 0.0,
+                gradientDuration: 1.0
             });
             this.game.updateComponentsList();
             this.game.saveCurrentRecipeComponents();
@@ -498,9 +502,21 @@ class UIManager {
             }
             if (!('glowStrength' in component)) {
                 component.glowStrength = 0.0;
-            }
+            }            
             if (!('blurStrength' in component)) {
                 component.blurStrength = 0.0;
+            }
+            if (!('enableColorGradient' in component)) {
+                component.enableColorGradient = false;
+            }
+            if (!('gradientFinalColor' in component)) {
+                component.gradientFinalColor = '#ff0000';
+            }
+            if (!('gradientStartTime' in component)) {
+                component.gradientStartTime = 0.0;
+            }
+            if (!('gradientDuration' in component)) {
+                component.gradientDuration = 1.0;
             }
             const componentDiv = document.createElement('div');
             componentDiv.classList.add('component');
@@ -541,10 +557,24 @@ class UIManager {
                                 <option value="sliceBurst">Slice Burst</option>
                             </select>
                         </div>
-                    </div>
+                    </div>                    
                     <div class="recipes-option">
                         <label>Primary Color:</label>
                         <input type="color" class="color-input" data-index="${index}" value="${component.color}">
+                    </div>
+                    <div class="recipes-option color-gradient-container">
+                        <label>Color Gradient:</label>
+                        <input type="checkbox" class="color-gradient-toggle" data-index="${index}" ${component.enableColorGradient ? 'checked' : ''}>
+                    </div>
+                    <div class="recipes-option color-gradient-options" style="display: ${component.enableColorGradient ? 'block' : 'none'};">
+                        <label>Gradient Final Color:</label>
+                        <input type="color" class="gradient-final-color-input" data-index="${index}" value="${component.gradientFinalColor}">
+                        <label>Gradient Start Time (% of lifetime):</label>
+                        <input type="range" class="gradient-start-time-select" data-index="${index}" min="0" max="1" step="0.01" value="${component.gradientStartTime}">
+                        <span class="value-display">${component.gradientStartTime.toFixed(2)}</span>
+                        <label>Gradient Duration (% of lifetime):</label>
+                        <input type="range" class="gradient-duration-select" data-index="${index}" min="0" max="1" step="0.01" value="${component.gradientDuration}">
+                        <span class="value-display">${component.gradientDuration.toFixed(2)}</span>
                     </div>
                     <div class="recipes-option secondary-color-container" style="display:none;">
                         <label>Secondary Color:</label>
@@ -596,9 +626,14 @@ class UIManager {
             patternSelect.value = component.pattern;
 
             const shapeSelect = componentDiv.querySelector('.shape-select');
-            shapeSelect.value = component.shape;
-
+            shapeSelect.value = component.shape;            
             const colorInput = componentDiv.querySelector('.color-input');
+            const colorGradientContainer = componentDiv.querySelector('.color-gradient-container');
+            const colorGradientToggle = componentDiv.querySelector('.color-gradient-toggle');
+            const colorGradientOptions = componentDiv.querySelector('.color-gradient-options');
+            const gradientFinalColorInput = componentDiv.querySelector('.gradient-final-color-input');
+            const gradientStartTimeSelect = componentDiv.querySelector('.gradient-start-time-select');
+            const gradientDurationSelect = componentDiv.querySelector('.gradient-duration-select');
             const secondaryColorContainer = componentDiv.querySelector('.secondary-color-container');
             const secondaryColorInput = componentDiv.querySelector('.secondary-color-input');
 
@@ -651,11 +686,47 @@ class UIManager {
                 const idx = e.target.getAttribute('data-index');
                 components[idx].shape = e.target.value;
                 onUpdate();
-            });
-
-            colorInput.addEventListener('input', (e) => {
+            });           
+             colorInput.addEventListener('input', (e) => {
                 const idx = e.target.getAttribute('data-index');
                 components[idx].color = e.target.value;
+                onUpdate();
+            });
+
+            colorGradientToggle.addEventListener('change', (e) => {
+                const idx = e.target.getAttribute('data-index');
+                components[idx].enableColorGradient = e.target.checked;
+                colorGradientOptions.style.display = e.target.checked ? 'block' : 'none';
+                onUpdate();
+            });
+
+            gradientFinalColorInput.addEventListener('input', (e) => {
+                const idx = e.target.getAttribute('data-index');
+                components[idx].gradientFinalColor = e.target.value;
+                onUpdate();
+            });
+
+            gradientStartTimeSelect.addEventListener('input', (e) => {
+                const idx = e.target.getAttribute('data-index');
+                const value = parseFloat(e.target.value);
+                components[idx].gradientStartTime = value;
+                // Update the value display
+                const valueDisplay = e.target.nextElementSibling;
+                if (valueDisplay && valueDisplay.classList.contains('value-display')) {
+                    valueDisplay.textContent = value.toFixed(2);
+                }
+                onUpdate();
+            });
+
+            gradientDurationSelect.addEventListener('input', (e) => {
+                const idx = e.target.getAttribute('data-index');
+                const value = parseFloat(e.target.value);
+                components[idx].gradientDuration = value;
+                // Update the value display
+                const valueDisplay = e.target.nextElementSibling;
+                if (valueDisplay && valueDisplay.classList.contains('value-display')) {
+                    valueDisplay.textContent = value.toFixed(2);
+                }
                 onUpdate();
             });
 

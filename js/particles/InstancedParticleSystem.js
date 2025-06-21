@@ -53,7 +53,7 @@ class InstancedParticleSystem {
                 zIndex: 10,
             });
             this.activeCounts[shape] = 0;
-            this.instanceData[shape] = new Float32Array(this.maxParticles * 22).fill(0);
+            this.instanceData[shape] = new Float32Array(this.maxParticles * 35).fill(0);
             this.trailPoints[shape] = new Float32Array(this.maxParticles * this.maxTrailPoints * 2);
             this.particleUpdateFns[shape] = new Array(this.maxParticles).fill(null);
             this.particleState[shape] = {
@@ -79,8 +79,7 @@ class InstancedParticleSystem {
         this.initialLifetimeIdx = 13;
         this.gravityIdx = 14;
         this.rotationIdx = 15;
-        this.frictionIdx = 16;
-
+        this.frictionIdx = 16;        
         // trail properties
         this.hasTrailIdx = 17;
         this.trailLengthIdx = 18;
@@ -88,11 +87,22 @@ class InstancedParticleSystem {
         this.trailHeadIndexIdx = 20;
         this.trailPointsCountIdx = 21;
         this.trailGlowStrengthIdx = 22;
-        this.trailBlurStrengthIdx = 23;
+        this.trailBlurStrengthIdx = 23;        
+        // gradient properties
+        this.enableColorGradientIdx = 24;
+        this.originalColorRIdx = 25;
+        this.originalColorGIdx = 26;
+        this.originalColorBIdx = 27;
+        this.originalColorAIdx = 28;
+        this.gradientFinalColorRIdx = 29;
+        this.gradientFinalColorGIdx = 30;
+        this.gradientFinalColorBIdx = 31;
+        this.gradientFinalColorAIdx = 32;
+        this.gradientStartTimeIdx = 33;
+        this.gradientDurationIdx = 34;
 
-        this.strideFloats = 24;
-    }
-
+        this.strideFloats = 35;
+    }    
     addParticle(position,
         velocity,
         color,
@@ -107,7 +117,12 @@ class InstancedParticleSystem {
         friction = FIREWORK_CONFIG.baseFriction,
         glowStrength = 0,
         blurStrength = 0,
-        updateFn = null) {
+        updateFn = null,
+        enableColorGradient = false,
+        gradientFinalColor = null,
+        gradientStartTime = 0.0,
+        gradientDuration = 1.0) 
+        {
         if (!this.meshes[shape]) shape = 'circle';
         const idx = this.activeCounts[shape];
         if (idx >= this.maxParticles) return -1;
@@ -166,8 +181,27 @@ class InstancedParticleSystem {
             const trailStartIndex = idx * this.maxTrailPoints * 2;
             trailBuffer[trailStartIndex] = position.x;
             trailBuffer[trailStartIndex + 1] = position.y;
-        } else {
+        } 
+        else {
             d[base + this.hasTrailIdx] = 0.0;
+        }        // Store gradient data
+        if (enableColorGradient && gradientFinalColor) {
+            d[base + this.enableColorGradientIdx] = 1.0;
+            // Store original color
+            d[base + this.originalColorRIdx] = color.r;
+            d[base + this.originalColorGIdx] = color.g;
+            d[base + this.originalColorBIdx] = color.b;
+            d[base + this.originalColorAIdx] = color.a;
+            // Store final gradient color
+            d[base + this.gradientFinalColorRIdx] = gradientFinalColor.r;
+            d[base + this.gradientFinalColorGIdx] = gradientFinalColor.g;
+            d[base + this.gradientFinalColorBIdx] = gradientFinalColor.b;
+            d[base + this.gradientFinalColorAIdx] = gradientFinalColor.a;
+            d[base + this.gradientStartTimeIdx] = gradientStartTime;
+            d[base + this.gradientDurationIdx] = gradientDuration;
+        } 
+        else {
+            d[base + this.enableColorGradientIdx] = 0.0;
         }
 
         this.particleUpdateFns[shape][idx] = updateFn;
@@ -242,10 +276,32 @@ class InstancedParticleSystem {
                 d[sBase + this.velocityIdx] *= hf;
                 d[sBase + this.velocityIdx + 1] *= vf;
                 d[sBase + this.positionIdx] += d[sBase + this.velocityIdx] * delta;
-                d[sBase + this.positionIdx + 1] += d[sBase + this.velocityIdx + 1] * delta;
+                d[sBase + this.positionIdx + 1] += d[sBase + this.velocityIdx + 1] * delta;                const n = d[sBase + this.lifetimeIdx] / d[sBase + this.initialLifetimeIdx];
+                d[sBase + this.colorIdx + 3] = (n * n) * (2 * Math.random());               
+                if (d[sBase + this.enableColorGradientIdx] > 0.5) {
+                    const normalizedLifetime = 1 - n; // 0 = dead, 1 = just born
+                    const gradientStartTime = d[sBase + this.gradientStartTimeIdx];
+                    const gradientDuration = d[sBase + this.gradientDurationIdx];
+                    
+                    const safeDuration = Math.max(0.01, gradientDuration);
+                    const gradientEndTime = gradientStartTime + safeDuration;
 
-                const n = d[sBase + this.lifetimeIdx] / d[sBase + this.initialLifetimeIdx];
-                d[sBase + this.colorIdx + 3] = (n * n) * (2 * Math.random());
+                    if (normalizedLifetime >= gradientStartTime && normalizedLifetime <= gradientEndTime) {
+                        const gradientProgress = (normalizedLifetime - gradientStartTime) / safeDuration;
+                        
+                        const originalR = d[sBase + this.originalColorRIdx];
+                        const originalG = d[sBase + this.originalColorGIdx];
+                        const originalB = d[sBase + this.originalColorBIdx];
+                        
+                        const finalR = d[sBase + this.gradientFinalColorRIdx];
+                        const finalG = d[sBase + this.gradientFinalColorGIdx];
+                        const finalB = d[sBase + this.gradientFinalColorBIdx];
+                        
+                        d[sBase + this.colorIdx] = originalR + (finalR - originalR) * gradientProgress;
+                        d[sBase + this.colorIdx + 1] = originalG + (finalG - originalG) * gradientProgress;
+                        d[sBase + this.colorIdx + 2] = originalB + (finalB - originalB) * gradientProgress;
+                    }
+                }
 
                 gpu[gBase + 0] = d[sBase + this.positionIdx];
                 gpu[gBase + 1] = d[sBase + this.positionIdx + 1];
@@ -302,17 +358,39 @@ class InstancedParticleSystem {
                 const trailWidth = d[sBase + this.trailWidthIdx];
                 const trailLength = d[sBase + this.trailLengthIdx];
                 const pointsCount = d[sBase + this.trailPointsCountIdx];
-                const headIdx = d[sBase + this.trailHeadIndexIdx];
-                const trailStartIndex = i * this.maxTrailPoints * 2;
-
-                const colorR = d[sBase + this.colorIdx];
-                const colorG = d[sBase + this.colorIdx + 1];
-                const colorB = d[sBase + this.colorIdx + 2];
+                const headIdx = d[sBase + this.trailHeadIndexIdx];                const trailStartIndex = i * this.maxTrailPoints * 2;                // Get colors for trail rendering
+                let baseColorR, baseColorG, baseColorB;
+                let currentParticleColorR, currentParticleColorG, currentParticleColorB;
+                let hasGradient = false;
+                let trailGradientProgress = 0;
+                
+                if (d[sBase + this.enableColorGradientIdx] > 0.5) {
+                    baseColorR = d[sBase + this.originalColorRIdx];
+                    baseColorG = d[sBase + this.originalColorGIdx];
+                    baseColorB = d[sBase + this.originalColorBIdx];
+                    
+                    currentParticleColorR = d[sBase + this.colorIdx];
+                    currentParticleColorG = d[sBase + this.colorIdx + 1];
+                    currentParticleColorB = d[sBase + this.colorIdx + 2];
+                    
+                    const normalizedLifetime = 1 - (lifetime / initialLifetime); // 0 = just born, 1 = dead
+                    const gradientStartTime = d[sBase + this.gradientStartTimeIdx];
+                    const gradientDuration = d[sBase + this.gradientDurationIdx];
+                    const trailGradientDuration = gradientDuration * 2; // Trail takes twice as long
+                    
+                    if (normalizedLifetime >= gradientStartTime) {
+                        trailGradientProgress = Math.min(1, (normalizedLifetime - gradientStartTime) / trailGradientDuration);
+                        hasGradient = true;
+                    }
+                } 
+                else {
+                    baseColorR = d[sBase + this.colorIdx];
+                    baseColorG = d[sBase + this.colorIdx + 1];
+                    baseColorB = d[sBase + this.colorIdx + 2];
+                }
 
                 const lifeNorm = lifetime / initialLifetime;
-                const fadeAlpha = lifeNorm * lifeNorm * lifeNorm;
-
-                for (let j = 0; j < pointsCount - 1; j++) {
+                const fadeAlpha = lifeNorm * lifeNorm * lifeNorm;                for (let j = 0; j < pointsCount - 1; j++) {
                     const p1_local_idx = (headIdx - pointsCount + j + trailLength) % trailLength;
                     const p2_local_idx = (headIdx - pointsCount + j + 1 + trailLength) % trailLength;
 
@@ -329,14 +407,35 @@ class InstancedParticleSystem {
                     if (len < 0.001) continue;
 
                     const ang = Math.atan2(dy, dx) - Math.PI * 0.5;
-                    const mx = (ax + bx) * 0.5;
-                    const my = (ay + by) * 0.5;
+                    const mx = (ax + bx) * 0.5;                    const my = (ay + by) * 0.5;
+                    
+                    let segmentColorR, segmentColorG, segmentColorB;
+                    if (hasGradient && trailGradientProgress > 0) {
+
+                        const segmentPositionFromTail = j / Math.max(1, pointsCount - 2);
+
+                        if (segmentPositionFromTail >= (1 - trailGradientProgress)) {
+                            segmentColorR = currentParticleColorR;
+                            segmentColorG = currentParticleColorG;
+                            segmentColorB = currentParticleColorB;
+                        } 
+                        else {
+                            segmentColorR = baseColorR;
+                            segmentColorG = baseColorG;
+                            segmentColorB = baseColorB;
+                        }
+                    } 
+                    else {
+                        segmentColorR = baseColorR;
+                        segmentColorG = baseColorG;
+                        segmentColorB = baseColorB;
+                    }
 
                     this.trailGroup.addInstanceRaw(
                         mx, my,
                         ang,
                         trailWidth, len,
-                        colorR, colorG, colorB, fadeAlpha * (2 * Math.random(), d[sBase + this.trailGlowStrengthIdx], d[sBase + this.trailBlurStrengthIdx])
+                        segmentColorR, segmentColorG, segmentColorB, fadeAlpha * 2 * Math.random(), d[sBase + this.trailGlowStrengthIdx], d[sBase + this.trailBlurStrengthIdx]
                     );
                 }
             }
