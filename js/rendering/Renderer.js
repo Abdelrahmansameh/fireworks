@@ -610,6 +610,18 @@ function buildDroplet(scale = 1, steps = 100) {
     };
 }
 
+function buildSliceBurst(size = 10) {
+    const coords = [];
+    const x1=  0, x2 = size / 2, x3 = size;
+    const y1 = 0, y2 = size / 20, y3 = 0;
+    coords.push(x1, y1, x2, y2, x3, y3);
+    const triIndices = earcut(coords, null, 2);
+    return {
+        vertices: new Float32Array(coords),
+        indices: new Uint16Array(triIndices),
+    };
+}
+
 function buildTriangle(base = 1, height = 2) {
     const coords = [];
 
@@ -693,14 +705,14 @@ function buildStrokeGeometry(points, strokeWidth = 5) {
 function buildTexturedSquare(width = 1, height = 1) {
     const halfW = width / 2;
     const halfH = height / 2;
-    
+
     const vertices = new Float32Array([
         -halfW, -halfH, // bottom-left
-         halfW, -halfH, // bottom-right
-         halfW,  halfH, // top-right
-        -halfW,  halfH  // top-left
+        halfW, -halfH, // bottom-right
+        halfW, halfH, // top-right
+        -halfW, halfH  // top-left
     ]);
-    
+
     // Texture coordinates (UV)
     const texCoords = new Float32Array([
         0, 1, // bottom-left
@@ -708,12 +720,12 @@ function buildTexturedSquare(width = 1, height = 1) {
         1, 0, // top-right
         0, 0  // top-left
     ]);
-    
+
     const indices = new Uint16Array([
-        0, 1, 2, 
-        0, 2, 3  
+        0, 1, 2,
+        0, 2, 3
     ]);
-    
+
     return {
         vertices: vertices,
         texCoords: texCoords,
@@ -793,6 +805,8 @@ class Shape2D {
         zIndex = 0,
         blendMode = BlendMode.NORMAL,
         isStroke = false,
+        glowStrength = 0,
+        blurStrength = 0,
     }) {
         this.vertices = vertices;
         this.indices = indices;
@@ -805,6 +819,8 @@ class Shape2D {
         this.zIndex = zIndex;
         this.blendMode = blendMode;
         this.isStroke = isStroke;
+        this.glowStrength = glowStrength;
+        this.blurStrength = blurStrength;
 
         // GPU buffers
         this._vbo = null;
@@ -830,8 +846,8 @@ class InstancedGroup {
         this.blendMode = blendMode;
         this.texture = texture;
 
-        // number of floats per instance
-        this.instanceStrideFloats = 9;
+        // number of floats per instance (now includes glowStrength and blurStrength)
+        this.instanceStrideFloats = 11;
         this.instanceData = new Float32Array(maxInstances * this.instanceStrideFloats);
         this.instanceCount = 0;
 
@@ -847,8 +863,7 @@ class InstancedGroup {
     getInstanceCount() {
         return this.instanceCount;
     }
-
-    addInstance(pos, rotation, scale, color) {
+    addInstance(pos, rotation, scale, color, glowStrength = 0, blurStrength = 0) {
         const i = this.instanceCount;
         if (i >= this.maxInstances) return;
         const base = i * this.instanceStrideFloats;
@@ -861,10 +876,12 @@ class InstancedGroup {
         this.instanceData[base + 6] = color.g;
         this.instanceData[base + 7] = color.b;
         this.instanceData[base + 8] = color.a;
+        this.instanceData[base + 9] = glowStrength;
+        this.instanceData[base + 10] = blurStrength;
         this.instanceCount++;
     }
 
-    addInstanceRaw(posX, posY, rotation, scaleX, scaleY, colorR, colorG, colorB, colorA) {
+    addInstanceRaw(posX, posY, rotation, scaleX, scaleY, colorR, colorG, colorB, colorA, glowStrength = 0, blurStrength = 0) {
         const i = this.instanceCount;
         if (i >= this.maxInstances) return;
         const base = i * this.instanceStrideFloats;
@@ -877,6 +894,8 @@ class InstancedGroup {
         this.instanceData[base + 6] = colorG;
         this.instanceData[base + 7] = colorB;
         this.instanceData[base + 8] = colorA;
+        this.instanceData[base + 9] = glowStrength;
+        this.instanceData[base + 10] = blurStrength;
         this.instanceCount++;
     }
 
@@ -906,6 +925,8 @@ class InstancedGroup {
             this.instanceData[targetBase + 6] = this.instanceData[lastBase + 6];
             this.instanceData[targetBase + 7] = this.instanceData[lastBase + 7];
             this.instanceData[targetBase + 8] = this.instanceData[lastBase + 8];
+            this.instanceData[targetBase + 9] = this.instanceData[lastBase + 9];
+            this.instanceData[targetBase + 10] = this.instanceData[lastBase + 10];
         }
 
         const base = lastIndex * this.instanceStrideFloats;
@@ -918,6 +939,8 @@ class InstancedGroup {
         this.instanceData[base + 6] = 0;
         this.instanceData[base + 7] = 0;
         this.instanceData[base + 8] = 0;
+        this.instanceData[base + 9] = 0;
+        this.instanceData[base + 10] = 0;
 
         this.instanceCount--;
     }
@@ -986,6 +1009,7 @@ class InstancedGroup {
     }
 }
 
+
 class Renderer2D {
     constructor(canvas, opts = {}) {
         this.canvas = canvas;
@@ -993,6 +1017,7 @@ class Renderer2D {
         if (!this.gl) {
             throw new Error('WebGL2 not supported here.');
         }
+
         if (opts.width) canvas.width = opts.width;
         if (opts.height) canvas.height = opts.height;
 
@@ -1007,6 +1032,16 @@ class Renderer2D {
         this.cameraZoom = 1.0;
 
         const gl = this.gl;
+
+        this.dummyTex = gl.createTexture();
+        gl.bindTexture(gl.TEXTURE_2D, this.dummyTex);
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA,
+            1, 1, 0,
+            gl.RGBA, gl.UNSIGNED_BYTE,
+            new Uint8Array([255, 255, 255, 255]));
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+
         gl.enable(gl.BLEND);
         gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 
@@ -1018,25 +1053,42 @@ class Renderer2D {
         this.u_matrix_Normal = gl.getUniformLocation(this.normalProgram, 'u_matrix');
         this.u_color_Normal = gl.getUniformLocation(this.normalProgram, 'u_color');
         this.u_texture_Normal = gl.getUniformLocation(this.normalProgram, 'u_texture');
-        this.u_useTexture_Normal = gl.getUniformLocation(this.normalProgram, 'u_useTexture');
-
-        this.instancedProgram = this._initProgram(this._instancedVS(), this._instancedFS());
+        this.u_useTexture_Normal = gl.getUniformLocation(this.normalProgram, 'u_useTexture'); this.instancedProgram = this._initProgram(this._instancedVS(), this._instancedFS());
         this.a_position_Inst = gl.getAttribLocation(this.instancedProgram, 'a_position');
         this.a_texCoord_Inst = gl.getAttribLocation(this.instancedProgram, 'a_texCoord');
         this.a_offset_Inst = gl.getAttribLocation(this.instancedProgram, 'a_offset');
         this.a_rotation_Inst = gl.getAttribLocation(this.instancedProgram, 'a_rotation');
         this.a_scale_Inst = gl.getAttribLocation(this.instancedProgram, 'a_scale');
         this.a_color_Inst = gl.getAttribLocation(this.instancedProgram, 'a_color');
+        this.a_glowStrength_Inst = gl.getAttribLocation(this.instancedProgram, 'a_glowStrength');
+        this.a_blurStrength_Inst = gl.getAttribLocation(this.instancedProgram, 'a_blurStrength');
         this.u_proj_Inst = gl.getUniformLocation(this.instancedProgram, 'u_proj');
         this.u_texture_Inst = gl.getUniformLocation(this.instancedProgram, 'u_texture');
         this.u_useTexture_Inst = gl.getUniformLocation(this.instancedProgram, 'u_useTexture');
-        this.u_useGlowLoc = gl.getUniformLocation(this.instancedProgram, 'u_useGlow');
-        this.u_glowRadiusLoc = gl.getUniformLocation(this.instancedProgram, 'u_glowRadius');
-        this.u_glowSoftnessLoc = gl.getUniformLocation(this.instancedProgram, 'u_glowSoftness');
+        this.u_isEmissivePass_Inst = gl.getUniformLocation(this.instancedProgram, 'u_isEmissivePass');
+
+        // Post-processing programs
+        this.emissiveProgram = this._initProgram(this._emissiveVS(), this._emissiveFS());
+        this.u_sceneTexture_Emissive = gl.getUniformLocation(this.emissiveProgram, 'u_sceneTexture');
+
+        this.blurProgram = this._initProgram(this._blurVS(), this._blurFS());
+        this.u_texture_Blur = gl.getUniformLocation(this.blurProgram, 'u_texture');
+        this.u_texelOffset_Blur = gl.getUniformLocation(this.blurProgram, 'u_texelOffset');
+
+        this.compositeProgram = this._initProgram(this._emissiveVS(), this._compositeFS());
+        this.u_sceneTexture_Composite = gl.getUniformLocation(this.compositeProgram, 'u_sceneTexture');
+        this.u_bloomTexture_Composite = gl.getUniformLocation(this.compositeProgram, 'u_bloomTexture');
+        this.u_globalBlurStrength_Composite = gl.getUniformLocation(this.compositeProgram, 'u_globalBlurStrength');
 
         this.virtualWidth = opts.virtualWidth || 1920;
         this.virtualHeight = opts.virtualHeight || 1080;
         this.scaleFactor = 1.0;
+
+        // Initialize post-processing pipeline
+        this._initPostProcessing();
+
+        this.FLOAT_FMT = gl.RGBA16F;           // internal format
+        const FLOAT_TYP = gl.HALF_FLOAT;        // data type (WebGL2 constant)
     }
 
     _createWhiteTexture() {
@@ -1050,7 +1102,7 @@ class Renderer2D {
 
     async loadTexture(url, name = null) {
         const textureName = name || url;
-        
+
         if (this.textures.has(textureName)) {
             return this.textures.get(textureName);
         }
@@ -1059,11 +1111,11 @@ class Renderer2D {
             const gl = this.gl;
             const texture = gl.createTexture();
             const image = new Image();
-            
+
             image.onload = () => {
                 gl.bindTexture(gl.TEXTURE_2D, texture);
                 gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
-                
+
                 const isPowerOf2 = (value) => (value & (value - 1)) === 0;
                 if (isPowerOf2(image.width) && isPowerOf2(image.height)) {
                     gl.generateMipmap(gl.TEXTURE_2D);
@@ -1073,21 +1125,21 @@ class Renderer2D {
                     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
                 }
                 gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-                
+
                 const textureInfo = {
                     texture: texture,
                     width: image.width,
                     height: image.height
                 };
-                
+
                 this.textures.set(textureName, textureInfo);
                 resolve(textureInfo);
             };
-            
+
             image.onerror = () => {
                 reject(new Error(`Failed to load texture: ${url}`));
             };
-            
+
             image.crossOrigin = 'anonymous';
             image.src = url;
         });
@@ -1211,7 +1263,7 @@ class Renderer2D {
         }
     }
 
-    createInstancedGroup({ vertices, indices, texCoords = null, texture = null, maxInstances = 10000, zIndex = 0, blendMode = BlendMode.NORMAL, useGlow = true, glowRadius = 0.9, glowSoftness = .2 }) {
+    createInstancedGroup({ vertices, indices, texCoords = null, texture = null, maxInstances = 10000, zIndex = 0, blendMode = BlendMode.NORMAL }) {
         const gl = this.gl;
         const baseGeom = {};
         baseGeom.vertexBuffer = gl.createBuffer();
@@ -1240,7 +1292,7 @@ class Renderer2D {
         const group = new InstancedGroup({ baseGeometry: baseGeom, maxInstances, zIndex, blendMode, texture });
         group._instanceBuffer = gl.createBuffer();
         gl.bindBuffer(gl.ARRAY_BUFFER, group._instanceBuffer);
-        const totalBytes = maxInstances * 9 * 4;
+        const totalBytes = maxInstances * 11 * 4; // Updated for 11 floats per instance
         gl.bufferData(gl.ARRAY_BUFFER, totalBytes, gl.DYNAMIC_DRAW);
 
         group._vao = gl.createVertexArray();
@@ -1262,11 +1314,9 @@ class Renderer2D {
             gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, baseGeom.indexBuffer);
         }
 
-        // instance buffer => offset(2), rotation(1), scale(2), color(4)
+        // instance buffer => offset(2), rotation(1), scale(2), color(4), glowStrength(1), blurStrength(1)
         gl.bindBuffer(gl.ARRAY_BUFFER, group._instanceBuffer);
-        const stride = 9 * 4;
-        
-        // Update attribute locations based on the new shader layout
+        const stride = 11 * 4; 
         // offset => loc= a_offset_Inst (location 2)
         gl.enableVertexAttribArray(this.a_offset_Inst);
         gl.vertexAttribPointer(this.a_offset_Inst, 2, gl.FLOAT, false, stride, 0);
@@ -1287,15 +1337,20 @@ class Renderer2D {
         gl.vertexAttribPointer(this.a_color_Inst, 4, gl.FLOAT, false, stride, 5 * 4);
         gl.vertexAttribDivisor(this.a_color_Inst, 1);
 
-        gl.bindVertexArray(null);
+        // glowStrength => a_glowStrength_Inst (location 6)
+        gl.enableVertexAttribArray(this.a_glowStrength_Inst);
+        gl.vertexAttribPointer(this.a_glowStrength_Inst, 1, gl.FLOAT, false, stride, 9 * 4);
+        gl.vertexAttribDivisor(this.a_glowStrength_Inst, 1);
 
-        group._useGlow = useGlow;
-        group._glowRadius = glowRadius;
-        group._glowSoftness = glowSoftness;
+        // blurStrength => a_blurStrength_Inst (location 7)
+        gl.enableVertexAttribArray(this.a_blurStrength_Inst);
+        gl.vertexAttribPointer(this.a_blurStrength_Inst, 1, gl.FLOAT, false, stride, 10 * 4);
+        gl.vertexAttribDivisor(this.a_blurStrength_Inst, 1); gl.bindVertexArray(null);
 
         this.instancedGroups.push(group);
         return group;
     }
+
     removeInstancedGroup(group) {
         const idx = this.instancedGroups.indexOf(group);
         if (idx >= 0) this.instancedGroups.splice(idx, 1);
@@ -1324,17 +1379,125 @@ class Renderer2D {
         }
     }
 
-
     drawFrame() {
         this._resizeIfNeeded();
+
+        try {
+            this._drawFrameWithPostProcessing();
+        } catch (error) {
+            console.error('Post-processing failed, falling back to direct rendering:', error);
+            this._drawFrameDirect();
+        }
+    }
+
+    _drawFrameWithPostProcessing() {
+        if (!this.postProcessingInitialized) {
+            this._resizePostProcessingBuffers();
+            if (!this.postProcessingInitialized) {
+                throw new Error('Failed to initialize post-processing');
+            }
+        }
+
         const gl = this.gl;
+        this._updateProjectionMatrix();
+
+        const items = [];
+        for (const sh of this.normalShapes) {
+            items.push({ type: 'normal', data: sh, zIndex: sh.zIndex, blend: sh.blendMode });
+        }
+        for (const grp of this.instancedGroups) {
+            items.push({ type: 'instanced', data: grp, zIndex: grp.zIndex, blend: grp.blendMode });
+        }
+        items.sort((a, b) => a.zIndex - b.zIndex);
+
+        gl.bindFramebuffer(gl.FRAMEBUFFER, this.sceneFBO);
+        gl.viewport(0, 0, this.canvas.width, this.canvas.height);
+        gl.clearColor(0, 0, 0, 1);
+        gl.clear(gl.COLOR_BUFFER_BIT);
+
+        let renderCount = 0;
+        for (const item of items) {
+            if (item.type === 'normal') {
+                this._drawNormalShape(item.data);
+                renderCount++;
+            } else {
+                this._drawInstancedGroup(item.data);
+                renderCount++;
+            }
+        }
+
+        if (gl.checkFramebufferStatus(gl.FRAMEBUFFER) !== gl.FRAMEBUFFER_COMPLETE) {
+            console.error('Scene framebuffer is not complete!');
+        }
+        // PASS 1: Render emissive to emiTex (half-res)  
+        const halfWidth = Math.max(1, Math.floor(this.canvas.width / 2));
+        const halfHeight = Math.max(1, Math.floor(this.canvas.height / 2));
+
+        gl.bindFramebuffer(gl.FRAMEBUFFER, this.emissiveFBO);
+        gl.viewport(0, 0, halfWidth, halfHeight);
+        gl.clearColor(0, 0, 0, 0); // Clear to transparent
+        gl.clear(gl.COLOR_BUFFER_BIT);
+
+        let emissiveCount = 0;
+        // Render ONLY objects with glow > 0 
+        for (const item of items) {
+            if (item.type === 'instanced') {
+                // Check if any instances in this group have glow > 0
+                let hasGlow = false;
+                const group = item.data;
+                for (let i = 0; i < group.instanceCount; i++) {
+                    const base = i * group.instanceStrideFloats;
+                    const glowStrength = group.instanceData[base + 9]; // glow at offset 9
+                    if (glowStrength > 0) {
+                        hasGlow = true;
+                        break;
+                    }
+                }
+                if (hasGlow) {
+                    this._drawEmissiveInstancedGroup(item.data);
+                    emissiveCount++;
+                }
+            }
+            // Note: Normal shapes don't have glow strength yet, so skip them
+        }
+
+        // PASS 2: Blur the emissive texture (ping-pong at half-res)
+        this._performBlurPasses();
+
+        // PASS 3: Composite final image
+        gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+        gl.viewport(0, 0, this.canvas.width, this.canvas.height);
+        gl.clearColor(0, 0, 0, 1);
+        gl.clear(gl.COLOR_BUFFER_BIT);
+
+        gl.disable(gl.BLEND);
+        gl.useProgram(this.compositeProgram);
+        gl.activeTexture(gl.TEXTURE0);
+        gl.bindTexture(gl.TEXTURE_2D, this.sceneTexture);
+        gl.uniform1i(this.u_sceneTexture_Composite, 0);
+
+        gl.activeTexture(gl.TEXTURE1);
+        gl.bindTexture(gl.TEXTURE_2D, this.blurTexture2); // Final blurred result
+        gl.uniform1i(this.u_bloomTexture_Composite, 1);
+
+        gl.uniform1f(this.u_globalBlurStrength_Composite, 1.0); // Enable global blur for testing
+
+        gl.bindVertexArray(this.fullScreenTriangleVAO);
+        gl.drawArrays(gl.TRIANGLES, 0, 3);
+        gl.bindVertexArray(null);
+        gl.enable(gl.BLEND);
+    }
+
+    _drawFrameDirect() {
+        // Direct rendering fallback without post-processing
+        const gl = this.gl;
+        gl.bindFramebuffer(gl.FRAMEBUFFER, null);
         gl.viewport(0, 0, this.canvas.width, this.canvas.height);
         gl.clearColor(0, 0, 0, 1);
         gl.clear(gl.COLOR_BUFFER_BIT);
 
         this._updateProjectionMatrix();
 
-        // zIndex sort
         const items = [];
         for (const sh of this.normalShapes) {
             items.push({ type: 'normal', data: sh, zIndex: sh.zIndex, blend: sh.blendMode });
@@ -1395,10 +1558,15 @@ class Renderer2D {
         // Handle texture
         const useTexture = shape.texture !== null;
         gl.uniform1i(this.u_useTexture_Normal, useTexture);
-        
+
         if (useTexture) {
             gl.activeTexture(gl.TEXTURE0);
             gl.bindTexture(gl.TEXTURE_2D, shape.texture.texture);
+            gl.uniform1i(this.u_texture_Normal, 0);
+        }
+        else {
+            gl.activeTexture(gl.TEXTURE0);
+            gl.bindTexture(gl.TEXTURE_2D, this.dummyTex);
             gl.uniform1i(this.u_texture_Normal, 0);
         }
 
@@ -1445,23 +1613,23 @@ class Renderer2D {
             default:
                 gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
                 break;
-        }
-        gl.useProgram(this.instancedProgram);
-
-        gl.uniform1i(this.u_useGlowLoc, group._useGlow ? 1 : 0);
-        gl.uniform1f(this.u_glowRadiusLoc, group._glowRadius);
-        gl.uniform1f(this.u_glowSoftnessLoc, group._glowSoftness);
+        }        gl.useProgram(this.instancedProgram);
 
         // Handle texture
         const useTexture = group.texture !== null;
         gl.uniform1i(this.u_useTexture_Inst, useTexture);
-        
+        gl.uniform1i(this.u_isEmissivePass_Inst, 0);
+
         if (useTexture) {
             gl.activeTexture(gl.TEXTURE0);
             gl.bindTexture(gl.TEXTURE_2D, group.texture.texture);
             gl.uniform1i(this.u_texture_Inst, 0);
         }
-
+        else {
+            gl.activeTexture(gl.TEXTURE0);
+            gl.bindTexture(gl.TEXTURE_2D, this.dummyTex);          
+            gl.uniform1i(this.u_texture_Inst, 0);
+        }
         gl.uniformMatrix4fv(this.u_proj_Inst, false, this._projectionMatrix);
 
         // update instance buffer
@@ -1491,49 +1659,120 @@ class Renderer2D {
         gl.bindVertexArray(null);
     }
 
-    _uploadShapeBuffers(shape) {
+    _drawEmissiveInstancedGroup(group) {
         const gl = this.gl;
-        shape._vbo = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, shape._vbo);
-        gl.bufferData(gl.ARRAY_BUFFER, shape.vertices, gl.STATIC_DRAW);
-        shape._vertexCount = shape.vertices.length / 2;
+        if (group.instanceCount <= 0) return;
 
-        // Upload texture coordinates if available
-        if (shape.texCoords) {
-            shape._texCoordVbo = gl.createBuffer();
-            gl.bindBuffer(gl.ARRAY_BUFFER, shape._texCoordVbo);
-            gl.bufferData(gl.ARRAY_BUFFER, shape.texCoords, gl.STATIC_DRAW);
+        let hasEmissiveInstances = false;
+        for (let i = 0; i < group.instanceCount; i++) {
+            const base = i * group.instanceStrideFloats;
+            if (group.instanceData[base + 9] > 0) {
+                hasEmissiveInstances = true;
+                break;
+            }
         }
 
-        if (shape.indices) {
-            shape._ibo = gl.createBuffer();
-            gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, shape._ibo);
-            gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, shape.indices, gl.STATIC_DRAW);
+        if (!hasEmissiveInstances) return;
+
+        gl.blendFunc(gl.SRC_ALPHA, gl.ONE);
+
+        gl.useProgram(this.instancedProgram);
+
+        const useTexture = group.texture !== null;
+        gl.uniform1i(this.u_useTexture_Inst, useTexture);
+        gl.uniform1i(this.u_isEmissivePass_Inst, 1);
+
+        if (useTexture) {
+            gl.activeTexture(gl.TEXTURE0);
+            gl.bindTexture(gl.TEXTURE_2D, group.texture.texture);
+            gl.uniform1i(this.u_texture_Inst, 0);
         }
-    }
-    _uploadShapeVertices(shape) {
-        const gl = this.gl;
-        gl.bindBuffer(gl.ARRAY_BUFFER, shape._vbo);
-        gl.bufferData(gl.ARRAY_BUFFER, shape.vertices, gl.STATIC_DRAW);
-        shape._vertexCount = shape.vertices.length / 2;
-    }
-    _uploadShapeIndices(shape) {
-        const gl = this.gl;
-        if (!shape._ibo) shape._ibo = gl.createBuffer();
-        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, shape._ibo);
-        gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, shape.indices, gl.STATIC_DRAW);
-    }
-    
-    _uploadShapeTexCoords(shape) {
-        const gl = this.gl;
-        if (shape.texCoords) {
-            if (!shape._texCoordVbo) shape._texCoordVbo = gl.createBuffer();
-            gl.bindBuffer(gl.ARRAY_BUFFER, shape._texCoordVbo);
-            gl.bufferData(gl.ARRAY_BUFFER, shape.texCoords, gl.STATIC_DRAW);
-        } else if (shape._texCoordVbo) {
-            gl.deleteBuffer(shape._texCoordVbo);
-            shape._texCoordVbo = null;
+
+        gl.uniformMatrix4fv(this.u_proj_Inst, false, this._projectionMatrix);
+
+        // Create filtered instance data with only emissive instances
+        const filteredData = new Float32Array(group.instanceCount * group.instanceStrideFloats);
+        let filteredCount = 0;
+
+        for (let i = 0; i < group.instanceCount; i++) {
+            const base = i * group.instanceStrideFloats;
+            const glowStrength = group.instanceData[base + 9];
+
+            if (glowStrength > 0) {
+                const filteredBase = filteredCount * group.instanceStrideFloats;
+                for (let j = 0; j < group.instanceStrideFloats; j++) {
+                    filteredData[filteredBase + j] = group.instanceData[base + j];
+                }
+
+                filteredCount++;
+            }
         }
+
+        if (filteredCount === 0) return;
+
+        // Update instance buffer with filtered data
+        gl.bindBuffer(gl.ARRAY_BUFFER, group._instanceBuffer);
+        const subData = filteredData.subarray(0, filteredCount * group.instanceStrideFloats);
+        gl.bufferSubData(gl.ARRAY_BUFFER, 0, subData);
+
+        // Bind VAO
+        gl.bindVertexArray(group._vao);
+
+        if (group.baseGeometry.numIndices > 0) {
+            gl.drawElementsInstanced(
+                gl.TRIANGLES,
+                group.baseGeometry.numIndices,
+                gl.UNSIGNED_SHORT,
+                0,
+                filteredCount
+            );
+        } else {
+            gl.drawArraysInstanced(
+                gl.TRIANGLES,
+                0,
+                group.baseGeometry.numVerts,
+                filteredCount
+            );
+        }
+
+        gl.bindVertexArray(null);
+
+        // Reset blend mode back to normal
+        gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+    }
+
+    _performBlurPasses() {
+        const gl = this.gl;
+        const halfWidth = Math.max(1, Math.floor(this.canvas.width / 2));
+        const halfHeight = Math.max(1, Math.floor(this.canvas.height / 2));
+
+        gl.useProgram(this.blurProgram);
+        gl.bindVertexArray(this.fullScreenTriangleVAO);
+
+        // Horizontal blur: emissive -> blur1
+        gl.bindFramebuffer(gl.FRAMEBUFFER, this.blurFBO1);
+        gl.viewport(0, 0, halfWidth, halfHeight);
+        gl.clearColor(0, 0, 0, 0);
+        gl.clear(gl.COLOR_BUFFER_BIT);
+
+        gl.activeTexture(gl.TEXTURE0);
+        gl.bindTexture(gl.TEXTURE_2D, this.emissiveTexture);
+        gl.uniform1i(this.u_texture_Blur, 0);
+        gl.uniform2f(this.u_texelOffset_Blur, 1.0 / halfWidth, 0.0);
+
+        gl.drawArrays(gl.TRIANGLES, 0, 3);
+
+        // Vertical blur: blur1 -> blur2
+        gl.bindFramebuffer(gl.FRAMEBUFFER, this.blurFBO2);
+        gl.clearColor(0, 0, 0, 0);
+        gl.clear(gl.COLOR_BUFFER_BIT);
+
+        gl.bindTexture(gl.TEXTURE_2D, this.blurTexture1);
+        gl.uniform2f(this.u_texelOffset_Blur, 0.0, 1.0 / halfHeight);
+
+        gl.drawArrays(gl.TRIANGLES, 0, 3);
+
+        gl.bindVertexArray(null);
     }
 
     _normalVS() {
@@ -1564,8 +1803,7 @@ class Renderer2D {
             }
         }
         `;
-    }
-    _instancedVS() {
+    } _instancedVS() {
         return `#version 300 es
         layout(location=0) in vec2 a_position; 
         layout(location=1) in vec2 a_texCoord;
@@ -1573,14 +1811,20 @@ class Renderer2D {
         layout(location=3) in float a_rotation;
         layout(location=4) in vec2 a_scale;
         layout(location=5) in vec4 a_color;
+        layout(location=6) in float a_glowStrength;
+        layout(location=7) in float a_blurStrength;
 
         uniform mat4 u_proj;
 
         out vec4 v_color;
         out vec2 v_uv;
+        out float v_glowStrength;
+        out float v_blurStrength;
 
         void main(){
             v_uv = a_texCoord;
+            v_glowStrength = a_glowStrength;
+            v_blurStrength = a_blurStrength;
             float c = cos(a_rotation);
             float s = sin(a_rotation);
             vec2 scaled = a_position * a_scale;
@@ -1592,40 +1836,130 @@ class Renderer2D {
             v_color = a_color;
         }
         `;
-    }
-    _instancedFS() {
+    } _instancedFS() {
         return `#version 300 es
         precision mediump float;
 
-        in vec4 v_color;
-        in vec2 v_uv;
+        in  vec4  v_color;
+        in  vec2  v_uv;
+        in  float v_glowStrength;
+        in  float v_blurStrength;
 
-        uniform bool  u_useGlow;       // toggle glow on/off
-        uniform float u_glowRadius;    // where glow falls to zero (in UV space)
-        uniform float u_glowSoftness;  // how wide the fade‐band is
         uniform sampler2D u_texture;
-        uniform bool u_useTexture;
-       
+        uniform bool      u_useTexture;
+        uniform bool      u_isEmissivePass;   
+
         out vec4 outColor;
 
-        void main(){
-            vec4 baseColor = v_color;
+        void main() {
+            vec4 base = u_useTexture ? texture(u_texture, v_uv) * v_color
+                                    : v_color;
+
+            if (u_isEmissivePass) {
+                // scale by both controls; >1.0 perfectly OK
+                base.rgb *= v_glowStrength * v_blurStrength;
+                // Alpha can stay as-is so bloom inherits original opacity
+            }
+
+            outColor = base;
+        }
+        `;
+    }
+
+    // Post-processing shaders
+    _emissiveVS() {
+        return `#version 300 es
+        layout(location=0) in vec2 a_position;
+        
+        out vec2 v_uv;
+        
+        void main() {
+            v_uv = a_position * 0.5 + 0.5;
+            gl_Position = vec4(a_position, 0.0, 1.0);
+        }
+        `;
+    } _emissiveFS() {
+        return `#version 300 es
+        precision mediump float;
+        
+        in vec2 v_uv;
+        
+        uniform sampler2D u_sceneTexture;
+        
+        out vec4 outColor;
+        
+        void main() {
+            vec4 sceneColor = texture(u_sceneTexture, v_uv);
             
-            if (u_useTexture) {
-                vec4 texColor = texture(u_texture, v_uv);
-                baseColor = texColor * v_color;
+            // For emissive pass, we want to downscale the scene texture to half resolution
+            // This will be filled with emissive content by the main rendering
+            outColor = sceneColor;
+        }
+        `;
+    }
+
+    _blurVS() {
+        return `#version 300 es
+        layout(location=0) in vec2 a_position;
+        
+        out vec2 v_uv;
+        
+        void main() {
+            v_uv = a_position * 0.5 + 0.5;
+            gl_Position = vec4(a_position, 0.0, 1.0);
+        }
+        `;
+    }
+
+    _blurFS() {
+        return `#version 300 es
+        precision mediump float;
+        
+        in vec2 v_uv;
+        
+        uniform sampler2D u_texture;
+        uniform vec2 u_texelOffset;
+        
+        out vec4 outColor;
+        
+        void main() {
+            // 9-tap Gaussian blur kernel weights
+            float weights[9];
+            weights[0] = 0.013519; weights[1] = 0.047662; weights[2] = 0.118318;
+            weights[3] = 0.205065; weights[4] = 0.231126; weights[5] = 0.205065;
+            weights[6] = 0.118318; weights[7] = 0.047662; weights[8] = 0.013519;
+            
+            vec3 color = vec3(0.0);
+            float alpha = 0.0;
+              for (int i = 0; i < 9; i++) {
+                vec2 offset = u_texelOffset * float(i - 4);
+                vec4 texSample = texture(u_texture, v_uv + offset);
+                color += texSample.rgb * weights[i];
+                alpha += texSample.a * weights[i];
             }
             
-            float glow = 1.0;
-            if(u_useGlow) {
-                float dist = distance(v_uv, vec2(0.5));
-                // smoothstep(edge0, edge1, x): 0 at x>=edge0, 1 at x<=edge1
-                 glow = smoothstep(u_glowRadius, u_glowRadius - u_glowSoftness, dist);
-            }
-            
-            vec3 col = baseColor.rgb * glow;
-            float a   = baseColor.a   * glow;
-            outColor = vec4(col, a);
+            outColor = vec4(color, alpha);
+        }
+        `;
+    } _compositeFS() {
+        return `#version 300 es
+        precision mediump float;
+
+        in  vec2 v_uv;
+        uniform sampler2D u_sceneTexture;    // full-res
+        uniform sampler2D u_bloomTexture;    // half-res, already blurred
+        uniform float     u_globalBlurStrength; // 0-1 (optional, keep for future)
+
+        out vec4 outColor;
+
+        void main() {
+            vec3 scene  = texture(u_sceneTexture, v_uv).rgb;
+            vec3 bloom  = texture(u_bloomTexture, v_uv).rgb;
+
+            // tone-map or clamp if you wish
+            vec3 colour = scene + bloom * 20.0;                 // simple additive output
+
+            outColor = vec4(colour, 1.0);                // alpha forced to 1
         }
         `;
     }
@@ -1718,7 +2052,6 @@ class Renderer2D {
         }
         return out;
     }
-
     _resizeIfNeeded() {
         const gl = this.gl;
         const dpr = window.devicePixelRatio || 1;
@@ -1729,7 +2062,227 @@ class Renderer2D {
             this.canvas.width = width;
             this.canvas.height = height;
             this._updateProjectionMatrix();
+
+            // Resize post-processing buffers when canvas size changes
+            if (this.postProcessingInitialized) {
+                this._resizePostProcessingBuffers();
+            }
         }
+    }
+
+    _initPostProcessing() {
+        const gl = this.gl;
+
+        // Create full-screen triangle for post-processing
+        this.fullScreenTriangleVAO = gl.createVertexArray();
+        gl.bindVertexArray(this.fullScreenTriangleVAO);
+
+        const fullScreenVerts = new Float32Array([
+            -1, -1,   // bottom-left
+            3, -1,   // bottom-right (extends past screen)
+            -1, 3    // top-left (extends past screen)
+        ]);
+
+        this.fullScreenVBO = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, this.fullScreenVBO);
+        gl.bufferData(gl.ARRAY_BUFFER, fullScreenVerts, gl.STATIC_DRAW);
+        gl.enableVertexAttribArray(0);
+        gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
+
+        gl.bindVertexArray(null);
+
+        // Will be initialized properly in _resizePostProcessingBuffers
+        this.sceneFBO = null;
+        this.sceneTexture = null;
+        this.emissiveFBO = null;
+        this.emissiveTexture = null;
+        this.blurFBO1 = null;
+        this.blurTexture1 = null;
+        this.blurFBO2 = null;
+        this.blurTexture2 = null;
+
+        this.postProcessingInitialized = false;
+    }
+
+    _resizePostProcessingBuffers() {
+        const gl = this.gl;
+        const width = this.canvas.width;
+        const height = this.canvas.height;
+        const halfWidth = Math.max(1, Math.floor(width / 2));
+        const halfHeight = Math.max(1, Math.floor(height / 2));
+
+        // Clean up existing buffers
+        if (this.sceneFBO) {
+            gl.deleteFramebuffer(this.sceneFBO);
+            gl.deleteTexture(this.sceneTexture);
+            gl.deleteFramebuffer(this.emissiveFBO);
+            gl.deleteTexture(this.emissiveTexture);
+            gl.deleteFramebuffer(this.blurFBO1);
+            gl.deleteTexture(this.blurTexture1);
+            gl.deleteFramebuffer(this.blurFBO2);
+            gl.deleteTexture(this.blurTexture2);
+        }
+
+        // Scene texture (full resolution)
+        this.sceneTexture = gl.createTexture();
+        gl.bindTexture(gl.TEXTURE_2D, this.sceneTexture);
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, width, height, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+
+        this.sceneFBO = gl.createFramebuffer();
+        gl.bindFramebuffer(gl.FRAMEBUFFER, this.sceneFBO);
+        gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this.sceneTexture, 0);
+
+        // Emissive texture (half resolution)
+        this.emissiveTexture = gl.createTexture();
+        gl.bindTexture(gl.TEXTURE_2D, this.emissiveTexture);
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, halfWidth, halfHeight, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+
+        this.emissiveFBO = gl.createFramebuffer();
+        gl.bindFramebuffer(gl.FRAMEBUFFER, this.emissiveFBO);
+        gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this.emissiveTexture, 0);
+
+        // Blur textures (half resolution, ping-pong)
+        this.blurTexture1 = gl.createTexture();
+        gl.bindTexture(gl.TEXTURE_2D, this.blurTexture1);
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, halfWidth, halfHeight, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+
+        this.blurFBO1 = gl.createFramebuffer();
+        gl.bindFramebuffer(gl.FRAMEBUFFER, this.blurFBO1);
+        gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this.blurTexture1, 0);
+
+        this.blurTexture2 = gl.createTexture();
+        gl.bindTexture(gl.TEXTURE_2D, this.blurTexture2);
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, halfWidth, halfHeight, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+
+        this.blurFBO2 = gl.createFramebuffer();
+        gl.bindFramebuffer(gl.FRAMEBUFFER, this.blurFBO2);
+        gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this.blurTexture2, 0);
+
+        // Check framebuffer completeness
+        if (gl.checkFramebufferStatus(gl.FRAMEBUFFER) !== gl.FRAMEBUFFER_COMPLETE) {
+            console.error('Framebuffer not complete');
+        }
+
+        gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+        this.postProcessingInitialized = true;
+    }
+
+    _doPostProcessing() {
+        const gl = this.gl;
+        const halfWidth = Math.max(1, Math.floor(this.canvas.width / 2));
+        const halfHeight = Math.max(1, Math.floor(this.canvas.height / 2));
+
+        // 1. Render scene to texture
+        gl.bindFramebuffer(gl.FRAMEBUFFER, this.sceneFBO);
+        gl.clear(gl.COLOR_BUFFER_BIT);
+        for (const sh of this.normalShapes) {
+            this._drawNormalShape(sh);
+        }
+        for (const grp of this.instancedGroups) {
+            this._drawInstancedGroup(grp);
+        }
+
+        // 2. Extract emissive parts
+        gl.bindFramebuffer(gl.FRAMEBUFFER, this.emissiveFBO);
+        gl.clear(gl.COLOR_BUFFER_BIT);
+        gl.useProgram(this.emissiveProgram);
+        gl.activeTexture(gl.TEXTURE0);
+        gl.bindTexture(gl.TEXTURE_2D, this.sceneTexture);
+        gl.uniform1i(this.u_sceneTexture_Emissive, 0);
+        gl.bindVertexArray(this.fullScreenTriangleVAO);
+        gl.drawArrays(gl.TRIANGLES, 0, 3);
+
+        // 3. Blur emissive parts
+        gl.bindFramebuffer(gl.FRAMEBUFFER, this.blurFBO1);
+        gl.clear(gl.COLOR_BUFFER_BIT);
+        gl.useProgram(this.blurProgram);
+        gl.activeTexture(gl.TEXTURE0);
+        gl.bindTexture(gl.TEXTURE_2D, this.emissiveTexture);
+        gl.uniform1i(this.u_texture_Blur, 0);
+        gl.uniform2f(this.u_texelOffset_Blur, 1.0 / halfWidth, 0.0);
+
+        gl.drawArrays(gl.TRIANGLES, 0, 3);
+
+        gl.bindFramebuffer(gl.FRAMEBUFFER, this.blurFBO2);
+        gl.clear(gl.COLOR_BUFFER_BIT);
+        gl.useProgram(this.blurProgram);
+        gl.activeTexture(gl.TEXTURE0);
+        gl.bindTexture(gl.TEXTURE_2D, this.blurTexture1);
+        gl.uniform1i(this.u_texture_Blur, 0);
+        gl.uniform2f(this.u_texelOffset_Blur, 0.0, 1.0 / halfHeight);
+
+        gl.drawArrays(gl.TRIANGLES, 0, 3);
+
+        // 4. Composite scene and blurred emissive parts
+        gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+        gl.clear(gl.COLOR_BUFFER_BIT);
+        gl.useProgram(this.compositeProgram);
+        gl.activeTexture(gl.TEXTURE0);
+        gl.bindTexture(gl.TEXTURE_2D, this.sceneTexture);
+        gl.uniform1i(this.u_sceneTexture_Composite, 0);
+        gl.activeTexture(gl.TEXTURE1);
+        gl.bindTexture(gl.TEXTURE_2D, this.blurTexture2);
+        gl.uniform1i(this.u_bloomTexture_Composite, 1);
+        gl.uniform1f(this.u_globalBlurStrength_Composite, 1.0);
+        gl.bindVertexArray(this.fullScreenTriangleVAO);
+        gl.drawArrays(gl.TRIANGLES, 0, 3);
+    }
+
+    // Buffer upload methods for normal shapes
+    _uploadShapeBuffers(shape) {
+        this._uploadShapeVertices(shape);
+        this._uploadShapeIndices(shape);
+        this._uploadShapeTexCoords(shape);
+    }
+
+    _uploadShapeVertices(shape) {
+        const gl = this.gl;
+        if (!shape.vertices) return;
+
+        if (!shape._vbo) {
+            shape._vbo = gl.createBuffer();
+        }
+        gl.bindBuffer(gl.ARRAY_BUFFER, shape._vbo);
+        gl.bufferData(gl.ARRAY_BUFFER, shape.vertices, gl.STATIC_DRAW);
+        shape._vertexCount = shape.vertices.length / 2;
+    }
+
+    _uploadShapeIndices(shape) {
+        const gl = this.gl;
+        if (!shape.indices) return;
+
+        if (!shape._ibo) {
+            shape._ibo = gl.createBuffer();
+        }
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, shape._ibo);
+        gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, shape.indices, gl.STATIC_DRAW);
+    }
+
+    _uploadShapeTexCoords(shape) {
+        const gl = this.gl;
+        if (!shape.texCoords) return;
+
+        if (!shape._texCoordVbo) {
+            shape._texCoordVbo = gl.createBuffer();
+        }
+        gl.bindBuffer(gl.ARRAY_BUFFER, shape._texCoordVbo);
+        gl.bufferData(gl.ARRAY_BUFFER, shape.texCoords, gl.STATIC_DRAW);
     }
 }
 
@@ -1800,4 +2353,5 @@ export {
     buildStrokeGeometry,
     buildTriangle,
     buildTexturedSquare,
+    buildSliceBurst,
 };

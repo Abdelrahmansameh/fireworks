@@ -35,6 +35,8 @@ class UIManager {
                 enableTrail: true,
                 trailLength: 11,
                 trailWidth: 2.6,
+                glowStrength: 0.3,
+                blurStrength: 0.3
             });
             this.game.updateComponentsList();
             this.game.saveCurrentRecipeComponents();
@@ -494,6 +496,12 @@ class UIManager {
             if (!('trailWidth' in component)) {
                 component.trailWidth = 1.5;
             }
+            if (!('glowStrength' in component)) {
+                component.glowStrength = 0.0;
+            }
+            if (!('blurStrength' in component)) {
+                component.blurStrength = 0.0;
+            }
             const componentDiv = document.createElement('div');
             componentDiv.classList.add('component');
 
@@ -557,12 +565,20 @@ class UIManager {
                     <div class="recipes-option trail-container">
                         <label>Trail:</label>
                         <input type="checkbox" class="trail-toggle" data-index="${index}" ${component.enableTrail ? 'checked' : ''}>
-                    </div>
+                    </div>                    
                     <div class="recipes-option trail-options" style="display: ${component.enableTrail ? 'block' : 'none'};">
                         <label>Trail Length:</label>
                         <input type="range" class="trail-length-select" data-index="${index}" min="1" max="15" step="0.5" value="${component.trailLength}">
                         <label>Trail Width:</label>
                         <input type="range" class="trail-width-select" data-index="${index}" min="0.5" max="7" step="0.1" value="${component.trailWidth}">
+                    </div>
+                    <div class="recipes-option">
+                        <label>Glow Strength:</label>
+                        <input type="range" class="glow-strength-select" data-index="${index}" min="0" max="2" step="0.05" value="${component.glowStrength}">
+                    </div>
+                    <div class="recipes-option">
+                        <label>Blur Strength:</label>
+                        <input type="range" class="blur-strength-select" data-index="${index}" min=".5" max="2" step="0.05" value="${component.blurStrength}">
                     </div>
                 </div>
             `;
@@ -589,11 +605,12 @@ class UIManager {
             const sizeSelect = componentDiv.querySelector('.size-select');
             const lifetimeSelect = componentDiv.querySelector('.lifetime-select');
             const spreadSelect = componentDiv.querySelector('.spread-select');
-            const trailContainer = componentDiv.querySelector('.trail-container');
-            const trailToggle = componentDiv.querySelector('.trail-toggle');
+            const trailContainer = componentDiv.querySelector('.trail-container');            const trailToggle = componentDiv.querySelector('.trail-toggle');
             const trailOptions = componentDiv.querySelector('.trail-options');
             const trailLengthSelect = componentDiv.querySelector('.trail-length-select');
             const trailWidthSelect = componentDiv.querySelector('.trail-width-select');
+            const glowStrengthSelect = componentDiv.querySelector('.glow-strength-select');
+            const blurStrengthSelect = componentDiv.querySelector('.blur-strength-select');
 
             const updateSecondaryColorVisibility = () => {
                 if (patternSelect.value === 'helix' || patternSelect.value === 'christmasTree') {
@@ -677,11 +694,34 @@ class UIManager {
                 const idx = e.target.getAttribute('data-index');
                 components[idx].trailLength = parseFloat(e.target.value);
                 onUpdate();
-            });
-
+            });            
             trailWidthSelect.addEventListener('input', (e) => {
                 const idx = e.target.getAttribute('data-index');
                 components[idx].trailWidth = parseFloat(e.target.value);
+                onUpdate();
+            });
+
+            glowStrengthSelect.addEventListener('input', (e) => {
+                const idx = e.target.getAttribute('data-index');
+                const value = parseFloat(e.target.value);
+                components[idx].glowStrength = value;
+                // Update the value display
+                const valueDisplay = e.target.nextElementSibling;
+                if (valueDisplay && valueDisplay.classList.contains('value-display')) {
+                    valueDisplay.textContent = value.toFixed(2);
+                }
+                onUpdate();
+            });
+
+            blurStrengthSelect.addEventListener('input', (e) => {
+                const idx = e.target.getAttribute('data-index');
+                const value = parseFloat(e.target.value);
+                components[idx].blurStrength = value;
+                // Update the value display
+                const valueDisplay = e.target.nextElementSibling;
+                if (valueDisplay && valueDisplay.classList.contains('value-display')) {
+                    valueDisplay.textContent = value.toFixed(2);
+                }
                 onUpdate();
             });
 

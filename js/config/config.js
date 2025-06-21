@@ -6,7 +6,7 @@ const FIREWORK_CONFIG = {
     trailDistBetweenPoints: 5,
     trailWidth: 2.0,
     baseSpeed: 150,
-    baseFriction: 2.0,
+    baseFriction: 1.0,
     verticalFrictionMultiplier: .9,
     gravityMultiplier: 5,
     particleSize: 5.0,
@@ -22,19 +22,37 @@ const FIREWORK_CONFIG = {
     autoLauncherMeshColor: { r: 136 / 255, g: 136 / 255, b: 136 / 255, a: 1 },
     patternGravities: {
         spherical: 9.81,
-        solidsphere: 20,
+        solidsphere: 30,
         ring: 8.0,
-        heart: 1,
-        star: 10,
+        heart: 50.0,
+        star: 13,
         brocade: 10,
-        burst: 9.81,
-        palm: 5.0,
-        willow: 20,
-        christmasTree: 0.4,
+        burst: 15,
+        palm: 10.0,
+        willow: 30,
+        christmasTree: 20.4,
         brokenHeart: 2,
         spinner: 2,
         spinningtails: 0.3,
+        helix: 0.3,
         default: 0.7
+    },
+    patternFriction: {
+        spherical: 1.0,
+        solidsphere: 2,
+        ring: 2.0,
+        heart: 2.0,
+        star: 2.0,
+        brocade: 2.0,
+        burst: 2.0,
+        palm: 2.0,
+        willow: -1.3,
+        christmasTree: 1.5,
+        brokenHeart: 2.0,
+        spinner: 0.0,
+        spinningtails: 0.0,
+        helix: 0.0,
+        default: 0.0
     },
     supportedShapes: ['sphere', 'star', 'ring', 'crystalDroplet', 'sliceBurst']
 };
@@ -49,7 +67,10 @@ const DEFAULT_RECIPE_COMPONENTS = [{
     secondaryColor: '#00ff00',
     enableTrail: true,
     trailLength: 11,
-    trailWidth: 2.6,}];
+    trailWidth: 2.6,
+    glowStrength: 2.0,
+    blurStrength: 1.0
+}];
 
 const GAME_BOUNDS = {
     LAUNCHER_MIN_X: 100,

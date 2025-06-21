@@ -36,15 +36,15 @@ class InstancedParticleSystem {
         });
 
         const geometries = {
-            circle: Renderer2D.buildCircle(1),
+            sphere: Renderer2D.buildCircle(1),
             star: Renderer2D.buildStar(),
-            triangle: Renderer2D.buildTriangle(),
-            square: Renderer2D.buildRing(0.7,0.7), // hack for a square
-            droplet: Renderer2D.buildDroplet(),
+            ring: Renderer2D.buildRing(),
+            crystalDroplet: Renderer2D.buildDroplet(),
+            sliceBurst: Renderer2D.buildSliceBurst(),
         };
 
         FIREWORK_CONFIG.supportedShapes.forEach(shape => {
-            const g = geometries[shape] || geometries.circle;
+            const g = geometries[shape] || geometries.sphere;
             this.meshes[shape] = this.renderer.createInstancedGroup({
                 vertices: g.vertices,
                 indices: g.indices,
@@ -80,29 +80,33 @@ class InstancedParticleSystem {
         this.gravityIdx = 14;
         this.rotationIdx = 15;
         this.frictionIdx = 16;
-        
+
         // trail properties
         this.hasTrailIdx = 17;
         this.trailLengthIdx = 18;
         this.trailWidthIdx = 19;
         this.trailHeadIndexIdx = 20;
         this.trailPointsCountIdx = 21;
+        this.trailGlowStrengthIdx = 22;
+        this.trailBlurStrengthIdx = 23;
 
-        this.strideFloats = 22;
+        this.strideFloats = 24;
     }
 
-    addParticle(position, 
-        velocity, 
-        color, 
-        scale, 
-        lifetime, 
+    addParticle(position,
+        velocity,
+        color,
+        scale,
+        lifetime,
         gravity,
-        shape = 'circle', 
+        shape = 'circle',
         acceleration = new Vector2(),
         enableTrail = true,
-        trailLength = 4, 
-        trailWidth = 1.5, 
+        trailLength = 4,
+        trailWidth = 1.5,
         friction = FIREWORK_CONFIG.baseFriction,
+        glowStrength = 0,
+        blurStrength = 0,
         updateFn = null) {
         if (!this.meshes[shape]) shape = 'circle';
         const idx = this.activeCounts[shape];
@@ -135,7 +139,6 @@ class InstancedParticleSystem {
 
         const dir = velocity.clone().normalize().scale(-1);
         d[base + this.rotationIdx] = dir.getAngle();
-
         this.meshes[shape].addInstanceRaw(
             position.x,
             position.y,
@@ -145,7 +148,9 @@ class InstancedParticleSystem {
             color.r,
             color.g,
             color.b,
-            color.a
+            color.a,
+            glowStrength,
+            blurStrength
         );
 
         if (enableTrail) {
@@ -154,6 +159,8 @@ class InstancedParticleSystem {
             d[base + this.trailWidthIdx] = trailWidth;
             d[base + this.trailHeadIndexIdx] = 1;
             d[base + this.trailPointsCountIdx] = 1;
+            d[base + this.trailGlowStrengthIdx] = glowStrength;
+            d[base + this.trailBlurStrengthIdx] = blurStrength;
 
             const trailBuffer = this.trailPoints[shape];
             const trailStartIndex = idx * this.maxTrailPoints * 2;
@@ -217,7 +224,7 @@ class InstancedParticleSystem {
                         trailBuffer.copyWithin(deadTrailOffset, lastTrailOffset, lastTrailOffset + trailSegmentSize);
                         updateFns[i] = updateFns[lastIdx];
                     }
-                    
+
                     const lastTrailOffset = lastIdx * trailSegmentSize;
                     trailBuffer.fill(0, lastTrailOffset, lastTrailOffset + trailSegmentSize);
                     updateFns[lastIdx] = null;
@@ -254,7 +261,7 @@ class InstancedParticleSystem {
                     const trailLength = d[sBase + this.trailLengthIdx];
                     const trailStartIndex = i * this.maxTrailPoints * 2;
                     let headIdx = d[sBase + this.trailHeadIndexIdx];
-                    
+
                     const lastPointLocalIdx = (headIdx - 1 + trailLength) % trailLength;
                     const lastPointAbsIdx = trailStartIndex + lastPointLocalIdx * 2;
 
@@ -262,11 +269,11 @@ class InstancedParticleSystem {
                     const dy = d[sBase + this.positionIdx + 1] - trailBuffer[lastPointAbsIdx + 1];
                     const dist = Math.hypot(dx, dy);
 
-                    if(dist > this.trailDistBetweenPoints){
+                    if (dist > this.trailDistBetweenPoints) {
                         const newPointAbsIdx = trailStartIndex + headIdx * 2;
                         trailBuffer[newPointAbsIdx] = d[sBase + this.positionIdx];
                         trailBuffer[newPointAbsIdx + 1] = d[sBase + this.positionIdx + 1];
-                        
+
                         d[sBase + this.trailHeadIndexIdx] = (headIdx + 1) % trailLength;
                         d[sBase + this.trailPointsCountIdx] = Math.min(trailLength, d[sBase + this.trailPointsCountIdx] + 1);
                     }
@@ -297,7 +304,7 @@ class InstancedParticleSystem {
                 const pointsCount = d[sBase + this.trailPointsCountIdx];
                 const headIdx = d[sBase + this.trailHeadIndexIdx];
                 const trailStartIndex = i * this.maxTrailPoints * 2;
-                
+
                 const colorR = d[sBase + this.colorIdx];
                 const colorG = d[sBase + this.colorIdx + 1];
                 const colorB = d[sBase + this.colorIdx + 2];
@@ -320,7 +327,7 @@ class InstancedParticleSystem {
                     const dx = bx - ax, dy = by - ay;
                     const len = Math.hypot(dx, dy);
                     if (len < 0.001) continue;
-                    
+
                     const ang = Math.atan2(dy, dx) - Math.PI * 0.5;
                     const mx = (ax + bx) * 0.5;
                     const my = (ay + by) * 0.5;
@@ -329,7 +336,7 @@ class InstancedParticleSystem {
                         mx, my,
                         ang,
                         trailWidth, len,
-                        colorR, colorG, colorB, fadeAlpha * (2 * Math.random())
+                        colorR, colorG, colorB, fadeAlpha * (2 * Math.random(), d[sBase + this.trailGlowStrengthIdx], d[sBase + this.trailBlurStrengthIdx])
                     );
                 }
             }
