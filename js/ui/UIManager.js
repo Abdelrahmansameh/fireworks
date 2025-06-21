@@ -569,12 +569,10 @@ class UIManager {
                     <div class="recipes-option color-gradient-options" style="display: ${component.enableColorGradient ? 'block' : 'none'};">
                         <label>Gradient Final Color:</label>
                         <input type="color" class="gradient-final-color-input" data-index="${index}" value="${component.gradientFinalColor}">
-                        <label>Gradient Start Time (% of lifetime):</label>
+                        <label>Gradient Start Time:</label>
                         <input type="range" class="gradient-start-time-select" data-index="${index}" min="0" max="1" step="0.01" value="${component.gradientStartTime}">
-                        <span class="value-display">${component.gradientStartTime.toFixed(2)}</span>
-                        <label>Gradient Duration (% of lifetime):</label>
+                        <label>Gradient Duration :</label>
                         <input type="range" class="gradient-duration-select" data-index="${index}" min="0" max="1" step="0.01" value="${component.gradientDuration}">
-                        <span class="value-display">${component.gradientDuration.toFixed(2)}</span>
                     </div>
                     <div class="recipes-option secondary-color-container" style="display:none;">
                         <label>Secondary Color:</label>
