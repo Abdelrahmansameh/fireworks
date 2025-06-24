@@ -1,11 +1,14 @@
 import { FIREWORK_CONFIG } from '../config/config.js';
 import * as Renderer2D from '../rendering/Renderer.js';
+import ParticleGPUUpdater from './ParticleGPUUpdater.js';
 const { BlendMode, Color, Vector2 } = Renderer2D;
 
 class InstancedParticleSystem {
     constructor(renderer, profiler) {
         this.profiler = profiler;
         this.renderer = renderer;
+
+        this.gpuUpdater = new ParticleGPUUpdater(this.renderer.gl, FIREWORK_CONFIG.maxParticles);
 
         this.maxParticles = FIREWORK_CONFIG.maxParticles;
         this.maxTrailPoints = FIREWORK_CONFIG.trailMaxPoints;
@@ -212,6 +215,17 @@ class InstancedParticleSystem {
     update(delta) {
         if (!delta) return;
         this.profiler?.startFunction?.('particleSystemUpdate');
+
+        // Prototype GPU update: physics only
+        FIREWORK_CONFIG.supportedShapes.forEach(shape => {
+            if (!this.instanceData[shape]) return;
+            const d = this.instanceData[shape];
+            this.gpuUpdater.update(delta, d, this.activeCounts[shape]);
+        });
+
+        // TODO: migrate color and trail updates to GPU
+        this.profiler?.endFunction?.('particleSystemUpdate');
+        return;
 
         FIREWORK_CONFIG.supportedShapes.forEach(shape => {
             if (!this.instanceData[shape]) return;
