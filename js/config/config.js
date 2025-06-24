@@ -1,7 +1,7 @@
 // Game Configuration Constants
 
 const FIREWORK_CONFIG = {
-    maxParticles: 500000,
+    maxParticles: 1000000,
     trailMaxPoints: 20,
     trailDistBetweenPoints: 5,
     trailWidth: 2.0,
