@@ -214,16 +214,28 @@ class InstancedParticleSystem {
 
     update(delta) {
         if (!delta) return;
-        this.profiler?.startFunction?.('particleSystemUpdate');
-
+        this.profiler?.startFunction?.('particleSystemUpdate');        
         FIREWORK_CONFIG.supportedShapes.forEach(shape => {
             if (!this.instanceData[shape]) return;
             const d = this.instanceData[shape];
             this.gpuUpdater.update(delta, d, this.activeCounts[shape]);
+            
+            const grp = this.meshes[shape];
+            const gpu = grp.instanceData;
+            const count = this.activeCounts[shape];
+            const sStr = this.strideFloats;
+            const gStr = grp.instanceStrideFloats;
+            
+            for (let i = 0; i < count; i++) {
+                const sBase = i * sStr;
+                const gBase = i * gStr;
+                
+                gpu[gBase + 0] = d[sBase + this.positionIdx];     
+                gpu[gBase + 1] = d[sBase + this.positionIdx + 1]; 
+            }
+            
+            grp.instanceCount = count;
         });
-
-        this.profiler?.endFunction?.('particleSystemUpdate');
-        return;
 
         FIREWORK_CONFIG.supportedShapes.forEach(shape => {
             if (!this.instanceData[shape]) return;
