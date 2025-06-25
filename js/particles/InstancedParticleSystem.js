@@ -214,29 +214,17 @@ class InstancedParticleSystem {
 
     update(delta) {
         if (!delta) return;
-        this.profiler?.startFunction?.('particleSystemUpdate');        
+        this.profiler?.startFunction?.('particleSystemUpdate');
+
+        // --- GPU Physics Update ---
         FIREWORK_CONFIG.supportedShapes.forEach(shape => {
-            if (!this.instanceData[shape]) return;
+            if (!this.instanceData[shape] || this.activeCounts[shape] === 0) return;
             const d = this.instanceData[shape];
-            this.gpuUpdater.update(delta, d, this.activeCounts[shape]);
-            
-            const grp = this.meshes[shape];
-            const gpu = grp.instanceData;
             const count = this.activeCounts[shape];
-            const sStr = this.strideFloats;
-            const gStr = grp.instanceStrideFloats;
-            
-            for (let i = 0; i < count; i++) {
-                const sBase = i * sStr;
-                const gBase = i * gStr;
-                
-                gpu[gBase + 0] = d[sBase + this.positionIdx];     
-                gpu[gBase + 1] = d[sBase + this.positionIdx + 1]; 
-            }
-            
-            grp.instanceCount = count;
+            this.gpuUpdater.update(delta, d, count, FIREWORK_CONFIG.verticalFrictionMultiplier);
         });
 
+        // --- CPU-side processing (lifetime check, trails, etc.) ---
         FIREWORK_CONFIG.supportedShapes.forEach(shape => {
             if (!this.instanceData[shape]) return;
 
@@ -253,21 +241,7 @@ class InstancedParticleSystem {
             for (let i = 0; i < count; i++) {
                 const sBase = i * sStr, gBase = i * gStr;
 
-                const updateFn = updateFns[i];
-                if (updateFn) {
-                    state.position.set(d[sBase + this.positionIdx], d[sBase + this.positionIdx + 1]);
-                    state.velocity.set(d[sBase + this.velocityIdx], d[sBase + this.velocityIdx + 1]);
-                    state.acceleration.set(d[sBase + this.accelerationIdx], d[sBase + this.accelerationIdx + 1]);
-                    updateFn(state, delta);
-                    d[sBase + this.positionIdx] = state.position.x;
-                    d[sBase + this.positionIdx + 1] = state.position.y;
-                    d[sBase + this.velocityIdx] = state.velocity.x;
-                    d[sBase + this.velocityIdx + 1] = state.velocity.y;
-                    d[sBase + this.accelerationIdx] = state.acceleration.x;
-                    d[sBase + this.accelerationIdx + 1] = state.acceleration.y;
-                }
-
-                d[sBase + this.lifetimeIdx] -= delta;
+                // --- Lifetime Check ---
                 if (d[sBase + this.lifetimeIdx] <= 0) {
                     const lastIdx = count - 1;
                     const trailSegmentSize = this.maxTrailPoints * 2;
@@ -291,17 +265,24 @@ class InstancedParticleSystem {
                     continue;
                 }
 
-                const f = d[sBase + this.frictionIdx];
-                const hf = 1 - f * delta;
-                const vf = 1 - f * FIREWORK_CONFIG.verticalFrictionMultiplier * delta;
-                d[sBase + this.velocityIdx] += d[sBase + this.accelerationIdx] * delta;
-                d[sBase + this.velocityIdx + 1] += (d[sBase + this.accelerationIdx + 1]
-                    - d[sBase + this.gravityIdx]) * delta;
-                d[sBase + this.velocityIdx] *= hf;
-                d[sBase + this.velocityIdx + 1] *= vf;
-                d[sBase + this.positionIdx] += d[sBase + this.velocityIdx] * delta;
-                d[sBase + this.positionIdx + 1] += d[sBase + this.velocityIdx + 1] * delta;                const n = d[sBase + this.lifetimeIdx] / d[sBase + this.initialLifetimeIdx];
-                d[sBase + this.colorIdx + 3] = (n * n) * (2 * Math.random());               
+                // --- Custom Update Functions (still on CPU) ---
+                const updateFn = updateFns[i];
+                if (updateFn) {
+                    state.position.set(d[sBase + this.positionIdx], d[sBase + this.positionIdx + 1]);
+                    state.velocity.set(d[sBase + this.velocityIdx], d[sBase + this.velocityIdx + 1]);
+                    state.acceleration.set(d[sBase + this.accelerationIdx], d[sBase + this.accelerationIdx + 1]);
+                    updateFn(state, delta);
+                    d[sBase + this.positionIdx] = state.position.x;
+                    d[sBase + this.positionIdx + 1] = state.position.y;
+                    d[sBase + this.velocityIdx] = state.velocity.x;
+                    d[sBase + this.velocityIdx + 1] = state.velocity.y;
+                    d[sBase + this.accelerationIdx] = state.acceleration.x;
+                    d[sBase + this.accelerationIdx + 1] = state.acceleration.y;
+                }
+
+                // --- Visual Updates (Alpha, Color Gradients - still on CPU for now) ---
+                const n = d[sBase + this.lifetimeIdx] / d[sBase + this.initialLifetimeIdx];
+                d[sBase + this.colorIdx + 3] = (n * n) * (2 * Math.random());
                 if (d[sBase + this.enableColorGradientIdx] > 0.5) {
                     const normalizedLifetime = 1 - n; // 0 = dead, 1 = just born
                     const gradientStartTime = d[sBase + this.gradientStartTimeIdx];
@@ -327,6 +308,7 @@ class InstancedParticleSystem {
                     }
                 }
 
+                // --- Update GPU instance data for rendering ---
                 gpu[gBase + 0] = d[sBase + this.positionIdx];
                 gpu[gBase + 1] = d[sBase + this.positionIdx + 1];
                 gpu[gBase + 2] = d[sBase + this.rotationIdx];
@@ -337,6 +319,7 @@ class InstancedParticleSystem {
                 gpu[gBase + 7] = d[sBase + this.colorIdx + 2];
                 gpu[gBase + 8] = d[sBase + this.colorIdx + 3];
 
+                // --- Trail System (still on CPU) ---
                 if (d[sBase + this.hasTrailIdx] > 0.5) {
                     const trailLength = d[sBase + this.trailLengthIdx];
                     const trailStartIndex = i * this.maxTrailPoints * 2;
