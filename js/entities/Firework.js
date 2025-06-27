@@ -183,13 +183,13 @@ class Firework {
                 case 'sparkle':
                     this.trailInstanceGroup.updateInstanceScale(
                         particle.index,
-                        FIREWORK_CONFIG.rocketTrailSize * (0.3 + Math.random() * 0.3) * (age),
-                        FIREWORK_CONFIG.rocketTrailSize * (0.3 + Math.random() * 0.3) * (age)
+                        FIREWORK_CONFIG.rocketTrailSize * (Math.random() * 0.8) * (age *2) + 0.3,
+                        FIREWORK_CONFIG.rocketTrailSize * (Math.random() * 0.8) * (age *2) + 0.3
                     );
                     this.trailInstanceGroup.updateInstanceColor(
                         particle.index,
                         1, 1, 1,
-                        particle.initialOpacity * (age)
+                        particle.initialOpacity
                     );
                     break;
 

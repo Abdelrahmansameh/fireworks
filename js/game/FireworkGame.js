@@ -1,4 +1,4 @@
-import { FIREWORK_CONFIG, GAME_BOUNDS, DEFAULT_RECIPE_COMPONENTS } from '../config/config.js';
+import { FIREWORK_CONFIG, GAME_BOUNDS, DEFAULT_RECIPE_COMPONENTS, GENERIC_RECIPE_NAMES} from '../config/config.js';
 import InstancedParticleSystem from '../particles/InstancedParticleSystem.js';
 import Crowd from '../entities/Crowd.js';
 import Firework from '../entities/Firework.js';
@@ -49,7 +49,7 @@ class FireworkGame {
         // Load game state data 
         const savedGameState = JSON.parse(localStorage.getItem('gameState'));
         if (savedGameState && savedGameState.autoLaunchers) {
-            this.gameState.autoLaunchers = savedGameState.autoLaunchers;
+            this.gameState.autoLaunchers = savedGameState.autoLaunchers.map(launcherData => ({ ...launcherData }));
         }
 
         // Load selected launcher
@@ -63,12 +63,9 @@ class FireworkGame {
         this.initRenderer2D();
         this.initBackgroundColor();
 
-        // Initialize game components
-        this.particleSystem = new InstancedParticleSystem(this.renderer2D, this.profiler);
-        this.crowd = new Crowd(this.renderer2D);
-
-        // Initialize launchers
         this.gameState.autoLaunchers.forEach(launcher => {
+            this.createAutoLauncherMesh(launcher);
+        
             if (!launcher.accumulator) {
                 launcher.accumulator = Math.random() * 5;
             }
@@ -78,8 +75,11 @@ class FireworkGame {
                 launcher.upgradeCost = 15;
             }
             launcher.x = this.clampToLauncherBounds(launcher.x);
-            this.createAutoLauncherMesh(launcher); // Create mesh for existing launchers
         });
+        
+        // Initialize game components
+        this.particleSystem = new InstancedParticleSystem(this.renderer2D, this.profiler);
+        this.crowd = new Crowd(this.renderer2D);
 
         // Initialize crowd
         const initialSps = this.calculateTotalSparklesPerSecond();
@@ -617,9 +617,23 @@ class FireworkGame {
         const recipeNameInput = document.getElementById('recipe-name');
         let recipeName = recipeNameInput.value.trim();
 
+        
         if (!recipeName) {
-            this.showNotification("Please specify a recipe name");
-            return;
+            let randomName = GENERIC_RECIPE_NAMES[Math.floor(Math.random() * GENERIC_RECIPE_NAMES.length)];
+            let existingIndex = this.recipes.findIndex(recipe => recipe.name.toLowerCase() === randomName.toLowerCase());
+            // lord forgive me for this
+            const maxRandoms = 10;
+            let attempts = 0;
+            while (existingIndex !== -1 && attempts < maxRandoms) {
+                randomName = GENERIC_RECIPE_NAMES[Math.floor(Math.random() * GENERIC_RECIPE_NAMES.length)];
+                existingIndex = this.recipes.findIndex(recipe => recipe.name.toLowerCase() === randomName.toLowerCase());
+                attempts++;
+            }
+            if (existingIndex !== -1) {
+                randomName += ` (${existingIndex + 1})`;
+            }
+            recipeName = randomName;
+            recipeNameInput.value = recipeName;
         }
 
         if (this.currentRecipeComponents.length === 0) {
@@ -811,6 +825,17 @@ class FireworkGame {
         }
     }
 
+    stripLauncherForSave(launcher) {
+        return {
+            x: launcher.x,
+            accumulator: launcher.accumulator,
+            assignedRecipeIndex: launcher.assignedRecipeIndex ?? -1,
+            level: launcher.level ?? 1,
+            spawnInterval: launcher.spawnInterval ?? 5,
+            upgradeCost: launcher.upgradeCost ?? 15
+        };
+    }
+
     serializeGameData() {
         const data = {
             fireworkCount: this.fireworkCount,
@@ -818,7 +843,7 @@ class FireworkGame {
             sparkles: this.getSparkles(),
             recipes: this.recipes,
             currentTrailEffect: this.currentTrailEffect,
-            gameState: { autoLaunchers: this.gameState.autoLaunchers }, // Save gameState
+            gameState: { autoLaunchers: this.gameState.autoLaunchers.map(launcher => this.stripLauncherForSave(launcher)) }, // Save only minimal launcher data
             currentRecipeComponents: this.currentRecipeComponents,
             backgroundColor: localStorage.getItem('backgroundColor') || '#000000',
             selectedLauncherIndex: this.selectedLauncherIndex,
@@ -852,22 +877,12 @@ class FireworkGame {
         this.selectedLauncherIndex = data.selectedLauncherIndex ?? null;
 
         if (data.gameState && data.gameState.autoLaunchers) {
-            this.gameState.autoLaunchers = data.gameState.autoLaunchers;
-            // Recreate meshes for deserialized launchers
-            this.gameState.autoLaunchers.forEach(launcher => {
-                if (!launcher.accumulator) {
-                    launcher.accumulator = Math.random() * 5;
-                }
-                if (launcher.level === undefined) {
-                    launcher.level = 1;
-                    launcher.spawnInterval = 5;
-                    launcher.upgradeCost = 15;
-                }
-                launcher.x = this.clampToLauncherBounds(launcher.x);
-                this.createAutoLauncherMesh(launcher); // Create mesh
+            this.gameState.autoLaunchers = data.gameState.autoLaunchers.map(launcherData => {
+                const launcher = { ...launcherData };
+                this.createAutoLauncherMesh(launcher);
+                return launcher;
             });
         }
-
 
         this.updateUI();
         this.updateComponentsList();

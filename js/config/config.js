@@ -84,4 +84,26 @@ const GAME_BOUNDS = {
     CROWD_Y: -510
 };
 
-export { FIREWORK_CONFIG, GAME_BOUNDS, DEFAULT_RECIPE_COMPONENTS };
+const GENERIC_RECIPE_NAMES = [
+    'Boom','Starburst', 'Shooting Star', 'Rainbow Rocket',
+    'Golden Shower', 'Silver Sparkle', 'Crimson Comet', 'Emerald',
+    'Blaster', 'Pulse', 'Wonder', 'Pop',
+    'Orb', 'Twinkle', 'Twink','Violet Vortex', 'Cyclone',
+    'Yonder', 'Black Blast', 'Gay Glimmer', 'Brown Burst',
+    'Nova', 'Pastel Paradise', 'Metallic Meteor', 'Glittering Galaxy',
+    'Firefly Flicker', 'Twilight Twirl', 'Midnight Magic', 'Sunset Spark',
+    'Dawn Dazzle', 'Aurora Arc', 'Starlight Stream',
+    'Cosmic Cascade', 'Lunar Light', 'Solar Flare', 'Meteor Shower',
+    'Comet Tail', 'Nebula Night', 'Galaxy Glow', 'Celestial Sphere',
+    'Radiant Rain', 'Starlight Spark', 'Twinkling Tides', 'Eclipse Echo',
+    'Phantom Flash', 'Mystic Mist', 'Enchanted Ember', 'Dreamy Drift',
+    'Whimsical Whirl', 'Frosty Flicker', 'Iridescent Illusion', 'Sparkling Spectrum',
+    'Electric Eruption', 'Crystal Cascade', 'Aurora Borealis', 'Stellar Storm',
+    'Celestial Comet', 'Galactic Glow', 'Nebula Nova', 'Luminous Lagoon',
+    'Radiant Ripple', 'Twilight Tangle', 'Midnight Mirage', 'Sunrise Sparkle',
+    'Dusk Dazzle', 'Aurora Aura', 'Starlit Symphony', 'Wedding Beige', 'Quebec',
+     'Wedding'
+];
+
+export { FIREWORK_CONFIG, GAME_BOUNDS, DEFAULT_RECIPE_COMPONENTS, GENERIC_RECIPE_NAMES };
+

@@ -57,6 +57,26 @@
         <div class="panel scrollable-panel">
             <h2 class="panel-title">Recipe Editor</h2>
 
+
+            <fieldset>
+                <legend>Explosion</legend>
+                <div id="components-list"></div>
+                <button id="add-component">Add Component</button>
+            </fieldset>
+
+            <fieldset class="recipe-settings">
+                <legend>Rocket</legend>
+                <div class="recipes-option">
+                    <select id="recipe-trail-effect">
+                        <option value="fade">Fade</option>
+                        <option value="sparkle">Sparkle</option>
+                        <option value="rainbow">Rainbow Gradient</option>
+                        <option value="comet">Comet Tail</option>
+                        <option value="none">None</option>
+                    </select>
+                </div>
+            </fieldset>
+
             <fieldset class="recipe-settings">
                 <legend>Name</legend>
                 <div class="recipes-option">
@@ -64,24 +84,6 @@
                 </div>
             </fieldset>
 
-            <fieldset class="recipe-settings">
-            <legend>Rocket</legend>
-            <div class="recipes-option">
-                <select id="recipe-trail-effect">
-                    <option value="fade">Fade</option>
-                    <option value="sparkle">Sparkle</option>
-                    <option value="rainbow">Rainbow Gradient</option>
-                    <option value="comet">Comet Tail</option>
-                    <option value="none">None</option>
-                </select>
-            </div>
-            </fieldset>
-            <fieldset>
-                <legend>Explosion</legend>
-                <div id="components-list"></div>
-                <button id="add-component">Add Component</button>
-            </fieldset>
-            
             <fieldset class="recipe-actions">
                 <button id="save-recipe">Save Recipe</button>
                 <button id="randomize-recipe">Randomize Recipe</button>
@@ -166,7 +168,7 @@
 
     <div id="notification" class="notification" role="alert" aria-live="assertive"></div>
 
-        <div id="overlay" class="overlay"></div>
+    <div id="overlay" class="overlay"></div>
     <div id="confirmation-dialog" class="confirmation-dialog">
         <h3 id="confirmation-title">Confirm</h3>
         <p id="confirmation-message">Are you sure?</p>
