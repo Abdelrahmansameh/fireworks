@@ -1,4 +1,4 @@
-import { FIREWORK_CONFIG, GAME_BOUNDS, DEFAULT_RECIPE_COMPONENTS, GENERIC_RECIPE_NAMES} from '../config/config.js';
+import { FIREWORK_CONFIG, GAME_BOUNDS, DEFAULT_RECIPE_COMPONENTS, GENERIC_RECIPE_NAMES } from '../config/config.js';
 import InstancedParticleSystem from '../particles/InstancedParticleSystem.js';
 import Crowd from '../entities/Crowd.js';
 import Firework from '../entities/Firework.js';
@@ -25,6 +25,9 @@ class FireworkGame {
         this.resourceManager = new ResourceManager(this);
         this.ui = new UIManager(this);
         this.profiler = new GameProfiler();
+
+        this.currentState = 'game';
+        this.advancedCreatorUnlocked = JSON.parse(localStorage.getItem('advancedCreatorUnlocked') || 'false');
 
         this.cameraTransitionSpeed = 2.0;
 
@@ -65,7 +68,7 @@ class FireworkGame {
 
         this.gameState.autoLaunchers.forEach(launcher => {
             this.createAutoLauncherMesh(launcher);
-        
+
             if (!launcher.accumulator) {
                 launcher.accumulator = Math.random() * 5;
             }
@@ -76,7 +79,7 @@ class FireworkGame {
             }
             launcher.x = this.clampToLauncherBounds(launcher.x);
         });
-        
+
         // Initialize game components
         this.particleSystem = new InstancedParticleSystem(this.renderer2D, this.profiler);
         this.crowd = new Crowd(this.renderer2D);
@@ -212,7 +215,7 @@ class FireworkGame {
         );
     }
 
-    update(deltaTime) {
+    updateGame(deltaTime) {
         this.profiler.startFrame();
 
         this.particleSystem.update(deltaTime);
@@ -329,6 +332,7 @@ class FireworkGame {
         localStorage.setItem('selectedLauncherIndex', this.selectedLauncherIndex || '');
 
         localStorage.setItem('resources', JSON.stringify(this.resourceManager.save()));
+        localStorage.setItem('advancedCreatorUnlocked', JSON.stringify(this.advancedCreatorUnlocked));
     }
 
     dismissNotification() {
@@ -357,22 +361,29 @@ class FireworkGame {
         const delta = this.clock.getDelta();
 
         if (!this.isPaused) {
-            const currentFireworks = this.gameState.fireworks;
-            for (let i = currentFireworks.length - 1; i >= 0; i--) {
-                currentFireworks[i].update(delta);
-                if (!currentFireworks[i].alive) {
-                    currentFireworks[i].dispose();
-                    currentFireworks.splice(i, 1);
+            if (this.currentState === 'game') {
+                const currentFireworks = this.gameState.fireworks;
+                for (let i = currentFireworks.length - 1; i >= 0; i--) {
+                    currentFireworks[i].update(delta);
+                    if (!currentFireworks[i].alive) {
+                        currentFireworks[i].dispose();
+                        currentFireworks.splice(i, 1);
+                    }
                 }
+
+                this.updateGame(delta);
+
+                this.profiler.startFunction('drawFrame');
+                this.renderer2D.drawFrame();
+                this.profiler.endFunction('drawFrame');
+            } else if (this.currentState === 'creator') {
+                this.updateCreator(delta);
+
+                this.profiler.startFunction('drawFrame');
+                if (this.previewRenderer) this.previewRenderer.drawFrame();
+                this.profiler.endFunction('drawFrame');
             }
-
-            this.update(delta);
-            this.crowd.update(delta);
         }
-
-        this.profiler.startFunction('drawFrame');
-        this.renderer2D.drawFrame();
-        this.profiler.endFunction('drawFrame');
     }
 
     getLauncherAt(x, y) {
@@ -532,7 +543,7 @@ class FireworkGame {
 
         if (this.crowd) {
             this.crowd.dispose();
-            this.crowd = new Crowd(this.renderer2D); 
+            this.crowd = new Crowd(this.renderer2D);
         }
 
 
@@ -565,10 +576,10 @@ class FireworkGame {
         this.showNotification("All recipes have been erased.");
     }
 
-    updateComponentsList() {
+    updateComponentsList(containerId = 'components-list') {
         this.ui.updateComponentsList(this.currentRecipeComponents, () => {
             this.saveCurrentRecipeComponents();
-        });
+        }, containerId);
     }
 
     saveCurrentRecipeComponents() {
@@ -617,7 +628,7 @@ class FireworkGame {
         const recipeNameInput = document.getElementById('recipe-name');
         let recipeName = recipeNameInput.value.trim();
 
-        
+
         if (!recipeName) {
             let randomName = GENERIC_RECIPE_NAMES[Math.floor(Math.random() * GENERIC_RECIPE_NAMES.length)];
             let existingIndex = this.recipes.findIndex(recipe => recipe.name.toLowerCase() === randomName.toLowerCase());
@@ -1005,6 +1016,95 @@ class FireworkGame {
         this.updateLauncherList();
         this.saveProgress();
         this.showNotification("All auto-launchers are now shooting random recipes!");
+    }
+
+    openAdvancedCreator() {
+        const creatorScene = document.getElementById('creator-scene');
+        if (!creatorScene) return;
+
+        document.getElementById('game-container').style.display = 'none';
+        const uiElements = document.querySelectorAll('.top-bar-container, .tab-content');
+        uiElements.forEach(el => el.style.display = 'none');
+
+        creatorScene.style.display = 'flex';
+
+        const canvas = document.getElementById('creator-canvas');
+        this.previewRenderer = new Renderer2D.Renderer2D(canvas, {});
+        this.previewRenderer._resizeIfNeeded();
+        this.previewParticleSystem = new InstancedParticleSystem(this.previewRenderer, this.profiler);
+
+        this.updateComponentsList('creator-components-list');
+        const trailSelect = document.getElementById('creator-trail-effect');
+        if (trailSelect) trailSelect.value = this.currentTrailEffect;
+        const nameInput = document.getElementById('creator-recipe-name');
+        if (nameInput) nameInput.value = document.getElementById('recipe-name').value;
+
+        this.currentState = 'creator';
+        this.previewFirework = null;
+    }
+
+    closeAdvancedCreator() {
+        const creatorScene = document.getElementById('creator-scene');
+        if (!creatorScene) return;
+
+        creatorScene.style.display = 'none';
+        document.getElementById('game-container').style.display = 'block';
+        const uiElements = document.querySelectorAll('.top-bar-container, .tab-content');
+        uiElements.forEach(el => el.style.display = '');
+
+        if (this.previewParticleSystem) {
+            this.previewParticleSystem.dispose();
+            this.previewParticleSystem = null;
+        }
+        this.previewRenderer = null;
+        this.previewFirework = null;
+
+        this.updateComponentsList('components-list');
+        const trailSelect = document.getElementById('recipe-trail-effect');
+        if (trailSelect) trailSelect.value = this.currentTrailEffect;
+
+        this.currentState = 'game';
+    }
+
+    updateCreator(delta) {
+        this.updateGame(delta);
+
+        if (this.previewParticleSystem) {
+            this.previewParticleSystem.update(delta);
+        }
+
+        let lifetime = 0;
+        if (this.currentRecipeComponents) {
+            for (const component of this.currentRecipeComponents) {
+                if (component.lifetime) {
+                    lifetime = Math.max(lifetime, component.lifetime);
+                }
+            }
+        }
+        lifetime -= 1;
+
+        // start a timer to only spawn the next firework after lifetime seconds
+        if (this.previewFireworkTimer) {
+            this.previewFireworkTimer -= delta;
+            if (this.previewFireworkTimer <= 0) {
+                this.previewFireworkTimer = null;
+            }
+        }
+
+        if (this.previewFirework) {
+            this.previewFirework.update(delta);
+            if (!this.previewFirework.alive) {
+                this.previewFirework.dispose();
+                this.previewFirework = null;
+            }
+        }
+
+        if (!this.previewFirework && !this.previewFireworkTimer) {
+            const viewHeight = this.previewRenderer.virtualHeight / this.previewRenderer.cameraZoom;
+            const y = -viewHeight / 16 + GAME_BOUNDS.OFFSET_MIN_Y;
+            this.previewFirework = new Firework(0, y, this.currentRecipeComponents, this.previewRenderer, viewHeight, this.currentTrailEffect, this.previewParticleSystem, y);
+            this.previewFireworkTimer = lifetime;
+        }
     }
 }
 

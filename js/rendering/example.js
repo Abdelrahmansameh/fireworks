@@ -142,7 +142,7 @@ window.addEventListener('DOMContentLoaded', () => {
         renderer.updateNormalShape(starShape, { rotation: starShape.rotation });
 
         starGroup.clear();
-        for (let i = 0; i < 50000; i++) {
+        for (let i = 0; i < 500000; i++) {
             const x = (Math.random() - 0.5) * 3000 + 400; 
             const y = (Math.random() - 0.5) * 3000 + 300; 
             const rot = Math.random() * Math.PI * 2;

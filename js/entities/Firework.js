@@ -3,7 +3,7 @@ import InstancedParticleSystem from '../particles/InstancedParticleSystem.js';
 import * as Renderer2D from '../rendering/Renderer.js';
 
 class Firework {
-    constructor(x, y, components, renderer, viewHeight, trailEffect, particleSystem) {
+    constructor(x, y, components, renderer, viewHeight, trailEffect, particleSystem, targetY = null) {
         this.components = components;
         this.renderer = renderer;
         this.trailEffect = trailEffect;
@@ -22,7 +22,7 @@ class Firework {
         const minY = -viewHeight / 2 + FIREWORK_CONFIG.minExplosionHeightPercent * viewHeight;
         const maxY = -viewHeight / 2 + FIREWORK_CONFIG.maxExplosionHeightPercent * viewHeight;
 
-        this.targetY = minY + Math.random() * (maxY - minY);
+        this.targetY = targetY || minY + Math.random() * (maxY - minY);
 
         this.lastTrailIndex = 0;
         const geometry = Renderer2D.buildCircle(.8);

@@ -22,8 +22,12 @@ class UIManager {
         gameCanvas.addEventListener('pointerdown', this.handlePointerDown, { passive: false });
     }
 
-    bindUIEvents() {        
-        document.getElementById('add-component').addEventListener('click', () => {
+    bindUIEvents() {
+        const addComponentButtons = [
+            document.getElementById('add-component'),
+            document.getElementById('creator-add-component')
+        ];
+        addComponentButtons.forEach(btn => btn && btn.addEventListener('click', () => {
             this.game.currentRecipeComponents.push({
                 pattern: 'spherical',
                 color: '#d07916',
@@ -42,19 +46,31 @@ class UIManager {
                 gradientStartTime: 0.0,
                 gradientDuration: 1.0
             });
-            this.game.updateComponentsList();
+            this.game.updateComponentsList(btn.id === 'creator-add-component' ? 'creator-components-list' : 'components-list');
             this.game.saveCurrentRecipeComponents();
-        });
+        }));
 
-        document.getElementById('save-recipe').addEventListener('click', () => {
+        const saveRecipeButtons = [
+            document.getElementById('creator-save-recipe'),
+            document.getElementById('save-recipe')
+        ];
+        saveRecipeButtons.forEach(btn => btn && btn.addEventListener('click', () => {
             this.game.saveCurrentRecipe();
-        });
+        }));
 
-        document.getElementById('randomize-recipe').addEventListener('click', () => {
+        const randomizeRecipeButtons = [
+            document.getElementById('creator-randomize-recipe'),
+            document.getElementById('randomize-recipe')
+        ];
+        randomizeRecipeButtons.forEach(btn => btn && btn.addEventListener('click', () => {
             this.game.randomizeRecipe();
-        });
+        }));
 
-        document.getElementById('erase-recipes').addEventListener('click', () => {
+        const eraseRecipeButtons = [
+            document.getElementById('creator-erase-recipes'),
+            document.getElementById('erase-recipes')
+        ];
+        eraseRecipeButtons.forEach(btn => btn && btn.addEventListener('click', () => {
             this.showConfirmation(
                 "Confirm Erase Recipes",
                 "Are you sure you want to erase all saved recipes?",
@@ -62,7 +78,8 @@ class UIManager {
                     this.game.eraseAllRecipes();
                 }
             );
-        });
+        }));
+
 
         document.getElementById('buy-auto-launcher').addEventListener('click', () => {
             this.game.buyAutoLauncher();
@@ -107,10 +124,14 @@ class UIManager {
         });
 
 
-        document.getElementById('recipe-trail-effect').addEventListener('change', (e) => {
+        const trailSelects = [
+            document.getElementById('recipe-trail-effect'),
+            document.getElementById('creator-trail-effect')
+        ];
+        trailSelects.forEach(sel => sel && sel.addEventListener('change', (e) => {
             this.game.currentTrailEffect = e.target.value;
             this.game.saveCurrentRecipeComponents();
-        });
+        }));
 
         const gameContainer = document.getElementById('game-canvas');
         gameContainer.addEventListener('pointerdown', (e) => {
@@ -172,6 +193,22 @@ class UIManager {
         document.getElementById('randomize-launcher-recipes').addEventListener('click', () => {
             this.game.randomizeLauncherRecipes();
         });
+
+        const advButton = document.getElementById('advanced-creator');
+        if (advButton) {
+            const unlocked = true; //localStorage.getItem('advancedCreatorUnlocked') === 'true';
+            advButton.style.display = unlocked ? 'inline-block' : 'none';
+            advButton.addEventListener('click', () => {
+                if (unlocked) this.game.openAdvancedCreator();
+            });
+        }
+
+        const backButton = document.getElementById('back-to-game');
+        if (backButton) {
+            backButton.addEventListener('click', () => {
+                this.game.closeAdvancedCreator();
+            });
+        }
 
         document.addEventListener('keydown', (e) => {
             if ((e.key === 'P' || e.key === 'p') && e.shiftKey) {
@@ -480,11 +517,13 @@ class UIManager {
         document.getElementById('firework-count').textContent = fireworkCount;
         document.getElementById('auto-launcher-level').textContent = autoLauncherCount; // Renamed from autoLauncherLevel
         document.getElementById('recipe-trail-effect').value = trailEffect;
+        const creatorTrail = document.getElementById('creator-trail-effect');
+        if (creatorTrail) creatorTrail.value = trailEffect;
         document.getElementById('auto-launcher-cost').textContent = nextCost;
     }
 
-    updateComponentsList(components, onUpdate) {
-        const componentsList = document.getElementById('components-list');
+    updateComponentsList(components, onUpdate, containerId = 'components-list') {
+        const componentsList = document.getElementById(containerId);
         componentsList.innerHTML = '';
 
         components.forEach((component, index) => {
@@ -502,7 +541,7 @@ class UIManager {
             }
             if (!('glowStrength' in component)) {
                 component.glowStrength = 0.0;
-            }            
+            }
             if (!('blurStrength' in component)) {
                 component.blurStrength = 0.0;
             }
@@ -624,7 +663,7 @@ class UIManager {
             patternSelect.value = component.pattern;
 
             const shapeSelect = componentDiv.querySelector('.shape-select');
-            shapeSelect.value = component.shape;            
+            shapeSelect.value = component.shape;
             const colorInput = componentDiv.querySelector('.color-input');
             const colorGradientContainer = componentDiv.querySelector('.color-gradient-container');
             const colorGradientToggle = componentDiv.querySelector('.color-gradient-toggle');
@@ -638,7 +677,7 @@ class UIManager {
             const sizeSelect = componentDiv.querySelector('.size-select');
             const lifetimeSelect = componentDiv.querySelector('.lifetime-select');
             const spreadSelect = componentDiv.querySelector('.spread-select');
-            const trailContainer = componentDiv.querySelector('.trail-container');            const trailToggle = componentDiv.querySelector('.trail-toggle');
+            const trailContainer = componentDiv.querySelector('.trail-container'); const trailToggle = componentDiv.querySelector('.trail-toggle');
             const trailOptions = componentDiv.querySelector('.trail-options');
             const trailLengthSelect = componentDiv.querySelector('.trail-length-select');
             const trailWidthSelect = componentDiv.querySelector('.trail-width-select');
@@ -684,8 +723,8 @@ class UIManager {
                 const idx = e.target.getAttribute('data-index');
                 components[idx].shape = e.target.value;
                 onUpdate();
-            });           
-             colorInput.addEventListener('input', (e) => {
+            });
+            colorInput.addEventListener('input', (e) => {
                 const idx = e.target.getAttribute('data-index');
                 components[idx].color = e.target.value;
                 onUpdate();
@@ -763,7 +802,7 @@ class UIManager {
                 const idx = e.target.getAttribute('data-index');
                 components[idx].trailLength = parseFloat(e.target.value);
                 onUpdate();
-            });            
+            });
             trailWidthSelect.addEventListener('input', (e) => {
                 const idx = e.target.getAttribute('data-index');
                 components[idx].trailWidth = parseFloat(e.target.value);
@@ -798,7 +837,7 @@ class UIManager {
             removeButton.addEventListener('click', (e) => {
                 const idx = e.target.getAttribute('data-index');
                 components.splice(idx, 1);
-                this.updateComponentsList(components, onUpdate);
+                this.updateComponentsList(components, onUpdate, containerId);
                 onUpdate();
             });
         });
