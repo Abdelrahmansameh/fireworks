@@ -781,3 +781,44 @@ body {
     padding: 10px;
     box-sizing: border-box;
 }
+
+#background-picker-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 10px;
+    padding: 10px;
+}
+
+.background-option {
+    border: 2px solid #555;
+    border-radius: 5px;
+    cursor: pointer;
+    text-align: center;
+    padding: 5px;
+    background-color: #333;
+    transition: all 0.2s ease-in-out;
+}
+
+.background-option:hover {
+    border-color: #777;
+    transform: scale(1.05);
+}
+
+.background-option.selected {
+    border-color: #00aaff;
+    background-color: #445;
+    box-shadow: 0 0 10px #00aaff;
+}
+
+.background-option img {
+    width: 100%;
+    height: 100px;
+    object-fit: cover;
+    border-radius: 3px;
+}
+
+.background-option span {
+    display: block;
+    margin-top: 5px;
+    font-size: 0.9em;
+}

@@ -1,4 +1,4 @@
-import { FIREWORK_CONFIG, GAME_BOUNDS, DEFAULT_RECIPE_COMPONENTS, GENERIC_RECIPE_NAMES } from '../config/config.js';
+import { FIREWORK_CONFIG, GAME_BOUNDS, DEFAULT_RECIPE_COMPONENTS, GENERIC_RECIPE_NAMES, BACKGROUND_IMAGES } from '../config/config.js';
 import InstancedParticleSystem from '../particles/InstancedParticleSystem.js';
 import Crowd from '../entities/Crowd.js';
 import Firework from '../entities/Firework.js';
@@ -17,6 +17,7 @@ class FireworkGame {
         this.recipes = [];
         this.currentRecipeComponents = [];
         this.currentTrailEffect = 'fade';
+        this.currentBackground = BACKGROUND_IMAGES[0].path;
         this.fireworkCount = 0;
         this.autoLauncherCost = 10;
         this.selectedLauncherIndex = null;
@@ -37,6 +38,7 @@ class FireworkGame {
     init() {
         this.fireworkCount = parseInt(localStorage.getItem('fireworkCount')) || 0;
         this.autoLauncherCost = parseInt(localStorage.getItem('autoLauncherCost')) || 10;
+        this.currentBackground = localStorage.getItem('currentBackground') || BACKGROUND_IMAGES[0].path;
 
         // Load resources
         const savedResources = localStorage.getItem('resources');
@@ -124,6 +126,8 @@ class FireworkGame {
         });
         this.renderer2D._resizeIfNeeded();
 
+        this.updateBackgroundMesh();
+
         this.cameraTargetX = 0;
         this.cameraTargetY = 0;
         this.cameraTargetZoom = 1.0;
@@ -134,6 +138,44 @@ class FireworkGame {
 
         this.ui.initializeRendererEvents();
         this.bindEvents();
+    }
+
+    async updateBackgroundMesh() {
+        if (this._backgroundMeshes) {
+            this._backgroundMeshes.forEach(mesh => this.renderer2D.removeNormalShape(mesh));
+            this._backgroundMeshes = [];
+        }
+
+        const textureKey = `bg_${this.currentBackground}`;
+        await this.renderer2D.loadTexture(this.currentBackground, textureKey);
+        const tex = this.renderer2D.getTexture(textureKey);
+        if (!tex) return;
+
+        const width = this.renderer2D.virtualWidth;
+        const height = this.renderer2D.virtualHeight;
+
+        const repeatCount = 10;
+        const meshes = [];
+        for (let i = -repeatCount / 2; i <= repeatCount / 2; i++) {
+            const bgMesh = this.renderer2D.createNormalShape({
+                ...Renderer2D.buildTexturedSquare(width, height),
+                texCoords: new Float32Array([
+                    0, 1,
+                    1, 1,
+                    1, 0,
+                    0, 0
+                ]),
+                texture: tex,
+                position: new Renderer2D.Vector2(i * width, 0),
+                rotation: 0,
+                scale: new Renderer2D.Vector2(1, 1),
+                zIndex: -1000,
+                blendMode: Renderer2D.BlendMode.NORMAL,
+                isStroke: false
+            });
+            meshes.push(bgMesh);
+        }
+        this._backgroundMeshes = meshes;
     }
 
     onWindowResize() {
@@ -294,25 +336,7 @@ class FireworkGame {
     }
 
     initBackgroundColor() {
-        const savedColor = localStorage.getItem('backgroundColor') || '#171717';
-
-        const initColorPicker = () => {
-            const colorPicker = document.getElementById('background-color');
-            if (colorPicker) {
-                colorPicker.value = savedColor;
-                document.body.style.backgroundColor = savedColor;
-
-                colorPicker.addEventListener('input', (e) => {
-                    const color = e.target.value;
-                    document.body.style.backgroundColor = color;
-                    localStorage.setItem('backgroundColor', color);
-                });
-            } else {
-                setTimeout(initColorPicker, 100);
-            }
-        };
-
-        initColorPicker();
+        document.body.style.backgroundColor = '#171717';
     }
 
     saveProgress() {
@@ -328,8 +352,8 @@ class FireworkGame {
         localStorage.setItem('gameState', JSON.stringify(gameStateData));
 
         localStorage.setItem('currentRecipeComponents', JSON.stringify(this.currentRecipeComponents));
-        localStorage.setItem('backgroundColor', document.getElementById('background-color').value);
         localStorage.setItem('selectedLauncherIndex', this.selectedLauncherIndex || '');
+        localStorage.setItem('currentBackground', this.currentBackground);
 
         localStorage.setItem('resources', JSON.stringify(this.resourceManager.save()));
         localStorage.setItem('advancedCreatorUnlocked', JSON.stringify(this.advancedCreatorUnlocked));
@@ -564,7 +588,6 @@ class FireworkGame {
         this.showNotification("Game has been reset.");
 
         document.body.style.backgroundColor = '#000000';
-        document.getElementById('background-color').value = '#000000';
 
         this.updateCrowdDisplay();
     }
@@ -858,7 +881,8 @@ class FireworkGame {
             currentRecipeComponents: this.currentRecipeComponents,
             backgroundColor: localStorage.getItem('backgroundColor') || '#000000',
             selectedLauncherIndex: this.selectedLauncherIndex,
-            resources: this.resourceManager.save()
+            resources: this.resourceManager.save(),
+            currentBackground: this.currentBackground
         };
         return JSON.stringify(data);
     }
@@ -883,7 +907,7 @@ class FireworkGame {
         const bgColor = data.backgroundColor || '#000000';
         document.body.style.backgroundColor = bgColor;
         localStorage.setItem('backgroundColor', bgColor);
-        document.getElementById('background-color').value = bgColor;
+        this.currentBackground = data.currentBackground || BACKGROUND_IMAGES[0].path;
 
         this.selectedLauncherIndex = data.selectedLauncherIndex ?? null;
 
@@ -899,6 +923,7 @@ class FireworkGame {
         this.updateComponentsList();
         this.updateRecipeList();
         this.updateLauncherList();
+        this.updateBackgroundMesh();
 
         this.updateCrowdDisplay();
     }
@@ -1105,6 +1130,14 @@ class FireworkGame {
             this.previewFirework = new Firework(0, y, this.currentRecipeComponents, this.previewRenderer, viewHeight, this.currentTrailEffect, this.previewParticleSystem, y);
             this.previewFireworkTimer = lifetime;
         }
+    }
+
+    changeBackground(path) {
+        if (this.currentBackground === path) return;
+        this.currentBackground = path;
+        localStorage.setItem('currentBackground', path);
+        this.updateBackgroundMesh();
+        this.ui.updateBackgroundPicker();
     }
 }
 

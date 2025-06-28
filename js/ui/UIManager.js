@@ -1,4 +1,4 @@
-import { GAME_BOUNDS } from '../config/config.js';
+import { GAME_BOUNDS, BACKGROUND_IMAGES } from '../config/config.js';
 import * as Renderer2D from '../rendering/Renderer.js';
 
 class UIManager {
@@ -122,6 +122,9 @@ class UIManager {
         document.getElementById('data-tab').addEventListener('click', () => {
             this.toggleTab('data');
         });
+        document.getElementById('background-tab').addEventListener('click', () => {
+            this.toggleTab('background');
+        });
 
 
         const trailSelects = [
@@ -181,6 +184,8 @@ class UIManager {
 
 
         document.addEventListener('wheel', this.handleWheelScroll, { passive: false });
+
+        this.updateBackgroundPicker();
 
         document.getElementById('spread-launchers').addEventListener('click', () => {
             this.game.spreadLaunchers();
@@ -951,6 +956,31 @@ class UIManager {
             default:
                 return 'Sphere';
         }
+    }
+
+    updateBackgroundPicker() {
+        const container = document.getElementById('background-picker-container');
+        if (!container) return;
+        container.innerHTML = '';
+
+        BACKGROUND_IMAGES.forEach(bg => {
+            const bgOption = document.createElement('div');
+            bgOption.className = 'background-option';
+            if (bg.path === this.game.currentBackground) {
+                bgOption.classList.add('selected');
+            }
+
+            bgOption.innerHTML = `
+                <img src="${bg.path}" alt="${bg.name}" />
+                <span>${bg.name}</span>
+            `;
+
+            bgOption.addEventListener('click', () => {
+                this.game.changeBackground(bg.path);
+            });
+
+            container.appendChild(bgOption);
+        });
     }
 }
 
