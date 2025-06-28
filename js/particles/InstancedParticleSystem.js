@@ -6,6 +6,9 @@ class InstancedParticleSystem {
     constructor(renderer, profiler) {
         this.profiler = profiler;
         this.renderer = renderer;
+        this.glows = [];
+
+        this.renderer.loadTexture('assets/glow.png', 'glow');
 
         this.maxParticles = FIREWORK_CONFIG.maxParticles;
         this.maxTrailPoints = FIREWORK_CONFIG.trailMaxPoints;
@@ -103,6 +106,27 @@ class InstancedParticleSystem {
 
         this.strideFloats = 35;
     }    
+    addGlow(position, color, initialSize, lifetime) {
+        const glowTexture = this.renderer.getTexture('glow');
+        if (!glowTexture) return;
+
+        const glowShape = this.renderer.createNormalShape({
+            ...Renderer2D.buildTexturedSquare(initialSize, initialSize),
+            texture: glowTexture,
+            position: new Vector2(position.x, position.y),
+            color: new Color(color.r, color.g, color.b, 0.5), // Start with some transparency
+            blendMode: BlendMode.ADDITIVE,
+            zIndex: -500 // Behind particles but in front of background
+        });
+
+        this.glows.push({
+            shape: glowShape,
+            lifetime: lifetime,
+            initialLifetime: lifetime,
+            initialSize: initialSize,
+        });
+    }
+
     addParticle(position,
         velocity,
         color,
@@ -212,6 +236,23 @@ class InstancedParticleSystem {
     update(delta) {
         if (!delta) return;
         this.profiler?.startFunction?.('particleSystemUpdate');
+
+        // Update glows
+        for (let i = this.glows.length - 1; i >= 0; i--) {
+            const glow = this.glows[i];
+            glow.lifetime -= delta;
+
+            if (glow.lifetime <= 0) {
+                this.renderer.removeNormalShape(glow.shape);
+                this.glows.splice(i, 1);
+            } else {
+                const lifePercent = glow.lifetime / glow.initialLifetime;
+                // Fade out and expand
+                glow.shape.color.a = lifePercent * 0.5;
+                const currentSize = glow.initialSize * (1.5 - lifePercent * 0.5);
+                glow.shape.scale.set(currentSize, currentSize);
+            }
+        }
 
         FIREWORK_CONFIG.supportedShapes.forEach(shape => {
             if (!this.instanceData[shape]) return;

@@ -109,6 +109,7 @@ const BACKGROUND_IMAGES = [
     {name: 'Default', path: 'assets/background.png' },
     {name: 'Forest', path: 'assets/forest.png' },
     {name: 'Town', path: 'assets/town.png' },
+    {name: 'City', path: 'assets/city.png' },
 ];
 
 export { FIREWORK_CONFIG, GAME_BOUNDS, DEFAULT_RECIPE_COMPONENTS, GENERIC_RECIPE_NAMES, BACKGROUND_IMAGES };
