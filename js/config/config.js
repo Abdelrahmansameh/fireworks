@@ -107,6 +107,9 @@ const GENERIC_RECIPE_NAMES = [
 
 const BACKGROUND_IMAGES = [
     {name: 'Default', path: 'assets/background.png' },
+    {name: 'Darkened Forest', path: 'assets/darkened_forest.png'},
+    {name: 'Darkened Town', path: 'assets/darkened_town.png'},
+    {name: 'Darkened City', path: 'assets/darkened_city.png'},
     {name: 'Forest', path: 'assets/forest.png' },
     {name: 'Town', path: 'assets/town.png' },
     {name: 'City', path: 'assets/city.png' },
