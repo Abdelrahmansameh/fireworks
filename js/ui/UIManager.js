@@ -646,11 +646,11 @@ class UIManager {
                     </div>
                     <div class="recipes-option">
                         <label>Glow Strength:</label>
-                        <input type="range" class="glow-strength-select" data-index="${index}" min="0" max="2" step="0.05" value="${component.glowStrength}">
+                        <input type="range" class="glow-strength-select" data-index="${index}" min="0" max="1" step="0.05" value="${component.glowStrength}">
                     </div>
                     <div class="recipes-option">
                         <label>Blur Strength:</label>
-                        <input type="range" class="blur-strength-select" data-index="${index}" min=".5" max="2" step="0.05" value="${component.blurStrength}">
+                        <input type="range" class="blur-strength-select" data-index="${index}" min=".2" max="1" step="0.05" value="${component.blurStrength}">
                     </div>
                 </div>
             `;

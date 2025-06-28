@@ -68,8 +68,8 @@ const DEFAULT_RECIPE_COMPONENTS = [{
     enableTrail: true,
     trailLength: 11,
     trailWidth: 2.6,
-    glowStrength: 2.0,
-    blurStrength: 1.0
+    glowStrength: 1.0,
+    blurStrength: .5
 }];
 
 const GAME_BOUNDS = {

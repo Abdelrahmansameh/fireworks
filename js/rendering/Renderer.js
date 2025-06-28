@@ -1030,7 +1030,8 @@ class Renderer2D {
         this.cameraX = 0;
         this.cameraY = 0;
         this.cameraZoom = 1.0;
-
+        this.usePostProcessing = (opts.usePostProcessing !== undefined) ? opts.usePostProcessing : true;
+        
         const gl = this.gl;
 
         this.dummyTex = gl.createTexture();
@@ -1084,8 +1085,11 @@ class Renderer2D {
         this.virtualHeight = opts.virtualHeight || 1080;
         this.scaleFactor = 1.0;
 
-        // Initialize post-processing pipeline
-        this._initPostProcessing();
+        if (this.usePostProcessing) {
+            this._initPostProcessing();
+        } else {
+            this.postProcessingInitialized = false;
+        }
 
         this.FLOAT_FMT = gl.RGBA16F;           // internal format
         const FLOAT_TYP = gl.HALF_FLOAT;        // data type (WebGL2 constant)
@@ -1381,6 +1385,10 @@ class Renderer2D {
 
     drawFrame() {
         this._resizeIfNeeded();
+        if (!this.usePostProcessing) {
+            this._drawFrameDirect();
+            return;
+        }
 
         try {
             this._drawFrameWithPostProcessing();
@@ -1489,7 +1497,6 @@ class Renderer2D {
     }
 
     _drawFrameDirect() {
-        // Direct rendering fallback without post-processing
         const gl = this.gl;
         gl.bindFramebuffer(gl.FRAMEBUFFER, null);
         gl.viewport(0, 0, this.canvas.width, this.canvas.height);

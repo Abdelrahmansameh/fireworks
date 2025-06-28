@@ -289,7 +289,7 @@ class Firework {
             const acceleration = new Renderer2D.Vector2();
             const shape = component.shape;
             const spread = component.spread;
-            this.particleSystem.addGlow(this.rocket.position, color,10, 1.5);
+            this.particleSystem.addGlow(this.rocket.position, color,  component.glowStrength, 1000* component.glowStrength, 1, component.glowStrength, 0);
 
             switch (pattern) {
                 case 'solidsphere':
