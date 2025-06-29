@@ -126,8 +126,7 @@ class FireworkGame {
         });
         this.renderer2D._resizeIfNeeded();
 
-        // Async-load launcher texture similarly to Crowd.js; once loaded we update
-        // any existing launcher meshes so the textured version appears.
+
         this.autoLauncherTextureLoaded = false;
         if (FIREWORK_CONFIG.autoLauncherTexture) {
             this.renderer2D.loadTexture(FIREWORK_CONFIG.autoLauncherTexture, 'auto_launcher_texture')
@@ -602,7 +601,8 @@ class FireworkGame {
         this.recipes = [];
         this.currentTrailEffect = 'fade';
         this.currentRecipeComponents = [...DEFAULT_RECIPE_COMPONENTS];
-
+        this.currentBackground = BACKGROUND_IMAGES[0].name;
+        
         this.resourceManager.reset();
 
         if (this.gameState.fireworks) {

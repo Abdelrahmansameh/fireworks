@@ -60,7 +60,7 @@ const FIREWORK_CONFIG = {
 
 const DEFAULT_RECIPE_COMPONENTS = [{
     pattern: 'spherical',
-    color: '#f5d0a6',
+    color: '#32db84',
     size: 0.5,
     lifetime: 3.7,
     shape: 'sphere',
@@ -108,7 +108,7 @@ const GENERIC_RECIPE_NAMES = [
 
 const BACKGROUND_IMAGES = [
     {name: 'Black Forest', path: 'assets/black-forest.png' },
-    {name: 'Default', path: 'assets/background.png' },
+    {name: 'Blank', path: 'assets/background.png' },
     {name: 'Black Town', path: 'assets/black-town.png' },
     {name: 'Black City', path: 'assets/black-city.png' },
     {name: 'Black Mountains', path: 'assets/black-mountains.png' },
