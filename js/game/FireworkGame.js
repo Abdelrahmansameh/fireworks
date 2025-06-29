@@ -494,7 +494,8 @@ class FireworkGame {
 
         if (this.getSparkles() >= cost) {
             this.subtractSparkles(cost);
-            const x = GAME_BOUNDS.LAUNCHER_MIN_X + (Math.random() * (GAME_BOUNDS.LAUNCHER_MAX_X - GAME_BOUNDS.LAUNCHER_MIN_X));
+            let x = this.renderer2D.cameraX + (Math.random() * 500 - 250);
+            x = Math.max(GAME_BOUNDS.LAUNCHER_MIN_X + Math.random() * 300, Math.min(x, GAME_BOUNDS.LAUNCHER_MAX_X - Math.random() * 300));
             const accumulator = Math.random() * 5;
             const launcher = {
                 x: x,

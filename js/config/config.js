@@ -62,7 +62,7 @@ const DEFAULT_RECIPE_COMPONENTS = [{
     size: 0.5,
     lifetime: 3.7,
     shape: 'sphere',
-    spread: 1.5,
+    spread: 1,
     secondaryColor: '#00ff00',
     enableTrail: true,
     trailLength: 11,
@@ -114,9 +114,6 @@ const BACKGROUND_IMAGES = [
     {name: 'Forest', path: 'assets/darkened_forest.png'},
     {name: 'Town', path: 'assets/darkened_town.png'},
     {name: 'City', path: 'assets/darkened_city.png'},
-    /*{name: 'Forest', path: 'assets/forest.png' },
-    {name: 'Town', path: 'assets/town.png' },
-    {name: 'City', path: 'assets/city.png' },*/
     {name: 'Mountain', path: 'assets/mountains-loop.png' },
     {name: 'Ruins', path: 'assets/ruins.png' },
 ];
