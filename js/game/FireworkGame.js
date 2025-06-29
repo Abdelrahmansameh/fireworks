@@ -32,7 +32,7 @@ class FireworkGame {
 
         this.cameraTransitionSpeed = 2.0;
 
-        this.usePostProcessing = JSON.parse(localStorage.getItem('usePostProcessing') || 'false');
+        this.usePostProcessing = JSON.parse(localStorage.getItem('usePostProcessing') || 'true');
 
         this.init();
     }

@@ -58,17 +58,17 @@ const FIREWORK_CONFIG = {
 
 const DEFAULT_RECIPE_COMPONENTS = [{
     pattern: 'spherical',
-    color: '#32db84',
-    size: 0.5,
+    color: '#fcd303',
+    size: 0.3,
     lifetime: 3.7,
-    shape: 'sphere',
-    spread: 1,
+    shape: 'ring',
+    spread: .7,
     secondaryColor: '#00ff00',
     enableTrail: true,
     trailLength: 11,
-    trailWidth: 2.6,
+    trailWidth: 2.8,
     glowStrength: 1.0,
-    blurStrength: .5
+    blurStrength: .7
 }];
 
 const GAME_BOUNDS = {
