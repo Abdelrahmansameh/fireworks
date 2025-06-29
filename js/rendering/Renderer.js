@@ -1030,7 +1030,7 @@ class Renderer2D {
         this.cameraX = 0;
         this.cameraY = 0;
         this.cameraZoom = 1.0;
-        this.usePostProcessing = (opts.usePostProcessing !== undefined) ? opts.usePostProcessing : true;
+        this.usePostProcessing = (opts.usePostProcessing !== undefined) ? opts.usePostProcessing : false;
         
         const gl = this.gl;
 
