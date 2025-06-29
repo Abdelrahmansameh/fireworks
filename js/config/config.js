@@ -18,8 +18,9 @@ const FIREWORK_CONFIG = {
     minExplosionHeightPercent: 0.4,
     maxExplosionHeightPercent: 0.8,
     autoLauncherMeshWidth: 30,
-    autoLauncherMeshHeight: 50,
+    autoLauncherMeshHeight: 80,
     autoLauncherMeshColor: { r: 136 / 255, g: 136 / 255, b: 136 / 255, a: 1 },
+    autoLauncherTexture: 'assets/launcher.png',
     patternGravities: {
         spherical: 9.81,
         solidsphere: 30,
@@ -59,7 +60,7 @@ const FIREWORK_CONFIG = {
 
 const DEFAULT_RECIPE_COMPONENTS = [{
     pattern: 'spherical',
-    color: '#d07916',
+    color: '#f5d0a6',
     size: 0.5,
     lifetime: 3.7,
     shape: 'sphere',
@@ -81,7 +82,7 @@ const GAME_BOUNDS = {
     SCROLL_MAX_X: 4200,
     CROWD_RIGHT_X: -900,
     CROWD_LEFT_X: -100,
-    CROWD_Y: -510
+    CROWD_Y: -515
 };
 
 const GENERIC_RECIPE_NAMES = [
@@ -106,13 +107,20 @@ const GENERIC_RECIPE_NAMES = [
 ];
 
 const BACKGROUND_IMAGES = [
+    {name: 'Black Forest', path: 'assets/black-forest.png' },
     {name: 'Default', path: 'assets/background.png' },
-    {name: 'Darkened Forest', path: 'assets/darkened_forest.png'},
-    {name: 'Darkened Town', path: 'assets/darkened_town.png'},
-    {name: 'Darkened City', path: 'assets/darkened_city.png'},
-    {name: 'Forest', path: 'assets/forest.png' },
+    {name: 'Black Town', path: 'assets/black-town.png' },
+    {name: 'Black City', path: 'assets/black-city.png' },
+    {name: 'Black Mountains', path: 'assets/black-mountains.png' },
+    {name: 'Black Ruins', path: 'assets/black-ruins.png' },
+    {name: 'Forest', path: 'assets/darkened_forest.png'},
+    {name: 'Town', path: 'assets/darkened_town.png'},
+    {name: 'City', path: 'assets/darkened_city.png'},
+    /*{name: 'Forest', path: 'assets/forest.png' },
     {name: 'Town', path: 'assets/town.png' },
-    {name: 'City', path: 'assets/city.png' },
+    {name: 'City', path: 'assets/city.png' },*/
+    {name: 'Mountain', path: 'assets/mountains-loop.png' },
+    {name: 'Ruins', path: 'assets/ruins.png' },
 ];
 
 export { FIREWORK_CONFIG, GAME_BOUNDS, DEFAULT_RECIPE_COMPONENTS, GENERIC_RECIPE_NAMES, BACKGROUND_IMAGES };

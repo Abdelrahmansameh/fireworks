@@ -97,7 +97,7 @@ class Crowd {
             attempts++;
         }
         
-        const y = GAME_BOUNDS.CROWD_Y + Math.random() * 10 - 5;
+        const y = GAME_BOUNDS.CROWD_Y + Math.random() * 5 - 2.5;
         const scale = 1 + Math.random() * 0.4;
         
         const hue = Math.random();

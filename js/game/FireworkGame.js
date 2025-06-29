@@ -126,6 +126,18 @@ class FireworkGame {
         });
         this.renderer2D._resizeIfNeeded();
 
+        // Async-load launcher texture similarly to Crowd.js; once loaded we update
+        // any existing launcher meshes so the textured version appears.
+        this.autoLauncherTextureLoaded = false;
+        if (FIREWORK_CONFIG.autoLauncherTexture) {
+            this.renderer2D.loadTexture(FIREWORK_CONFIG.autoLauncherTexture, 'auto_launcher_texture')
+                .then(() => {
+                    this.autoLauncherTextureLoaded = true;
+                    this._applyAutoLauncherTexture();
+                })
+                .catch(err => console.warn('Failed to load auto-launcher texture. Falling back to default mesh.', err));
+        }
+
         this.updateBackgroundMesh();
 
         this.cameraTargetX = 0;
@@ -138,6 +150,28 @@ class FireworkGame {
 
         this.ui.initializeRendererEvents();
         this.bindEvents();
+    }
+
+    /**
+     * Replace existing launcher meshes with textured versions once the texture is loaded.
+     * New launchers created after this point will automatically use the texture.
+     */
+    _applyAutoLauncherTexture() {
+        const tex = this.renderer2D.getTexture('auto_launcher_texture');
+        if (!tex) return;
+
+        for (const launcher of this.gameState.autoLaunchers) {
+            if (!launcher.mesh) {
+                // Mesh not yet created (e.g., pending). Create it now.
+                this.createAutoLauncherMesh(launcher);
+                continue;
+            }
+
+            // Replace the existing mesh with a textured one
+            this.renderer2D.removeNormalShape(launcher.mesh);
+            launcher.mesh = null;
+            this.createAutoLauncherMesh(launcher);
+        }
     }
 
     async updateBackgroundMesh() {
@@ -300,7 +334,7 @@ class FireworkGame {
 
                 const effect = trailEffect || this.currentTrailEffect;
 
-                const firework = new Firework(x + (Math.random() - 0.5) * FIREWORK_CONFIG.autoLauncherMeshWidth, launchY, components, this.renderer2D, this.renderer2D.virtualHeight / this.renderer2D.cameraZoom, effect, this.particleSystem);
+                const firework = new Firework(x + (Math.random() * 0.5 - 0.25) * FIREWORK_CONFIG.autoLauncherMeshWidth, launchY, components, this.renderer2D, this.renderer2D.virtualHeight / this.renderer2D.cameraZoom, effect, this.particleSystem);
                 this.gameState.fireworks.push(firework); this.fireworkCount++;
                 this.resourceManager.resources.sparkles.add(1);
                 this.updateUI();
@@ -441,7 +475,7 @@ class FireworkGame {
         const y = minY || viewBottomWorldY + GAME_BOUNDS.OFFSET_MIN_Y;
         const effect = trailEffect || this.currentTrailEffect;
 
-        this.launch(x + (Math.random() - 0.5) * FIREWORK_CONFIG.autoLauncherMeshWidth, y, components, effect);
+        this.launch(x + (Math.random() - 0.5) * FIREWORK_CONFIG.autoLauncherMeshWidth, y + FIREWORK_CONFIG.autoLauncherMeshHeight / 2, components, effect);
         this.fireworkCount++;
         this.addSparkles(1);
         this.updateUI();
@@ -485,34 +519,54 @@ class FireworkGame {
     }
 
     createAutoLauncherMesh(launcher) {
-
         const width = FIREWORK_CONFIG.autoLauncherMeshWidth;
         const height = FIREWORK_CONFIG.autoLauncherMeshHeight;
         const viewBottomWorldY = this.renderer2D.cameraY - (this.renderer2D.virtualHeight / (2 * this.renderer2D.cameraZoom));
         const yPos = viewBottomWorldY + GAME_BOUNDS.OFFSET_MIN_Y;
 
-        // Define vertices for a rectangle centered at (0,0)
-        const rectVertices = [
-            -width / 2, -height / 2,
-            width / 2, -height / 2,
-            width / 2, height / 2,
-            -width / 2, height / 2
-        ];
+        const tex = (this.autoLauncherTextureLoaded && FIREWORK_CONFIG.autoLauncherTexture) ? this.renderer2D.getTexture('auto_launcher_texture') : null;
 
-        const rectGeom = Renderer2D.buildPolygon(rectVertices);
-        const color = FIREWORK_CONFIG.autoLauncherMeshColor;
+        if (tex) {
+            // Textured square (width x height) centred around origin
+            const squareGeom = Renderer2D.buildTexturedSquare(width, height);
 
-        launcher.mesh = this.renderer2D.createNormalShape({
-            vertices: rectGeom.vertices,
-            indices: rectGeom.indices,
-            color: new Renderer2D.Color(color.r, color.g, color.b, 1),
-            position: new Renderer2D.Vector2(launcher.x, yPos),
-            rotation: 0,
-            scale: new Renderer2D.Vector2(1, 1),
-            zIndex: -5, // Behind fireworks and particles
-            blendMode: Renderer2D.BlendMode.NORMAL,
-            isStroke: false
-        });
+            launcher.mesh = this.renderer2D.createNormalShape({
+                vertices: squareGeom.vertices,
+                texCoords: squareGeom.texCoords,
+                indices: squareGeom.indices,
+                texture: tex,
+                color: new Renderer2D.Color(1, 1, 1, 1), // white so texture shows as-is
+                position: new Renderer2D.Vector2(launcher.x, yPos),
+                rotation: 0,
+                scale: new Renderer2D.Vector2(1, 1),
+                zIndex: 10, // Behind fireworks and particles
+                blendMode: Renderer2D.BlendMode.NORMAL,
+                isStroke: false
+            });
+        } else {
+            // Fallback to simple coloured rectangle (legacy behaviour)
+            const rectVertices = [
+                -width / 2, -height / 2,
+                width / 2, -height / 2,
+                width / 2, height / 2,
+                -width / 2, height / 2
+            ];
+
+            const rectGeom = Renderer2D.buildPolygon(rectVertices);
+            const color = FIREWORK_CONFIG.autoLauncherMeshColor;
+
+            launcher.mesh = this.renderer2D.createNormalShape({
+                vertices: rectGeom.vertices,
+                indices: rectGeom.indices,
+                color: new Renderer2D.Color(color.r, color.g, color.b, 1),
+                position: new Renderer2D.Vector2(launcher.x, yPos),
+                rotation: 0,
+                scale: new Renderer2D.Vector2(1, 1),
+                zIndex: 20,
+                blendMode: Renderer2D.BlendMode.NORMAL,
+                isStroke: false
+            });
+        }
     }
 
     resetAutoLaunchers() {
