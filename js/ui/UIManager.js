@@ -182,6 +182,13 @@ class UIManager {
             }
         });
 
+        const ppToggle = document.getElementById('toggle-post-processing');
+        if (ppToggle) {
+            ppToggle.checked = !!this.game.renderer2D.usePostProcessing;
+            ppToggle.addEventListener('change', (e) => {
+                this.game.togglePostProcessing(e.target.checked);
+            });
+        }
 
         document.addEventListener('wheel', this.handleWheelScroll, { passive: false });
 
@@ -316,7 +323,7 @@ class UIManager {
                 if (deltaX < 20 && !this.game.isClickInsideUI(e)) {
                     const worldPos = this.game.screenToWorld(e.clientX, e.clientY);
                     for (let i = 0; i < 1; i++) {
-                        this.game.launchFireworkAt(worldPos.x);
+                        this.game.launchFireworkAt(worldPos.x,  worldPos.y);
                     }
                 }
                 document.body.style.cursor = 'default';

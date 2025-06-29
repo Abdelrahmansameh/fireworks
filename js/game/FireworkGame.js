@@ -32,6 +32,8 @@ class FireworkGame {
 
         this.cameraTransitionSpeed = 2.0;
 
+        this.usePostProcessing = JSON.parse(localStorage.getItem('usePostProcessing') || 'false');
+
         this.init();
     }
 
@@ -122,7 +124,7 @@ class FireworkGame {
     initRenderer2D() {
         this.canvas2D = document.getElementById('game-canvas');
         this.renderer2D = new Renderer2D.Renderer2D(this.canvas2D, {
-
+            usePostProcessing: this.usePostProcessing,
         });
         this.renderer2D._resizeIfNeeded();
 
@@ -462,7 +464,7 @@ class FireworkGame {
     }
 
     // dont use every frame because js is weird 
-    launchFireworkAt(x, minY = null, recipeComponents = null, trailEffect = null) {
+    launchFireworkAt(x, targetY = null, minY = null,  recipeComponents = null, trailEffect = null) {
         const components = recipeComponents || this.currentRecipeComponents;
 
         if (components.length === 0) {
@@ -474,15 +476,15 @@ class FireworkGame {
         const y = minY || viewBottomWorldY + GAME_BOUNDS.OFFSET_MIN_Y;
         const effect = trailEffect || this.currentTrailEffect;
 
-        this.launch(x + (Math.random() - 0.5) * FIREWORK_CONFIG.autoLauncherMeshWidth, y + FIREWORK_CONFIG.autoLauncherMeshHeight / 2, components, effect);
+        this.launch(x + (Math.random() - 0.5) * FIREWORK_CONFIG.autoLauncherMeshWidth, y + FIREWORK_CONFIG.autoLauncherMeshHeight / 2, components, effect, Math.max(targetY, minY));
         this.fireworkCount++;
         this.addSparkles(1);
         this.updateUI();
     }
 
     // dont use every frame because js is weird 
-    launch(x, y, components, trailEffect) {
-        const firework = new Firework(x, y, components, this.renderer2D, this.renderer2D.virtualHeight / this.renderer2D.cameraZoom, trailEffect, this.particleSystem);
+    launch(x, y, components, trailEffect, targetY = null) {
+        const firework = new Firework(x, y, components, this.renderer2D, this.renderer2D.virtualHeight / this.renderer2D.cameraZoom, trailEffect, this.particleSystem, targetY);
         this.gameState.fireworks.push(firework);
     }
 
@@ -601,8 +603,8 @@ class FireworkGame {
         this.recipes = [];
         this.currentTrailEffect = 'fade';
         this.currentRecipeComponents = [...DEFAULT_RECIPE_COMPONENTS];
-        this.currentBackground = BACKGROUND_IMAGES[0].name;
-        
+
+
         this.resourceManager.reset();
 
         if (this.gameState.fireworks) {
@@ -1192,6 +1194,30 @@ class FireworkGame {
         localStorage.setItem('currentBackground', path);
         this.updateBackgroundMesh();
         this.ui.updateBackgroundPicker();
+    }
+
+    togglePostProcessing(enabled) {
+        const usePP = !!enabled;
+
+        if (this.renderer2D.usePostProcessing === usePP) {
+            return;
+        }
+
+        this.renderer2D.usePostProcessing = usePP;
+
+        if (usePP) {
+            if (!this.renderer2D.postProcessingInitialized) {
+                try {
+                    this.renderer2D._initPostProcessing();
+                    this.renderer2D._resizePostProcessingBuffers();
+                } catch (err) {
+                    console.warn('Failed to initialize post-processing:', err);
+                    this.renderer2D.usePostProcessing = false;
+                }
+            }
+        }
+
+        localStorage.setItem('usePostProcessing', JSON.stringify(usePP));
     }
 }
 
