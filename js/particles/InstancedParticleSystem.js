@@ -312,8 +312,9 @@ class InstancedParticleSystem {
                 }
 
                 const f = d[sBase + this.frictionIdx];
-                const hf = 1 - f * delta;
-                const vf = 1 - f * FIREWORK_CONFIG.verticalFrictionMultiplier * delta;
+                // exponential friction
+                const hf = Math.exp(-f * delta);
+                const vf = Math.exp(-f * FIREWORK_CONFIG.verticalFrictionMultiplier * delta);
                 d[sBase + this.velocityIdx] += d[sBase + this.accelerationIdx] * delta;
                 d[sBase + this.velocityIdx + 1] += (d[sBase + this.accelerationIdx + 1]
                     - d[sBase + this.gravityIdx]) * delta;

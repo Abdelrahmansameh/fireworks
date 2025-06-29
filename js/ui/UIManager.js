@@ -591,7 +591,6 @@ class UIManager {
                                 <option value="willow">Willow</option>
                                 <option value="helix">Helix</option>
                                 <option value="spinner">Spinner</option>
-                                <option value="spinningtails">Spinning Tails</option>
                                 <option value="star">Star</option>
                                 <option value="brocade">Brocade</option>
                                 <option value="brokenHeart">Broken Heart</option>
@@ -639,7 +638,7 @@ class UIManager {
                     </div>
                     <div class="recipes-option">
                         <label>Spread:</label>
-                        <input type="range" class="spread-select" data-index="${index}" min="0.5" max="2" step="0.1" value="${component.spread}">
+                        <input type="range" class="spread-select" data-index="${index}" min="0.4" max="1" step="0.1" value="${component.spread}">
                     </div>
                     <div class="recipes-option trail-container">
                         <label>Trail:</label>
@@ -647,7 +646,7 @@ class UIManager {
                     </div>                    
                     <div class="recipes-option trail-options" style="display: ${component.enableTrail ? 'block' : 'none'};">
                         <label>Trail Length:</label>
-                        <input type="range" class="trail-length-select" data-index="${index}" min="1" max="25" step="0.5" value="${component.trailLength}">
+                        <input type="range" class="trail-length-select" data-index="${index}" min="1" max="18" step="0.5" value="${component.trailLength}">
                         <label>Trail Width:</label>
                         <input type="range" class="trail-width-select" data-index="${index}" min="0.5" max="7" step="0.1" value="${component.trailWidth}">
                     </div>

@@ -1,6 +1,7 @@
 import { FIREWORK_CONFIG } from '../config/config.js';
 import InstancedParticleSystem from '../particles/InstancedParticleSystem.js';
 import * as Renderer2D from '../rendering/Renderer.js';
+import { recipeMap } from './patterns/index.js';
 
 class Firework {
     constructor(x, y, components, renderer, viewHeight, trailEffect, particleSystem, targetY = null) {
@@ -258,6 +259,7 @@ class Firework {
 
     explode() {
         this.alive = false;
+        this.exploded = true;
         if (this.rocket) this.renderer.removeNormalShape(this.rocket);
         if (this.trailInstanceGroup) { this.renderer.removeInstancedGroup(this.trailInstanceGroup); }
 
@@ -291,691 +293,59 @@ class Firework {
             const spread = component.spread;
             this.particleSystem.addGlow(this.rocket.position, color,  component.glowStrength, 500* component.glowStrength, 0.5, component.glowStrength, 0);
 
-            switch (pattern) {
-                case 'solidsphere':
-                case 'spherical':
-                    {
-                        const layers = pattern === 'solidsphere' ? 6 : 1;
-                        const radius = pattern === 'solidsphere' ? spread * 0.5 : spread * 1.5;
-                        for (let layer = 0; layer < layers; layer++) {
-                            // distribute less particles in the inner layers from the max particles count
-                            const particlesThisLayer = (particleCount / layers) * (layer + 1 / layers);
-                            const risingVelocity = pattern === 'solidsphere' ? 150 : 50;
+            const sharedCtx = {
+                rocketPos,
+                particleCount,
+                speed,
+                spread,
+                gravity,
+                friction,
+                size,
+                component,
+                secondaryColor,
+                primaryColor: color,
+            };
 
-                            for (let i = 0; i < particlesThisLayer; i++) {
-                                const angle = (i / particlesThisLayer) * Math.PI * 2;
-                                const magnitude = (speed * (0.8 + Math.random() * 0.4) * radius) * (layer + 1 / layers);
-                                velocity.set(
-                                    Math.cos(angle) * magnitude,
-                                    Math.sin(angle) * magnitude + risingVelocity
-                                );
-                                const index = this.particleSystem.addParticle(
-                                    rocketPos.clone(),
-                                    velocity.clone(),
-                                    color,
-                                    size,
-                                    component.lifetime,
-                                    gravity * (0.8 + Math.random() * 0.4),
-                                    shape,
-                                    acceleration,
-                                    component.enableTrail,
-                                    component.trailLength,
-                                    component.trailWidth,
-                                    friction,
-                                    component.glowStrength,
-                                    component.blurStrength,
-                                    null,
-                                    component.enableColorGradient,
-                                    gradientFinalColor,
-                                    component.gradientStartTime,
-                                    component.gradientDuration
-                                );
-                                if (index !== -1) this.particles[shape].add(index);
-                            }
-                        }
-                        break;
-                    }
-                case 'ring':
-                    {
-                        for (let i = 0; i < particleCount; i++) {
-                            const angle = (i / particleCount) * Math.PI * 2;
-                            const magnitude = speed * spread * 3;
-                            const risingVelocity = 100;
-                            velocity.set(
-                                Math.cos(angle) * magnitude,
-                                Math.sin(angle) * magnitude + risingVelocity
-                            );
-                            const index = this.particleSystem.addParticle(
-                                rocketPos.clone(),
-                                velocity.clone(),
-                                color,
-                                size,
-                                component.lifetime,
-                                gravity * (0.9 + Math.random() * 0.1),
-                                shape,
-                                acceleration,
-                                component.enableTrail,
-                                component.trailLength,
-                                component.trailWidth,
-                                friction,
-                                component.glowStrength,
-                                component.blurStrength,
-                                null,
-                                component.enableColorGradient,
-                                gradientFinalColor,
-                                component.gradientStartTime,
-                                component.gradientDuration
-                            );
-                            if (index !== -1) this.particles[shape].add(index);
-                        }
-                        break;
-                    }
-                case 'burst':
-                    {
-                        for (let i = 0; i < particleCount; i++) {
-                            const angle = Math.random() * Math.PI * 2;
-                            const magnitude = speed * Math.random() * spread * 2;
-                            const risingVelocity = 100;
-                            velocity.set(
-                                Math.cos(angle) * magnitude,
-                                Math.sin(angle) * magnitude + risingVelocity
-                            );
-                            const index = this.particleSystem.addParticle(
-                                rocketPos.clone(),
-                                velocity.clone(),
-                                color,
-                                size,
-                                component.lifetime,
-                                gravity,
-                                shape,
-                                acceleration,
-                                component.enableTrail,
-                                component.trailLength,
-                                component.trailWidth,
-                                friction,
-                                component.glowStrength,
-                                component.blurStrength,
-                                null,
-                                component.enableColorGradient,
-                                gradientFinalColor,
-                                component.gradientStartTime,
-                                component.gradientDuration
-                            );
-                            if (index !== -1) this.particles[shape].add(index);
-                        }
-                        break;
-                    }
-                case 'palm':
-                    {
-                        const branches = 8;
-                        const particlesPerBranch = Math.floor(particleCount / branches);
-                        for (let i = 0; i < particleCount; i++) {
-                            const branch = i % branches;
-                            const particleInBranch = Math.floor(i / branches);
-                            const baseAngle = (branch / branches) * Math.PI * 2;
-                            const angleSpread = 0.3 * (particleInBranch / particlesPerBranch);
-                            const angle = baseAngle + (Math.random() - 0.5) * angleSpread;
-                            const magnitude = speed * (1 + particleInBranch / particlesPerBranch) * spread * 2.5;
-                            velocity.set(
-                                Math.cos(angle) * magnitude,
-                                Math.sin(angle) * magnitude
-                            );
-                            const index = this.particleSystem.addParticle(
-                                rocketPos.clone(),
-                                velocity.clone(),
-                                color,
-                                size,
-                                component.lifetime,
-                                gravity,
-                                shape,
-                                acceleration,
-                                component.enableTrail,
-                                component.trailLength,
-                                component.trailWidth,
-                                friction,
-                                component.glowStrength,
-                                component.blurStrength,
-                                null,
-                                component.enableColorGradient,
-                                gradientFinalColor,
-                                component.gradientStartTime,
-                                component.gradientDuration
-                            );
-                            if (index !== -1) this.particles[shape].add(index);
-                        }
-                        break;
-                    }
-                case 'willow':
-                    {
-                        const emissionAngle = 1;
-                        for (let i = 0; i < particleCount; i++) {
-                            const angleOffset = (Math.random() * 1.2 - 0.5) * emissionAngle;
-                            const angle = (-Math.PI / 2) + angleOffset;
-                            const horizontalDrift = (Math.random() - 0.5) * 30;
-                            const initialSpeed = speed * (0.5 + Math.random() * 0.1);
-                            velocity.set(
-                                (Math.cos(angle) * initialSpeed + horizontalDrift) * spread,
-                                -Math.sin(angle) * initialSpeed * 0.8
-                            );
-                            const initialOffset = new Renderer2D.Vector2(i * 0.2 + (Math.random() - 0.5) * 10, (Math.random() - 0.5) * 20);
-                            const index = this.particleSystem.addParticle(
-                                rocketPos.clone().add(initialOffset),
-                                velocity.clone(),
-                                color,
-                                size,
-                                component.lifetime,
-                                gravity,
-                                shape,
-                                acceleration,
-                                component.enableTrail,
-                                component.trailLength,
-                                component.trailWidth,
-                                friction,
-                                component.glowStrength,
-                                component.blurStrength,
-                                null,
-                                component.enableColorGradient,
-                                gradientFinalColor,
-                                component.gradientStartTime,
-                                component.gradientDuration
-                            );
-                            if (index !== -1) this.particles[shape].add(index);
-                        }
-                        break;
-                    }
-                case 'christmasTree':
-                    {
-                        const baseWidth = spread * 2;
-                        const baseHeight = spread * 3;
-                        const trunkWidth = baseWidth * 0.2;
-                        const trunkHeight = baseHeight * 0.2;
-                        const triangleScales = [1, 0.7, 0.4];
-                        const triangleHeights = [baseHeight * 0.4, baseHeight * 0.3, baseHeight * 0.2];
-                        const horizontalLinesCount = 3;
+            const recipe = recipeMap[pattern];
+            if (recipe) {
+                const total = (typeof recipe.count === 'function') ? recipe.count(sharedCtx) : recipe.count;
+                for (let i = 0; i < total; i++) {
+                    const initial = recipe.calcInitialState(i, { ...sharedCtx, index: i, total });
 
-                        //  trunk
-                        const trunkParticles = Math.floor(particleCount * 0.2);
-                        const trunkRows = Math.floor(Math.sqrt(trunkParticles));
-                        const trunkCols = Math.floor(trunkParticles / trunkRows);
+                    const pos = initial.pos || rocketPos.clone();
+                    const vel = initial.vel || new Renderer2D.Vector2();
+                    const accel = initial.accel || new Renderer2D.Vector2();
+                    const updateFn = initial.updateFn || null;
+                    const particleColor = initial.color || color;
+                    const g = (initial.gravity !== undefined) ? initial.gravity : gravity;
 
-                        for (let row = 0; row < trunkRows; row++) {
-                            for (let col = 0; col < trunkCols; col++) {
-                                const x = (col / (trunkCols - 1) - 0.5) * trunkWidth;
-                                const y = (row / trunkRows) * trunkHeight;
-                                velocity.set(
-                                    x * speed,
-                                    y * speed
-                                ); 
-                                const index = this.particleSystem.addParticle(
-                                    rocketPos.clone(),
-                                    velocity.clone(),
-                                    secondaryColor,
-                                    size,
-                                    component.lifetime,
-                                    gravity,
-                                    shape,
-                                    acceleration,
-                                    component.enableTrail,
-                                    component.trailLength,
-                                    component.trailWidth,
-                                    friction,
-                                    component.glowStrength,
-                                    component.blurStrength,
-                                    null,
-                                    component.enableColorGradient,
-                                    gradientFinalColor,
-                                    component.gradientStartTime,
-                                    component.gradientDuration
-                                );
-                                if (index !== -1) this.particles[shape].add(index);
-                            }
-                        }
+                    const index = this.particleSystem.addParticle(
+                        pos.clone(),
+                        vel.clone(),
+                        particleColor,
+                        size,
+                        component.lifetime,
+                        g,
+                        shape,
+                        accel,
+                        component.enableTrail,
+                        component.trailLength,
+                        component.trailWidth,
+                        friction,
+                        component.glowStrength,
+                        component.blurStrength,
+                        updateFn,
+                        component.enableColorGradient,
+                        gradientFinalColor,
+                        component.gradientStartTime,
+                        component.gradientDuration
+                    );
 
-                        const triangleParticles = Math.floor((particleCount - trunkParticles) / triangleScales.length);
-                        const edgeParticles = Math.floor(Math.sqrt(triangleParticles) * 2);
-
-                        let currentBaseY = trunkHeight;
-
-                        triangleScales.forEach((scale, triangleIndex) => {
-                            const triangleWidth = baseWidth * scale;
-                            const triangleHeight = triangleHeights[triangleIndex];
-                            const baseY = currentBaseY;
-                            // left edge
-                            for (let i = 0; i < edgeParticles; i++) {
-                                const progress = i / (edgeParticles - 1);
-                                const x = (-0.5 + progress * 0.5) * triangleWidth;
-                                const y = baseY + progress * triangleHeight;
-                                velocity.set(
-                                    x * speed,
-                                    y * speed
-                                ); 
-                                const index = this.particleSystem.addParticle(
-                                    rocketPos.clone(),
-                                    velocity.clone(),
-                                    color,
-                                    size,
-                                    component.lifetime,
-                                    gravity * (0.8 + Math.random() * 0.4),
-                                    shape,
-                                    acceleration,
-                                    component.enableTrail,
-                                    component.trailLength,
-                                    component.trailWidth,
-                                    friction,
-                                    component.glowStrength,
-                                    component.blurStrength,
-                                    null,
-                                    component.enableColorGradient,
-                                    gradientFinalColor,
-                                    component.gradientStartTime,
-                                    component.gradientDuration
-                                );
-                                if (index !== -1) this.particles[shape].add(index);
-                            }                       
-                             //  right edge
-                            for (let i = 0; i < edgeParticles; i++) {
-                                const progress = i / (edgeParticles - 1);
-                                const x = (0.5 - progress * 0.5) * triangleWidth;
-                                const y = baseY + progress * triangleHeight;
-                                velocity.set(
-                                    x * speed,
-                                    y * speed
-                                );
-                                const index = this.particleSystem.addParticle(
-                                    rocketPos.clone(),
-                                    velocity.clone(),
-                                    color,
-                                    size,
-                                    component.lifetime,
-                                    gravity * (0.9 + Math.random() * 0.1),
-                                    shape,
-                                    acceleration,
-                                    component.enableTrail,
-                                    component.trailLength,
-                                    component.trailWidth,
-                                    friction,
-                                    component.glowStrength,
-                                    component.blurStrength,
-                                    null,
-                                    component.enableColorGradient,
-                                    gradientFinalColor,
-                                    component.gradientStartTime,
-                                    component.gradientDuration
-                                );
-                                if (index !== -1) this.particles[shape].add(index);
-                            }
-
-                            //  horizontal lines
-                            for (let line = 0; line <= horizontalLinesCount; line++) {
-                                const lineProgress = line / horizontalLinesCount;
-                                const y = baseY + lineProgress * triangleHeight;
-                                const currentWidth = triangleWidth * (1 - lineProgress);
-                                const lineParticles = Math.floor(edgeParticles * 0.5 * (1 - lineProgress) + 3); for (let i = 0; i < lineParticles; i++) {
-                                    const x = ((i / (lineParticles - 1)) - 0.5) * currentWidth;
-                                    velocity.set(
-                                        x * speed,
-                                        y * speed
-                                    );
-                                    const index = this.particleSystem.addParticle(
-                                        rocketPos.clone(),
-                                        velocity.clone(),
-                                        color,
-                                        size,
-                                        component.lifetime,
-                                        gravity,
-                                        shape,
-                                        acceleration,
-                                        component.enableTrail,
-                                        component.trailLength,
-                                        component.trailWidth,
-                                        friction,
-                                        component.glowStrength,
-                                        component.blurStrength,
-                                        null,
-                                        component.enableColorGradient,
-                                        gradientFinalColor,
-                                        component.gradientStartTime,
-                                        component.gradientDuration
-                                    );
-                                    if (index !== -1) this.particles[shape].add(index);
-                                }
-                            }
-
-                            currentBaseY += triangleHeight;
-                        });
-                        break;
-                    }
-                case 'heart':
-                    {
-                        const heartScale = spread;
-                        for (let i = 0; i < particleCount; i++) {
-                            const t = (i / particleCount) * Math.PI * 2;
-                            const xOffset = heartScale * (16 * Math.pow(Math.sin(t), 3));
-                            const yOffset = heartScale * (13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t));
-                            const angle = Math.atan2(yOffset, xOffset);
-                            const magnitude = speed * Math.sqrt(xOffset * xOffset + yOffset * yOffset) * 0.15;
-                            const risingVelocity = 300;
-                            velocity.set(
-                                Math.cos(angle) * magnitude,
-                                Math.sin(angle) * magnitude + risingVelocity
-                            ); 
-                            const index = this.particleSystem.addParticle(
-                                rocketPos.clone(),
-                                velocity.clone(),
-                                color,
-                                size,
-                                component.lifetime,
-                                gravity * (0.9 + Math.random() * 0.1),
-                                shape,
-                                acceleration,
-                                component.enableTrail,
-                                component.trailLength,
-                                component.trailWidth,
-                                friction,
-                                component.glowStrength,
-                                component.blurStrength,
-                                null,
-                                component.enableColorGradient,
-                                gradientFinalColor,
-                                component.gradientStartTime,
-                                component.gradientDuration
-                            );
-                            if (index !== -1) this.particles[shape].add(index);
-                        }
-                        break;
-                    }
-                case 'brokenHeart':
-                    {
-                        const heartScale = spread;
-                        const pivotOffset = new Renderer2D.Vector2(0, -heartScale * 30);
-
-                        for (let i = 0; i < particleCount; i++) {
-                            const t = (i / particleCount) * Math.PI * 2;
-                            const xOffset = heartScale * (16 * Math.pow(Math.sin(t), 3));
-                            const yOffset = heartScale * (13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t));
-
-                            const particleOffset = new Renderer2D.Vector2(xOffset, yOffset);
-
-                            const angle = Math.atan2(yOffset, xOffset);
-                            const magnitude = speed * Math.sqrt(xOffset * xOffset + yOffset * yOffset) * 0.1;
-                            const unbrokenHeartVelocity = new Renderer2D.Vector2(
-                                Math.cos(angle) * magnitude,
-                                Math.sin(angle) * magnitude
-                            );
-
-                            const pivotToParticle = particleOffset.clone();
-                            pivotToParticle.subtract(pivotOffset);
-                            const rotation = new Renderer2D.Vector2(pivotToParticle.y, -pivotToParticle.x);
-
-                            const sign = (xOffset > 0) ? 2 : -2;
-                            const rotationSpeed = sign;
-                            rotation.scale(rotationSpeed); 
-                            const index = this.particleSystem.addParticle(
-                                rocketPos.clone(),
-                                unbrokenHeartVelocity,
-                                color,
-                                size,
-                                component.lifetime,
-                                gravity * 1.3,
-                                shape,
-                                rotation,
-                                component.enableTrail,
-                                component.trailLength,
-                                component.trailWidth,
-                                friction,
-                                component.glowStrength,
-                                component.blurStrength,
-                                null,
-                                component.enableColorGradient,
-                                gradientFinalColor,
-                                component.gradientStartTime,
-                                component.gradientDuration
-                            );
-                            if (index !== -1) this.particles[shape].add(index);
-                        }
-                        break;
-                    }
-                case 'brocade':
-                case 'star':
-                    {
-                        const spikes = pattern === 'brocade' ? 10 : 5;
-                        const outerRadius = speed * spread *1.5;
-                        const innerRadius = speed * 0.5 * spread*1.5;
-                        const pointsPerStar = spikes * 2;
-                        const risingVelocity = 30;
-                        for (let i = 0; i < particleCount; i++) {
-                            const starPoint = i % pointsPerStar;
-                            const starCopy = Math.floor(i / pointsPerStar);
-                            let radius = (starPoint % 2 === 0) ? outerRadius : innerRadius;
-                            let angle = (starPoint / pointsPerStar) * Math.PI * 2;
-
-                            if (i > pointsPerStar && (starPoint % 2 === 0)) {
-                                radius = outerRadius * (1 + (Math.random() * 0.2 - 0.1));
-                            }
-
-                            const radiusVariation = 1 + (Math.random() * 0.5 - 0.2) * (starCopy > 0 ? 1 : 0);
-                            const angleVariation = (Math.random() * 0.2 - 0.2) * (starCopy > 0 ? 1 : 0); velocity.set(
-                                Math.cos(angle + angleVariation) * radius * radiusVariation,
-                                Math.sin(angle + angleVariation) * radius * radiusVariation + risingVelocity
-                            );
-
-                            const index = this.particleSystem.addParticle(
-                                rocketPos.clone(),
-                                velocity.clone(),
-                                color,
-                                size,
-                                component.lifetime,
-                                gravity,
-                                shape,
-                                acceleration,
-                                component.enableTrail,
-                                component.trailLength,
-                                component.trailWidth,
-                                friction,
-                                component.glowStrength,
-                                component.blurStrength,
-                                null,
-                                component.enableColorGradient,
-                                gradientFinalColor,
-                                component.gradientStartTime,
-                                component.gradientDuration
-                            );
-                            if (index !== -1) this.particles[shape].add(index);
-                        }
-                        break;
-                    }
-                case 'spinner':
-                    {
-                        const explosionCenter = this.rocket.position.clone();
-                        const numArms = 20;
-                        const particlesPerArm = Math.floor(particleCount / numArms);
-                        for (let i = 0; i < particleCount; i++) {
-                            const armIndex = Math.floor(i / particlesPerArm);
-                            let currentAngle = (armIndex / numArms) * Math.PI * 2 + (Math.random() - 0.5) * 10;
-                            const maxRadius = spread * 50 + (i % particlesPerArm) * 10;
-
-                            const radialSpeed = spread * 30 + (Math.random() - 0.5) * 10;
-                            let currentRadius = 0;
-
-                            const spinSpeed = 3;
-
-                            const updateFn = (pState, delta) => {
-                                // soft ease into  max radius
-                                currentRadius = currentRadius + (maxRadius - currentRadius) * delta;
-                                if (currentRadius > - maxRadius) {
-                                    currentRadius += radialSpeed * delta * 0.1;
-                                }
-                                currentRadius += Math.random() * 200 * delta;
-                                currentAngle += spinSpeed * delta;
-
-                                pState.position.x = explosionCenter.x + Math.cos(currentAngle) * currentRadius;
-                                pState.position.y = explosionCenter.y + Math.sin(currentAngle) * currentRadius;
-                            };
-                            const index = this.particleSystem.addParticle(
-                                rocketPos.clone(),
-                                new Renderer2D.Vector2(0, 0),
-                                color,
-                                size,
-                                component.lifetime,
-                                gravity * 100,
-                                shape,
-                                new Renderer2D.Vector2(),
-                                component.enableTrail,
-                                component.trailLength,
-                                component.trailWidth,
-                                friction,
-                                component.glowStrength,
-                                component.blurStrength,
-                                updateFn,
-                                component.enableColorGradient,
-                                gradientFinalColor,
-                                component.gradientStartTime,
-                                component.gradientDuration
-                            );
-                            if (index !== -1) this.particles[shape].add(index);
-                        }
-                        break;
-                    }
-                case 'spinningtails':
-                    {
-                        const explosionCenter = this.rocket.position.clone();
-                        const numArms = 7;
-                        const particlesPerArm = Math.floor(particleCount / numArms);
-
-                        for (let i = 0; i < particleCount; i++) {
-                            const armIndex = Math.floor(i / particlesPerArm);
-                            let currentAngle = (armIndex / numArms) * Math.PI * 2;
-
-                            const radialSpeed = speed * 2 * (0.1 + Math.random() * 0.4);
-                            let currentRadius = (i % particlesPerArm) * 0.02 * spread;
-                            const maxRadius = spread * 1000 + (i % particlesPerArm) * 5;
-                            const spinSpeed = 2.5;
-
-                            const updateFn = (pState, delta) => {
-                                currentRadius += pState.velocity.length() * delta * (i + 1 % particlesPerArm + 1) * 0.02;
-                                if (currentRadius > maxRadius) {
-                                    currentRadius = maxRadius;
-                                }
-                                currentAngle += spinSpeed * delta;
-
-                                pState.position.x = explosionCenter.x + Math.cos(currentAngle + i * 2) * currentRadius;
-                                pState.position.y = explosionCenter.y + Math.sin(currentAngle + i * 2) * currentRadius;
-
-                            }; const index = this.particleSystem.addParticle(
-                                rocketPos.clone(),
-                                new Renderer2D.Vector2(10, 10),
-                                color,
-                                size,
-                                component.lifetime,
-                                gravity * 100,
-                                shape,
-                                new Renderer2D.Vector2(),
-                                component.enableTrail,
-                                component.trailLength,
-                                component.trailWidth,
-                                friction,
-                                component.glowStrength,
-                                component.blurStrength,
-                                updateFn,
-                                component.enableColorGradient,
-                                gradientFinalColor,
-                                component.gradientStartTime,
-                                component.gradientDuration
-                            );
-                            if (index !== -1) this.particles[shape].add(index);
-                        }
-                        break;
-                    }
-                case 'helix':
-                    const helixRadius = 3 * spread;
-                    const riseSpeed = speed * 0.1 * spread;
-                    const rotationSpeed = 2;
-                    const particlesPerStream = 100;
-                    const verticalSpacing = 0.7 * spread;
-                    const spreadFactor = 0.1;
-
-                    for (let stream = 0; stream < 2; stream++) {
-                        const streamOffset = stream * Math.PI;
-                        for (let i = 0; i < particlesPerStream; i++) {
-                            const t = (i / particlesPerStream) * Math.PI * 2;
-                            const angle = t + streamOffset;
-
-                            const randomSpread = (Math.random() - 0.5) * spreadFactor;
-
-
-                            velocity.set(
-                                -Math.sin(angle) * rotationSpeed + Math.cos(angle) * helixRadius * (1 + randomSpread),
-                                riseSpeed * 10
-                            );
-                            const particleColor = new Renderer2D.Color();
-                            if (stream === 1) {
-                                particleColor.copy(secondaryColor);
-                            } else {
-                                particleColor.copy(color);
-                            }
-                            acceleration.set(
-                                -Math.sin(angle) * rotationSpeed + Math.cos(angle) * helixRadius * (1 + randomSpread) * 3,
-                                riseSpeed * (1 + randomSpread) - i * verticalSpacing
-                            ); 
-                            const index = this.particleSystem.addParticle(
-                                rocketPos,
-                                velocity,
-                                particleColor,
-                                size,
-                                component.lifetime,
-                                gravity * 0.2,
-                                shape,
-                                acceleration,
-                                false,
-                                0,
-                                0,
-                                friction,
-                                component.glowStrength,
-                                component.blurStrength,
-                                null,
-                                component.enableColorGradient,
-                                gradientFinalColor,
-                                component.gradientStartTime,
-                                component.gradientDuration
-                            );
-                            if (index !== -1) this.particles[shape].add(index);
-                        }
-                    }
-                    break;
-
-                default:
-                    for (let i = 0; i < particleCount; i++) {
-                        const angle = Math.random() * Math.PI * 2;
-                        const magnitude = speed * spread;
-                        velocity.set(
-                            Math.cos(angle) * magnitude,
-                            Math.sin(angle) * magnitude
-                        ); const index = this.particleSystem.addParticle(
-                            rocketPos.clone(),
-                            velocity.clone(),
-                            color,
-                            size,
-                            component.lifetime,
-                            gravity,
-                            shape,
-                            acceleration,
-                            component.enableTrail,
-                            component.trailLength,
-                            component.trailWidth,
-                            friction,
-                            component.glowStrength,
-                            component.blurStrength,
-                            null,
-                            component.enableColorGradient,
-                            gradientFinalColor,
-                            component.gradientStartTime,
-                            component.gradientDuration
-                        );
-                        if (index !== -1) this.particles[shape].add(index);
-                    }
+                    if (index !== -1) this.particles[shape].add(index);
+                }
+                return;
             }
         });
-        this.exploded = true;
     }
 
     dispose() {

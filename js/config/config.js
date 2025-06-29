@@ -5,8 +5,8 @@ const FIREWORK_CONFIG = {
     trailMaxPoints: 20,
     trailDistBetweenPoints: 5,
     trailWidth: 2.0,
-    baseSpeed: 150,
-    baseFriction: 1.0,
+    baseSpeed: 500,
+    baseFriction: 2.0,
     verticalFrictionMultiplier: .9,
     gravityMultiplier: 5,
     particleSize: 5.0,
@@ -24,7 +24,7 @@ const FIREWORK_CONFIG = {
     patternGravities: {
         spherical: 9.81,
         solidsphere: 30,
-        ring: 8.0,
+        ring: 18.0,
         heart: 50.0,
         star: 13,
         brocade: 10,
@@ -34,13 +34,12 @@ const FIREWORK_CONFIG = {
         christmasTree: 20.4,
         brokenHeart: 2,
         spinner: 2,
-        spinningtails: 0.3,
         helix: 0.3,
         default: 0.7
     },
     patternFriction: {
         spherical: 1.0,
-        solidsphere: 2,
+        solidsphere: 1.5,
         ring: 2.0,
         heart: 2.0,
         star: 2.0,
@@ -51,7 +50,6 @@ const FIREWORK_CONFIG = {
         christmasTree: 1.5,
         brokenHeart: 2.0,
         spinner: 0.0,
-        spinningtails: 0.0,
         helix: 0.0,
         default: 0.0
     },
@@ -109,7 +107,7 @@ const GENERIC_RECIPE_NAMES = [
 const BACKGROUND_IMAGES = [
     {name: 'Black Forest', path: 'assets/black-forest.png' },
     {name: 'Blank', path: 'assets/background.png' },
-    {name: 'Black Town', path: 'assets/black-town.png' },
+    {name: 'Black Town', path: 'assets/mountain-town.png' },
     {name: 'Black City', path: 'assets/black-city.png' },
     {name: 'Black Mountains', path: 'assets/black-mountains.png' },
     {name: 'Black Ruins', path: 'assets/black-ruins.png' },
