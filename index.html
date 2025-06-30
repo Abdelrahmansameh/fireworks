@@ -20,7 +20,7 @@
                 <div class="tab" id="auto-launcher-tab">Auto-Launchers</div>
                 <div class="tab" id="crowd-tab">Crowd</div>
                 <div class="tab" id="background-tab">Background</div>
-                <div class="tab" id="data-tab">Save/Load</div>
+                <div class="tab" id="settings-tab">Settings</div>
                 <div class="tab" id="stats-tab">Stats</div>
                 <div class="tab" id="upgrades-tab">Upgrades</div>
                 <div class="tab" id="cheats-tab">Cheats</div>
@@ -154,9 +154,10 @@
         </div>
     </div>
 
-    <div class="tab-content" id="data-content">
+    <div class="tab-content" id="settings-content">
         <div class="panel scrollable-panel">
-            <h2 class="panel-title">Save / Load</h2>
+            <h2 class="panel-title">Settings</h2>
+            <h3>Save / Load</h3>
             <button id="save-progress">Save Progress</button>
             <div class="recipes-option">
                 <label>Serialized Data (copy/paste):</label>
@@ -164,8 +165,13 @@
             </div>
             <button id="load-progress">Load Progress</button>
             <br>
+
+            <h3>Options</h3>
             <div class="recipes-option">
                 <label><input type="checkbox" id="toggle-post-processing"> Enable Post-Processing</label>
+            </div>
+            <div class="recipes-option">
+                <label><input type="checkbox" id="toggle-floating-sparkle" checked> Show Floating Sparkle Counter</label>
             </div>
             <br>
             <button id="reset-launchers" class="danger-button">Reset All Auto-Launchers</button>

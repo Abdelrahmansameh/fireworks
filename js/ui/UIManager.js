@@ -9,12 +9,17 @@ class UIManager {
         this.draggingLauncher = null;
         this.lastPointerX = 0;
         this.notificationTimeout = null;
+        this.activeFloatingSparkle = null;
+        this.floatingSparkleTimeout = null;
 
         this.pointerMoveHandler = this.pointerMoveHandler.bind(this);
         this.pointerUpHandler = this.pointerUpHandler.bind(this);
         this.handleWheelScroll = this.handleWheelScroll.bind(this);
         this.handlePointerDown = this.handlePointerDown.bind(this);
         this.handlePointerClick = this.handlePointerClick.bind(this);
+
+        const storedFS = localStorage.getItem('showFloatingSparkle');
+        this.showFloatingSparkleEnabled = storedFS === null ? true : (storedFS === 'true');
     }
 
     initializeRendererEvents() {
@@ -103,9 +108,12 @@ class UIManager {
             this.toggleTab('auto-launcher');
             this.game.updateLauncherList();
         });
-        document.getElementById('data-tab').addEventListener('click', () => {
-            this.toggleTab('data');
-        });
+        const settingsTabBtn = document.getElementById('settings-tab');
+        if (settingsTabBtn) {
+            settingsTabBtn.addEventListener('click', () => {
+                this.toggleTab('settings');
+            });
+        }
         const upgradesTabBtn = document.getElementById('upgrades-tab');
         if (upgradesTabBtn) {
             upgradesTabBtn.addEventListener('click', () => {
@@ -267,6 +275,15 @@ class UIManager {
                 }
             }
         });
+
+        const fsToggle = document.getElementById('toggle-floating-sparkle');
+        if (fsToggle) {
+            fsToggle.checked = this.showFloatingSparkleEnabled;
+            fsToggle.addEventListener('change', (e) => {
+                this.showFloatingSparkleEnabled = e.target.checked;
+                localStorage.setItem('showFloatingSparkle', this.showFloatingSparkleEnabled);
+            });
+        }
     }
 
     handlePointerDown(e) {
@@ -1081,8 +1098,50 @@ class UIManager {
 
 
     showFloatingSparkle(screenX, screenY, amount) {
+        if (!this.showFloatingSparkleEnabled) return;
+
+        const THRESHOLD_X_DIST = 30; 
+
+        if (this.activeFloatingSparkle && document.body.contains(this.activeFloatingSparkle)) {
+            const existingX = parseFloat(this.activeFloatingSparkle.style.left || '0');
+
+            if (Math.abs(existingX - screenX) <= THRESHOLD_X_DIST) {
+                const elem = this.activeFloatingSparkle;
+
+                const currentAmount = parseFloat(elem.dataset.amount || '0');
+                const newAmount = currentAmount + amount;
+                elem.dataset.amount = newAmount;
+                elem.textContent = `+${newAmount.toLocaleString()}`;
+
+                elem.style.top = `${screenY}px`;
+
+                elem.style.animation = 'none';
+                void elem.offsetWidth;
+                elem.style.animation = 'floatUpFade 1.5s ease-out forwards';
+
+                if (this.floatingSparkleTimeout) {
+                    clearTimeout(this.floatingSparkleTimeout);
+                }
+                const remove = () => {
+                    elem.remove();
+                    if (this.activeFloatingSparkle === elem) {
+                        this.activeFloatingSparkle = null;
+                        this.floatingSparkleTimeout = null;
+                    }
+                };
+                elem.onanimationend = remove;
+                this.floatingSparkleTimeout = setTimeout(remove, 1500);
+                return;
+            }
+            this.activeFloatingSparkle = null;
+            if (this.floatingSparkleTimeout) {
+                this.floatingSparkleTimeout = null; 
+            }
+        }
+
         const elem = document.createElement('div');
         elem.className = 'floating-sparkle';
+        elem.dataset.amount = amount;
         elem.textContent = `+${amount.toLocaleString()}`;
 
         elem.style.left = `${screenX}px`;
@@ -1090,9 +1149,15 @@ class UIManager {
 
         document.body.appendChild(elem);
 
-        const remove = () => elem.remove();
-        elem.addEventListener('animationend', remove);
-        setTimeout(remove, 1500);
+        const remove = () => {
+            elem.remove();
+            this.activeFloatingSparkle = null;
+            this.floatingSparkleTimeout = null;
+        };
+        elem.onanimationend = remove;
+        this.floatingSparkleTimeout = setTimeout(remove, 1500);
+
+        this.activeFloatingSparkle = elem;
     }
 }
 
