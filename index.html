@@ -15,13 +15,15 @@
     <div class="top-bar-container">
         <div class="tab-bar">
             <button id="collapse-button" class="collapse-button">☰</button>
-            <div class="tabs">
+            <div class="tabs collapsed">
                 <div class="tab" id="recipes-tab">Recipes</div>
                 <div class="tab" id="auto-launcher-tab">Auto-Launchers</div>
                 <div class="tab" id="crowd-tab">Crowd</div>
                 <div class="tab" id="background-tab">Background</div>
                 <div class="tab" id="data-tab">Save/Load</div>
                 <div class="tab" id="stats-tab">Stats</div>
+                <div class="tab" id="upgrades-tab">Upgrades</div>
+                <div class="tab" id="cheats-tab">Cheats</div>
             </div>
         </div>
         <div class="resource-counter">
@@ -172,7 +174,40 @@
         </div>
     </div>
 
+    <div class="tab-content" id="upgrades-content">
+        <div class="panel scrollable-panel">
+            <h2 class="panel-title">Upgrades</h2>
+            <h3>Available</h3>
+            <div id="upgrades-available" class="upgrade-grid"></div>
+            <h3>Owned</h3>
+            <div id="upgrades-owned" class="upgrade-grid"></div>
+        </div>
+    </div>
 
+    <div class="tab-content" id="cheats-content">
+        <div class="panel scrollable-panel">
+            <h2 class="panel-title">Cheats (Developer)</h2>
+
+            <fieldset>
+                <legend>Add Resources</legend>
+                <div class="recipes-option">
+                    <label>Sparkles:</label>
+                    <input type="number" id="cheat-sparkles-amount" value="100000" step="1000" min="0">
+                    <button id="cheat-add-sparkles">Add Sparkles</button>
+                </div>
+                <div class="recipes-option">
+                    <label>Gold:</label>
+                    <input type="number" id="cheat-gold-amount" value="1000" step="100" min="0">
+                    <button id="cheat-add-gold">Add Gold</button>
+                </div>
+            </fieldset>
+
+            <fieldset>
+                <legend>Upgrades</legend>
+                <button id="cheat-unlock-upgrades">Unlock All Upgrades</button>
+            </fieldset>
+        </div>
+    </div>
 
     <div id="creator-scene" style="display:none;">
         <canvas id="creator-canvas"></canvas>

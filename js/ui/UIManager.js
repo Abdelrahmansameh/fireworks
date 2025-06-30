@@ -1,4 +1,4 @@
-import { GAME_BOUNDS, BACKGROUND_IMAGES } from '../config/config.js';
+import { GAME_BOUNDS, BACKGROUND_IMAGES, DEFAULT_RECIPE_COMPONENTS } from '../config/config.js';
 import * as Renderer2D from '../rendering/Renderer.js';
 
 class UIManager {
@@ -28,24 +28,8 @@ class UIManager {
             document.getElementById('creator-add-component')
         ];
         addComponentButtons.forEach(btn => btn && btn.addEventListener('click', () => {
-            this.game.currentRecipeComponents.push({
-                pattern: 'spherical',
-                color: '#d07916',
-                size: 0.5,
-                lifetime: 3.7,
-                shape: 'sphere',
-                spread: 1.5,
-                secondaryColor: '#00ff00',
-                enableTrail: true,
-                trailLength: 11,
-                trailWidth: 2.6,
-                glowStrength: 0.3,
-                blurStrength: 0.3,
-                enableColorGradient: false,
-                gradientFinalColor: '#ff0000',
-                gradientStartTime: 0.0,
-                gradientDuration: 1.0
-            });
+            const defaultComponent = { ...DEFAULT_RECIPE_COMPONENTS[0] };
+            this.game.currentRecipeComponents.push(defaultComponent);
             this.game.updateComponentsList(btn.id === 'creator-add-component' ? 'creator-components-list' : 'components-list');
             this.game.saveCurrentRecipeComponents();
         }));
@@ -122,10 +106,58 @@ class UIManager {
         document.getElementById('data-tab').addEventListener('click', () => {
             this.toggleTab('data');
         });
+        const upgradesTabBtn = document.getElementById('upgrades-tab');
+        if (upgradesTabBtn) {
+            upgradesTabBtn.addEventListener('click', () => {
+                this.toggleTab('upgrades');
+                this.renderUpgrades();
+            });
+        }
         document.getElementById('background-tab').addEventListener('click', () => {
             this.toggleTab('background');
         });
 
+        const cheatsTabBtn = document.getElementById('cheats-tab');
+        if (cheatsTabBtn) {
+            cheatsTabBtn.addEventListener('click', () => {
+                this.toggleTab('cheats');
+            });
+        }
+
+        const cheatAddSparklesBtn = document.getElementById('cheat-add-sparkles');
+        if (cheatAddSparklesBtn) {
+            cheatAddSparklesBtn.addEventListener('click', () => {
+                const amtInput = document.getElementById('cheat-sparkles-amount');
+                const amount = parseFloat(amtInput.value) || 0;
+                if (amount > 0) {
+                    this.game.addSparkles(amount);
+                    this.game.updateUI();
+                    this.showNotification(`Added ${amount.toLocaleString()} sparkles`);
+                }
+            });
+        }
+
+        const cheatAddGoldBtn = document.getElementById('cheat-add-gold');
+        if (cheatAddGoldBtn) {
+            cheatAddGoldBtn.addEventListener('click', () => {
+                const amtInput = document.getElementById('cheat-gold-amount');
+                const amount = parseFloat(amtInput.value) || 0;
+                if (amount > 0) {
+                    this.game.addGold(amount);
+                    this.game.updateUI();
+                    this.showNotification(`Added ${amount.toLocaleString()} gold`);
+                }
+            });
+        }
+
+        // Cheat: unlock all upgrades
+        const cheatUnlockUpgradesBtn = document.getElementById('cheat-unlock-upgrades');
+        if (cheatUnlockUpgradesBtn) {
+            cheatUnlockUpgradesBtn.addEventListener('click', () => {
+                this.game.unlockAllUpgrades();
+                this.showNotification('All upgrades unlocked!');
+            });
+        }
 
         const trailSelects = [
             document.getElementById('recipe-trail-effect'),
@@ -151,6 +183,8 @@ class UIManager {
         document.addEventListener('gesturestart', e => e.preventDefault());
         document.addEventListener('gesturechange', e => e.preventDefault());
         document.addEventListener('gestureend', e => e.preventDefault());
+
+        this.renderUpgrades();
     }
 
     bindEvents() {
@@ -986,6 +1020,60 @@ class UIManager {
             });
 
             container.appendChild(bgOption);
+        });
+    }
+
+    renderUpgrades() {
+        const availableContainer = document.getElementById('upgrades-available');
+        const ownedContainer = document.getElementById('upgrades-owned');
+        if (!availableContainer || !ownedContainer) return;
+
+        availableContainer.innerHTML = '';
+        ownedContainer.innerHTML = '';
+
+        const { upgrades, purchasedUpgrades } = this.game;
+        upgrades.forEach(up => {
+            const lvl = purchasedUpgrades[up.id] ?? 0;
+            const maxLevel = up.maxLevel ?? 1;
+
+            if (lvl > 0) {
+                const ownedCard = document.createElement('div');
+                ownedCard.className = 'upgrade-card purchased';
+
+                const oTitle = document.createElement('div');
+                oTitle.textContent = `${up.name} (Lv ${lvl})`;
+                ownedCard.appendChild(oTitle);
+
+                const oDesc = document.createElement('div');
+                oDesc.textContent = up.desc;
+                ownedCard.appendChild(oDesc);
+
+                ownedContainer.appendChild(ownedCard);
+            }
+
+            if (lvl < maxLevel) {
+                const availCard = document.createElement('div');
+                availCard.className = 'upgrade-card';
+
+                const aTitle = document.createElement('div');
+                aTitle.textContent = `${up.name} (Lv ${lvl + 1})`;
+                availCard.appendChild(aTitle);
+
+                const aDesc = document.createElement('div');
+                aDesc.textContent = up.desc;
+                availCard.appendChild(aDesc);
+
+                const aCost = document.createElement('div');
+                aCost.textContent = `Cost: ${up.cost.toLocaleString()} ${up.currency}`;
+                availCard.appendChild(aCost);
+
+                const btn = document.createElement('button');
+                btn.textContent = 'Buy';
+                btn.addEventListener('click', () => this.game.buyUpgrade(up.id));
+                availCard.appendChild(btn);
+
+                availableContainer.appendChild(availCard);
+            }
         });
     }
 }

@@ -1,4 +1,5 @@
 import { FIREWORK_CONFIG, GAME_BOUNDS, DEFAULT_RECIPE_COMPONENTS, GENERIC_RECIPE_NAMES, BACKGROUND_IMAGES } from '../config/config.js';
+import { UPGRADE_DEFINITIONS } from '../upgrades/upgrades.js';
 import InstancedParticleSystem from '../particles/InstancedParticleSystem.js';
 import Crowd from '../entities/Crowd.js';
 import Firework from '../entities/Firework.js';
@@ -33,6 +34,40 @@ class FireworkGame {
         this.cameraTransitionSpeed = 2.0;
 
         this.usePostProcessing = JSON.parse(localStorage.getItem('usePostProcessing') || 'true');
+
+        this.baseSparkleMultiplier = 1;
+        this.patternSparkleMultipliers = { default: 1 };
+
+        // Upgrades state
+        this.upgrades = UPGRADE_DEFINITIONS;                       // static definitions
+        this.upgradeLookup = Object.fromEntries(UPGRADE_DEFINITIONS.map(u => [u.id, u]));
+        this.purchasedUpgrades = {}; // id -> level
+
+        const savedBaseMult = parseFloat(localStorage.getItem('baseSparkleMultiplier'));
+        if (!isNaN(savedBaseMult)) {
+            this.baseSparkleMultiplier = savedBaseMult;
+        }
+
+        const savedPatternMultStr = localStorage.getItem('patternSparkleMultipliers');
+        if (savedPatternMultStr) {
+            try {
+                const parsed = JSON.parse(savedPatternMultStr);
+                if (parsed && typeof parsed === 'object') {
+                    this.patternSparkleMultipliers = { ...this.patternSparkleMultipliers, ...parsed };
+                }
+            } catch (e) {
+                console.error('Failed to parse pattern sparkle multipliers:', e);
+            }
+        }
+
+        // Load purchased upgrades
+        try {
+            const stored = JSON.parse(localStorage.getItem('purchasedUpgrades') || '{}');
+            if (stored && typeof stored === 'object') this.purchasedUpgrades = stored;
+        } catch {}
+
+        // Apply purchased upgrades to compute multipliers / effects
+        this.recomputeUpgrades();
 
         this.init();
     }
@@ -279,6 +314,11 @@ class FireworkGame {
         return this.resourceManager.resources.sparkles.amount;
     }
 
+    getComponentSparkles(component) {
+        const patternMult = this.patternSparkleMultipliers[component.pattern] ?? this.patternSparkleMultipliers.default ?? 1;
+        return this.baseSparkleMultiplier * patternMult;
+    }
+
     updateUI() {
         const totalSparklesPerSec = this.calculateTotalSparklesPerSecond().toFixed(2);
 
@@ -337,7 +377,8 @@ class FireworkGame {
 
                 const firework = new Firework(x + (Math.random() * 0.5 - 0.25) * FIREWORK_CONFIG.autoLauncherMeshWidth, launchY, components, this.renderer2D, this.renderer2D.virtualHeight / this.renderer2D.cameraZoom, effect, this.particleSystem);
                 this.gameState.fireworks.push(firework); this.fireworkCount++;
-                this.resourceManager.resources.sparkles.add(1);
+                const sparkleAmount = components.reduce((sum, c) => sum + this.getComponentSparkles(c), 0);
+                this.resourceManager.resources.sparkles.add(sparkleAmount);
                 this.updateUI();
                 launcher.accumulator -= launcher.spawnInterval;
             }
@@ -392,6 +433,10 @@ class FireworkGame {
 
         localStorage.setItem('resources', JSON.stringify(this.resourceManager.save()));
         localStorage.setItem('advancedCreatorUnlocked', JSON.stringify(this.advancedCreatorUnlocked));
+
+        localStorage.setItem('baseSparkleMultiplier', this.baseSparkleMultiplier);
+        localStorage.setItem('patternSparkleMultipliers', JSON.stringify(this.patternSparkleMultipliers));
+        localStorage.setItem('purchasedUpgrades', JSON.stringify(this.purchasedUpgrades));
     }
 
     dismissNotification() {
@@ -464,7 +509,7 @@ class FireworkGame {
     }
 
     // dont use every frame because js is weird 
-    launchFireworkAt(x, targetY = null, minY = null,  recipeComponents = null, trailEffect = null) {
+    launchFireworkAt(x, targetY = null, minY = null, recipeComponents = null, trailEffect = null) {
         const components = recipeComponents || this.currentRecipeComponents;
 
         if (components.length === 0) {
@@ -478,7 +523,8 @@ class FireworkGame {
 
         this.launch(x + (Math.random() - 0.5) * FIREWORK_CONFIG.autoLauncherMeshWidth, y + FIREWORK_CONFIG.autoLauncherMeshHeight / 2, components, effect, Math.max(targetY, minY));
         this.fireworkCount++;
-        this.addSparkles(1);
+        const sparkleAmount = components.reduce((sum, c) => sum + this.getComponentSparkles(c), 0);
+        this.addSparkles(sparkleAmount);
         this.updateUI();
     }
 
@@ -604,9 +650,13 @@ class FireworkGame {
         this.recipes = [];
         this.currentTrailEffect = 'fade';
         this.currentRecipeComponents = [...DEFAULT_RECIPE_COMPONENTS];
-
+        this.baseSparkleMultiplier = 1;
+        this.patternSparkleMultipliers = { default: 1 };
 
         this.resourceManager.reset();
+
+        this.purchasedUpgrades = {};
+        this.recomputeUpgrades();
 
         if (this.gameState.fireworks) {
             this.gameState.fireworks.forEach(firework => {
@@ -754,7 +804,7 @@ class FireworkGame {
 
     randomizeRecipe() {
         for (let i = 0; i < this.currentRecipeComponents.length; i++) {
-            const possiblePatterns = ['spherical', 'ring', 'heart', 'burst', 'palm', 'willow', 'helix', 'spinner',  'star', 'brokenHeart', 'christmasTree'];
+            const possiblePatterns = ['spherical', 'ring', 'heart', 'burst', 'palm', 'willow', 'helix', 'spinner', 'star', 'brokenHeart', 'christmasTree'];
             const possibleShapes = ['sphere', 'star'];
             const randomHex = `#${Math.floor(Math.random() * 0xFFFFFF)
                 .toString(16)
@@ -939,7 +989,10 @@ class FireworkGame {
             backgroundColor: localStorage.getItem('backgroundColor') || '#000000',
             selectedLauncherIndex: this.selectedLauncherIndex,
             resources: this.resourceManager.save(),
-            currentBackground: this.currentBackground
+            currentBackground: this.currentBackground,
+            baseSparkleMultiplier: this.baseSparkleMultiplier,
+            patternSparkleMultipliers: this.patternSparkleMultipliers,
+            purchasedUpgrades: this.purchasedUpgrades
         };
         return JSON.stringify(data);
     }
@@ -983,15 +1036,41 @@ class FireworkGame {
         this.updateBackgroundMesh();
 
         this.updateCrowdDisplay();
+
+        this.baseSparkleMultiplier = (typeof data.baseSparkleMultiplier === 'number' && !isNaN(data.baseSparkleMultiplier)) ? data.baseSparkleMultiplier : 1;
+        if (data.patternSparkleMultipliers && typeof data.patternSparkleMultipliers === 'object') {
+            this.patternSparkleMultipliers = { ...this.patternSparkleMultipliers, ...data.patternSparkleMultipliers };
+        }
+
+        if (data.purchasedUpgrades && typeof data.purchasedUpgrades === 'object') {
+            this.purchasedUpgrades = data.purchasedUpgrades;
+        }
+
+        this.recomputeUpgrades();
     }
 
 
 
     calculateSparklesPerSecond(autoLaunchers) {
         if (!autoLaunchers) return 0;
-        let totalSparklesPerSecond = autoLaunchers.reduce((total, launcher) => {
-            return total + (1 / launcher.spawnInterval);
-        }, 0);
+        let totalSparklesPerSecond = 0;
+
+        autoLaunchers.forEach(launcher => {
+            let recipe = this.recipes[launcher.assignedRecipeIndex];
+            let components;
+            if (recipe) {
+                components = recipe.components;
+            } else {
+                if (!this.recipes.length) {
+                    components = this.currentRecipeComponents;
+                } else {
+                    components = this.recipes[0].components;
+                }
+            }
+
+            const sparklePerFirework = components.reduce((sum, c) => sum + this.getComponentSparkles(c), 0);
+            totalSparklesPerSecond += sparklePerFirework / launcher.spawnInterval;
+        });
 
         return Math.round(totalSparklesPerSecond * 100) / 100;
     }
@@ -1219,6 +1298,68 @@ class FireworkGame {
         }
 
         localStorage.setItem('usePostProcessing', JSON.stringify(usePP));
+    }
+
+
+    recomputeUpgrades() {
+        this.baseSparkleMultiplier = 1;
+        this.patternSparkleMultipliers = { default: 1 };
+
+        for (const up of this.upgrades) {
+            const level = this.purchasedUpgrades[up.id] ?? 0;
+            if (level > 0) {
+                up.apply(this, level);
+            }
+        }
+    }
+
+    buyUpgrade(id) {
+        const up = this.upgradeLookup[id];
+        if (!up) return;
+
+        const currentLevel = this.purchasedUpgrades[id] ?? 0;
+        if (currentLevel >= (up.maxLevel ?? 1)) {
+            this.showNotification('Upgrade already maxed');
+            return;
+        }
+
+        const wallet = up.currency === 'gold' ? this.resourceManager.resources.gold : this.resourceManager.resources.sparkles;
+        if (wallet.amount < up.cost) {
+            this.showNotification(`Not enough ${up.currency}`);
+            return;
+        }
+
+        wallet.subtract(up.cost);
+        this.purchasedUpgrades[id] = currentLevel + 1;
+
+        up.apply(this, this.purchasedUpgrades[id]);
+
+        this.saveProgress();
+        this.updateUI();
+        this.ui.renderUpgrades();
+        this.showNotification('Upgrade purchased!');
+    }
+
+    addGold(amount) {
+        this.resourceManager.resources.gold.add(amount);
+        this.updateUI();
+    }
+
+    unlockAllUpgrades() {
+        let changed = false;
+        for (const up of this.upgrades) {
+            const maxLevel = up.maxLevel ?? 1;
+            if ((this.purchasedUpgrades[up.id] ?? 0) < maxLevel) {
+                this.purchasedUpgrades[up.id] = maxLevel;
+                up.apply(this, maxLevel);
+                changed = true;
+            }
+        }
+        if (changed) {
+            this.saveProgress();
+            this.updateUI();
+            if (this.ui && this.ui.renderUpgrades) this.ui.renderUpgrades();
+        }
     }
 }
 

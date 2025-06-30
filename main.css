@@ -820,3 +820,26 @@ body {
     margin-top: 5px;
     font-size: 0.9em;
 }
+
+.upgrade-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.upgrade-card {
+    width: 180px;
+    padding: 8px;
+    border: 1px solid #555;
+    background: #222;
+    border-radius: 4px;
+    color: #eee;
+    font-size: 14px;
+}
+.upgrade-card.purchased {
+    opacity: 0.5;
+}
+.upgrade-card button {
+    width: 100%;
+    margin-top: 6px;
+}
