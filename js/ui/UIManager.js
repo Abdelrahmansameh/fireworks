@@ -356,8 +356,9 @@ class UIManager {
                 const deltaX = Math.abs(e.clientX - this.lastPointerX);
                 if (deltaX < 20 && !this.game.isClickInsideUI(e)) {
                     const worldPos = this.game.screenToWorld(e.clientX, e.clientY);
-                    for (let i = 0; i < 1; i++) {
-                        this.game.launchFireworkAt(worldPos.x,  worldPos.y);
+                    const sparkleAmount = this.game.launchFireworkAt(worldPos.x,  worldPos.y);
+                    if (sparkleAmount) {
+                        this.showFloatingSparkle(e.clientX + 20, e.clientY - 10, sparkleAmount);
                     }
                 }
                 document.body.style.cursor = 'default';
@@ -1075,6 +1076,22 @@ class UIManager {
                 availableContainer.appendChild(availCard);
             }
         });
+    }
+
+
+    showFloatingSparkle(screenX, screenY, amount) {
+        const elem = document.createElement('div');
+        elem.className = 'floating-sparkle';
+        elem.textContent = `+${amount.toLocaleString()}`;
+
+        elem.style.left = `${screenX}px`;
+        elem.style.top = `${screenY}px`;
+
+        document.body.appendChild(elem);
+
+        const remove = () => elem.remove();
+        elem.addEventListener('animationend', remove);
+        setTimeout(remove, 1500);
     }
 }
 

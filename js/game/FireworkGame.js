@@ -526,6 +526,7 @@ class FireworkGame {
         const sparkleAmount = components.reduce((sum, c) => sum + this.getComponentSparkles(c), 0);
         this.addSparkles(sparkleAmount);
         this.updateUI();
+        return sparkleAmount;
     }
 
     // dont use every frame because js is weird 
