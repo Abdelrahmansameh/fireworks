@@ -848,22 +848,23 @@ body {
     position: fixed;
     color: #ffffff;
     font-weight: bold;
-    font-size: 14px;
     pointer-events: none;
     user-select: none;
     transform: translateX(0) translateY(0);
     opacity: 1;
     z-index: 4000;
-    animation: floatUpFade 1s ease-out forwards;
+    animation: floatUpFade 1.5s ease-out forwards;
 }
 
 @keyframes floatUpFade {
     0% {
         transform: translateX(0) translateY(0);
         opacity: 1;
+        font-size: 1.75rem; 
     }
     100% {
-        transform: translateX(10px) translateY(-30px);
+        transform: translateX(0%) translateY(-500%);
+        font-size: 1rem; 
         opacity: 0;
     }
 }

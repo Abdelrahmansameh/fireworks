@@ -356,9 +356,10 @@ class UIManager {
                 const deltaX = Math.abs(e.clientX - this.lastPointerX);
                 if (deltaX < 20 && !this.game.isClickInsideUI(e)) {
                     const worldPos = this.game.screenToWorld(e.clientX, e.clientY);
-                    const sparkleAmount = this.game.launchFireworkAt(worldPos.x,  worldPos.y);
-                    if (sparkleAmount) {
-                        this.showFloatingSparkle(e.clientX + 20, e.clientY - 10, sparkleAmount);
+                    const res = this.game.launchFireworkAt(worldPos.x,  worldPos.y);
+                    if (res.sparkleAmount) {
+                        const screenPos = this.game.renderer2D.worldToScreen(res.spawnX, res.spawnY);
+                        this.showFloatingSparkle(e.clientX + 30, screenPos.y - 50, res.sparkleAmount);
                     }
                 }
                 document.body.style.cursor = 'default';

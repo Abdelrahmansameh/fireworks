@@ -64,7 +64,7 @@ class FireworkGame {
         try {
             const stored = JSON.parse(localStorage.getItem('purchasedUpgrades') || '{}');
             if (stored && typeof stored === 'object') this.purchasedUpgrades = stored;
-        } catch {}
+        } catch { }
 
         // Apply purchased upgrades to compute multipliers / effects
         this.recomputeUpgrades();
@@ -520,13 +520,15 @@ class FireworkGame {
         const viewBottomWorldY = this.renderer2D.cameraY - (this.renderer2D.virtualHeight / 2 / this.renderer2D.cameraZoom);
         const y = minY || viewBottomWorldY + GAME_BOUNDS.OFFSET_MIN_Y;
         const effect = trailEffect || this.currentTrailEffect;
+        const spawnX = x + (Math.random() - 0.5) * FIREWORK_CONFIG.autoLauncherMeshWidth;
+        const spawnY = y + FIREWORK_CONFIG.autoLauncherMeshHeight / 2;
 
-        this.launch(x + (Math.random() - 0.5) * FIREWORK_CONFIG.autoLauncherMeshWidth, y + FIREWORK_CONFIG.autoLauncherMeshHeight / 2, components, effect, Math.max(targetY, minY));
+        this.launch(spawnX, spawnY, components, effect, Math.max(targetY, minY));
         this.fireworkCount++;
         const sparkleAmount = components.reduce((sum, c) => sum + this.getComponentSparkles(c), 0);
         this.addSparkles(sparkleAmount);
         this.updateUI();
-        return sparkleAmount;
+        return { sparkleAmount, spawnX, spawnY };
     }
 
     // dont use every frame because js is weird 

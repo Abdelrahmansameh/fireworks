@@ -1536,6 +1536,20 @@ class Renderer2D {
         return new Vector2(worldX, worldY);
     }
 
+    worldToScreen(wx, wy) {
+        const rect              = this.canvas.getBoundingClientRect();
+    
+        const cssToWorld        = this.virtualHeight / this.canvas.clientHeight;
+    
+        const sx = (wx - this.cameraX) * this.cameraZoom / cssToWorld +
+                   this.canvas.clientWidth  / 2 + rect.left;
+    
+        const sy = (this.cameraY - wy) * this.cameraZoom / cssToWorld +
+                   this.canvas.clientHeight / 2 + rect.top;
+    
+        return { x: sx, y: sy };
+    }
+
     _drawNormalShape(shape) {
         const gl = this.gl;
         // set blend
