@@ -1,4 +1,4 @@
-import { FIREWORK_CONFIG, GAME_BOUNDS, DEFAULT_RECIPE_COMPONENTS, GENERIC_RECIPE_NAMES, BACKGROUND_IMAGES } from '../config/config.js';
+import { FIREWORK_CONFIG, GAME_BOUNDS, DEFAULT_RECIPE_COMPONENTS, GENERIC_RECIPE_NAMES, BACKGROUND_IMAGES, AUTO_LAUNCHER_COST_BASE, AUTO_LAUNCHER_COST_RATIO, AUTO_UPGRADE_COST_RATIO, AUTO_SPAWN_INTERVAL_RATIO } from '../config/config.js';
 import { UPGRADE_DEFINITIONS } from '../upgrades/upgrades.js';
 import InstancedParticleSystem from '../particles/InstancedParticleSystem.js';
 import Crowd from '../entities/Crowd.js';
@@ -20,7 +20,7 @@ class FireworkGame {
         this.currentTrailEffect = 'fade';
         this.currentBackground = BACKGROUND_IMAGES[0].path;
         this.fireworkCount = 0;
-        this.autoLauncherCost = 10;
+        this.autoLauncherCost = AUTO_LAUNCHER_COST_BASE;
         this.selectedLauncherIndex = null;
         this.crowdThresholds = [1, 2, 3, 4, 5, 10, 15];
 
@@ -74,7 +74,7 @@ class FireworkGame {
 
     init() {
         this.fireworkCount = parseInt(localStorage.getItem('fireworkCount')) || 0;
-        this.autoLauncherCost = parseInt(localStorage.getItem('autoLauncherCost')) || 10;
+        this.autoLauncherCost = parseInt(localStorage.getItem('autoLauncherCost')) || AUTO_LAUNCHER_COST_BASE;
         this.currentBackground = localStorage.getItem('currentBackground') || BACKGROUND_IMAGES[0].path;
 
         // Load resources
@@ -553,10 +553,10 @@ class FireworkGame {
                 level: 1,
                 spawnInterval: 5,
                 upgradeCost: 15,
-                mesh: null // Initialize mesh property
+                mesh: null 
             };
             this.gameState.autoLaunchers.push(launcher);
-            this.createAutoLauncherMesh(launcher); // Create mesh for the new launcher
+            this.createAutoLauncherMesh(launcher); 
             this.updateUI();
             this.updateLauncherList();
             this.showNotification("Auto-Launcher purchased!");
@@ -566,7 +566,7 @@ class FireworkGame {
     }
 
     calculateAutoLauncherCost(numLaunchers) {
-        return Math.floor(10 * Math.pow(1.2, numLaunchers));
+        return Math.floor(AUTO_LAUNCHER_COST_BASE * Math.pow(AUTO_LAUNCHER_COST_RATIO, numLaunchers));
     }
 
     createAutoLauncherMesh(launcher) {
@@ -629,12 +629,11 @@ class FireworkGame {
                 launcher.mesh = null;
             }
             let cost = 0;
-            cost += this.calculateAutoLauncherCost(0); // Cost of the first launcher
-            // Calculate cost of upgrades for this launcher
-            let currentUpgradeCost = 15; // Initial upgrade cost for level 1 to 2
+            cost += this.calculateAutoLauncherCost(0); 
+            let currentUpgradeCost = 15; 
             for (let i = 1; i < launcher.level; i++) {
                 cost += currentUpgradeCost;
-                currentUpgradeCost = Math.floor(currentUpgradeCost * 1.2);
+                currentUpgradeCost = Math.floor(currentUpgradeCost * AUTO_UPGRADE_COST_RATIO);
             }
             refundAmount += cost;
         });
@@ -642,7 +641,7 @@ class FireworkGame {
 
 
         this.addSparkles(Math.floor(refundAmount));
-        this.autoLauncherCost = 10; // Reset base cost
+        this.autoLauncherCost = AUTO_LAUNCHER_COST_BASE; 
         this.updateUI();
         this.updateLauncherList();
         return refundAmount;
@@ -687,7 +686,7 @@ class FireworkGame {
             this.particleSystem = new InstancedParticleSystem(this.renderer2D, this.profiler);
         }
 
-        this.autoLauncherCost = 10;
+        this.autoLauncherCost = AUTO_LAUNCHER_COST_BASE;
 
         localStorage.clear();
 
@@ -924,8 +923,8 @@ class FireworkGame {
         if (this.getSparkles() >= launcher.upgradeCost) {
             this.subtractSparkles(launcher.upgradeCost);
             launcher.level += 1;
-            launcher.spawnInterval = launcher.spawnInterval * 0.9;
-            launcher.upgradeCost = Math.floor(launcher.upgradeCost * 1.2);
+            launcher.spawnInterval = launcher.spawnInterval * AUTO_SPAWN_INTERVAL_RATIO;
+            launcher.upgradeCost = Math.floor(launcher.upgradeCost * AUTO_UPGRADE_COST_RATIO);
 
             this.updateUI();
             this.updateLauncherList();
@@ -1012,7 +1011,7 @@ class FireworkGame {
         }
 
         this.fireworkCount = data.fireworkCount || 0;
-        this.autoLauncherCost = data.autoLauncherCost || 10;
+        this.autoLauncherCost = data.autoLauncherCost || AUTO_LAUNCHER_COST_BASE;
         this.recipes = data.recipes || [];
         this.currentTrailEffect = data.currentTrailEffect || 'fade';
         this.currentRecipeComponents = data.currentRecipeComponents || [...DEFAULT_RECIPE_COMPONENTS];
@@ -1247,7 +1246,6 @@ class FireworkGame {
         }
         lifetime -= 1;
 
-        // start a timer to only spawn the next firework after lifetime seconds
         if (this.previewFireworkTimer) {
             this.previewFireworkTimer -= delta;
             if (this.previewFireworkTimer <= 0) {
@@ -1327,12 +1325,13 @@ class FireworkGame {
         }
 
         const wallet = up.currency === 'gold' ? this.resourceManager.resources.gold : this.resourceManager.resources.sparkles;
-        if (wallet.amount < up.cost) {
+        const nextCost = Math.floor(up.baseCost * Math.pow(up.costRatio, currentLevel));
+        if (wallet.amount < nextCost) {
             this.showNotification(`Not enough ${up.currency}`);
             return;
         }
 
-        wallet.subtract(up.cost);
+        wallet.subtract(nextCost);
         this.purchasedUpgrades[id] = currentLevel + 1;
 
         up.apply(this, this.purchasedUpgrades[id]);

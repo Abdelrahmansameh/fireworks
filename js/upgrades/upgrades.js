@@ -3,7 +3,8 @@
 // pattern     : pattern name if group==='PATTERN', else null
 // name        : human-readable title
 // desc        : description shown in UI
-// cost        : number (price)
+// baseCost    : starting price
+// costRatio   : multiplier for each level
 // currency    : 'sparkles' | 'gold'
 // maxLevel    : maximum purchasable level (1 for single-purchase)
 // apply(game, level): callback executed after purchase and on load.
@@ -15,7 +16,8 @@ const UPGRADE_DEFINITIONS = [
         pattern: null,
         name: 'Spark Core I',
         desc: '+2 sparkles per component',
-        cost: 1000,
+        baseCost: 1000,
+        costRatio: 1.5,
         currency: 'sparkles',
         maxLevel: 3,
         apply: (game, level) => { game.baseSparkleMultiplier += 2 * level; }
@@ -26,7 +28,8 @@ const UPGRADE_DEFINITIONS = [
         pattern: null,
         name: 'Spark Core II',
         desc: '+5 sparkles per component',
-        cost: 5000,
+        baseCost: 5000,
+        costRatio: 1.5,
         currency: 'gold',
         maxLevel: 3,
         apply: (game, level) => { game.baseSparkleMultiplier += 5 * level; }
@@ -42,7 +45,8 @@ Object.keys(FIREWORK_CONFIG.patternGravities).forEach(pattern => {
         pattern,
         name: `${pattern.charAt(0).toUpperCase() + pattern.slice(1)} Booster`,
         desc: `x2 sparkles per '${pattern}' component`,
-        cost: 750,
+        baseCost: 750,
+        costRatio: 1.0,
         currency: 'sparkles',
         maxLevel: 1,
         apply: (game, level) => {

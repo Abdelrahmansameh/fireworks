@@ -1082,8 +1082,9 @@ class UIManager {
                 aDesc.textContent = up.desc;
                 availCard.appendChild(aDesc);
 
+                const nextCost = Math.floor(up.baseCost * Math.pow(up.costRatio, lvl));
                 const aCost = document.createElement('div');
-                aCost.textContent = `Cost: ${up.cost.toLocaleString()} ${up.currency}`;
+                aCost.textContent = `Cost: ${nextCost.toLocaleString()} ${up.currency}`;
                 availCard.appendChild(aCost);
 
                 const btn = document.createElement('button');
