@@ -612,7 +612,7 @@ function buildDroplet(scale = 1, steps = 100) {
 
 function buildSliceBurst(size = 10) {
     const coords = [];
-    const x1=  0, x2 = size / 2, x3 = size;
+    const x1 = 0, x2 = size / 2, x3 = size;
     const y1 = 0, y2 = size / 20, y3 = 0;
     coords.push(x1, y1, x2, y2, x3, y3);
     const triIndices = earcut(coords, null, 2);
@@ -1031,7 +1031,7 @@ class Renderer2D {
         this.cameraY = 0;
         this.cameraZoom = 1.0;
         this.usePostProcessing = (opts.usePostProcessing !== undefined) ? opts.usePostProcessing : false;
-        
+
         const gl = this.gl;
 
         this.dummyTex = gl.createTexture();
@@ -1320,7 +1320,7 @@ class Renderer2D {
 
         // instance buffer => offset(2), rotation(1), scale(2), color(4), glowStrength(1), blurStrength(1)
         gl.bindBuffer(gl.ARRAY_BUFFER, group._instanceBuffer);
-        const stride = 11 * 4; 
+        const stride = 11 * 4;
         // offset => loc= a_offset_Inst (location 2)
         gl.enableVertexAttribArray(this.a_offset_Inst);
         gl.vertexAttribPointer(this.a_offset_Inst, 2, gl.FLOAT, false, stride, 0);
@@ -1537,16 +1537,16 @@ class Renderer2D {
     }
 
     worldToScreen(wx, wy) {
-        const rect              = this.canvas.getBoundingClientRect();
-    
-        const cssToWorld        = this.virtualHeight / this.canvas.clientHeight;
-    
+        const rect = this.canvas.getBoundingClientRect();
+
+        const cssToWorld = this.virtualHeight / this.canvas.clientHeight;
+
         const sx = (wx - this.cameraX) * this.cameraZoom / cssToWorld +
-                   this.canvas.clientWidth  / 2 + rect.left;
-    
+            this.canvas.clientWidth / 2 + rect.left;
+
         const sy = (this.cameraY - wy) * this.cameraZoom / cssToWorld +
-                   this.canvas.clientHeight / 2 + rect.top;
-    
+            this.canvas.clientHeight / 2 + rect.top;
+
         return { x: sx, y: sy };
     }
 
@@ -1648,7 +1648,7 @@ class Renderer2D {
         }
         else {
             gl.activeTexture(gl.TEXTURE0);
-            gl.bindTexture(gl.TEXTURE_2D, this.dummyTex);          
+            gl.bindTexture(gl.TEXTURE_2D, this.dummyTex);
             gl.uniform1i(this.u_texture_Inst, 0);
         }
         gl.uniformMatrix4fv(this.u_proj_Inst, false, this._projectionMatrix);
