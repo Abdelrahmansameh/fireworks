@@ -17,12 +17,29 @@ class FireworkGame {
 
         this.recipes = [];
         this.currentRecipeComponents = [];
-        this.currentTrailEffect = 'fade';
+        this.currentTrailEffect = 'sparkle';
         this.currentBackground = BACKGROUND_IMAGES[0].path;
         this.fireworkCount = 0;
         this.autoLauncherCost = AUTO_LAUNCHER_COST_BASE;
         this.selectedLauncherIndex = null;
         this.crowdThresholds = [1, 2, 3, 4, 5, 10, 15];
+
+        this.unlockStates = {
+            sparkleCounter: false,
+            tabMenu: false,
+            autoLauncherTab: false,
+            upgradesTab: false,
+            crowdsTab: false,
+            backgroundTab: false
+        };
+
+        this.firstClickStates = {
+            tabMenu: false,
+            autoLauncherTab: false,
+            upgradesTab: false,
+            crowdsTab: false,
+            backgroundTab: false
+        };
 
         this.resourceManager = new ResourceManager(this);
         this.ui = new UIManager(this);
@@ -38,8 +55,7 @@ class FireworkGame {
         this.baseSparkleMultiplier = 1;
         this.patternSparkleMultipliers = { default: 1 };
 
-        // Upgrades state
-        this.upgrades = UPGRADE_DEFINITIONS;                       // static definitions
+        this.upgrades = UPGRADE_DEFINITIONS;                       
         this.upgradeLookup = Object.fromEntries(UPGRADE_DEFINITIONS.map(u => [u.id, u]));
         this.purchasedUpgrades = {}; // id -> level
 
@@ -60,13 +76,13 @@ class FireworkGame {
             }
         }
 
-        // Load purchased upgrades
         try {
             const stored = JSON.parse(localStorage.getItem('purchasedUpgrades') || '{}');
             if (stored && typeof stored === 'object') this.purchasedUpgrades = stored;
         } catch { }
 
-        // Apply purchased upgrades to compute multipliers / effects
+        this.loadUnlockStates();
+
         this.recomputeUpgrades();
 
         this.init();
@@ -94,14 +110,7 @@ class FireworkGame {
             this.gameState.autoLaunchers = savedGameState.autoLaunchers.map(launcherData => ({ ...launcherData }));
         }
 
-        // Load selected launcher
-        const savedSelectedIndex = parseInt(localStorage.getItem('selectedLauncherIndex'));
-        if (!isNaN(savedSelectedIndex) && savedSelectedIndex < this.gameState.autoLaunchers.length) {
-            this.selectedLauncherIndex = savedSelectedIndex;
-            // this.selectLauncher(this.selectedLauncherIndex); // selectLauncher updates UI, UI might not be ready
-        }
 
-        // Initialize 2D renderer
         this.initRenderer2D();
         this.initBackgroundColor();
 
@@ -119,17 +128,14 @@ class FireworkGame {
             launcher.x = this.clampToLauncherBounds(launcher.x);
         });
 
-        // Initialize game components
         this.particleSystem = new InstancedParticleSystem(this.renderer2D, this.profiler);
         this.crowd = new Crowd(this.renderer2D);
 
-        // Initialize crowd
         const initialSps = this.calculateTotalSparklesPerSecond();
         const initialCrowd = this._calculateTargetCrowdCount(initialSps);
         this.crowd.setCount(initialCrowd);
         this.updateCrowdDisplay();
 
-        // Load UI and events
         this.loadRecipes();
         this.loadCurrentRecipe();
         this.updateUI();
@@ -137,11 +143,9 @@ class FireworkGame {
         this.updateRecipeList();
         this.updateLauncherList();
 
-        // Setup game container
         const gameContainer = document.getElementById('game-container');
         gameContainer.style.touchAction = 'none';
 
-        // Setup visibility change handler\
         document.addEventListener('visibilitychange', () => {
             if (document.visibilityState === 'hidden') {
                 this.pause();
@@ -149,6 +153,8 @@ class FireworkGame {
                 this.resume();
             }
         });
+
+        this.ui.initializeUnlockStates(this.unlockStates);
 
         // Start game loop
         this.animate();
@@ -386,7 +392,6 @@ class FireworkGame {
         this.profiler.endFunction('autoLaunchersUpdate');
 
 
-        // Update crowd based on sparkles per second
         const currentSps = this.calculateTotalSparklesPerSecond();
         const targetCrowdSize = this._calculateTargetCrowdCount(currentSps);
         this.crowd.setCount(targetCrowdSize);
@@ -395,6 +400,8 @@ class FireworkGame {
         this.resourceManager.update();
 
         this.crowd.update(deltaTime);
+
+        this.checkUnlockConditions();
 
         this.saveProgress();
 
@@ -437,6 +444,7 @@ class FireworkGame {
         localStorage.setItem('baseSparkleMultiplier', this.baseSparkleMultiplier);
         localStorage.setItem('patternSparkleMultipliers', JSON.stringify(this.patternSparkleMultipliers));
         localStorage.setItem('purchasedUpgrades', JSON.stringify(this.purchasedUpgrades));
+        this.saveUnlockStates();
     }
 
     dismissNotification() {
@@ -527,6 +535,7 @@ class FireworkGame {
         this.fireworkCount++;
         const sparkleAmount = components.reduce((sum, c) => sum + this.getComponentSparkles(c), 0);
         this.addSparkles(sparkleAmount);
+        this.checkUnlockConditions(); 
         this.updateUI();
         return { sparkleAmount, spawnX, spawnY };
     }
@@ -648,9 +657,10 @@ class FireworkGame {
     }
 
     resetGame() {
+        this.ui.hideActiveTab();
         this.fireworkCount = 0;
         this.recipes = [];
-        this.currentTrailEffect = 'fade';
+        this.currentTrailEffect = 'sparkle';
         this.currentRecipeComponents = [...DEFAULT_RECIPE_COMPONENTS];
         this.baseSparkleMultiplier = 1;
         this.patternSparkleMultipliers = { default: 1 };
@@ -658,6 +668,24 @@ class FireworkGame {
         this.resourceManager.reset();
 
         this.purchasedUpgrades = {};
+        
+        this.unlockStates = {
+            sparkleCounter: false,
+            tabMenu: false,
+            autoLauncherTab: false,
+            upgradesTab: false,
+            crowdsTab: false,
+            backgroundTab: false
+        };
+
+        this.firstClickStates = {
+            tabMenu: false,
+            autoLauncherTab: false,
+            upgradesTab: false,
+            crowdsTab: false,
+            backgroundTab: false
+        };
+        
         this.recomputeUpgrades();
 
         if (this.gameState.fireworks) {
@@ -689,6 +717,8 @@ class FireworkGame {
         this.autoLauncherCost = AUTO_LAUNCHER_COST_BASE;
 
         localStorage.clear();
+
+        this.ui.initializeUnlockStates(this.unlockStates);
 
         this.updateUI();
         this.updateComponentsList();
@@ -994,7 +1024,9 @@ class FireworkGame {
             currentBackground: this.currentBackground,
             baseSparkleMultiplier: this.baseSparkleMultiplier,
             patternSparkleMultipliers: this.patternSparkleMultipliers,
-            purchasedUpgrades: this.purchasedUpgrades
+            purchasedUpgrades: this.purchasedUpgrades,
+            unlockStates: this.unlockStates,
+            firstClickStates: this.firstClickStates
         };
         return JSON.stringify(data);
     }
@@ -1013,7 +1045,7 @@ class FireworkGame {
         this.fireworkCount = data.fireworkCount || 0;
         this.autoLauncherCost = data.autoLauncherCost || AUTO_LAUNCHER_COST_BASE;
         this.recipes = data.recipes || [];
-        this.currentTrailEffect = data.currentTrailEffect || 'fade';
+        this.currentTrailEffect = data.currentTrailEffect || 'sparkle';
         this.currentRecipeComponents = data.currentRecipeComponents || [...DEFAULT_RECIPE_COMPONENTS];
 
         const bgColor = data.backgroundColor || '#000000';
@@ -1046,6 +1078,16 @@ class FireworkGame {
 
         if (data.purchasedUpgrades && typeof data.purchasedUpgrades === 'object') {
             this.purchasedUpgrades = data.purchasedUpgrades;
+        }
+
+        if (data.unlockStates && typeof data.unlockStates === 'object') {
+            this.unlockStates = { ...this.unlockStates, ...data.unlockStates };
+            this.saveUnlockStates();
+            this.ui.initializeUnlockStates(this.unlockStates);
+        }
+
+        if (data.firstClickStates && typeof data.firstClickStates === 'object') {
+            this.firstClickStates = { ...this.firstClickStates, ...data.firstClickStates };
         }
 
         this.recomputeUpgrades();
@@ -1361,6 +1403,90 @@ class FireworkGame {
             this.saveProgress();
             this.updateUI();
             if (this.ui && this.ui.renderUpgrades) this.ui.renderUpgrades();
+        }
+    }
+
+    loadUnlockStates() {
+        const states = JSON.parse(localStorage.getItem('unlockStates') || '{}');
+        this.unlockStates = { ...this.unlockStates, ...states };
+        
+        const clickStates = JSON.parse(localStorage.getItem('firstClickStates') || '{}');
+        this.firstClickStates = { ...this.firstClickStates, ...clickStates };
+    }
+
+    saveUnlockStates() {
+        localStorage.setItem('unlockStates', JSON.stringify(this.unlockStates));
+        localStorage.setItem('firstClickStates', JSON.stringify(this.firstClickStates));
+    }
+
+    checkUnlockConditions() {
+        let unlockUpdated = false;
+
+        if (!this.unlockStates.sparkleCounter && this.fireworkCount >= 1) {
+            this.unlockStates.sparkleCounter = true;
+            this.ui.showSparkleCounter();
+            unlockUpdated = true;
+        }
+
+        if (!this.unlockStates.tabMenu && this.fireworkCount >= 10) {
+            this.unlockStates.tabMenu = true;
+            this.ui.showTabMenu();
+            this.ui.showCollapseButton();
+            this.ui.expandAllTabs();
+            if (!this.firstClickStates.tabMenu) {
+                this.ui.addGlimmer('tabMenu');
+            }
+            unlockUpdated = true;
+        }
+
+        if (!this.unlockStates.autoLauncherTab && this.fireworkCount >= 20) {
+            this.unlockStates.autoLauncherTab = true;
+            this.ui.showAutoLauncherTab();
+            this.ui.expandAllTabs();
+            if (!this.firstClickStates.autoLauncherTab) {
+                this.ui.addGlimmer('autoLauncherTab');
+            }
+            unlockUpdated = true;
+        }
+
+        if (!this.unlockStates.upgradesTab && this.fireworkCount >= 30) {
+            this.unlockStates.upgradesTab = true;
+            this.ui.showUpgradesTab();
+            this.ui.expandAllTabs();
+            if (!this.firstClickStates.upgradesTab) {
+                this.ui.addGlimmer('upgradesTab');
+            }
+            unlockUpdated = true;
+        }
+
+        if (!this.unlockStates.backgroundTab && this.getSparkles() >= 50) {
+            this.unlockStates.backgroundTab = true;
+            this.ui.showBackgroundTab();
+            if (!this.firstClickStates.backgroundTab) {
+                this.ui.addGlimmer('backgroundTab');
+            }
+            unlockUpdated = true;
+        }
+
+        if (!this.unlockStates.crowdsTab && this.calculateTotalSparklesPerSecond() >= 0.7) {
+            this.unlockStates.crowdsTab = true;
+            this.ui.showCrowdsTab();
+            if (!this.firstClickStates.crowdsTab) {
+                this.ui.addGlimmer('crowdsTab');
+            }
+            unlockUpdated = true;
+        }
+
+        if (unlockUpdated) {
+            this.saveUnlockStates();
+        }
+    }
+
+    onFirstClick(elementType) {
+        if (!this.firstClickStates[elementType]) {
+            this.firstClickStates[elementType] = true;
+            this.ui.removeGlimmer(elementType);
+            this.saveUnlockStates();
         }
     }
 }

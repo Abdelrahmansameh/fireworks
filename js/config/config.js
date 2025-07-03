@@ -11,9 +11,9 @@ const FIREWORK_CONFIG = {
     gravityMultiplier: 5,
     particleSize: 5.0,
     particleDensity: 100,
-    ascentSpeed: 350,
-    rocketTrailLength: 30,
-    rocketSize: .5,
+    ascentSpeed: 450,
+    rocketTrailLength: 40,
+    rocketSize: .8,
     rocketTrailSize: 1.2,
     minExplosionHeightPercent: 0.4,
     maxExplosionHeightPercent: 0.8,
@@ -63,7 +63,7 @@ const AUTO_SPAWN_INTERVAL_RATIO = 0.9;
 
 const DEFAULT_RECIPE_COMPONENTS = [{
     pattern: 'spherical',
-    color: '#fcd303',
+    color: '#b05111',
     size: 0.3,
     lifetime: 3.7,
     shape: 'ring',

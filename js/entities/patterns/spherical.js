@@ -2,7 +2,7 @@ import ParticleRecipe from './ParticleRecipe.js';
 import * as Renderer2D from '../../rendering/Renderer.js';
 
 
-function createSphereRecipe(name, layerCountCb, radiusMultiplierCb, risingVelocityCb) {
+function createSphereRecipe(name, layerCountCb, radiusMultiplierCb, risingVelocityCb, randomA, randomB) {
     return new ParticleRecipe({
         name,
         count: ctx => ctx.particleCount,
@@ -13,7 +13,7 @@ function createSphereRecipe(name, layerCountCb, radiusMultiplierCb, risingVeloci
             const angle = (i / (ctx.particleCount / layers)) * Math.PI * 2;
 
             const radius = radiusMultiplierCb(ctx) * (layerProgress + 1 / layers);
-            const magnitude = ctx.speed * (0.8 + Math.random() * 0.4) * radius;
+            const magnitude = ctx.speed * (randomA + Math.random() * randomB) * radius;
             const risingVelocity = risingVelocityCb(ctx);
 
             const vel = new Renderer2D.Vector2(
@@ -34,14 +34,18 @@ const spherical = createSphereRecipe(
     'spherical',
     () => 1,
     ctx => ctx.spread * 1,
-    () => 50
+    () => 50,
+    0.8,
+    0.4
 );
 
 const solidsphere = createSphereRecipe(
     'solidsphere',
     () => 6,
     ctx => ctx.spread *1,
-    () => 150
+    () => 150,
+    1.2,
+    0.1
 );
 
 export { spherical, solidsphere }; 

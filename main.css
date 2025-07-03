@@ -868,3 +868,39 @@ body {
         opacity: 0;
     }
 }
+
+.unlock-hidden {
+    display: none !important;
+}
+
+.unlock-glimmer {
+    position: relative;
+    overflow: hidden;
+}
+
+.unlock-glimmer::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(255, 255, 255, 0.4),
+        transparent
+    );
+    animation: glimmer 2s infinite;
+    z-index: 1000;
+    pointer-events: none;
+}
+
+@keyframes glimmer {
+    0% {
+        left: -100%;
+    }
+    50% {
+        left: 100%;
+    }
+}

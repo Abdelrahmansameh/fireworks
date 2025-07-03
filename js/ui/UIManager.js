@@ -196,7 +196,7 @@ class UIManager {
     }
 
     bindEvents() {
-        document.getElementById('collapse-button').addEventListener('click', this.handleCollapseButton);
+        document.getElementById('collapse-button').addEventListener('click', this.handleCollapseButton.bind(this));
 
         document.getElementById('save-progress').addEventListener('click', () => {
             const data = this.game.serializeGameData();
@@ -420,19 +420,29 @@ class UIManager {
         });
     }
 
+    hideActiveTab() {
+        const activeTabContent = document.querySelector('.tab-content.active');
+        if (activeTabContent) {
+            activeTabContent.classList.remove('active');
+        }
+    }
+
     handleCollapseButton() {
         const tabs = document.querySelector('.tabs');
-        const activeTabContent = document.querySelector('.tab-content.active');
 
         if (tabs.classList.contains('collapsed')) {
             tabs.classList.remove('collapsed');
         } else {
             tabs.classList.add('collapsed');
-            if (activeTabContent) {
-                activeTabContent.classList.remove('active');
-            }
+            this.hideActiveTab();
         }
     }
+
+    expandAllTabs() {
+        const tabs = document.querySelector('.tabs');
+        tabs.classList.remove('collapsed');
+    }
+
 
     showConfirmation(title, message, onConfirm) {
         const confirmationDialog = document.getElementById('confirmation-dialog');
@@ -546,29 +556,36 @@ class UIManager {
 
         const sparkleTotalElements = sparklesElement.querySelectorAll('.sparkle-total');
         sparkleTotalElements.forEach(el => {
-            el.textContent = isCompact ?
-                `${formatCompactNumber(sparklesCount)} sp` :
-                `${sparklesCount} sp`;
+            const countText = isCompact ? 
+                `${formatCompactNumber(sparklesCount)} sp` : 
+                `${sparklesCount}`;
+            const rateText = isCompact ?
+                ` (+${formatCompactNumber(totalSparklesRate)}/s)` :
+                ` (+${totalSparklesRate}/s)`;
+            
+            el.innerHTML = `${countText}<span style="font-size: 0.8em; opacity: 0.8;">${rateText}</span>`;
         });
 
-        if (isCompact) {
-            sparklesElement.querySelector('.sparkle-rate').textContent =
-                ` (+${formatCompactNumber(totalSparklesRate)}/s)`;
-        } else {
-            sparklesElement.querySelector('.total-rate').textContent =
-                `${totalSparklesRate} sp/s`;
-
-        }
+        // Clear the separate rate displays since we're now showing inline
+        const sparkleRateEl = sparklesElement.querySelector('.sparkle-rate');
+        if (sparkleRateEl) sparkleRateEl.textContent = '';
+        
+        const totalRateEl = sparklesElement.querySelector('.total-rate');
+        if (totalRateEl) totalRateEl.textContent = '';
 
         const gold = this.game.resourceManager.resources.gold;
         const goldTotalElements = sparklesElement.querySelectorAll('.gold-total');
         goldTotalElements.forEach(el => {
-            el.textContent = gold.formatAmount();
+            const countText = gold.formatAmount();
+            const rateText = ` (+${gold.perSecond.toFixed(1)}/s)`;
+            
+            el.innerHTML = `${countText}<span style="font-size: 0.8em; opacity: 0.8;">${rateText}</span>`;
         });
 
+        // Clear the separate gold rate displays since we're now showing inline
         const goldRateElements = sparklesElement.querySelectorAll('.gold-rate');
         goldRateElements.forEach(el => {
-            el.textContent = ` +${gold.perSecond.toFixed(1)}/s`;
+            el.textContent = '';
         });
 
         if (!sparklesElement._hasClickHandler) {
@@ -683,7 +700,7 @@ class UIManager {
                     </div>
                     <div class="recipes-option">
                         <label>Shell Size:</label>
-                        <input type="range" class="size-select" data-index="${index}" min="0.3" max="0.7" step="0.05" value="${component.size}">
+                        <input type="range" class="size-select" data-index="${index}" min="0.1" max="0.7" step="0.05" value="${component.size}">
                     </div>
                     <div class="recipes-option">
                         <label>Lifetime:</label>
@@ -1159,6 +1176,223 @@ class UIManager {
         this.floatingSparkleTimeout = setTimeout(remove, 1500);
 
         this.activeFloatingSparkle = elem;
+    }
+
+    initializeUnlockStates(unlockStates) {
+        this.hideSparkleCounter();
+        this.hideTabMenu();
+        this.hideCollapseButton();
+        this.hideAllTabs();
+        
+        if (unlockStates.sparkleCounter) {
+            this.showSparkleCounter();
+        }
+        
+        if (unlockStates.tabMenu) {
+            this.showTabMenu();
+            this.showCollapseButton();
+            if (!this.game.firstClickStates.tabMenu) {
+                this.addGlimmer('tabMenu');
+            }
+        }
+        
+        if (unlockStates.autoLauncherTab) {
+            this.showAutoLauncherTab();
+            if (!this.game.firstClickStates.autoLauncherTab) {
+                this.addGlimmer('autoLauncherTab');
+            }
+        }
+        
+        if (unlockStates.upgradesTab) {
+            this.showUpgradesTab();
+            if (!this.game.firstClickStates.upgradesTab) {
+                this.addGlimmer('upgradesTab');
+            }
+        }
+        
+        if (unlockStates.backgroundTab) {
+            this.showBackgroundTab();
+            if (!this.game.firstClickStates.backgroundTab) {
+                this.addGlimmer('backgroundTab');
+            }
+        }
+        
+        if (unlockStates.crowdsTab) {
+            this.showCrowdsTab();
+            if (!this.game.firstClickStates.crowdsTab) {
+                this.addGlimmer('crowdsTab');
+            }
+        }
+    }
+
+    hideAllTabs() {
+        const tabs = [
+            'recipes-tab',
+            'stats-tab', 
+            'crowd-tab',
+            'auto-launcher-tab',
+            'settings-tab',
+            'upgrades-tab',
+            'background-tab',
+            'cheats-tab'
+        ];
+        
+        tabs.forEach(tabId => {
+            const tab = document.getElementById(tabId);
+            if (tab) {
+                tab.classList.add('unlock-hidden');
+            }
+        });
+    }
+
+    hideSparkleCounter() {
+        const sparkleCounter = document.getElementById('ressource-count');
+        if (sparkleCounter) {
+            sparkleCounter.classList.add('unlock-hidden');
+        }
+    }
+
+    showSparkleCounter() {
+        const sparkleCounter = document.getElementById('ressource-count');
+        if (sparkleCounter) {
+            sparkleCounter.classList.remove('unlock-hidden');
+        }
+    }
+
+    hideTabMenu() {
+        const tabs = document.querySelector('.tabs');
+        if (tabs) {
+            tabs.classList.add('unlock-hidden');
+        }
+    }
+
+    showTabMenu() {
+        const tabs = document.querySelector('.tabs');
+        if (tabs) {
+            tabs.classList.remove('unlock-hidden');
+        }
+        
+        this.showRecipesTab();
+        this.showStatsTab();
+        this.showSettingsTab();
+        this.showCheatsTab();
+    }
+
+    hideCollapseButton() {
+        const collapseButton = document.getElementById('collapse-button');
+        if (collapseButton) {
+            collapseButton.classList.add('unlock-hidden');
+        }
+    }
+
+    showCollapseButton() {
+        const collapseButton = document.getElementById('collapse-button');
+        if (collapseButton) {
+            collapseButton.classList.remove('unlock-hidden');
+        }
+    }
+
+    showRecipesTab() {
+        const recipesTab = document.getElementById('recipes-tab');
+        if (recipesTab) {
+            recipesTab.classList.remove('unlock-hidden');
+        }
+    }
+
+    showStatsTab() {
+        const statsTab = document.getElementById('stats-tab');
+        if (statsTab) {
+            statsTab.classList.remove('unlock-hidden');
+        }
+    }
+
+    showBackgroundTab() {
+        const backgroundTab = document.getElementById('background-tab');
+        if (backgroundTab) {
+            backgroundTab.classList.remove('unlock-hidden');
+        }
+    }
+
+    showSettingsTab() {
+        const settingsTab = document.getElementById('settings-tab');
+        if (settingsTab) {
+            settingsTab.classList.remove('unlock-hidden');
+        }
+    }
+
+    showCheatsTab() {
+        const cheatsTab = document.getElementById('cheats-tab');
+        if (cheatsTab) {
+            cheatsTab.classList.remove('unlock-hidden');
+        }
+    }
+
+    showAutoLauncherTab() {
+        const autoLauncherTab = document.getElementById('auto-launcher-tab');
+        if (autoLauncherTab) {
+            autoLauncherTab.classList.remove('unlock-hidden');
+        }
+    }
+
+    showUpgradesTab() {
+        const upgradesTab = document.getElementById('upgrades-tab');
+        if (upgradesTab) {
+            upgradesTab.classList.remove('unlock-hidden');
+        }
+    }
+
+    showCrowdsTab() {
+        const crowdTab = document.getElementById('crowd-tab');
+        if (crowdTab) {
+            crowdTab.classList.remove('unlock-hidden');
+        }
+    }
+
+    addGlimmer(elementType) {
+        const elementMap = {
+            sparkleCounter: 'ressource-count',
+            tabMenu: 'recipes-tab', // Use recipes tab as the first visible tab
+            autoLauncherTab: 'auto-launcher-tab',
+            upgradesTab: 'upgrades-tab',
+            backgroundTab: 'background-tab',
+            crowdsTab: 'crowd-tab'
+        };
+
+        const elementId = elementMap[elementType];
+        if (elementId) {
+            const element = document.getElementById(elementId);
+            if (element) {
+                element.classList.add('unlock-glimmer');
+                this.setupFirstClickListener(element, elementType);
+            }
+        }
+    }
+
+    removeGlimmer(elementType) {
+        const elementMap = {
+            sparkleCounter: 'ressource-count',
+            tabMenu: 'recipes-tab',
+            autoLauncherTab: 'auto-launcher-tab',
+            upgradesTab: 'upgrades-tab',
+            backgroundTab: 'background-tab',
+            crowdsTab: 'crowd-tab'
+        };
+
+        const elementId = elementMap[elementType];
+        if (elementId) {
+            const element = document.getElementById(elementId);
+            if (element) {
+                element.classList.remove('unlock-glimmer');
+            }
+        }
+    }
+
+    setupFirstClickListener(element, elementType) {
+        const clickHandler = () => {
+            this.game.onFirstClick(elementType);
+            element.removeEventListener('click', clickHandler);
+        };
+        element.addEventListener('click', clickHandler);
     }
 }
 

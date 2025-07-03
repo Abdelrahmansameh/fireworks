@@ -114,9 +114,9 @@ class InstancedParticleSystem {
             ...Renderer2D.buildTexturedSquare(initialSize, initialSize),
             texture: glowTexture,
             position: new Vector2(position.x, position.y),
-            color: new Color(color.r, color.g, color.b, 0.5), // Start with some transparency
+            color: new Color(color.r, color.g, color.b, 0.5), 
             blendMode: BlendMode.ADDITIVE,
-            zIndex: -500 // Behind particles but in front of background
+            zIndex: -500 
         });
 
         this.glows.push({

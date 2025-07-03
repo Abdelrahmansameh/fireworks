@@ -47,12 +47,25 @@ class Firework {
         return { r: parseInt(result[1], 16) / 255, g: parseInt(result[2], 16) / 255, b: parseInt(result[3], 16) / 255, a: 1 };
     }
 
+    _getFirstComponentColor() {
+        // Get the color of the first component, or default to white
+        if (this.components && this.components.length > 0 && this.components[0].color) {
+            return this._hexToRgbA(this.components[0].color);
+        }
+        return { r: 1, g: 1, b: 1, a: 1 }; // Default white
+    }
+
     createRocket(x, y) {
         const geometry = Renderer2D.buildTriangle(6, 10);
+        
+        // Use the color of the first component in the recipe
+        const firstComponentColor = this._getFirstComponentColor();
+        const rocketColor = new Renderer2D.Color(firstComponentColor.r, firstComponentColor.g, firstComponentColor.b, 1);
+        
         const rocket = this.renderer.createNormalShape({
             vertices: geometry.vertices,
             indices: geometry.indices,
-            color: new Renderer2D.Color(1, 1, 1, 1),
+            color: rocketColor,
             position: new Renderer2D.Vector2(x, y),
             rotation: 0,
             scale: new Renderer2D.Vector2(FIREWORK_CONFIG.rocketSize, FIREWORK_CONFIG.rocketSize),
@@ -156,11 +169,12 @@ class Firework {
 
             case 'fade':
             default:
+                const firstComponentColor = this._getFirstComponentColor();
                 this.trailInstanceGroup.addInstance(
                     new Renderer2D.Vector2(x, y),
                     0,
                     new Renderer2D.Vector2(FIREWORK_CONFIG.rocketTrailSize, FIREWORK_CONFIG.rocketTrailSize),
-                    new Renderer2D.Color(1, 1, 1, 0.8)
+                    new Renderer2D.Color(firstComponentColor.r, firstComponentColor.g, firstComponentColor.b, 0.8)
                 );
 
                 this.trailParticles.push({
@@ -222,9 +236,10 @@ class Firework {
 
                 case 'fade':
                 default:
+                    const firstComponentColor = this._getFirstComponentColor();
                     this.trailInstanceGroup.updateInstanceColor(
                         particle.index,
-                        1, 1, 1,
+                        firstComponentColor.r, firstComponentColor.g, firstComponentColor.b,
                         particle.initialOpacity * (age)
                     );
                     break;
@@ -291,7 +306,13 @@ class Firework {
             const acceleration = new Renderer2D.Vector2();
             const shape = component.shape;
             const spread = component.spread;
-            this.particleSystem.addGlow(this.rocket.position, color,  component.glowStrength, 500* component.glowStrength, 0.5, component.glowStrength, 0);
+            this.particleSystem.addGlow(this.rocket.position, 
+                                        color,  
+                                        component.glowStrength,
+                                        500* component.glowStrength,
+                                        0.6,
+                                        component.glowStrength,
+                                        0);
 
             const sharedCtx = {
                 rocketPos,
