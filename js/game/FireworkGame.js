@@ -1,4 +1,4 @@
-import { FIREWORK_CONFIG, GAME_BOUNDS, DEFAULT_RECIPE_COMPONENTS, GENERIC_RECIPE_NAMES, BACKGROUND_IMAGES, AUTO_LAUNCHER_COST_BASE, AUTO_LAUNCHER_COST_RATIO, AUTO_UPGRADE_COST_RATIO, AUTO_SPAWN_INTERVAL_RATIO } from '../config/config.js';
+import { FIREWORK_CONFIG, GAME_BOUNDS, DEFAULT_RECIPE_COMPONENTS, GENERIC_RECIPE_NAMES, BACKGROUND_IMAGES, AUTO_LAUNCHER_COST_BASE, AUTO_LAUNCHER_COST_RATIO, AUTO_UPGRADE_COST_RATIO, AUTO_SPAWN_INTERVAL_RATIO, COMPONENT_PROPERTY_RANGES } from '../config/config.js';
 import { UPGRADE_DEFINITIONS } from '../upgrades/upgrades.js';
 import InstancedParticleSystem from '../particles/InstancedParticleSystem.js';
 import Crowd from '../entities/Crowd.js';
@@ -180,6 +180,8 @@ class FireworkGame {
                 .catch(err => console.warn('Failed to load auto-launcher texture. Falling back to default mesh.', err));
         }
 
+        this._backgroundMeshes = [];
+        this._skyMeshes = [];
         this.updateBackgroundMesh();
 
         this.cameraTargetX = 0;
@@ -221,7 +223,14 @@ class FireworkGame {
             this._backgroundMeshes.forEach(mesh => this.renderer2D.removeNormalShape(mesh));
             this._backgroundMeshes = [];
         }
+        
+        if (this._skyMeshes) {
+            this._skyMeshes.forEach(mesh => this.renderer2D.removeNormalShape(mesh));
+            this._skyMeshes = [];
+        }
 
+        const currentBgConfig = BACKGROUND_IMAGES.find(bg => bg.path === this.currentBackground);
+        
         const textureKey = `bg_${this.currentBackground}`;
         await this.renderer2D.loadTexture(this.currentBackground, textureKey);
         const tex = this.renderer2D.getTexture(textureKey);
@@ -252,13 +261,48 @@ class FireworkGame {
             meshes.push(bgMesh);
         }
         this._backgroundMeshes = meshes;
+
+        if (currentBgConfig && currentBgConfig.skyPath) {
+            const skyTextureKey = `sky_${currentBgConfig.skyPath}`;
+            await this.renderer2D.loadTexture(currentBgConfig.skyPath, skyTextureKey);
+            const skyTex = this.renderer2D.getTexture(skyTextureKey);
+            
+            if (skyTex) {
+                const skyMeshes = [];
+                const skyLayers = 4;
+                
+                for (let x = -repeatCount / 2; x <= repeatCount / 2; x++) {
+                    for (let y = 1; y <= skyLayers; y++) {
+                        const skyMesh = this.renderer2D.createNormalShape({
+                            ...Renderer2D.buildTexturedSquare(width, height),
+                            texCoords: new Float32Array([
+                                0, 1,
+                                1, 1,
+                                1, 0,
+                                0, 0
+                            ]),
+                            texture: skyTex,
+                            position: new Renderer2D.Vector2(x * width, y * height),
+                            rotation: 0,
+                            scale: new Renderer2D.Vector2(1, 1),
+                            zIndex: -999, 
+                            blendMode: Renderer2D.BlendMode.NORMAL,
+                            isStroke: false
+                        });
+                        skyMeshes.push(skyMesh);
+                    }
+                }
+                this._skyMeshes = skyMeshes;
+            }
+        } else {
+            this._skyMeshes = [];
+        }
     }
 
     onWindowResize() {
 
         this.renderer2D._updateProjectionMatrix();
-        const viewBottomWorldY = this.renderer2D.cameraY - (this.renderer2D.virtualHeight / (2 * this.renderer2D.cameraZoom));
-        const yPos = viewBottomWorldY + GAME_BOUNDS.OFFSET_MIN_Y;
+        const yPos = GAME_BOUNDS.WORLD_LAUNCHER_Y;
         for (const launcher of this.gameState.autoLaunchers) {
             launcher.y = yPos;
             if (launcher.mesh) {
@@ -356,8 +400,7 @@ class FireworkGame {
                 let recipeComponents = null;
                 let trailEffect = null;
 
-                const viewBottomWorldY = this.renderer2D.cameraY - (this.renderer2D.virtualHeight / 2 / this.renderer2D.cameraZoom);
-                const launchY = viewBottomWorldY + GAME_BOUNDS.OFFSET_MIN_Y;
+                const launchY = GAME_BOUNDS.WORLD_LAUNCHER_Y;
 
                 if (recipe) {
                     recipeComponents = recipe.components;
@@ -381,7 +424,7 @@ class FireworkGame {
 
                 const effect = trailEffect || this.currentTrailEffect;
 
-                const firework = new Firework(x + (Math.random() * 0.5 - 0.25) * FIREWORK_CONFIG.autoLauncherMeshWidth, launchY, components, this.renderer2D, this.renderer2D.virtualHeight / this.renderer2D.cameraZoom, effect, this.particleSystem);
+                const firework = new Firework(x + (Math.random() * 0.5 - 0.25) * FIREWORK_CONFIG.autoLauncherMeshWidth, launchY, components, this.renderer2D, effect, this.particleSystem);
                 this.gameState.fireworks.push(firework); this.fireworkCount++;
                 const sparkleAmount = components.reduce((sum, c) => sum + this.getComponentSparkles(c), 0);
                 this.resourceManager.resources.sparkles.add(sparkleAmount);
@@ -525,8 +568,7 @@ class FireworkGame {
             return;
         }
 
-        const viewBottomWorldY = this.renderer2D.cameraY - (this.renderer2D.virtualHeight / 2 / this.renderer2D.cameraZoom);
-        const y = minY || viewBottomWorldY + GAME_BOUNDS.OFFSET_MIN_Y;
+        const y = minY || GAME_BOUNDS.WORLD_LAUNCHER_Y;
         const effect = trailEffect || this.currentTrailEffect;
         const spawnX = x + (Math.random() - 0.5) * FIREWORK_CONFIG.autoLauncherMeshWidth;
         const spawnY = y + FIREWORK_CONFIG.autoLauncherMeshHeight / 2;
@@ -542,7 +584,7 @@ class FireworkGame {
 
     // dont use every frame because js is weird 
     launch(x, y, components, trailEffect, targetY = null) {
-        const firework = new Firework(x, y, components, this.renderer2D, this.renderer2D.virtualHeight / this.renderer2D.cameraZoom, trailEffect, this.particleSystem, targetY);
+        const firework = new Firework(x, y, components, this.renderer2D, trailEffect, this.particleSystem, targetY);
         this.gameState.fireworks.push(firework);
     }
 
@@ -581,8 +623,7 @@ class FireworkGame {
     createAutoLauncherMesh(launcher) {
         const width = FIREWORK_CONFIG.autoLauncherMeshWidth;
         const height = FIREWORK_CONFIG.autoLauncherMeshHeight;
-        const viewBottomWorldY = this.renderer2D.cameraY - (this.renderer2D.virtualHeight / (2 * this.renderer2D.cameraZoom));
-        const yPos = viewBottomWorldY + GAME_BOUNDS.OFFSET_MIN_Y;
+        const yPos = GAME_BOUNDS.WORLD_LAUNCHER_Y;
 
         const tex = (this.autoLauncherTextureLoaded && FIREWORK_CONFIG.autoLauncherTexture) ? this.renderer2D.getTexture('auto_launcher_texture') : null;
 
@@ -700,6 +741,15 @@ class FireworkGame {
             }
         });
         this.gameState.autoLaunchers = [];
+
+        if (this._backgroundMeshes) {
+            this._backgroundMeshes.forEach(mesh => this.renderer2D.removeNormalShape(mesh));
+            this._backgroundMeshes = [];
+        }
+        if (this._skyMeshes) {
+            this._skyMeshes.forEach(mesh => this.renderer2D.removeNormalShape(mesh));
+            this._skyMeshes = [];
+        }
 
 
         if (this.crowd) {
@@ -844,26 +894,36 @@ class FireworkGame {
             const randomSecondaryHex = `#${Math.floor(Math.random() * 0xFFFFFF)
                 .toString(16)
                 .padStart(6, '0')}`;
-            const maxSize = 0.7;
-            const minSize = 0.3;
-            const size = Math.random() * (maxSize - minSize) + minSize;
-            const maxLifetime = 5.0;
-            const minLifetime = 1.5;
-            const lifetime = Math.random() * (maxLifetime - minLifetime) + minLifetime;
-            const maxSpread = 2.0;
-            const minSpread = 0.5;
-            const spread = Math.random() * (maxSpread - minSpread) + minSpread;
+            
+            const randomValue = (prop) => {
+                const range = COMPONENT_PROPERTY_RANGES[prop];
+                if (range) {
+                    return Math.random() * (range.max - range.min) + range.min;
+                }
+                return 1.0; 
+            };
+
+            const randomIntValue = (prop) => {
+                const range = COMPONENT_PROPERTY_RANGES[prop];
+                if (range) {
+                    return Math.floor(Math.random() * (range.max - range.min + 1)) + range.min;
+                }
+                return 1;
+            }
+
             this.currentRecipeComponents[i] = {
                 pattern: possiblePatterns[Math.floor(Math.random() * possiblePatterns.length)],
                 color: randomHex,
                 secondaryColor: randomSecondaryHex,
-                size: size,
-                lifetime: lifetime,
+                size: randomValue('size'),
+                lifetime: randomValue('lifetime'),
                 shape: possibleShapes[Math.floor(Math.random() * possibleShapes.length)],
-                spread: spread,
+                spread: randomValue('spread'),
                 enableTrail: Math.random() < 0.8,
-                trailLength: Math.floor(Math.random() * 10) + 1,
-                trailWidth: Math.random() * 2 + 0.5,
+                trailLength: randomIntValue('trailLength'),
+                trailWidth: randomValue('trailWidth'),
+                glowStrength: randomValue('glowStrength'),
+                blurStrength: randomValue('blurStrength'),
             };
         }
         this.updateComponentsList();
@@ -1304,9 +1364,8 @@ class FireworkGame {
         }
 
         if (!this.previewFirework && !this.previewFireworkTimer) {
-            const viewHeight = this.previewRenderer.virtualHeight / this.previewRenderer.cameraZoom;
-            const y = -viewHeight / 16 + GAME_BOUNDS.OFFSET_MIN_Y;
-            this.previewFirework = new Firework(0, y, this.currentRecipeComponents, this.previewRenderer, viewHeight, this.currentTrailEffect, this.previewParticleSystem, y);
+            const y = GAME_BOUNDS.WORLD_LAUNCHER_Y;
+            this.previewFirework = new Firework(0, y, this.currentRecipeComponents, this.previewRenderer, this.currentTrailEffect, this.previewParticleSystem, y);
             this.previewFireworkTimer = lifetime;
         }
     }

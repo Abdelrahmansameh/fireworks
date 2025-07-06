@@ -1,10 +1,10 @@
-import { FIREWORK_CONFIG } from '../config/config.js';
+import { FIREWORK_CONFIG, GAME_BOUNDS } from '../config/config.js';
 import InstancedParticleSystem from '../particles/InstancedParticleSystem.js';
 import * as Renderer2D from '../rendering/Renderer.js';
 import { recipeMap } from './patterns/index.js';
 
 class Firework {
-    constructor(x, y, components, renderer, viewHeight, trailEffect, particleSystem, targetY = null) {
+    constructor(x, y, components, renderer, trailEffect, particleSystem, targetY = null) {
         this.components = components;
         this.renderer = renderer;
         this.trailEffect = trailEffect;
@@ -20,8 +20,8 @@ class Firework {
         this.rocket = this.createRocket(x, y);
         this.trailParticles = [];
 
-        const minY = -viewHeight / 2 + FIREWORK_CONFIG.minExplosionHeightPercent * viewHeight;
-        const maxY = -viewHeight / 2 + FIREWORK_CONFIG.maxExplosionHeightPercent * viewHeight;
+        const minY = GAME_BOUNDS.WORLD_MIN_EXPLOSION_Y;
+        const maxY = GAME_BOUNDS.WORLD_MAX_EXPLOSION_Y;
 
         this.targetY = targetY || minY + Math.random() * (maxY - minY);
 

@@ -28,7 +28,7 @@ const FIREWORK_CONFIG = {
         heart: 50.0,
         star: 13,
         brocade: 10,
-        burst: 15,
+        burst: 35,
         palm: 25.0,
         willow: 100,
         christmasTree: 20.4,
@@ -85,7 +85,14 @@ const GAME_BOUNDS = {
     SCROLL_MAX_X: 4200,
     CROWD_RIGHT_X: -900,
     CROWD_LEFT_X: -100,
-    CROWD_Y: -515
+    CROWD_Y: -515,
+    WORLD_GROUND_Y: -540, 
+    WORLD_MIN_EXPLOSION_Y: -105, 
+    WORLD_MAX_EXPLOSION_Y: 324, 
+    WORLD_LAUNCHER_Y: -535,
+    IS_ZOOM_LOCKED: true,
+    MAX_ZOOM: 5,
+    MIN_ZOOM: 0.1
 };
 
 const GENERIC_RECIPE_NAMES = [
@@ -114,7 +121,7 @@ const BACKGROUND_IMAGES = [
     {name: 'Blank', path: 'assets/background.png' },
     {name: 'Black Town', path: 'assets/mountain-town.png' },
     {name: 'Black City', path: 'assets/black-city.png' },
-    {name: 'Black Mountains', path: 'assets/black-mountains.png' },
+    {name: 'Black Mountains', path: 'assets/black-mountains.png', skyPath: 'assets/black-mountains-sky.png'},
     {name: 'Black Ruins', path: 'assets/black-ruins.png' },
     {name: 'Forest', path: 'assets/darkened_forest.png'},
     {name: 'Town', path: 'assets/darkened_town.png'},
@@ -123,5 +130,15 @@ const BACKGROUND_IMAGES = [
     {name: 'Ruins', path: 'assets/ruins.png' },
 ];
 
-export { FIREWORK_CONFIG, GAME_BOUNDS, DEFAULT_RECIPE_COMPONENTS, GENERIC_RECIPE_NAMES, BACKGROUND_IMAGES, AUTO_LAUNCHER_COST_BASE, AUTO_LAUNCHER_COST_RATIO, AUTO_UPGRADE_COST_RATIO, AUTO_SPAWN_INTERVAL_RATIO };
+const COMPONENT_PROPERTY_RANGES = {
+    size: { min: 0.1, max: 0.7, step: 0.05 },
+    lifetime: { min: 1.5, max: 5, step: 0.1 },
+    spread: { min: 0.4, max: 1, step: 0.1 },
+    trailLength: { min: 1, max: 18, step: 0.5 },
+    trailWidth: { min: 0.5, max: 7, step: 0.1 },
+    glowStrength: { min: 0, max: 1.25, step: 0.05 },
+    blurStrength: { min: 0.2, max: 1, step: 0.05 },
+};
+
+export { FIREWORK_CONFIG, GAME_BOUNDS, DEFAULT_RECIPE_COMPONENTS, GENERIC_RECIPE_NAMES, BACKGROUND_IMAGES, AUTO_LAUNCHER_COST_BASE, AUTO_LAUNCHER_COST_RATIO, AUTO_UPGRADE_COST_RATIO, AUTO_SPAWN_INTERVAL_RATIO, COMPONENT_PROPERTY_RANGES };
 

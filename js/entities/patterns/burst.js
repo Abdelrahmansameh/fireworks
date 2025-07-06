@@ -6,7 +6,7 @@ const burstRecipe = new ParticleRecipe({
     count: (ctx) => ctx.particleCount,
     calcInitialState: (i, ctx) => {
         const angle = Math.random() * Math.PI * 2;
-        const magnitude = ctx.speed * Math.random() * ctx.spread * 1.25;
+        const magnitude = ctx.speed * Math.random() * ctx.spread * 0.75;
         const risingVelocity = 100;
         return {
             pos: ctx.rocketPos.clone(),

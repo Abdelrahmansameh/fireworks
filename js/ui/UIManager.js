@@ -1,4 +1,4 @@
-import { GAME_BOUNDS, BACKGROUND_IMAGES, DEFAULT_RECIPE_COMPONENTS } from '../config/config.js';
+import { GAME_BOUNDS, BACKGROUND_IMAGES, DEFAULT_RECIPE_COMPONENTS, COMPONENT_PROPERTY_RANGES } from '../config/config.js';
 import * as Renderer2D from '../rendering/Renderer.js';
 
 class UIManager {
@@ -346,7 +346,7 @@ class UIManager {
             this.game.renderer2D.cameraX -= deltaX * dragScrollSpeed;
 
             const viewHalfWidth = (this.game.renderer2D.canvas.width / this.game.renderer2D.cameraZoom) / 2;
-            const minCameraX = GAME_BOUNDS.SCROLL_MIN_X + viewHalfWidth;
+            const minCameraX = GAME_BOUNDS.SCROLL_MIN_X;
             const maxCameraX = GAME_BOUNDS.SCROLL_MAX_X - viewHalfWidth;
             // Ensure minCameraX is not greater than maxCameraX, can happen if view is wider than scroll area
             if (minCameraX > maxCameraX) {
@@ -393,25 +393,32 @@ class UIManager {
     }
 
     handleWheelScroll(event) {
+        if (GAME_BOUNDS.IS_ZOOM_LOCKED) {
+            return;
+        }
+
         if (this.game.isClickInsideUI(event)) {
             return;
         }
 
-        const wheelScrollSpeed = 0.05;
-        const scrollAmount = event.deltaY * wheelScrollSpeed;
-
-        this.game.renderer2D.cameraX += scrollAmount;
-
-        const viewHalfWidth = (this.game.renderer2D.canvas.width / this.game.renderer2D.cameraZoom) / 2;
-        const minCameraX = GAME_BOUNDS.SCROLL_MIN_X + viewHalfWidth;
-        const maxCameraX = GAME_BOUNDS.SCROLL_MAX_X - viewHalfWidth;
-
-        // Ensure minCameraX is not greater than maxCameraX
-        if (minCameraX > maxCameraX) {
-            this.game.renderer2D.cameraX = (GAME_BOUNDS.SCROLL_MIN_X + GAME_BOUNDS.SCROLL_MAX_X) / 2;
+        const oldZoom = this.game.renderer2D.cameraZoom;
+        const oldCameraY = this.game.renderer2D.cameraY;
+        
+        const oldViewHeight = this.game.renderer2D.virtualHeight / oldZoom;
+        const bottomEdgeY = oldCameraY - oldViewHeight / 2;
+        
+        const zoomFactor = 1.1;
+        
+        if (event.deltaY < 0) {
+            this.game.renderer2D.cameraZoom *= zoomFactor;
         } else {
-            this.game.renderer2D.cameraX = Math.max(minCameraX, Math.min(maxCameraX, this.game.renderer2D.cameraX));
+            this.game.renderer2D.cameraZoom /= zoomFactor;
         }
+
+        this.game.renderer2D.cameraZoom = Math.max(GAME_BOUNDS.MIN_ZOOM, Math.min(this.game.renderer2D.cameraZoom, GAME_BOUNDS.MAX_ZOOM));
+
+        const newViewHeight = this.game.renderer2D.virtualHeight / this.game.renderer2D.cameraZoom;
+        this.game.renderer2D.cameraY = bottomEdgeY + newViewHeight / 2;
 
         this.game.renderer2D.setCamera({
             x: this.game.renderer2D.cameraX,
@@ -700,15 +707,15 @@ class UIManager {
                     </div>
                     <div class="recipes-option">
                         <label>Shell Size:</label>
-                        <input type="range" class="size-select" data-index="${index}" min="0.1" max="0.7" step="0.05" value="${component.size}">
+                        <input type="range" class="size-select" data-index="${index}" min="${COMPONENT_PROPERTY_RANGES.size.min}" max="${COMPONENT_PROPERTY_RANGES.size.max}" step="${COMPONENT_PROPERTY_RANGES.size.step}" value="${component.size}">
                     </div>
                     <div class="recipes-option">
                         <label>Lifetime:</label>
-                        <input type="range" class="lifetime-select" data-index="${index}" min="1.5" max="5" step="0.1" value="${component.lifetime}">
+                        <input type="range" class="lifetime-select" data-index="${index}" min="${COMPONENT_PROPERTY_RANGES.lifetime.min}" max="${COMPONENT_PROPERTY_RANGES.lifetime.max}" step="${COMPONENT_PROPERTY_RANGES.lifetime.step}" value="${component.lifetime}">
                     </div>
                     <div class="recipes-option">
                         <label>Spread:</label>
-                        <input type="range" class="spread-select" data-index="${index}" min="0.4" max="1" step="0.1" value="${component.spread}">
+                        <input type="range" class="spread-select" data-index="${index}" min="${COMPONENT_PROPERTY_RANGES.spread.min}" max="${COMPONENT_PROPERTY_RANGES.spread.max}" step="${COMPONENT_PROPERTY_RANGES.spread.step}" value="${component.spread}">
                     </div>
                     <div class="recipes-option trail-container">
                         <label>Trail:</label>
@@ -716,17 +723,17 @@ class UIManager {
                     </div>                    
                     <div class="recipes-option trail-options" style="display: ${component.enableTrail ? 'block' : 'none'};">
                         <label>Trail Length:</label>
-                        <input type="range" class="trail-length-select" data-index="${index}" min="1" max="18" step="0.5" value="${component.trailLength}">
+                        <input type="range" class="trail-length-select" data-index="${index}" min="${COMPONENT_PROPERTY_RANGES.trailLength.min}" max="${COMPONENT_PROPERTY_RANGES.trailLength.max}" step="${COMPONENT_PROPERTY_RANGES.trailLength.step}" value="${component.trailLength}">
                         <label>Trail Width:</label>
-                        <input type="range" class="trail-width-select" data-index="${index}" min="0.5" max="7" step="0.1" value="${component.trailWidth}">
+                        <input type="range" class="trail-width-select" data-index="${index}" min="${COMPONENT_PROPERTY_RANGES.trailWidth.min}" max="${COMPONENT_PROPERTY_RANGES.trailWidth.max}" step="${COMPONENT_PROPERTY_RANGES.trailWidth.step}" value="${component.trailWidth}">
                     </div>
                     <div class="recipes-option">
                         <label>Glow Strength:</label>
-                        <input type="range" class="glow-strength-select" data-index="${index}" min="0" max="1.25" step="0.05" value="${component.glowStrength}">
+                        <input type="range" class="glow-strength-select" data-index="${index}" min="${COMPONENT_PROPERTY_RANGES.glowStrength.min}" max="${COMPONENT_PROPERTY_RANGES.glowStrength.max}" step="${COMPONENT_PROPERTY_RANGES.glowStrength.step}" value="${component.glowStrength}">
                     </div>
                     <div class="recipes-option">
                         <label>Blur Strength:</label>
-                        <input type="range" class="blur-strength-select" data-index="${index}" min=".2" max="1" step="0.05" value="${component.blurStrength}">
+                        <input type="range" class="blur-strength-select" data-index="${index}" min="${COMPONENT_PROPERTY_RANGES.blurStrength.min}" max="${COMPONENT_PROPERTY_RANGES.blurStrength.max}" step="${COMPONENT_PROPERTY_RANGES.blurStrength.step}" value="${component.blurStrength}">
                     </div>
                 </div>
             `;
