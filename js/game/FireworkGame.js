@@ -93,7 +93,6 @@ class FireworkGame {
         this.autoLauncherCost = parseInt(localStorage.getItem('autoLauncherCost')) || AUTO_LAUNCHER_COST_BASE;
         this.currentBackground = localStorage.getItem('currentBackground') || BACKGROUND_IMAGES[0].path;
 
-        // Load resources
         const savedResources = localStorage.getItem('resources');
         if (savedResources) {
             try {
@@ -104,7 +103,6 @@ class FireworkGame {
             }
         }
 
-        // Load game state data 
         const savedGameState = JSON.parse(localStorage.getItem('gameState'));
         if (savedGameState && savedGameState.autoLaunchers) {
             this.gameState.autoLaunchers = savedGameState.autoLaunchers.map(launcherData => ({ ...launcherData }));
@@ -156,7 +154,6 @@ class FireworkGame {
 
         this.ui.initializeUnlockStates(this.unlockStates);
 
-        // Start game loop
         this.animate();
 
         this.ui.bindEvents();
@@ -196,22 +193,17 @@ class FireworkGame {
         this.bindEvents();
     }
 
-    /**
-     * Replace existing launcher meshes with textured versions once the texture is loaded.
-     * New launchers created after this point will automatically use the texture.
-     */
+
     _applyAutoLauncherTexture() {
         const tex = this.renderer2D.getTexture('auto_launcher_texture');
         if (!tex) return;
 
         for (const launcher of this.gameState.autoLaunchers) {
             if (!launcher.mesh) {
-                // Mesh not yet created (e.g., pending). Create it now.
                 this.createAutoLauncherMesh(launcher);
                 continue;
             }
 
-            // Replace the existing mesh with a textured one
             this.renderer2D.removeNormalShape(launcher.mesh);
             launcher.mesh = null;
             this.createAutoLauncherMesh(launcher);
@@ -374,7 +366,7 @@ class FireworkGame {
 
         this.ui.updateUI(
             Math.floor(this.getSparkles()),
-            totalSparklesPerSec, // Pass total rate, level-specific rate is removed
+            totalSparklesPerSec, 
             this.fireworkCount,
             this.gameState.autoLaunchers.length,
             this.currentTrailEffect,
@@ -628,7 +620,6 @@ class FireworkGame {
         const tex = (this.autoLauncherTextureLoaded && FIREWORK_CONFIG.autoLauncherTexture) ? this.renderer2D.getTexture('auto_launcher_texture') : null;
 
         if (tex) {
-            // Textured square (width x height) centred around origin
             const squareGeom = Renderer2D.buildTexturedSquare(width, height);
 
             launcher.mesh = this.renderer2D.createNormalShape({
@@ -636,16 +627,15 @@ class FireworkGame {
                 texCoords: squareGeom.texCoords,
                 indices: squareGeom.indices,
                 texture: tex,
-                color: new Renderer2D.Color(1, 1, 1, 1), // white so texture shows as-is
+                color: new Renderer2D.Color(1, 1, 1, 1),
                 position: new Renderer2D.Vector2(launcher.x, yPos),
                 rotation: 0,
                 scale: new Renderer2D.Vector2(1, 1),
-                zIndex: 10, // Behind fireworks and particles
+                zIndex: 10,
                 blendMode: Renderer2D.BlendMode.NORMAL,
                 isStroke: false
             });
         } else {
-            // Fallback to simple coloured rectangle (legacy behaviour)
             const rectVertices = [
                 -width / 2, -height / 2,
                 width / 2, -height / 2,
