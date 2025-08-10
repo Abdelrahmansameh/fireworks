@@ -7,9 +7,11 @@ import UIManager from '../ui/UIManager.js';
 import ResourceManager from '../resources/ResourceManager.js';
 import GameProfiler from '../profiling/GameProfiler.js';
 import * as Renderer2D from '../rendering/Renderer.js';
+import Engine from '../engine/Engine.js';
 
-class FireworkGame {
+class FireworkGame extends Engine {
     constructor() {
+        super();
         this.gameState = {
             fireworks: [],
             autoLaunchers: []
@@ -154,7 +156,7 @@ class FireworkGame {
 
         this.ui.initializeUnlockStates(this.unlockStates);
 
-        this.animate();
+        this.start();
 
         this.ui.bindEvents();
     }
@@ -184,8 +186,6 @@ class FireworkGame {
         this.cameraTargetX = 0;
         this.cameraTargetY = 0;
         this.cameraTargetZoom = 1.0;
-
-        this.clock = new Renderer2D.Clock();
 
         window.addEventListener('resize', this.onWindowResize.bind(this), false);
 
@@ -491,46 +491,31 @@ class FireworkGame {
         }
     }
 
-    pause() {
-        this.isPaused = true;
-    }
-
-    resume() {
-        if (this.isPaused) {
-            this.isPaused = false;
-            this.clock.start();
-        }
-    }
-
-    animate() {
-        requestAnimationFrame(() => this.animate());
-
-        const delta = this.clock.getDelta();
-
-        if (!this.isPaused) {
-            if (this.currentState === 'game') {
-                const currentFireworks = this.gameState.fireworks;
-                for (let i = currentFireworks.length - 1; i >= 0; i--) {
-                    currentFireworks[i].update(delta);
-                    if (!currentFireworks[i].alive) {
-                        currentFireworks[i].dispose();
-                        currentFireworks.splice(i, 1);
-                    }
+    update(delta) {
+        if (this.currentState === 'game') {
+            const currentFireworks = this.gameState.fireworks;
+            for (let i = currentFireworks.length - 1; i >= 0; i--) {
+                currentFireworks[i].update(delta);
+                if (!currentFireworks[i].alive) {
+                    currentFireworks[i].dispose();
+                    currentFireworks.splice(i, 1);
                 }
-
-                this.updateGame(delta);
-
-                this.profiler.startFunction('drawFrame');
-                this.renderer2D.drawFrame();
-                this.profiler.endFunction('drawFrame');
-            } else if (this.currentState === 'creator') {
-                this.updateCreator(delta);
-
-                this.profiler.startFunction('drawFrame');
-                if (this.previewRenderer) this.previewRenderer.drawFrame();
-                this.profiler.endFunction('drawFrame');
             }
+
+            this.updateGame(delta);
+        } else if (this.currentState === 'creator') {
+            this.updateCreator(delta);
         }
+    }
+
+    render() {
+        this.profiler.startFunction('drawFrame');
+        if (this.currentState === 'game') {
+            this.renderer2D.drawFrame();
+        } else if (this.currentState === 'creator') {
+            if (this.previewRenderer) this.previewRenderer.drawFrame();
+        }
+        this.profiler.endFunction('drawFrame');
     }
 
     getLauncherAt(x, y) {
