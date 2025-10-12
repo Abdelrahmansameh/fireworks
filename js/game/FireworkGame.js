@@ -64,7 +64,7 @@ class FireworkGame extends Engine {
         this.upgrades = UPGRADE_DEFINITIONS;                       
         this.upgradeLookup = Object.fromEntries(UPGRADE_DEFINITIONS.map(u => [u.id, u]));
         this.purchasedUpgrades = {};
-        
+
         const savedBaseMult = parseFloat(localStorage.getItem('baseSparkleMultiplier'));
         if (!isNaN(savedBaseMult)) {
             this.baseSparkleMultiplier = savedBaseMult;
@@ -541,7 +541,6 @@ class FireworkGame extends Engine {
             this.ui.updateBuildingCounts();
             this.ui.updateBuildingCosts();
             this.ui.updateBuildingListByType(buildingType);
-            this.ui.showNotification(`${building.name} purchased!`);
         }
     }
 
