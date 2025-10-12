@@ -104,9 +104,11 @@ class UIManager {
         document.getElementById('crowd-tab').addEventListener('click', () => {
             this.toggleTab('crowd');
         });
-        document.getElementById('auto-launcher-tab').addEventListener('click', () => {
-            this.toggleTab('auto-launcher');
+        document.getElementById('buildings-tab').addEventListener('click', () => {
+            this.toggleTab('buildings');
             this.game.updateLauncherList();
+            this.updateBuildingCosts();
+            this.updateBuildingTypeVisibility();
         });
         const settingsTabBtn = document.getElementById('settings-tab');
         if (settingsTabBtn) {
@@ -139,7 +141,6 @@ class UIManager {
                 const amount = parseFloat(amtInput.value) || 0;
                 if (amount > 0) {
                     this.game.addSparkles(amount);
-                    this.game.updateUI();
                     this.showNotification(`Added ${amount.toLocaleString()} sparkles`);
                 }
             });
@@ -152,7 +153,6 @@ class UIManager {
                 const amount = parseFloat(amtInput.value) || 0;
                 if (amount > 0) {
                     this.game.addGold(amount);
-                    this.game.updateUI();
                     this.showNotification(`Added ${amount.toLocaleString()} gold`);
                 }
             });
@@ -257,6 +257,32 @@ class UIManager {
             });
         }
 
+        // Building type tab switching
+        const buildingTypeTabs = document.querySelectorAll('.building-type-tab');
+        buildingTypeTabs.forEach(tab => {
+            tab.addEventListener('click', (e) => {
+                const buildingType = e.target.getAttribute('data-building-type');
+                this.switchBuildingType(buildingType);
+            });
+        });
+
+        // Buy buttons for new building types
+        document.getElementById('buy-resource-generator').addEventListener('click', () => {
+            this.game.buyBuilding('RESOURCE_GENERATOR');
+        });
+
+        document.getElementById('buy-efficiency-booster').addEventListener('click', () => {
+            this.game.buyBuilding('EFFICIENCY_BOOSTER');
+        });
+
+        document.getElementById('upgrade-all-generators').addEventListener('click', () => {
+            this.game.upgradeAllBuildingsByType('RESOURCE_GENERATOR');
+        });
+
+        document.getElementById('upgrade-all-boosters').addEventListener('click', () => {
+            this.game.upgradeAllBuildingsByType('EFFICIENCY_BOOSTER');
+        });
+
         const backButton = document.getElementById('back-to-game');
         if (backButton) {
             backButton.addEventListener('click', () => {
@@ -300,15 +326,13 @@ class UIManager {
             return;
         }
 
-        const intersectedLauncher = this.game.getLauncherAt(worldPos.x, worldPos.y);
+        const intersectedBuilding = this.game.getLauncherAt(worldPos.x, worldPos.y);
 
-        if (intersectedLauncher) {
+        if (intersectedBuilding) {
             this.isDragging = true;
-            this.draggingLauncher = intersectedLauncher;
-            const launcherIndex = this.game.gameState.autoLaunchers.indexOf(intersectedLauncher);
-            if (launcherIndex > -1) {
-                this.game.selectLauncher(launcherIndex);
-            }
+            this.draggingLauncher = intersectedBuilding;
+            this.game.selectLauncher(intersectedBuilding.id);
+            this.game.updateLauncherList();
 
             document.body.style.cursor = 'grabbing';
 
@@ -336,8 +360,7 @@ class UIManager {
             const worldPos = this.game.screenToWorld(e.clientX, e.clientY);
             const clampedX = Math.max(GAME_BOUNDS.LAUNCHER_MIN_X, Math.min(worldPos.x, GAME_BOUNDS.LAUNCHER_MAX_X));
 
-            this.draggingLauncher.x = clampedX;
-            this.draggingLauncher.mesh.position.x = clampedX;
+            this.draggingLauncher.setPosition(clampedX, this.draggingLauncher.y);
             this.game.saveProgress();
         } else if (this.isScrollDragging) {
             const deltaX = e.clientX - this.lastPointerX;
@@ -573,7 +596,6 @@ class UIManager {
             el.innerHTML = `${countText}<span style="font-size: 0.8em; opacity: 0.8;">${rateText}</span>`;
         });
 
-        // Clear the separate rate displays since we're now showing inline
         const sparkleRateEl = sparklesElement.querySelector('.sparkle-rate');
         if (sparkleRateEl) sparkleRateEl.textContent = '';
         
@@ -589,7 +611,6 @@ class UIManager {
             el.innerHTML = `${countText}<span style="font-size: 0.8em; opacity: 0.8;">${rateText}</span>`;
         });
 
-        // Clear the separate gold rate displays since we're now showing inline
         const goldRateElements = sparklesElement.querySelectorAll('.gold-rate');
         goldRateElements.forEach(el => {
             el.textContent = '';
@@ -599,12 +620,11 @@ class UIManager {
             sparklesElement._hasClickHandler = true;
             sparklesElement.addEventListener('click', () => {
                 sparklesElement.classList.toggle('compact');
-                this.updateUI(sparklesCount, totalSparklesRate, fireworkCount, autoLauncherCount, trailEffect, nextCost);
             });
         }
 
         document.getElementById('firework-count').textContent = fireworkCount;
-        document.getElementById('auto-launcher-level').textContent = autoLauncherCount; // Renamed from autoLauncherLevel
+        document.getElementById('auto-launcher-level').textContent = autoLauncherCount;
         document.getElementById('recipe-trail-effect').value = trailEffect;
         const creatorTrail = document.getElementById('creator-trail-effect');
         if (creatorTrail) creatorTrail.value = trailEffect;
@@ -949,7 +969,7 @@ class UIManager {
         });
     }
 
-    updateLauncherList(launchers, selectedIndex, onSelect, onUpgrade) {
+    updateLauncherList(launchers, selectedBuildingId, onSelect, onUpgrade) {
         const launcherList = document.getElementById('launcher-list');
         launcherList.innerHTML = '';
 
@@ -961,15 +981,19 @@ class UIManager {
         launchers.forEach((launcher, index) => {
             const launcherDiv = document.createElement('div');
             launcherDiv.classList.add('launcher-card');
-            if (index === selectedIndex) {
+            launcherDiv.dataset.buildingId = launcher.id;
+            
+            if (launcher.id === selectedBuildingId) {
                 launcherDiv.classList.add('selected');
             }
+
+            const upgradeCost = launcher.getUpgradeCost();
 
             launcherDiv.innerHTML = `
                 <h3>Auto-Launcher ${index + 1}</h3>
                 <div class="recipes-option">
                     <label>Assign Recipe:</label>
-                    <select class="recipe-select" data-index="${index}">
+                    <select class="recipe-select" data-building-id="${launcher.id}">
                         <option value="">-- Shoot a random recipe --</option>
                         ${this.game.recipes.map((recipe, rIndex) => `
                             <option value="${rIndex}" ${launcher.assignedRecipeIndex === rIndex ? 'selected' : ''}>${recipe.name}</option>
@@ -979,29 +1003,32 @@ class UIManager {
                 <div class="launcher-details">
                     <p>Level: ${launcher.level}</p>
                     <p>Spawn Rate: Every ${launcher.spawnInterval.toFixed(1)}s</p>
-                    <p>Upgrade Cost: ${launcher.upgradeCost} sparkles</p>
-                    <button class="upgrade-button" data-index="${index}">Upgrade</button>
+                    <p>Upgrade Cost: ${upgradeCost} sparkles</p>
+                    <button class="upgrade-button" data-building-id="${launcher.id}">Upgrade</button>
                 </div>
             `;
             launcherList.appendChild(launcherDiv);
 
             const recipeSelect = launcherDiv.querySelector('.recipe-select');
             recipeSelect.addEventListener('change', (e) => {
-                const idx = e.target.getAttribute('data-index');
-                const selectedRecipeIndex = parseInt(e.target.value);
-                if (!isNaN(selectedRecipeIndex)) {
-                    this.game.gameState.autoLaunchers[idx].assignedRecipeIndex = selectedRecipeIndex;
-                } else {
-                    this.game.gameState.autoLaunchers[idx].assignedRecipeIndex = null;
+                const buildingId = e.target.getAttribute('data-building-id');
+                const building = this.game.buildingManager.getBuildingById(buildingId);
+                if (building) {
+                    const selectedRecipeIndex = parseInt(e.target.value);
+                    if (!isNaN(selectedRecipeIndex)) {
+                        building.assignedRecipeIndex = selectedRecipeIndex;
+                    } else {
+                        building.assignedRecipeIndex = null;
+                    }
+                    this.game.saveProgress();
                 }
-                this.game.saveProgress();
             });
 
             const upgradeButton = launcherDiv.querySelector('.upgrade-button');
-            upgradeButton.addEventListener('click', () => onUpgrade(index));
+            upgradeButton.addEventListener('click', () => onUpgrade(launcher.id));
 
             launcherDiv.addEventListener('click', () => {
-                onSelect(index);
+                onSelect(launcher.id);
                 if (launcher && launcher.x !== undefined) {
                     this.game.setCameraTarget(launcher.x);
                 }
@@ -1203,10 +1230,10 @@ class UIManager {
             }
         }
         
-        if (unlockStates.autoLauncherTab) {
-            this.showAutoLauncherTab();
-            if (!this.game.firstClickStates.autoLauncherTab) {
-                this.addGlimmer('autoLauncherTab');
+        if (unlockStates.buildingsTab) {
+            this.showBuildingsTab();
+            if (!this.game.firstClickStates.buildingsTab) {
+                this.addGlimmer('buildingsTab');
             }
         }
         
@@ -1230,6 +1257,9 @@ class UIManager {
                 this.addGlimmer('crowdsTab');
             }
         }
+
+        // Update building type visibility based on unlock states
+        this.updateBuildingTypeVisibility();
     }
 
     hideAllTabs() {
@@ -1237,7 +1267,7 @@ class UIManager {
             'recipes-tab',
             'stats-tab', 
             'crowd-tab',
-            'auto-launcher-tab',
+            'buildings-tab',
             'settings-tab',
             'upgrades-tab',
             'background-tab',
@@ -1334,10 +1364,10 @@ class UIManager {
         }
     }
 
-    showAutoLauncherTab() {
-        const autoLauncherTab = document.getElementById('auto-launcher-tab');
-        if (autoLauncherTab) {
-            autoLauncherTab.classList.remove('unlock-hidden');
+    showBuildingsTab() {
+        const buildingsTab = document.getElementById('buildings-tab');
+        if (buildingsTab) {
+            buildingsTab.classList.remove('unlock-hidden');
         }
     }
 
@@ -1359,7 +1389,7 @@ class UIManager {
         const elementMap = {
             sparkleCounter: 'ressource-count',
             tabMenu: 'recipes-tab', // Use recipes tab as the first visible tab
-            autoLauncherTab: 'auto-launcher-tab',
+            buildingsTab: 'buildings-tab',
             upgradesTab: 'upgrades-tab',
             backgroundTab: 'background-tab',
             crowdsTab: 'crowd-tab'
@@ -1379,7 +1409,7 @@ class UIManager {
         const elementMap = {
             sparkleCounter: 'ressource-count',
             tabMenu: 'recipes-tab',
-            autoLauncherTab: 'auto-launcher-tab',
+            buildingsTab: 'buildings-tab',
             upgradesTab: 'upgrades-tab',
             backgroundTab: 'background-tab',
             crowdsTab: 'crowd-tab'
@@ -1400,6 +1430,215 @@ class UIManager {
             element.removeEventListener('click', clickHandler);
         };
         element.addEventListener('click', clickHandler);
+    }
+
+    switchBuildingType(buildingType) {
+        // Update tab active states
+        const tabs = document.querySelectorAll('.building-type-tab');
+        tabs.forEach(tab => {
+            if (tab.getAttribute('data-building-type') === buildingType) {
+                tab.classList.add('active');
+            } else {
+                tab.classList.remove('active');
+            }
+        });
+
+        // Update section active states
+        const sections = document.querySelectorAll('.building-section');
+        sections.forEach(section => {
+            if (section.getAttribute('data-building-type') === buildingType) {
+                section.classList.add('active');
+            } else {
+                section.classList.remove('active');
+            }
+        });
+
+        // Update the building lists
+        this.updateBuildingListByType(buildingType);
+    }
+
+    updateBuildingListByType(buildingType) {
+        const buildings = this.game.buildingManager.getBuildingsByType(buildingType);
+        
+        if (buildingType === 'AUTO_LAUNCHER') {
+            this.updateLauncherList(buildings, this.game.selectedBuildingId, 
+                (id) => this.game.selectLauncher(id),
+                (id) => this.game.upgradeLauncher(id)
+            );
+        } else if (buildingType === 'RESOURCE_GENERATOR') {
+            this.updateGeneratorList(buildings, this.game.selectedBuildingId,
+                (id) => this.game.selectLauncher(id),
+                (id) => {
+                    const building = this.game.buildingManager.getBuildingById(id);
+                    if (building) {
+                        this.game.buildingManager.upgradeBuilding(building);
+                        this.updateBuildingListByType('RESOURCE_GENERATOR');
+                    }
+                }
+            );
+        } else if (buildingType === 'EFFICIENCY_BOOSTER') {
+            this.updateBoosterList(buildings, this.game.selectedBuildingId,
+                (id) => this.game.selectLauncher(id),
+                (id) => {
+                    const building = this.game.buildingManager.getBuildingById(id);
+                    if (building) {
+                        this.game.buildingManager.upgradeBuilding(building);
+                        this.updateBuildingListByType('EFFICIENCY_BOOSTER');
+                    }
+                }
+            );
+        }
+
+        // Update counts
+        this.updateBuildingCounts();
+    }
+
+    updateGeneratorList(generators, selectedBuildingId, onSelect, onUpgrade) {
+        const generatorList = document.getElementById('generator-list');
+        generatorList.innerHTML = '';
+
+        if (generators.length === 0) {
+            generatorList.innerHTML = "<p>No resource generators owned yet.</p>";
+            return;
+        }
+
+        generators.forEach((generator, index) => {
+            const generatorDiv = document.createElement('div');
+            generatorDiv.classList.add('launcher-card');
+            generatorDiv.dataset.buildingId = generator.id;
+            
+            if (generator.id === selectedBuildingId) {
+                generatorDiv.classList.add('selected');
+            }
+
+            const upgradeCost = generator.getUpgradeCost();
+            const productionRate = generator.calculateProductionRate();
+
+            generatorDiv.innerHTML = `
+                <h3>Resource Generator ${index + 1}</h3>
+                <div class="launcher-details">
+                    <p>Level: ${generator.level}</p>
+                    <p>Production: ${productionRate.toFixed(1)} sparkles/s</p>
+                    <p>Upgrade Cost: ${upgradeCost} gold</p>
+                    <button class="upgrade-button" data-building-id="${generator.id}">Upgrade</button>
+                </div>
+            `;
+            generatorList.appendChild(generatorDiv);
+
+            const upgradeButton = generatorDiv.querySelector('.upgrade-button');
+            upgradeButton.addEventListener('click', (e) => {
+                e.stopPropagation();
+                onUpgrade(generator.id);
+            });
+
+            generatorDiv.addEventListener('click', () => {
+                onSelect(generator.id);
+                if (generator && generator.x !== undefined) {
+                    this.game.setCameraTarget(generator.x);
+                }
+            });
+        });
+    }
+
+    updateBoosterList(boosters, selectedBuildingId, onSelect, onUpgrade) {
+        const boosterList = document.getElementById('booster-list');
+        boosterList.innerHTML = '';
+
+        if (boosters.length === 0) {
+            boosterList.innerHTML = "<p>No efficiency boosters owned yet.</p>";
+            return;
+        }
+
+        boosters.forEach((booster, index) => {
+            const boosterDiv = document.createElement('div');
+            boosterDiv.classList.add('launcher-card');
+            boosterDiv.dataset.buildingId = booster.id;
+            
+            if (booster.id === selectedBuildingId) {
+                boosterDiv.classList.add('selected');
+            }
+
+            const upgradeCost = booster.getUpgradeCost();
+            const radius = booster.calculateRadius();
+            const multiplier = booster.calculateMultiplier();
+            const nearbyBuildings = booster.getNearbyBuildings(this.game.buildingManager);
+
+            boosterDiv.innerHTML = `
+                <h3>Efficiency Booster ${index + 1}</h3>
+                <div class="launcher-details">
+                    <p>Level: ${booster.level}</p>
+                    <p>Range: ${radius.toFixed(0)} units</p>
+                    <p>Boost: ${((multiplier - 1) * 100).toFixed(0)}%</p>
+                    <p>Boosting: ${nearbyBuildings.length} buildings</p>
+                    <p>Upgrade Cost: ${upgradeCost} gold</p>
+                    <button class="upgrade-button" data-building-id="${booster.id}">Upgrade</button>
+                </div>
+            `;
+            boosterList.appendChild(boosterDiv);
+
+            const upgradeButton = boosterDiv.querySelector('.upgrade-button');
+            upgradeButton.addEventListener('click', (e) => {
+                e.stopPropagation();
+                onUpgrade(booster.id);
+            });
+
+            boosterDiv.addEventListener('click', () => {
+                onSelect(booster.id);
+                if (booster && booster.x !== undefined) {
+                    this.game.setCameraTarget(booster.x);
+                }
+            });
+        });
+    }
+
+    updateBuildingCounts() {
+        const autoLaunchers = this.game.buildingManager.getBuildingsByType('AUTO_LAUNCHER');
+        const generators = this.game.buildingManager.getBuildingsByType('RESOURCE_GENERATOR');
+        const boosters = this.game.buildingManager.getBuildingsByType('EFFICIENCY_BOOSTER');
+
+        document.getElementById('auto-launcher-level').textContent = autoLaunchers.length;
+        document.getElementById('resource-generator-count').textContent = generators.length;
+        document.getElementById('efficiency-booster-count').textContent = boosters.length;
+    }
+
+    updateBuildingCosts() {
+        const autoLauncherCost = this.game.buildingManager.getBuyCost('AUTO_LAUNCHER');
+        const generatorCost = this.game.buildingManager.getBuyCost('RESOURCE_GENERATOR');
+        const boosterCost = this.game.buildingManager.getBuyCost('EFFICIENCY_BOOSTER');
+
+        document.getElementById('auto-launcher-cost').textContent = autoLauncherCost;
+        document.getElementById('resource-generator-cost').textContent = generatorCost;
+        document.getElementById('efficiency-booster-cost').textContent = boosterCost;
+    }
+
+    updateBuildingTypeVisibility() {
+        // Show/hide building type tabs based on unlock state
+        const generatorTab = document.querySelector('.building-type-tab[data-building-type="RESOURCE_GENERATOR"]');
+        const boosterTab = document.querySelector('.building-type-tab[data-building-type="EFFICIENCY_BOOSTER"]');
+
+        if (generatorTab) {
+            if (this.game.unlockStates.resourceGenerator) {
+                generatorTab.style.display = 'block';
+            } else {
+                generatorTab.style.display = 'none';
+            }
+        }
+
+        if (boosterTab) {
+            if (this.game.unlockStates.efficiencyBooster) {
+                boosterTab.style.display = 'block';
+            } else {
+                boosterTab.style.display = 'none';
+            }
+        }
+
+        // If currently viewing a locked building type, switch to auto launcher
+        const activeBuildingType = document.querySelector('.building-type-tab.active')?.getAttribute('data-building-type');
+        if (activeBuildingType === 'RESOURCE_GENERATOR' && !this.game.unlockStates.resourceGenerator) {
+            this.switchBuildingType('AUTO_LAUNCHER');
+        } else if (activeBuildingType === 'EFFICIENCY_BOOSTER' && !this.game.unlockStates.efficiencyBooster) {
+            this.switchBuildingType('AUTO_LAUNCHER');
+        }
     }
 }
 

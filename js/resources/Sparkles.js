@@ -13,7 +13,7 @@ export default class Sparkles extends Resource {
     }
 
     updateTotalRate() {
-        this.perSecond = this.levelRate;
+        this._perSecond = this.levelRate;
     }
 
     formatAmount() {

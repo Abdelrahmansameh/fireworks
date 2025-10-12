@@ -17,7 +17,7 @@
             <button id="collapse-button" class="collapse-button">☰</button>
             <div class="tabs collapsed">
                 <div class="tab" id="recipes-tab">Recipes</div>
-                <div class="tab" id="auto-launcher-tab">Auto-Launchers</div>
+                <div class="tab" id="buildings-tab">Buildings</div>
                 <div class="tab" id="crowd-tab">Crowd</div>
                 <div class="tab" id="background-tab">Background</div>
                 <div class="tab" id="settings-tab">Settings</div>
@@ -108,20 +108,56 @@
         </div>
     </div>
 
-    <div class="tab-content" id="auto-launcher-content">
+    <div class="tab-content" id="buildings-content">
         <div class="panel scrollable-panel">
-            <h2 class="panel-title">Manage Auto-Launchers</h2>
+            <h2 class="panel-title">Manage Buildings</h2>
 
-            <div class="auto-launcher">
-                <h3>Auto-Launchers Owned: <span id="auto-launcher-level">0</span></h3>
-                <p>Cost: <span id="auto-launcher-cost">10</span> sparkles</p>
-                <button id="buy-auto-launcher">Buy Auto-Launcher</button>
-                <button id="upgrade-all-launchers">Upgrade All</button>
-                <button id="spread-launchers">Spread Launchers Evenly</button>
-                <button id="randomize-launcher-recipes">Assign random to all Launchers</button>
+            <!-- Building Type Tabs -->
+            <div class="building-type-tabs">
+                <button class="building-type-tab active" data-building-type="AUTO_LAUNCHER">Auto-Launchers</button>
+                <button class="building-type-tab" data-building-type="RESOURCE_GENERATOR">Resource Generators</button>
+                <button class="building-type-tab" data-building-type="EFFICIENCY_BOOSTER">Efficiency Boosters</button>
             </div>
-            <br>
-            <div id="launcher-list"></div>
+
+            <!-- Auto-Launcher Section -->
+            <div class="building-section active" data-building-type="AUTO_LAUNCHER">
+                <div class="building-buy-section">
+                    <h3>Auto-Launchers Owned: <span id="auto-launcher-level">0</span></h3>
+                    <p>Cost: <span id="auto-launcher-cost">10</span> sparkles</p>
+                    <button id="buy-auto-launcher">Buy Auto-Launcher</button>
+                    <button id="upgrade-all-launchers">Upgrade All</button>
+                    <button id="spread-launchers">Spread Launchers Evenly</button>
+                    <button id="randomize-launcher-recipes">Assign random to all Launchers</button>
+                </div>
+                <br>
+                <div id="launcher-list"></div>
+            </div>
+
+            <!-- Resource Generator Section -->
+            <div class="building-section" data-building-type="RESOURCE_GENERATOR">
+                <div class="building-buy-section">
+                    <h3>Resource Generators Owned: <span id="resource-generator-count">0</span></h3>
+                    <p>Cost: <span id="resource-generator-cost">50</span> gold</p>
+                    <p class="building-description">Passively generates sparkles over time</p>
+                    <button id="buy-resource-generator">Buy Resource Generator</button>
+                    <button id="upgrade-all-generators">Upgrade All</button>
+                </div>
+                <br>
+                <div id="generator-list"></div>
+            </div>
+
+            <!-- Efficiency Booster Section -->
+            <div class="building-section" data-building-type="EFFICIENCY_BOOSTER">
+                <div class="building-buy-section">
+                    <h3>Efficiency Boosters Owned: <span id="efficiency-booster-count">0</span></h3>
+                    <p>Cost: <span id="efficiency-booster-cost">100</span> gold</p>
+                    <p class="building-description">Boosts production of nearby buildings</p>
+                    <button id="buy-efficiency-booster">Buy Efficiency Booster</button>
+                    <button id="upgrade-all-boosters">Upgrade All</button>
+                </div>
+                <br>
+                <div id="booster-list"></div>
+            </div>
         </div>
     </div>
 

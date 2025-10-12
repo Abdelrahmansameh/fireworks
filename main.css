@@ -844,6 +844,70 @@ body {
     margin-top: 6px;
 }
 
+.building-type-tabs {
+    display: flex;
+    gap: 5px;
+    margin-bottom: 15px;
+    border-bottom: 2px solid #34495e;
+    padding-bottom: 5px;
+}
+
+.building-type-tab {
+    flex: 1;
+    padding: 8px 12px;
+    background: #2a2f3a;
+    border: 1px solid #34495e;
+    border-bottom: none;
+    border-radius: 5px 5px 0 0;
+    cursor: pointer;
+    color: white;
+    transition: background 0.3s;
+    font-size: 0.9em;
+}
+
+.building-type-tab:hover {
+    background: #3b4f6b;
+}
+
+.building-type-tab.active {
+    background: #1a1f2a;
+    color: #45a29e;
+    border-color: #45a29e;
+}
+
+.building-section {
+    display: none;
+}
+
+.building-section.active {
+    display: block;
+}
+
+.building-buy-section {
+    background: #0a0e15;
+    padding: 10px;
+    border-radius: 10px;
+    margin-bottom: 15px;
+    border: 1px solid #25344a;
+}
+
+.building-buy-section h3 {
+    margin-top: 0;
+    color: #45a29e;
+}
+
+.building-buy-section button {
+    display: inline-block;
+    margin: 5px 5px 5px 0;
+}
+
+.building-description {
+    color: #aaa;
+    font-style: italic;
+    font-size: 0.9em;
+    margin: 5px 0;
+}
+
 .floating-sparkle {
     position: fixed;
     color: #ffffff;

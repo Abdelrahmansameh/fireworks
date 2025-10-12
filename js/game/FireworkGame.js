@@ -1,4 +1,4 @@
-import { FIREWORK_CONFIG, GAME_BOUNDS, DEFAULT_RECIPE_COMPONENTS, GENERIC_RECIPE_NAMES, BACKGROUND_IMAGES, AUTO_LAUNCHER_COST_BASE, AUTO_LAUNCHER_COST_RATIO, AUTO_UPGRADE_COST_RATIO, AUTO_SPAWN_INTERVAL_RATIO, COMPONENT_PROPERTY_RANGES } from '../config/config.js';
+import { FIREWORK_CONFIG, GAME_BOUNDS, DEFAULT_RECIPE_COMPONENTS, GENERIC_RECIPE_NAMES, BACKGROUND_IMAGES, AUTO_LAUNCHER_COST_BASE, AUTO_LAUNCHER_COST_RATIO, AUTO_UPGRADE_COST_RATIO, AUTO_SPAWN_INTERVAL_RATIO, COMPONENT_PROPERTY_RANGES, BUILDING_TYPES } from '../config/config.js';
 import { UPGRADE_DEFINITIONS } from '../upgrades/upgrades.js';
 import InstancedParticleSystem from '../particles/InstancedParticleSystem.js';
 import Crowd from '../entities/Crowd.js';
@@ -8,6 +8,7 @@ import ResourceManager from '../resources/ResourceManager.js';
 import GameProfiler from '../profiling/GameProfiler.js';
 import * as Renderer2D from '../rendering/Renderer.js';
 import Engine from '../engine/Engine.js';
+import BuildingManager from '../buildings/BuildingManager.js';
 
 class FireworkGame extends Engine {
     constructor() {
@@ -29,21 +30,24 @@ class FireworkGame extends Engine {
         this.unlockStates = {
             sparkleCounter: false,
             tabMenu: false,
-            autoLauncherTab: false,
+            buildingsTab: false,
             upgradesTab: false,
             crowdsTab: false,
-            backgroundTab: false
+            backgroundTab: false,
+            resourceGenerator: false,
+            efficiencyBooster: false
         };
 
         this.firstClickStates = {
             tabMenu: false,
-            autoLauncherTab: false,
+            buildingsTab: false,
             upgradesTab: false,
             crowdsTab: false,
             backgroundTab: false
         };
 
         this.resourceManager = new ResourceManager(this);
+        this.buildingManager = new BuildingManager(this);
         this.ui = new UIManager(this);
         this.profiler = new GameProfiler();
 
@@ -106,27 +110,52 @@ class FireworkGame extends Engine {
         }
 
         const savedGameState = JSON.parse(localStorage.getItem('gameState'));
-        if (savedGameState && savedGameState.autoLaunchers) {
-            this.gameState.autoLaunchers = savedGameState.autoLaunchers.map(launcherData => ({ ...launcherData }));
-        }
-
-
+        
         this.initRenderer2D();
         this.initBackgroundColor();
 
-        this.gameState.autoLaunchers.forEach(launcher => {
-            this.createAutoLauncherMesh(launcher);
-
-            if (!launcher.accumulator) {
-                launcher.accumulator = Math.random() * 5;
+        // Load building system data
+        const savedBuildingData = localStorage.getItem('buildingManagerData');
+        if (savedBuildingData) {
+            // New save format - use BuildingManager
+            try {
+                const buildingData = JSON.parse(savedBuildingData);
+                this.buildingManager.deserialize(buildingData);
+            } catch (e) {
+                console.error('Failed to load building data:', e);
             }
-            if (launcher.level === undefined) {
-                launcher.level = 1;
-                launcher.spawnInterval = 5;
-                launcher.upgradeCost = 15;
-            }
-            launcher.x = this.clampToLauncherBounds(launcher.x);
-        });
+        } else if (savedGameState && savedGameState.autoLaunchers) {
+            // Old save format - migrate autoLaunchers to BuildingManager
+            console.log('Migrating old autoLaunchers to new building system...');
+            savedGameState.autoLaunchers.forEach(launcherData => {
+                // Ensure launcher has required properties
+                if (!launcherData.accumulator) {
+                    launcherData.accumulator = Math.random() * 5;
+                }
+                if (launcherData.level === undefined) {
+                    launcherData.level = 1;
+                    launcherData.spawnInterval = 5;
+                }
+                
+                // Clamp position
+                launcherData.x = this.clampToLauncherBounds(launcherData.x);
+                launcherData.y = launcherData.y || GAME_BOUNDS.WORLD_LAUNCHER_Y;
+                
+                // Create building through BuildingManager
+                this.buildingManager.createBuilding(
+                    'AUTO_LAUNCHER',
+                    launcherData.x,
+                    launcherData.y,
+                    launcherData
+                );
+            });
+            
+            // Clear old gameState
+            this.gameState.autoLaunchers = [];
+        }
+        
+        // Keep gameState.autoLaunchers for backward compatibility but keep it empty
+        this.gameState.autoLaunchers = [];
 
         this.particleSystem = new InstancedParticleSystem(this.renderer2D, this.profiler);
         this.crowd = new Crowd(this.renderer2D);
@@ -138,7 +167,6 @@ class FireworkGame extends Engine {
 
         this.loadRecipes();
         this.loadCurrentRecipe();
-        this.updateUI();
         this.updateComponentsList();
         this.updateRecipeList();
         this.updateLauncherList();
@@ -198,15 +226,11 @@ class FireworkGame extends Engine {
         const tex = this.renderer2D.getTexture('auto_launcher_texture');
         if (!tex) return;
 
-        for (const launcher of this.gameState.autoLaunchers) {
-            if (!launcher.mesh) {
-                this.createAutoLauncherMesh(launcher);
-                continue;
-            }
-
-            this.renderer2D.removeNormalShape(launcher.mesh);
-            launcher.mesh = null;
-            this.createAutoLauncherMesh(launcher);
+        // Recreate all auto launcher buildings with texture
+        const launchers = this.buildingManager.getBuildingsByType('AUTO_LAUNCHER');
+        for (const launcher of launchers) {
+            launcher.destroy();
+            launcher.createMesh();
         }
     }
 
@@ -292,14 +316,12 @@ class FireworkGame extends Engine {
     }
 
     onWindowResize() {
-
         this.renderer2D._updateProjectionMatrix();
         const yPos = GAME_BOUNDS.WORLD_LAUNCHER_Y;
-        for (const launcher of this.gameState.autoLaunchers) {
-            launcher.y = yPos;
-            if (launcher.mesh) {
-                launcher.mesh.position.y = yPos;
-            }
+        
+        // Update all building positions
+        for (const building of this.buildingManager.buildings) {
+            building.setPosition(building.x, yPos);
         }
     }
 
@@ -362,15 +384,18 @@ class FireworkGame extends Engine {
     }
 
     updateUI() {
-        const totalSparklesPerSec = this.calculateTotalSparklesPerSecond().toFixed(2);
+        const totalSparklesPerSec = this.calculateTotalSparklesPerSecond();
+        const launcherCount = this.buildingManager.getBuildingsByType('AUTO_LAUNCHER').length;
+
+        this.resourceManager.resources.sparkles.updateFromLevel(totalSparklesPerSec);
 
         this.ui.updateUI(
             Math.floor(this.getSparkles()),
-            totalSparklesPerSec, 
+            totalSparklesPerSec.toFixed(2), 
             this.fireworkCount,
-            this.gameState.autoLaunchers.length,
+            launcherCount,
             this.currentTrailEffect,
-            this.calculateAutoLauncherCost(this.gameState.autoLaunchers.length)
+            this.calculateAutoLauncherCost(launcherCount)
         );
     }
 
@@ -381,50 +406,10 @@ class FireworkGame extends Engine {
 
         this.updateCameraPosition(deltaTime);
 
-
-        this.profiler.startFunction('autoLaunchersUpdate');
-        this.gameState.autoLaunchers.forEach(launcher => {
-            launcher.accumulator += deltaTime;
-            if (launcher.accumulator >= launcher.spawnInterval) {
-                const x = launcher.x;
-                let recipe = this.recipes[launcher.assignedRecipeIndex];
-
-                let recipeComponents = null;
-                let trailEffect = null;
-
-                const launchY = GAME_BOUNDS.WORLD_LAUNCHER_Y;
-
-                if (recipe) {
-                    recipeComponents = recipe.components;
-                    trailEffect = recipe.trailEffect;
-                } else {
-                    if (!this.recipes.length) {
-                        recipeComponents = this.currentRecipeComponents;
-                        trailEffect = this.currentTrailEffect;
-                    }
-                    else {
-                        recipeComponents = this.recipes[Math.floor(Math.random() * this.recipes.length)].components;
-                        trailEffect = this.recipes[Math.floor(Math.random() * this.recipes.length)].trailEffect;
-                    }
-                }
-
-                const components = recipeComponents || this.currentRecipeComponents;
-
-                if (components.length === 0) {
-                    return;
-                }
-
-                const effect = trailEffect || this.currentTrailEffect;
-
-                const firework = new Firework(x + (Math.random() * 0.5 - 0.25) * FIREWORK_CONFIG.autoLauncherMeshWidth, launchY, components, this.renderer2D, effect, this.particleSystem);
-                this.gameState.fireworks.push(firework); this.fireworkCount++;
-                const sparkleAmount = components.reduce((sum, c) => sum + this.getComponentSparkles(c), 0);
-                this.resourceManager.resources.sparkles.add(sparkleAmount);
-                this.updateUI();
-                launcher.accumulator -= launcher.spawnInterval;
-            }
-        });
-        this.profiler.endFunction('autoLaunchersUpdate');
+        // Update all buildings through BuildingManager
+        this.profiler.startFunction('buildingsUpdate');
+        this.buildingManager.update(deltaTime);
+        this.profiler.endFunction('buildingsUpdate');
 
 
         const currentSps = this.calculateTotalSparklesPerSecond();
@@ -437,6 +422,8 @@ class FireworkGame extends Engine {
         this.crowd.update(deltaTime);
 
         this.checkUnlockConditions();
+
+        this.updateUI();
 
         this.saveProgress();
 
@@ -464,8 +451,12 @@ class FireworkGame extends Engine {
         localStorage.setItem('fireworkRecipes', JSON.stringify(this.recipes));
         localStorage.setItem('currentTrailEffect', this.currentTrailEffect);
 
+        // Save BuildingManager data (new format)
+        localStorage.setItem('buildingManagerData', JSON.stringify(this.buildingManager.serialize()));
+        
+        // Keep old gameState for backward compatibility but it's empty now
         const gameStateData = {
-            autoLaunchers: this.gameState.autoLaunchers
+            autoLaunchers: []
         };
         localStorage.setItem('gameState', JSON.stringify(gameStateData));
 
@@ -519,21 +510,8 @@ class FireworkGame extends Engine {
     }
 
     getLauncherAt(x, y) {
-        for (const launcher of this.gameState.autoLaunchers) {
-            if (launcher.mesh) {
-                const halfWidth = (launcher.mesh.scale.x * FIREWORK_CONFIG.autoLauncherMeshWidth) / 2;
-                const halfHeight = (launcher.mesh.scale.y * FIREWORK_CONFIG.autoLauncherMeshHeight) / 2;
-                if (
-                    x >= launcher.x - halfWidth &&
-                    x <= launcher.x + halfWidth &&
-                    y >= launcher.mesh.position.y - halfHeight &&
-                    y <= launcher.mesh.position.y + halfHeight
-                ) {
-                    return launcher;
-                }
-            }
-        }
-        return null;
+        // Delegate to BuildingManager
+        return this.buildingManager.getBuildingAt(x, y);
     }
 
     // dont use every frame because js is weird 
@@ -555,7 +533,6 @@ class FireworkGame extends Engine {
         const sparkleAmount = components.reduce((sum, c) => sum + this.getComponentSparkles(c), 0);
         this.addSparkles(sparkleAmount);
         this.checkUnlockConditions(); 
-        this.updateUI();
         return { sparkleAmount, spawnX, spawnY };
     }
 
@@ -566,108 +543,36 @@ class FireworkGame extends Engine {
     }
 
     buyAutoLauncher() {
-        const numLaunchers = this.gameState.autoLaunchers.length;
-        const cost = this.calculateAutoLauncherCost(numLaunchers);
-
-        if (this.getSparkles() >= cost) {
-            this.subtractSparkles(cost);
-            let x = this.renderer2D.cameraX + (Math.random() * 500 - 250);
-            x = Math.max(GAME_BOUNDS.LAUNCHER_MIN_X + Math.random() * 300, Math.min(x, GAME_BOUNDS.LAUNCHER_MAX_X - Math.random() * 300));
-            const accumulator = Math.random() * 5;
-            const launcher = {
-                x: x,
-                accumulator: accumulator,
-                assignedRecipeIndex: null,
-                level: 1,
-                spawnInterval: 5,
-                upgradeCost: 15,
-                mesh: null 
-            };
-            this.gameState.autoLaunchers.push(launcher);
-            this.createAutoLauncherMesh(launcher); 
-            this.updateUI();
+        const building = this.buildingManager.buyBuilding('AUTO_LAUNCHER');
+        if (building) {
             this.updateLauncherList();
-            this.showNotification("Auto-Launcher purchased!");
-        } else {
-            this.showNotification("Not enough sparkles to buy this upgrade!");
         }
+    }
+
+    buyBuilding(buildingType) {
+        const building = this.buildingManager.buyBuilding(buildingType);
+        if (building) {
+            this.ui.updateBuildingCounts();
+            this.ui.updateBuildingCosts();
+            this.ui.updateBuildingListByType(buildingType);
+            this.ui.showNotification(`${building.name} purchased!`);
+        }
+    }
+
+    upgradeAllBuildingsByType(buildingType) {
+        this.buildingManager.upgradeAllOfType(buildingType);
+        this.ui.updateBuildingCounts();
+        this.ui.updateBuildingCosts();
+        this.ui.updateBuildingListByType(buildingType);
     }
 
     calculateAutoLauncherCost(numLaunchers) {
         return Math.floor(AUTO_LAUNCHER_COST_BASE * Math.pow(AUTO_LAUNCHER_COST_RATIO, numLaunchers));
     }
 
-    createAutoLauncherMesh(launcher) {
-        const width = FIREWORK_CONFIG.autoLauncherMeshWidth;
-        const height = FIREWORK_CONFIG.autoLauncherMeshHeight;
-        const yPos = GAME_BOUNDS.WORLD_LAUNCHER_Y;
-
-        const tex = (this.autoLauncherTextureLoaded && FIREWORK_CONFIG.autoLauncherTexture) ? this.renderer2D.getTexture('auto_launcher_texture') : null;
-
-        if (tex) {
-            const squareGeom = Renderer2D.buildTexturedSquare(width, height);
-
-            launcher.mesh = this.renderer2D.createNormalShape({
-                vertices: squareGeom.vertices,
-                texCoords: squareGeom.texCoords,
-                indices: squareGeom.indices,
-                texture: tex,
-                color: new Renderer2D.Color(1, 1, 1, 1),
-                position: new Renderer2D.Vector2(launcher.x, yPos),
-                rotation: 0,
-                scale: new Renderer2D.Vector2(1, 1),
-                zIndex: 10,
-                blendMode: Renderer2D.BlendMode.NORMAL,
-                isStroke: false
-            });
-        } else {
-            const rectVertices = [
-                -width / 2, -height / 2,
-                width / 2, -height / 2,
-                width / 2, height / 2,
-                -width / 2, height / 2
-            ];
-
-            const rectGeom = Renderer2D.buildPolygon(rectVertices);
-            const color = FIREWORK_CONFIG.autoLauncherMeshColor;
-
-            launcher.mesh = this.renderer2D.createNormalShape({
-                vertices: rectGeom.vertices,
-                indices: rectGeom.indices,
-                color: new Renderer2D.Color(color.r, color.g, color.b, 1),
-                position: new Renderer2D.Vector2(launcher.x, yPos),
-                rotation: 0,
-                scale: new Renderer2D.Vector2(1, 1),
-                zIndex: 20,
-                blendMode: Renderer2D.BlendMode.NORMAL,
-                isStroke: false
-            });
-        }
-    }
-
     resetAutoLaunchers() {
-        let refundAmount = 0;
-
-        this.gameState.autoLaunchers.forEach(launcher => {
-            if (launcher.mesh) {
-                this.renderer2D.removeNormalShape(launcher.mesh);
-                launcher.mesh = null;
-            }
-            let cost = 0;
-            cost += this.calculateAutoLauncherCost(0); 
-            let currentUpgradeCost = 15; 
-            for (let i = 1; i < launcher.level; i++) {
-                cost += currentUpgradeCost;
-                currentUpgradeCost = Math.floor(currentUpgradeCost * AUTO_UPGRADE_COST_RATIO);
-            }
-            refundAmount += cost;
-        });
-        this.gameState.autoLaunchers = [];
-
-
-        this.addSparkles(Math.floor(refundAmount));
+        const refundAmount = this.buildingManager.resetBuildingsOfType('AUTO_LAUNCHER');
         this.autoLauncherCost = AUTO_LAUNCHER_COST_BASE; 
-        this.updateUI();
         this.updateLauncherList();
         return refundAmount;
     }
@@ -688,15 +593,17 @@ class FireworkGame extends Engine {
         this.unlockStates = {
             sparkleCounter: false,
             tabMenu: false,
-            autoLauncherTab: false,
+            buildingsTab: false,
             upgradesTab: false,
             crowdsTab: false,
-            backgroundTab: false
+            backgroundTab: false,
+            resourceGenerator: false,
+            efficiencyBooster: false
         };
 
         this.firstClickStates = {
             tabMenu: false,
-            autoLauncherTab: false,
+            buildingsTab: false,
             upgradesTab: false,
             crowdsTab: false,
             backgroundTab: false
@@ -710,12 +617,10 @@ class FireworkGame extends Engine {
             });
         }
         this.gameState.fireworks = [];
-        this.gameState.autoLaunchers.forEach(launcher => {
-            if (launcher.mesh) {
-                this.renderer2D.removeNormalShape(launcher.mesh);
-            }
-        });
-        this.gameState.autoLaunchers = [];
+        
+        // Reset all buildings
+        this.buildingManager.destroy();
+        this.buildingManager = new BuildingManager(this);
 
         if (this._backgroundMeshes) {
             this._backgroundMeshes.forEach(mesh => this.renderer2D.removeNormalShape(mesh));
@@ -745,7 +650,6 @@ class FireworkGame extends Engine {
 
         this.ui.initializeUnlockStates(this.unlockStates);
 
-        this.updateUI();
         this.updateComponentsList();
         this.updateRecipeList();
         this.updateLauncherList();
@@ -902,7 +806,6 @@ class FireworkGame extends Engine {
             };
         }
         this.updateComponentsList();
-        this.updateUI();
         this.saveCurrentRecipeComponents();
         this.showNotification("Recipe randomized!");
     }
@@ -950,87 +853,52 @@ class FireworkGame extends Engine {
         this.currentRecipeComponents = this.recipes[index].components.map(component => ({ ...component }));
         this.currentTrailEffect = this.recipes[index].trailEffect;
         this.updateComponentsList();
-        this.updateUI();
         this.saveCurrentRecipeComponents();
         document.getElementById('recipe-name').value = this.recipes[index].name;
         this.showNotification(`Loaded Recipe "${this.recipes[index].name}"`);
     }
 
     updateLauncherList() {
+        const launchers = this.buildingManager.getBuildingsByType('AUTO_LAUNCHER');
         this.ui.updateLauncherList(
-            this.gameState.autoLaunchers,
-            this.selectedLauncherIndex,
-            (index) => this.selectLauncher(index),
-            (index) => this.upgradeLauncher(index)
+            launchers,
+            this.buildingManager.selectedBuildingId,
+            (buildingId) => this.selectLauncher(buildingId),
+            (buildingId) => this.upgradeLauncher(buildingId)
         );
     }
 
-    selectLauncher(selectedIndex) {
+    selectLauncher(buildingId) {
+        const building = this.buildingManager.getBuildingById(buildingId);
+        this.buildingManager.selectBuilding(building);
+        
+        // Update UI
         const launcherCards = document.querySelectorAll('.launcher-card');
-        launcherCards.forEach((card, index) => {
-            if (index === selectedIndex) {
+        launcherCards.forEach((card) => {
+            if (card.dataset.buildingId === buildingId) {
                 card.classList.add('selected');
             } else {
                 card.classList.remove('selected');
             }
         });
-        this.selectedLauncherIndex = selectedIndex;
-        localStorage.setItem('selectedLauncherIndex', selectedIndex);
     }
 
-    upgradeLauncher(index) {
-        const launcher = this.gameState.autoLaunchers[index];
-        if (!launcher) {
-            this.showNotification("Launcher not found.");
+    upgradeLauncher(buildingId) {
+        const building = this.buildingManager.getBuildingById(buildingId);
+        if (!building) {
+            this.showNotification("Building not found.");
             return;
         }
 
-        if (this.getSparkles() >= launcher.upgradeCost) {
-            this.subtractSparkles(launcher.upgradeCost);
-            launcher.level += 1;
-            launcher.spawnInterval = launcher.spawnInterval * AUTO_SPAWN_INTERVAL_RATIO;
-            launcher.upgradeCost = Math.floor(launcher.upgradeCost * AUTO_UPGRADE_COST_RATIO);
-
-            this.updateUI();
+        const success = this.buildingManager.upgradeBuilding(building);
+        if (success) {
             this.updateLauncherList();
-            this.showNotification(`Auto-Launcher ${index + 1} upgraded to level ${launcher.level}!`);
-        } else {
-            this.showNotification("Not enough sparkles to upgrade this launcher!");
         }
     }
 
     upgradeAllLaunchers() {
-        const launchers = this.gameState.autoLaunchers;
-        let upgraded = false;
-        let totalSpent = 0;
-        let foundAffordableUpgrade = true;
-
-        while (foundAffordableUpgrade) {
-            foundAffordableUpgrade = false;
-            let cheapestCost = Infinity;
-            let cheapestIndex = -1;
-
-            for (let i = 0; i < launchers.length; i++) {
-                const cost = launchers[i].upgradeCost;
-                if (cost <= this.getSparkles() && cost < cheapestCost) {
-                    cheapestCost = cost;
-                    cheapestIndex = i;
-                    foundAffordableUpgrade = true;
-                }
-            }
-
-            if (foundAffordableUpgrade) {
-                this.upgradeLauncher(cheapestIndex);
-                totalSpent += cheapestCost;
-                upgraded = true;
-            }
-        }
-
-        if (!upgraded) {
-            this.showNotification("Not enough sparkles to upgrade any launchers!");
-        } else {
-            this.showNotification(`Upgraded all launchers! (${totalSpent.toLocaleString()} sparkles spent)`);
-        }
+        this.buildingManager.upgradeAllOfType('AUTO_LAUNCHER');
+        this.updateLauncherList();
     }
 
     stripLauncherForSave(launcher) {
@@ -1051,10 +919,9 @@ class FireworkGame extends Engine {
             sparkles: this.getSparkles(),
             recipes: this.recipes,
             currentTrailEffect: this.currentTrailEffect,
-            gameState: { autoLaunchers: this.gameState.autoLaunchers.map(launcher => this.stripLauncherForSave(launcher)) }, // Save only minimal launcher data
+            buildingManagerData: this.buildingManager.serialize(),
             currentRecipeComponents: this.currentRecipeComponents,
             backgroundColor: localStorage.getItem('backgroundColor') || '#000000',
-            selectedLauncherIndex: this.selectedLauncherIndex,
             resources: this.resourceManager.save(),
             currentBackground: this.currentBackground,
             baseSparkleMultiplier: this.baseSparkleMultiplier,
@@ -1088,17 +955,22 @@ class FireworkGame extends Engine {
         localStorage.setItem('backgroundColor', bgColor);
         this.currentBackground = data.currentBackground || BACKGROUND_IMAGES[0].path;
 
-        this.selectedLauncherIndex = data.selectedLauncherIndex ?? null;
-
-        if (data.gameState && data.gameState.autoLaunchers) {
-            this.gameState.autoLaunchers = data.gameState.autoLaunchers.map(launcherData => {
-                const launcher = { ...launcherData };
-                this.createAutoLauncherMesh(launcher);
-                return launcher;
+        // Load buildings
+        if (data.buildingManagerData) {
+            this.buildingManager.deserialize(data.buildingManagerData);
+        } else if (data.gameState && data.gameState.autoLaunchers) {
+            // Old save format - migrate
+            console.log('Migrating old save format to building system...');
+            data.gameState.autoLaunchers.forEach(launcherData => {
+                this.buildingManager.createBuilding(
+                    'AUTO_LAUNCHER',
+                    launcherData.x,
+                    launcherData.y || GAME_BOUNDS.WORLD_LAUNCHER_Y,
+                    launcherData
+                );
             });
         }
 
-        this.updateUI();
         this.updateComponentsList();
         this.updateRecipeList();
         this.updateLauncherList();
@@ -1130,32 +1002,23 @@ class FireworkGame extends Engine {
 
 
 
-    calculateSparklesPerSecond(autoLaunchers) {
-        if (!autoLaunchers) return 0;
+    calculateSparklesPerSecond(buildings) {
+        if (!buildings) return 0;
         let totalSparklesPerSecond = 0;
 
-        autoLaunchers.forEach(launcher => {
-            let recipe = this.recipes[launcher.assignedRecipeIndex];
-            let components;
-            if (recipe) {
-                components = recipe.components;
-            } else {
-                if (!this.recipes.length) {
-                    components = this.currentRecipeComponents;
-                } else {
-                    components = this.recipes[0].components;
-                }
+        buildings.forEach(building => {
+            if (building.type === 'AUTO_LAUNCHER' && building.getSparklesPerSecond) {
+                totalSparklesPerSecond += building.getSparklesPerSecond();
+            } else if (building.type === 'RESOURCE_GENERATOR' && building.resourceType === 'sparkles') {
+                totalSparklesPerSecond += building.getProductionRate();
             }
-
-            const sparklePerFirework = components.reduce((sum, c) => sum + this.getComponentSparkles(c), 0);
-            totalSparklesPerSecond += sparklePerFirework / launcher.spawnInterval;
         });
 
         return Math.round(totalSparklesPerSecond * 100) / 100;
     }
 
     calculateTotalSparklesPerSecond() {
-        return this.calculateSparklesPerSecond(this.gameState.autoLaunchers);
+        return this.calculateSparklesPerSecond(this.buildingManager.buildings);
     }
 
     updateCameraPosition(deltaTime) {
@@ -1225,32 +1088,14 @@ class FireworkGame extends Engine {
     }
 
     spreadLaunchers() {
-        const launchers = this.gameState.autoLaunchers;
-        if (launchers.length === 0) {
-            this.showNotification("No launchers to spread!");
-            return;
-        }
-
-        const totalWidth = GAME_BOUNDS.LAUNCHER_MAX_X - GAME_BOUNDS.LAUNCHER_MIN_X;
-        const spacing = Math.min(totalWidth / (launchers.length + 1), 200);
-
-        launchers.forEach((launcher, index) => {
-            const newX = GAME_BOUNDS.LAUNCHER_MIN_X + spacing * (index + 1);
-            launcher.x = newX;
-            if (launcher.mesh) {
-                launcher.mesh.position.x = newX;
-            }
-        });
-
-        this.showNotification("Launchers spread evenly!");
+        this.buildingManager.spreadBuildings('AUTO_LAUNCHER');
     }
 
     randomizeLauncherRecipes() {
-        const launchers = this.gameState.autoLaunchers;
-
-
+        const launchers = this.buildingManager.getBuildingsByType('AUTO_LAUNCHER');
+        
         launchers.forEach(launcher => {
-            launcher.assignedRecipeIndex = -1;
+            launcher.assignedRecipeIndex = null;
         });
 
         this.updateLauncherList();
@@ -1413,14 +1258,12 @@ class FireworkGame extends Engine {
         up.apply(this, this.purchasedUpgrades[id]);
 
         this.saveProgress();
-        this.updateUI();
         this.ui.renderUpgrades();
         this.showNotification('Upgrade purchased!');
     }
 
     addGold(amount) {
         this.resourceManager.resources.gold.add(amount);
-        this.updateUI();
     }
 
     unlockAllUpgrades() {
@@ -1435,7 +1278,6 @@ class FireworkGame extends Engine {
         }
         if (changed) {
             this.saveProgress();
-            this.updateUI();
             if (this.ui && this.ui.renderUpgrades) this.ui.renderUpgrades();
         }
     }
@@ -1473,12 +1315,12 @@ class FireworkGame extends Engine {
             unlockUpdated = true;
         }
 
-        if (!this.unlockStates.autoLauncherTab && this.fireworkCount >= 20) {
-            this.unlockStates.autoLauncherTab = true;
-            this.ui.showAutoLauncherTab();
+        if (!this.unlockStates.buildingsTab && this.fireworkCount >= 20) {
+            this.unlockStates.buildingsTab = true;
+            this.ui.showBuildingsTab();
             this.ui.expandAllTabs();
-            if (!this.firstClickStates.autoLauncherTab) {
-                this.ui.addGlimmer('autoLauncherTab');
+            if (!this.firstClickStates.buildingsTab) {
+                this.ui.addGlimmer('buildingsTab');
             }
             unlockUpdated = true;
         }
@@ -1511,6 +1353,28 @@ class FireworkGame extends Engine {
             unlockUpdated = true;
         }
 
+        // Unlock Resource Generator after having 3 auto launchers
+        if (!this.unlockStates.resourceGenerator) {
+            const launcherCount = this.buildingManager.getBuildingsByType('AUTO_LAUNCHER').length;
+            if (launcherCount >= 3) {
+                this.unlockStates.resourceGenerator = true;
+                this.showNotification("New building unlocked: Sparkle Generator!");
+                this.ui.updateBuildingTypeVisibility();
+                unlockUpdated = true;
+            }
+        }
+
+        // Unlock Efficiency Booster after reaching 2 sparkles/sec
+        if (!this.unlockStates.efficiencyBooster) {
+            const totalSps = this.calculateTotalSparklesPerSecond();
+            if (totalSps >= 2.0) {
+                this.unlockStates.efficiencyBooster = true;
+                this.showNotification("New building unlocked: Efficiency Booster!");
+                this.ui.updateBuildingTypeVisibility();
+                unlockUpdated = true;
+            }
+        }
+
         if (unlockUpdated) {
             this.saveUnlockStates();
         }
@@ -1522,6 +1386,29 @@ class FireworkGame extends Engine {
             this.ui.removeGlimmer(elementType);
             this.saveUnlockStates();
         }
+    }
+
+    /**
+     * Check if a building type is unlocked
+     */
+    isBuildingTypeUnlocked(buildingType) {
+        switch (buildingType) {
+            case 'AUTO_LAUNCHER':
+                return this.unlockStates.buildingsTab || false;
+            case 'RESOURCE_GENERATOR':
+                return this.unlockStates.resourceGenerator || false;
+            case 'EFFICIENCY_BOOSTER':
+                return this.unlockStates.efficiencyBooster || false;
+            default:
+                return false;
+        }
+    }
+
+    /**
+     * Wrapper for getLauncherAt - now uses BuildingManager
+     */
+    getLauncherAt(x, y) {
+        return this.buildingManager.getBuildingAt(x, y);
     }
 }
 

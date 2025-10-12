@@ -140,5 +140,71 @@ const COMPONENT_PROPERTY_RANGES = {
     blurStrength: { min: 0.2, max: 1, step: 0.05 },
 };
 
-export { FIREWORK_CONFIG, GAME_BOUNDS, DEFAULT_RECIPE_COMPONENTS, GENERIC_RECIPE_NAMES, BACKGROUND_IMAGES, AUTO_LAUNCHER_COST_BASE, AUTO_LAUNCHER_COST_RATIO, AUTO_UPGRADE_COST_RATIO, AUTO_SPAWN_INTERVAL_RATIO, COMPONENT_PROPERTY_RANGES };
+const BUILDING_TYPES = {
+    AUTO_LAUNCHER: {
+        id: 'auto_launcher',
+        name: 'Auto Launcher',
+        description: 'Automatically launches fireworks',
+        baseCost: 10,
+        costRatio: 1.2,
+        currency: 'sparkles',
+        // Visual properties
+        width: 30,
+        height: 80,
+        color: { r: 136 / 255, g: 136 / 255, b: 136 / 255, a: 1 },
+        texture: 'assets/launcher.png',
+        textureKey: 'auto_launcher_texture',
+        // Upgrade properties
+        baseUpgradeCost: 15,
+        upgradeCostRatio: 1.2,
+        // Behavior properties
+        baseSpawnInterval: 5,
+        spawnIntervalRatio: 0.9,
+    },
+    RESOURCE_GENERATOR: {
+        id: 'resource_generator',
+        name: 'Sparkle Generator',
+        description: 'Passively generates sparkles over time',
+        baseCost: 50,
+        costRatio: 1.3,
+        currency: 'sparkles',
+        // Visual properties
+        width: 40,
+        height: 60,
+        color: { r: 1, g: 0.84, b: 0, a: 1 }, // Gold color
+        texture: null, // Can add texture later
+        textureKey: null,
+        // Upgrade properties
+        baseUpgradeCost: 25,
+        upgradeCostRatio: 1.25,
+        // Behavior properties
+        baseProductionRate: 0.5, // sparkles per second
+        productionRateRatio: 1.5, // multiplier per level
+        resourceType: 'sparkles',
+    },
+    EFFICIENCY_BOOSTER: {
+        id: 'efficiency_booster',
+        name: 'Efficiency Booster',
+        description: 'Boosts production of nearby buildings',
+        baseCost: 100,
+        costRatio: 1.5,
+        currency: 'gold',
+        // Visual properties
+        width: 50,
+        height: 70,
+        color: { r: 0.5, g: 0.2, b: 0.9, a: 1 }, // Purple color
+        texture: null,
+        textureKey: null,
+        // Upgrade properties
+        baseUpgradeCost: 50,
+        upgradeCostRatio: 1.3,
+        // Behavior properties
+        baseRadius: 200,
+        radiusRatio: 1.1, // radius grows per level
+        baseMultiplier: 1.1, // 10% boost
+        multiplierRatio: 1.05, // multiplier grows per level
+    }
+};
+
+export { FIREWORK_CONFIG, GAME_BOUNDS, DEFAULT_RECIPE_COMPONENTS, GENERIC_RECIPE_NAMES, BACKGROUND_IMAGES, AUTO_LAUNCHER_COST_BASE, AUTO_LAUNCHER_COST_RATIO, AUTO_UPGRADE_COST_RATIO, AUTO_SPAWN_INTERVAL_RATIO, COMPONENT_PROPERTY_RANGES, BUILDING_TYPES };
 
