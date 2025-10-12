@@ -22,7 +22,7 @@ class Crowd {
                 texCoords: geometry.texCoords,
                 texture: texture,
                 maxInstances: 1000,
-                zIndex: -10, // Behind fireworks
+                zIndex: -10,
                 blendMode: Renderer2D.BlendMode.NORMAL,
                 useGlow: false
             });
@@ -125,14 +125,12 @@ class Crowd {
     update(deltaTime) {
         if (!this.instancedGroup || this.people.length === 0) return;
         
-        // Update idle animation (slight bobbing)
         for (let i = 0; i < this.people.length; i++) {
             const person = this.people[i];
             person.bobOffset += person.bobSpeed * deltaTime;
             
             const bobY = person.y + Math.sin(person.bobOffset) * 2;
             
-            // Update instance position
             this.instancedGroup.updateInstancePosition(person.instanceIndex, person.x, bobY);
         }
     }

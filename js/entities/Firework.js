@@ -48,17 +48,15 @@ class Firework {
     }
 
     _getFirstComponentColor() {
-        // Get the color of the first component, or default to white
         if (this.components && this.components.length > 0 && this.components[0].color) {
             return this._hexToRgbA(this.components[0].color);
         }
-        return { r: 1, g: 1, b: 1, a: 1 }; // Default white
+        return { r: 1, g: 1, b: 1, a: 1 }; 
     }
 
     createRocket(x, y) {
         const geometry = Renderer2D.buildTriangle(6, 10);
         
-        // Use the color of the first component in the recipe
         const firstComponentColor = this._getFirstComponentColor();
         const rocketColor = new Renderer2D.Color(firstComponentColor.r, firstComponentColor.g, firstComponentColor.b, 1);
         

@@ -15,7 +15,6 @@ export default class GameProfiler {
         this.functionStack = [];
         this.startTime = null;
         
-        // Add profiler overhead tracking
         this.profilerOverhead = 0;
         this.profilerCallCount = 0;
     }

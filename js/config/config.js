@@ -1,5 +1,3 @@
-// Game Configuration Constants
-
 const FIREWORK_CONFIG = {
     maxParticles: 500000,
     trailMaxPoints: 20,
@@ -148,16 +146,13 @@ const BUILDING_TYPES = {
         baseCost: 10,
         costRatio: 1.2,
         currency: 'sparkles',
-        // Visual properties
         width: 30,
         height: 80,
         color: { r: 136 / 255, g: 136 / 255, b: 136 / 255, a: 1 },
         texture: 'assets/launcher.png',
         textureKey: 'auto_launcher_texture',
-        // Upgrade properties
         baseUpgradeCost: 15,
         upgradeCostRatio: 1.2,
-        // Behavior properties
         baseSpawnInterval: 5,
         spawnIntervalRatio: 0.9,
     },
@@ -167,19 +162,16 @@ const BUILDING_TYPES = {
         description: 'Passively generates sparkles over time',
         baseCost: 50,
         costRatio: 1.3,
-        currency: 'sparkles',
-        // Visual properties
+        currency: 'gold',
         width: 40,
         height: 60,
-        color: { r: 1, g: 0.84, b: 0, a: 1 }, // Gold color
-        texture: null, // Can add texture later
+        color: { r: 1, g: 0.84, b: 0, a: 1 }, 
+        texture: null,
         textureKey: null,
-        // Upgrade properties
         baseUpgradeCost: 25,
         upgradeCostRatio: 1.25,
-        // Behavior properties
-        baseProductionRate: 0.5, // sparkles per second
-        productionRateRatio: 1.5, // multiplier per level
+        baseProductionRate: 0.5,
+        productionRateRatio: 1.5,
         resourceType: 'sparkles',
     },
     EFFICIENCY_BOOSTER: {
@@ -189,20 +181,19 @@ const BUILDING_TYPES = {
         baseCost: 100,
         costRatio: 1.5,
         currency: 'gold',
-        // Visual properties
         width: 50,
         height: 70,
-        color: { r: 0.5, g: 0.2, b: 0.9, a: 1 }, // Purple color
+        color: { r: 0.5, g: 0.2, b: 0.9, a: 1 },
         texture: null,
         textureKey: null,
-        // Upgrade properties
         baseUpgradeCost: 50,
         upgradeCostRatio: 1.3,
-        // Behavior properties
+        baseUpgradeCost: 50,
+        upgradeCostRatio: 1.3,
         baseRadius: 200,
-        radiusRatio: 1.1, // radius grows per level
-        baseMultiplier: 1.1, // 10% boost
-        multiplierRatio: 1.05, // multiplier grows per level
+        radiusRatio: 1.1,
+        baseMultiplier: 1.1,
+        multiplierRatio: 1.05,
     }
 };
 

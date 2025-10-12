@@ -56,7 +56,7 @@ window.addEventListener('DOMContentLoaded', () => {
     const circleShape = renderer.createNormalShape({
         vertices: circleData.vertices,
         indices: circleData.indices,
-        color: new Renderer2D.Color(1, 0, 0, 1), // red
+        color: new Renderer2D.Color(1, 0, 0, 1), 
         position: new Renderer2D.Vector2(200, 200),
         rotation: 0,
         scale: new Renderer2D.Vector2(2, 1),

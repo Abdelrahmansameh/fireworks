@@ -211,15 +211,13 @@ class InstancedParticleSystem {
         } 
         else {
             d[base + this.hasTrailIdx] = 0.0;
-        }        // Store gradient data
+        }       
         if (enableColorGradient && gradientFinalColor) {
             d[base + this.enableColorGradientIdx] = 1.0;
-            // Store original color
             d[base + this.originalColorRIdx] = color.r;
             d[base + this.originalColorGIdx] = color.g;
             d[base + this.originalColorBIdx] = color.b;
             d[base + this.originalColorAIdx] = color.a;
-            // Store final gradient color
             d[base + this.gradientFinalColorRIdx] = gradientFinalColor.r;
             d[base + this.gradientFinalColorGIdx] = gradientFinalColor.g;
             d[base + this.gradientFinalColorBIdx] = gradientFinalColor.b;
@@ -240,7 +238,6 @@ class InstancedParticleSystem {
         if (!delta) return;
         this.profiler?.startFunction?.('particleSystemUpdate');
 
-        // Update glows
         for (let i = this.glows.length - 1; i >= 0; i--) {
             const glow = this.glows[i];
             glow.lifetime -= delta;
@@ -250,7 +247,6 @@ class InstancedParticleSystem {
                 this.glows.splice(i, 1);
             } else {
                 const lifePercent = glow.lifetime / glow.initialLifetime;
-                // Fade out and expand
                 glow.shape.color.a = glow.initialAlpha + ((glow.finalAlpha - glow.initialAlpha) * (1-lifePercent));
                 const currentSize = glow.initialSize + ((glow.finalSize - glow.initialSize) * (1-lifePercent));
                 glow.shape.scale.set(currentSize, currentSize); 
@@ -312,7 +308,6 @@ class InstancedParticleSystem {
                 }
 
                 const f = d[sBase + this.frictionIdx];
-                // exponential friction
                 const hf = Math.exp(-f * delta);
                 const vf = Math.exp(-f * FIREWORK_CONFIG.verticalFrictionMultiplier * delta);
                 d[sBase + this.velocityIdx] += d[sBase + this.accelerationIdx] * delta;
@@ -321,10 +316,11 @@ class InstancedParticleSystem {
                 d[sBase + this.velocityIdx] *= hf;
                 d[sBase + this.velocityIdx + 1] *= vf;
                 d[sBase + this.positionIdx] += d[sBase + this.velocityIdx] * delta;
-                d[sBase + this.positionIdx + 1] += d[sBase + this.velocityIdx + 1] * delta;                const n = d[sBase + this.lifetimeIdx] / d[sBase + this.initialLifetimeIdx];
+                d[sBase + this.positionIdx + 1] += d[sBase + this.velocityIdx + 1] * delta;                
+                const n = d[sBase + this.lifetimeIdx] / d[sBase + this.initialLifetimeIdx];
                 d[sBase + this.colorIdx + 3] = (n * n) * (2 * Math.random());               
                 if (d[sBase + this.enableColorGradientIdx] > 0.5) {
-                    const normalizedLifetime = 1 - n; // 0 = dead, 1 = just born
+                    const normalizedLifetime = 1 - n; 
                     const gradientStartTime = d[sBase + this.gradientStartTimeIdx];
                     const gradientDuration = d[sBase + this.gradientDurationIdx];
                     
@@ -403,7 +399,8 @@ class InstancedParticleSystem {
                 const trailWidth = d[sBase + this.trailWidthIdx];
                 const trailLength = d[sBase + this.trailLengthIdx];
                 const pointsCount = d[sBase + this.trailPointsCountIdx];
-                const headIdx = d[sBase + this.trailHeadIndexIdx];                const trailStartIndex = i * this.maxTrailPoints * 2;                // Get colors for trail rendering
+                const headIdx = d[sBase + this.trailHeadIndexIdx];               
+                const trailStartIndex = i * this.maxTrailPoints * 2;                
                 let baseColorR, baseColorG, baseColorB;
                 let currentParticleColorR, currentParticleColorG, currentParticleColorB;
                 let hasGradient = false;
@@ -418,10 +415,10 @@ class InstancedParticleSystem {
                     currentParticleColorG = d[sBase + this.colorIdx + 1];
                     currentParticleColorB = d[sBase + this.colorIdx + 2];
                     
-                    const normalizedLifetime = 1 - (lifetime / initialLifetime); // 0 = just born, 1 = dead
+                    const normalizedLifetime = 1 - (lifetime / initialLifetime);
                     const gradientStartTime = d[sBase + this.gradientStartTimeIdx];
                     const gradientDuration = d[sBase + this.gradientDurationIdx];
-                    const trailGradientDuration = gradientDuration * 2; // Trail takes twice as long
+                    const trailGradientDuration = gradientDuration * 2; 
                     
                     if (normalizedLifetime >= gradientStartTime) {
                         trailGradientProgress = Math.min(1, (normalizedLifetime - gradientStartTime) / trailGradientDuration);

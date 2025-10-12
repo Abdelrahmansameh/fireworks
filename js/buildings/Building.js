@@ -1,10 +1,6 @@
 import * as Renderer2D from '../rendering/Renderer.js';
 import { FIREWORK_CONFIG, GAME_BOUNDS, BUILDING_TYPES } from '../config/config.js';
 
-/**
- * Base Building class
- * Simple, flat structure with all properties directly on the class
- */
 class Building {
     constructor(game, buildingType, x, y, data = {}) {
         this.game = game;
@@ -15,39 +11,28 @@ class Building {
             throw new Error(`Unknown building type: ${buildingType}`);
         }
 
-        // Generate unique ID
         this.id = data.id || `building_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
         
-        // Position and transform
         this.x = x;
         this.y = y;
         this.rotation = data.rotation || 0;
         this.scale = data.scale || 1;
         
-        // State
         this.level = data.level || 1;
         this.mesh = null;
         
         this.multiplier = 1.0; 
         
-        // Create visual representation
         this.createMesh();
-    }
-
-    /**
-     * Create the visual mesh for this building
-     */
-    createMesh() {
+    }    createMesh() {
         const width = this.config.width;
         const height = this.config.height;
         const yPos = this.y;
 
-        // Check if we should use texture
         const tex = this.config.textureKey ? 
             this.game.renderer2D.getTexture(this.config.textureKey) : null;
 
         if (tex) {
-            // Create textured mesh
             const squareGeom = Renderer2D.buildTexturedSquare(width, height);
             this.mesh = this.game.renderer2D.createNormalShape({
                 vertices: squareGeom.vertices,
@@ -63,7 +48,6 @@ class Building {
                 isStroke: false
             });
         } else {
-            // Create colored rectangle mesh
             const rectVertices = [
                 -width / 2, -height / 2,
                 width / 2, -height / 2,
@@ -88,18 +72,9 @@ class Building {
         }
     }
 
-    /**
-     * Update building state (called each frame)
-     * Override in subclasses for specific behavior
-     */
     update(deltaTime) {
-        // Base class does nothing - override in subclasses
     }
 
-    /**
-     * Upgrade this building to the next level
-     * @returns {boolean} True if upgrade was successful
-     */
     upgrade() {
         const cost = this.getUpgradeCost();
         const currency = this.config.currency;
@@ -116,17 +91,9 @@ class Building {
         return true;
     }
 
-    /**
-     * Called after successful upgrade
-     * Override in subclasses for specific behavior
-     */
     onUpgrade() {
-        // Override in subclasses
     }
 
-    /**
-     * Get the cost to upgrade to the next level
-     */
     getUpgradeCost() {
         return Math.floor(
             this.config.baseUpgradeCost * 
@@ -134,9 +101,6 @@ class Building {
         );
     }
 
-    /**
-     * Get the cost to purchase this building at a given count
-     */
     static getPurchaseCost(buildingType, count) {
         const config = BUILDING_TYPES[buildingType];
         if (!config) return Infinity;
@@ -147,9 +111,6 @@ class Building {
         );
     }
 
-    /**
-     * Check if a point is inside this building's bounds
-     */
     isPointInside(x, y) {
         if (!this.mesh) return false;
 
@@ -164,9 +125,6 @@ class Building {
         );
     }
 
-    /**
-     * Update position and clamp to valid bounds
-     */
     setPosition(x, y) {
         this.x = Math.max(
             GAME_BOUNDS.LAUNCHER_MIN_X, 
@@ -180,9 +138,6 @@ class Building {
         }
     }
 
-    /**
-     * Serialize building state for saving
-     */
     serialize() {
         return {
             id: this.id,
@@ -195,9 +150,6 @@ class Building {
         };
     }
 
-    /**
-     * Clean up resources
-     */
     destroy() {
         if (this.mesh) {
             this.game.renderer2D.removeNormalShape(this.mesh);
@@ -205,9 +157,6 @@ class Building {
         }
     }
 
-    /**
-     * Get building bounds
-     */
     getBounds() {
         const halfWidth = (this.config.width * this.scale) / 2;
         const halfHeight = (this.config.height * this.scale) / 2;

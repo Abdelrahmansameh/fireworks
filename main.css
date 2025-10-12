@@ -11,7 +11,7 @@ body {
 
 #game-canvas {
     display: block;
-    width: 100vw;  /* fill the viewport */
+    width: 100vw;
     height: 100vh; 
   }
 
@@ -72,7 +72,6 @@ body {
 .tabs {
     display: flex;
     overflow-x: auto;
-    /* -webkit-overflow-scrolling: touch; */
     white-space: nowrap;
     scrollbar-width: thin;
     gap: 5px;
@@ -81,7 +80,7 @@ body {
     transition: max-width 0.3s ease;
 }
 .tabs::-webkit-scrollbar { 
-    display: none;  /* Safari and Chrome */
+    display: none;
 }
 .tabs.collapsed {
     max-width: 0;

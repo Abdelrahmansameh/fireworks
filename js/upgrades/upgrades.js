@@ -36,7 +36,6 @@ const UPGRADE_DEFINITIONS = [
     },
 ];
 
-// one upgrade per pattern
 import { FIREWORK_CONFIG } from '../config/config.js';
 Object.keys(FIREWORK_CONFIG.patternGravities).forEach(pattern => {
     UPGRADE_DEFINITIONS.push({

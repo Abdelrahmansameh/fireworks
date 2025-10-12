@@ -63,8 +63,8 @@ class FireworkGame extends Engine {
 
         this.upgrades = UPGRADE_DEFINITIONS;                       
         this.upgradeLookup = Object.fromEntries(UPGRADE_DEFINITIONS.map(u => [u.id, u]));
-        this.purchasedUpgrades = {}; // id -> level
-
+        this.purchasedUpgrades = {};
+        
         const savedBaseMult = parseFloat(localStorage.getItem('baseSparkleMultiplier'));
         if (!isNaN(savedBaseMult)) {
             this.baseSparkleMultiplier = savedBaseMult;
@@ -114,10 +114,8 @@ class FireworkGame extends Engine {
         this.initRenderer2D();
         this.initBackgroundColor();
 
-        // Load building system data
         const savedBuildingData = localStorage.getItem('buildingManagerData');
         if (savedBuildingData) {
-            // New save format - use BuildingManager
             try {
                 const buildingData = JSON.parse(savedBuildingData);
                 this.buildingManager.deserialize(buildingData);
@@ -125,10 +123,8 @@ class FireworkGame extends Engine {
                 console.error('Failed to load building data:', e);
             }
         } else if (savedGameState && savedGameState.autoLaunchers) {
-            // Old save format - migrate autoLaunchers to BuildingManager
             console.log('Migrating old autoLaunchers to new building system...');
             savedGameState.autoLaunchers.forEach(launcherData => {
-                // Ensure launcher has required properties
                 if (!launcherData.accumulator) {
                     launcherData.accumulator = Math.random() * 5;
                 }
@@ -137,11 +133,9 @@ class FireworkGame extends Engine {
                     launcherData.spawnInterval = 5;
                 }
                 
-                // Clamp position
                 launcherData.x = this.clampToLauncherBounds(launcherData.x);
                 launcherData.y = launcherData.y || GAME_BOUNDS.WORLD_LAUNCHER_Y;
                 
-                // Create building through BuildingManager
                 this.buildingManager.createBuilding(
                     'AUTO_LAUNCHER',
                     launcherData.x,
@@ -150,11 +144,9 @@ class FireworkGame extends Engine {
                 );
             });
             
-            // Clear old gameState
             this.gameState.autoLaunchers = [];
         }
         
-        // Keep gameState.autoLaunchers for backward compatibility but keep it empty
         this.gameState.autoLaunchers = [];
 
         this.particleSystem = new InstancedParticleSystem(this.renderer2D, this.profiler);
@@ -226,7 +218,6 @@ class FireworkGame extends Engine {
         const tex = this.renderer2D.getTexture('auto_launcher_texture');
         if (!tex) return;
 
-        // Recreate all auto launcher buildings with texture
         const launchers = this.buildingManager.getBuildingsByType('AUTO_LAUNCHER');
         for (const launcher of launchers) {
             launcher.destroy();
@@ -319,7 +310,6 @@ class FireworkGame extends Engine {
         this.renderer2D._updateProjectionMatrix();
         const yPos = GAME_BOUNDS.WORLD_LAUNCHER_Y;
         
-        // Update all building positions
         for (const building of this.buildingManager.buildings) {
             building.setPosition(building.x, yPos);
         }
@@ -406,7 +396,6 @@ class FireworkGame extends Engine {
 
         this.updateCameraPosition(deltaTime);
 
-        // Update all buildings through BuildingManager
         this.profiler.startFunction('buildingsUpdate');
         this.buildingManager.update(deltaTime);
         this.profiler.endFunction('buildingsUpdate');
@@ -451,10 +440,8 @@ class FireworkGame extends Engine {
         localStorage.setItem('fireworkRecipes', JSON.stringify(this.recipes));
         localStorage.setItem('currentTrailEffect', this.currentTrailEffect);
 
-        // Save BuildingManager data (new format)
         localStorage.setItem('buildingManagerData', JSON.stringify(this.buildingManager.serialize()));
         
-        // Keep old gameState for backward compatibility but it's empty now
         const gameStateData = {
             autoLaunchers: []
         };
@@ -510,7 +497,6 @@ class FireworkGame extends Engine {
     }
 
     getLauncherAt(x, y) {
-        // Delegate to BuildingManager
         return this.buildingManager.getBuildingAt(x, y);
     }
 
@@ -872,7 +858,6 @@ class FireworkGame extends Engine {
         const building = this.buildingManager.getBuildingById(buildingId);
         this.buildingManager.selectBuilding(building);
         
-        // Update UI
         const launcherCards = document.querySelectorAll('.launcher-card');
         launcherCards.forEach((card) => {
             if (card.dataset.buildingId === buildingId) {
@@ -955,11 +940,9 @@ class FireworkGame extends Engine {
         localStorage.setItem('backgroundColor', bgColor);
         this.currentBackground = data.currentBackground || BACKGROUND_IMAGES[0].path;
 
-        // Load buildings
         if (data.buildingManagerData) {
             this.buildingManager.deserialize(data.buildingManagerData);
         } else if (data.gameState && data.gameState.autoLaunchers) {
-            // Old save format - migrate
             console.log('Migrating old save format to building system...');
             data.gameState.autoLaunchers.forEach(launcherData => {
                 this.buildingManager.createBuilding(
@@ -1353,7 +1336,6 @@ class FireworkGame extends Engine {
             unlockUpdated = true;
         }
 
-        // Unlock Resource Generator after having 3 auto launchers
         if (!this.unlockStates.resourceGenerator) {
             const launcherCount = this.buildingManager.getBuildingsByType('AUTO_LAUNCHER').length;
             if (launcherCount >= 3) {
@@ -1364,7 +1346,6 @@ class FireworkGame extends Engine {
             }
         }
 
-        // Unlock Efficiency Booster after reaching 2 sparkles/sec
         if (!this.unlockStates.efficiencyBooster) {
             const totalSps = this.calculateTotalSparklesPerSecond();
             if (totalSps >= 2.0) {
@@ -1388,9 +1369,6 @@ class FireworkGame extends Engine {
         }
     }
 
-    /**
-     * Check if a building type is unlocked
-     */
     isBuildingTypeUnlocked(buildingType) {
         switch (buildingType) {
             case 'AUTO_LAUNCHER':
@@ -1404,9 +1382,6 @@ class FireworkGame extends Engine {
         }
     }
 
-    /**
-     * Wrapper for getLauncherAt - now uses BuildingManager
-     */
     getLauncherAt(x, y) {
         return this.buildingManager.getBuildingAt(x, y);
     }

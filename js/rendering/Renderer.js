@@ -144,7 +144,6 @@ class Color {
     }
 }
 
-// Earcut Implementation
 function earcut(data, holeIndices, dim) {
     dim = dim || 2;
     var hasHoles = holeIndices && holeIndices.length,
@@ -183,7 +182,6 @@ function earcut(data, holeIndices, dim) {
     return triangles;
 }
 
-// Helper functions from earcut, inlined:
 function linkedList(data, start, end, dim, clockwise) {
     var i, last;
     if (clockwise === (signedArea(data, start, end, dim) > 0)) {
@@ -528,9 +526,6 @@ function splitPolygon(a, b) {
     return b2;
 }
 
-/*************************************************************
- * 2) Shape Builders
- *************************************************************/
 function buildCircle(radius = 1, segments = 32) {
     const verts = [0, 0];
     for (let i = 0; i <= segments; i++) {
@@ -600,7 +595,7 @@ function buildDroplet(scale = 1, steps = 100) {
             5 * Math.cos(2 * t) -
             2 * Math.cos(3 * t) -
             Math.cos(4 * t);
-        coords.push(x * scale * 0.2, y * scale * 0.2); // Removed the negation on y
+        coords.push(x * scale * 0.2, y * scale * 0.2);
     }
     coords.push(coords[0], coords[1]);
     const triIndices = earcut(coords, null, 2);
@@ -627,7 +622,7 @@ function buildTriangle(base = 1, height = 2) {
 
     coords.push(-base / 2, 0);
     coords.push(base / 2, 0);
-    coords.push(0, height); // Removed the negation on y
+    coords.push(0, height); 
 
     const triIndices = earcut(coords, null, 2);
     return {
@@ -713,7 +708,6 @@ function buildTexturedSquare(width = 1, height = 1) {
         -halfW, halfH  // top-left
     ]);
 
-    // Texture coordinates (UV)
     const texCoords = new Float32Array([
         0, 1, // bottom-left
         1, 1, // bottom-right
@@ -846,12 +840,10 @@ class InstancedGroup {
         this.blendMode = blendMode;
         this.texture = texture;
 
-        // number of floats per instance (now includes glowStrength and blurStrength)
         this.instanceStrideFloats = 11;
         this.instanceData = new Float32Array(maxInstances * this.instanceStrideFloats);
         this.instanceCount = 0;
 
-        // GPU buffer
         this._instanceBuffer = null;
         this._vao = null;
     }
@@ -906,8 +898,6 @@ class InstancedGroup {
         }
 
         const lastIndex = this.instanceCount - 1;
-
-        //swap with last instance
 
         if (index !== lastIndex) {
             const targetBase = index * this.instanceStrideFloats;
@@ -1068,7 +1058,6 @@ class Renderer2D {
         this.u_useTexture_Inst = gl.getUniformLocation(this.instancedProgram, 'u_useTexture');
         this.u_isEmissivePass_Inst = gl.getUniformLocation(this.instancedProgram, 'u_isEmissivePass');
 
-        // Post-processing programs
         this.emissiveProgram = this._initProgram(this._emissiveVS(), this._emissiveFS());
         this.u_sceneTexture_Emissive = gl.getUniformLocation(this.emissiveProgram, 'u_sceneTexture');
 
@@ -1091,8 +1080,8 @@ class Renderer2D {
             this.postProcessingInitialized = false;
         }
 
-        this.FLOAT_FMT = gl.RGBA16F;           // internal format
-        const FLOAT_TYP = gl.HALF_FLOAT;        // data type (WebGL2 constant)
+        this.FLOAT_FMT = gl.RGBA16F;           
+        const FLOAT_TYP = gl.HALF_FLOAT;     
     }
 
     _createWhiteTexture() {
@@ -1161,26 +1150,25 @@ class Renderer2D {
         let r = 0, g = 0, b = 0, a = 1;
         let processedHex = hex.startsWith('#') ? hex.slice(1) : hex;
 
-        if (processedHex.length === 3) { // #RGB
+        if (processedHex.length === 3) { 
             r = parseInt(processedHex[0] + processedHex[0], 16);
             g = parseInt(processedHex[1] + processedHex[1], 16);
             b = parseInt(processedHex[2] + processedHex[2], 16);
-        } else if (processedHex.length === 4) { // #RGBA
+        } else if (processedHex.length === 4) { 
             r = parseInt(processedHex[0] + processedHex[0], 16);
             g = parseInt(processedHex[1] + processedHex[1], 16);
             b = parseInt(processedHex[2] + processedHex[2], 16);
             a = parseInt(processedHex[3] + processedHex[3], 16);
-        } else if (processedHex.length === 6) { // #RRGGBB
+        } else if (processedHex.length === 6) { //
             r = parseInt(processedHex.substring(0, 2), 16);
             g = parseInt(processedHex.substring(2, 4), 16);
             b = parseInt(processedHex.substring(4, 6), 16);
-        } else if (processedHex.length === 8) { // #RRGGBBAA
+        } else if (processedHex.length === 8) { //
             r = parseInt(processedHex.substring(0, 2), 16);
             g = parseInt(processedHex.substring(2, 4), 16);
             b = parseInt(processedHex.substring(4, 6), 16);
             a = parseInt(processedHex.substring(6, 8), 16);
         } else {
-            // console.warn(`Invalid hex color string format: #${processedHex}. Using default black.`);
             return { r: 0, g: 0, b: 0, a: 1 };
         }
 
@@ -1296,7 +1284,7 @@ class Renderer2D {
         const group = new InstancedGroup({ baseGeometry: baseGeom, maxInstances, zIndex, blendMode, texture });
         group._instanceBuffer = gl.createBuffer();
         gl.bindBuffer(gl.ARRAY_BUFFER, group._instanceBuffer);
-        const totalBytes = maxInstances * 11 * 4; // Updated for 11 floats per instance
+        const totalBytes = maxInstances * 11 * 4; 
         gl.bufferData(gl.ARRAY_BUFFER, totalBytes, gl.DYNAMIC_DRAW);
 
         group._vao = gl.createVertexArray();
@@ -1321,6 +1309,7 @@ class Renderer2D {
         // instance buffer => offset(2), rotation(1), scale(2), color(4), glowStrength(1), blurStrength(1)
         gl.bindBuffer(gl.ARRAY_BUFFER, group._instanceBuffer);
         const stride = 11 * 4;
+
         // offset => loc= a_offset_Inst (location 2)
         gl.enableVertexAttribArray(this.a_offset_Inst);
         gl.vertexAttribPointer(this.a_offset_Inst, 2, gl.FLOAT, false, stride, 0);
@@ -1437,25 +1426,23 @@ class Renderer2D {
         if (gl.checkFramebufferStatus(gl.FRAMEBUFFER) !== gl.FRAMEBUFFER_COMPLETE) {
             console.error('Scene framebuffer is not complete!');
         }
-        // PASS 1: Render emissive to emiTex (half-res)  
+
         const halfWidth = Math.max(1, Math.floor(this.canvas.width / 2));
         const halfHeight = Math.max(1, Math.floor(this.canvas.height / 2));
 
         gl.bindFramebuffer(gl.FRAMEBUFFER, this.emissiveFBO);
         gl.viewport(0, 0, halfWidth, halfHeight);
-        gl.clearColor(0, 0, 0, 0); // Clear to transparent
+        gl.clearColor(0, 0, 0, 0); 
         gl.clear(gl.COLOR_BUFFER_BIT);
 
         let emissiveCount = 0;
-        // Render ONLY objects with glow > 0 
         for (const item of items) {
             if (item.type === 'instanced') {
-                // Check if any instances in this group have glow > 0
                 let hasGlow = false;
                 const group = item.data;
                 for (let i = 0; i < group.instanceCount; i++) {
                     const base = i * group.instanceStrideFloats;
-                    const glowStrength = group.instanceData[base + 9]; // glow at offset 9
+                    const glowStrength = group.instanceData[base + 9];
                     if (glowStrength > 0) {
                         hasGlow = true;
                         break;
@@ -1466,13 +1453,10 @@ class Renderer2D {
                     emissiveCount++;
                 }
             }
-            // Note: Normal shapes don't have glow strength yet, so skip them
         }
 
-        // PASS 2: Blur the emissive texture (ping-pong at half-res)
         this._performBlurPasses();
 
-        // PASS 3: Composite final image
         gl.bindFramebuffer(gl.FRAMEBUFFER, null);
         gl.viewport(0, 0, this.canvas.width, this.canvas.height);
         gl.clearColor(0, 0, 0, 1);
@@ -1485,10 +1469,10 @@ class Renderer2D {
         gl.uniform1i(this.u_sceneTexture_Composite, 0);
 
         gl.activeTexture(gl.TEXTURE1);
-        gl.bindTexture(gl.TEXTURE_2D, this.blurTexture2); // Final blurred result
+        gl.bindTexture(gl.TEXTURE_2D, this.blurTexture2);
         gl.uniform1i(this.u_bloomTexture_Composite, 1);
 
-        gl.uniform1f(this.u_globalBlurStrength_Composite, 1.0); // Enable global blur for testing
+        gl.uniform1f(this.u_globalBlurStrength_Composite, 1.0); 
 
         gl.bindVertexArray(this.fullScreenTriangleVAO);
         gl.drawArrays(gl.TRIANGLES, 0, 3);
@@ -1552,7 +1536,6 @@ class Renderer2D {
 
     _drawNormalShape(shape) {
         const gl = this.gl;
-        // set blend
         switch (shape.blendMode) {
             case BlendMode.ADDITIVE:
                 gl.blendFunc(gl.SRC_ALPHA, gl.ONE);
@@ -1576,7 +1559,6 @@ class Renderer2D {
         gl.uniformMatrix4fv(this.u_matrix_Normal, false, mvp);
         gl.uniform4fv(this.u_color_Normal, shape.color.toArray());
 
-        // Handle texture
         const useTexture = shape.texture !== null;
         gl.uniform1i(this.u_useTexture_Normal, useTexture);
 
@@ -1591,12 +1573,10 @@ class Renderer2D {
             gl.uniform1i(this.u_texture_Normal, 0);
         }
 
-        // bind shape buffers
         gl.bindBuffer(gl.ARRAY_BUFFER, shape._vbo);
         gl.enableVertexAttribArray(this.a_position_Normal);
         gl.vertexAttribPointer(this.a_position_Normal, 2, gl.FLOAT, false, 0, 0);
 
-        // bind texture coordinates if available
         if (shape._texCoordVbo && this.a_texCoord_Normal !== -1) {
             gl.bindBuffer(gl.ARRAY_BUFFER, shape._texCoordVbo);
             gl.enableVertexAttribArray(this.a_texCoord_Normal);
@@ -1636,7 +1616,6 @@ class Renderer2D {
                 break;
         }        gl.useProgram(this.instancedProgram);
 
-        // Handle texture
         const useTexture = group.texture !== null;
         gl.uniform1i(this.u_useTexture_Inst, useTexture);
         gl.uniform1i(this.u_isEmissivePass_Inst, 0);
@@ -1653,12 +1632,10 @@ class Renderer2D {
         }
         gl.uniformMatrix4fv(this.u_proj_Inst, false, this._projectionMatrix);
 
-        // update instance buffer
         gl.bindBuffer(gl.ARRAY_BUFFER, group._instanceBuffer);
         const subData = group.instanceData.subarray(0, group.instanceCount * group.instanceStrideFloats);
         gl.bufferSubData(gl.ARRAY_BUFFER, 0, subData);
 
-        // bind VAO
         gl.bindVertexArray(group._vao);
 
         if (group.baseGeometry.numIndices > 0) {
@@ -1711,7 +1688,6 @@ class Renderer2D {
 
         gl.uniformMatrix4fv(this.u_proj_Inst, false, this._projectionMatrix);
 
-        // Create filtered instance data with only emissive instances
         const filteredData = new Float32Array(group.instanceCount * group.instanceStrideFloats);
         let filteredCount = 0;
 
@@ -1731,12 +1707,10 @@ class Renderer2D {
 
         if (filteredCount === 0) return;
 
-        // Update instance buffer with filtered data
         gl.bindBuffer(gl.ARRAY_BUFFER, group._instanceBuffer);
         const subData = filteredData.subarray(0, filteredCount * group.instanceStrideFloats);
         gl.bufferSubData(gl.ARRAY_BUFFER, 0, subData);
 
-        // Bind VAO
         gl.bindVertexArray(group._vao);
 
         if (group.baseGeometry.numIndices > 0) {
@@ -1758,7 +1732,6 @@ class Renderer2D {
 
         gl.bindVertexArray(null);
 
-        // Reset blend mode back to normal
         gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
     }
 
@@ -1770,7 +1743,6 @@ class Renderer2D {
         gl.useProgram(this.blurProgram);
         gl.bindVertexArray(this.fullScreenTriangleVAO);
 
-        // Horizontal blur: emissive -> blur1
         gl.bindFramebuffer(gl.FRAMEBUFFER, this.blurFBO1);
         gl.viewport(0, 0, halfWidth, halfHeight);
         gl.clearColor(0, 0, 0, 0);
@@ -1783,7 +1755,6 @@ class Renderer2D {
 
         gl.drawArrays(gl.TRIANGLES, 0, 3);
 
-        // Vertical blur: blur1 -> blur2
         gl.bindFramebuffer(gl.FRAMEBUFFER, this.blurFBO2);
         gl.clearColor(0, 0, 0, 0);
         gl.clear(gl.COLOR_BUFFER_BIT);
@@ -1877,9 +1848,7 @@ class Renderer2D {
                                     : v_color;
 
             if (u_isEmissivePass) {
-                // scale by both controls; >1.0 perfectly OK
                 base.rgb *= v_glowStrength * v_blurStrength;
-                // Alpha can stay as-is so bloom inherits original opacity
             }
 
             outColor = base;
@@ -1912,8 +1881,6 @@ class Renderer2D {
         void main() {
             vec4 sceneColor = texture(u_sceneTexture, v_uv);
             
-            // For emissive pass, we want to downscale the scene texture to half resolution
-            // This will be filled with emissive content by the main rendering
             outColor = sceneColor;
         }
         `;
@@ -1944,7 +1911,6 @@ class Renderer2D {
         out vec4 outColor;
         
         void main() {
-            // 9-tap Gaussian blur kernel weights
             float weights[9];
             weights[0] = 0.013519; weights[1] = 0.047662; weights[2] = 0.118318;
             weights[3] = 0.205065; weights[4] = 0.231126; weights[5] = 0.205065;
@@ -1967,9 +1933,9 @@ class Renderer2D {
         precision mediump float;
 
         in  vec2 v_uv;
-        uniform sampler2D u_sceneTexture;    // full-res
-        uniform sampler2D u_bloomTexture;    // half-res, already blurred
-        uniform float     u_globalBlurStrength; // 0-1 (optional, keep for future)
+        uniform sampler2D u_sceneTexture;    
+        uniform sampler2D u_bloomTexture;  
+        uniform float     u_globalBlurStrength; 
 
         out vec4 outColor;
 
@@ -1977,10 +1943,9 @@ class Renderer2D {
             vec3 scene  = texture(u_sceneTexture, v_uv).rgb;
             vec3 bloom  = texture(u_bloomTexture, v_uv).rgb;
 
-            // tone-map or clamp if you wish
-            vec3 colour = scene + bloom * 20.0;                 // simple additive output
+            vec3 colour = scene + bloom * 20.0;                 
 
-            outColor = vec4(colour, 1.0);                // alpha forced to 1
+            outColor = vec4(colour, 1.0);          
         }
         `;
     }

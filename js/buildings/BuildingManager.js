@@ -4,16 +4,12 @@ import EfficiencyBooster from './EfficiencyBooster.js';
 import Building from './Building.js';
 import { BUILDING_TYPES, GAME_BOUNDS } from '../config/config.js';
 
-/**
- * BuildingManager - Centralized manager for all buildings
- */
 class BuildingManager {
     constructor(game) {
         this.game = game;
         this.buildings = [];
         this.selectedBuildingId = null;
         
-        // Building type registry
         this.buildingClasses = {
             'AUTO_LAUNCHER': AutoLauncher,
             'RESOURCE_GENERATOR': ResourceGenerator,
@@ -21,9 +17,6 @@ class BuildingManager {
         };
     }
 
-    /**
-     * Create a new building
-     */
     createBuilding(buildingType, x, y, data = {}) {
         const BuildingClass = this.buildingClasses[buildingType];
         if (!BuildingClass) {
@@ -37,9 +30,6 @@ class BuildingManager {
         return building;
     }
 
-    /**
-     * Purchase a new building
-     */
     buyBuilding(buildingType) {
         const config = BUILDING_TYPES[buildingType];
         if (!config) {
@@ -58,7 +48,6 @@ class BuildingManager {
 
         resource.subtract(cost);
         
-        // Calculate spawn position (near camera with some randomness)
         let x = this.game.renderer2D.cameraX + (Math.random() * 500 - 250);
         x = Math.max(
             GAME_BOUNDS.LAUNCHER_MIN_X + Math.random() * 300, 
@@ -76,9 +65,6 @@ class BuildingManager {
         return building;
     }
 
-    /**
-     * Remove a building
-     */
     removeBuilding(building) {
         const index = this.buildings.indexOf(building);
         if (index > -1) {
@@ -91,14 +77,9 @@ class BuildingManager {
         }
     }
 
-    /**
-     * Update all buildings
-     */
     update(deltaTime) {
-        // Calculate booster multipliers first
         const boosterMultipliers = this.calculateBoosterMultipliers();
         
-        // Update all buildings with their boost multipliers
         for (const building of this.buildings) {
             const multiplier = boosterMultipliers.get(building.id) || 1.0;
             building.multiplier = multiplier;
@@ -106,9 +87,6 @@ class BuildingManager {
         }
     }
 
-    /**
-     * Calculate boost multipliers for all buildings
-     */
     calculateBoosterMultipliers() {
         const boosters = this.getBuildingsByType('EFFICIENCY_BOOSTER');
         const multipliers = new Map();
@@ -128,9 +106,6 @@ class BuildingManager {
         return multipliers;
     }
 
-    /**
-     * Get building at position
-     */
     getBuildingAt(x, y) {
         for (const building of this.buildings) {
             if (building.isPointInside(x, y)) {
@@ -140,45 +115,27 @@ class BuildingManager {
         return null;
     }
 
-    /**
-     * Get buildings by type
-     */
     getBuildingsByType(buildingType) {
         return this.buildings.filter(b => b.type === buildingType);
     }
 
-    /**
-     * Get building by ID
-     */
     getBuildingById(id) {
         return this.buildings.find(b => b.id === id);
     }
 
-    /**
-     * Get the cost to buy a building of the given type
-     */
     getBuyCost(buildingType) {
         const count = this.getBuildingsByType(buildingType).length;
         return Building.getPurchaseCost(buildingType, count);
     }
 
-    /**
-     * Select a building
-     */
     selectBuilding(building) {
         this.selectedBuildingId = building ? building.id : null;
     }
 
-    /**
-     * Get selected building
-     */
     getSelectedBuilding() {
         return this.getBuildingById(this.selectedBuildingId);
     }
 
-    /**
-     * Upgrade a building
-     */
     upgradeBuilding(building) {
         if (!building) return false;
         
@@ -196,9 +153,6 @@ class BuildingManager {
         return success;
     }
 
-    /**
-     * Upgrade all buildings of a type
-     */
     upgradeAllOfType(buildingType) {
         const buildings = this.getBuildingsByType(buildingType);
         let upgraded = false;
@@ -237,9 +191,6 @@ class BuildingManager {
         }
     }
 
-    /**
-     * Spread buildings evenly
-     */
     spreadBuildings(buildingType = null) {
         let buildingsToSpread = buildingType ? 
             this.getBuildingsByType(buildingType) : 
@@ -261,9 +212,6 @@ class BuildingManager {
         this.game.showNotification("Buildings spread evenly!");
     }
 
-    /**
-     * Reset all buildings of a type
-     */
     resetBuildingsOfType(buildingType) {
         const buildings = this.getBuildingsByType(buildingType);
         let refundAmount = 0;
@@ -271,11 +219,9 @@ class BuildingManager {
         for (let i = buildings.length - 1; i >= 0; i--) {
             const building = buildings[i];
             
-            // Calculate refund
             const purchaseCost = Building.getPurchaseCost(buildingType, 0);
             refundAmount += purchaseCost;
             
-            // Add upgrade costs
             for (let level = 1; level < building.level; level++) {
                 const upgradeCost = Math.floor(
                     building.config.baseUpgradeCost * 
@@ -296,22 +242,17 @@ class BuildingManager {
         return refundAmount;
     }
 
-    /**
-     * Check if placement is valid
-     */
     isValidPlacement(x, y, buildingType, excludeBuilding = null) {
         const config = BUILDING_TYPES[buildingType];
         if (!config) return false;
 
-        // Check bounds
         const halfWidth = config.width / 2;
         if (x - halfWidth < GAME_BOUNDS.LAUNCHER_MIN_X || 
             x + halfWidth > GAME_BOUNDS.LAUNCHER_MAX_X) {
             return false;
         }
 
-        // Check collision with other buildings
-        const minSpacing = 20; // Minimum space between buildings
+        const minSpacing = 20;
         
         for (const building of this.buildings) {
             if (building === excludeBuilding) continue;
@@ -328,9 +269,6 @@ class BuildingManager {
         return true;
     }
 
-    /**
-     * Serialize all buildings
-     */
     serialize() {
         return {
             buildings: this.buildings.map(b => b.serialize()),
@@ -338,17 +276,12 @@ class BuildingManager {
         };
     }
 
-    /**
-     * Deserialize and restore buildings
-     */
     deserialize(data) {
-        // Clear existing buildings
         for (const building of this.buildings) {
             building.destroy();
         }
         this.buildings = [];
 
-        // Restore buildings
         if (data.buildings) {
             for (const buildingData of data.buildings) {
                 this.createBuilding(
@@ -363,9 +296,6 @@ class BuildingManager {
         this.selectedBuildingId = data.selectedBuildingId || null;
     }
 
-    /**
-     * Clean up all buildings
-     */
     destroy() {
         for (const building of this.buildings) {
             building.destroy();
