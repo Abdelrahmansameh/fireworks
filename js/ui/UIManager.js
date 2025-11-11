@@ -1171,7 +1171,7 @@ class UIManager {
     showFloatingSparkle(screenX, screenY, amount) {
         if (!this.showFloatingSparkleEnabled) return;
 
-        const THRESHOLD_X_DIST = 30; 
+        const THRESHOLD_X_DIST = 50; 
 
         if (this.activeFloatingSparkle && document.body.contains(this.activeFloatingSparkle)) {
             const existingX = parseFloat(this.activeFloatingSparkle.style.left || '0');
