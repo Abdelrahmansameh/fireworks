@@ -310,6 +310,25 @@ class UIManager {
                 localStorage.setItem('showFloatingSparkle', this.showFloatingSparkleEnabled);
             });
         }
+
+        const volumeSlider = document.getElementById('music-volume');
+        const volumeValue = document.getElementById('volume-value');
+        if (volumeSlider && volumeValue) {
+            const savedVolume = localStorage.getItem('musicVolume');
+            if (savedVolume !== null) {
+                const volume = parseInt(savedVolume);
+                volumeSlider.value = volume;
+                volumeValue.textContent = volume;
+                this.game.audioManager.setVolume(volume / 100);
+            }
+
+            volumeSlider.addEventListener('input', (e) => {
+                const volume = parseInt(e.target.value);
+                volumeValue.textContent = volume;
+                this.game.audioManager.setVolume(volume / 100);
+                localStorage.setItem('musicVolume', volume);
+            });
+        }
     }
 
     handlePointerDown(e) {

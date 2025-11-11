@@ -88,6 +88,15 @@ class Vector2 {
         const dy = this.y - v.y;
         return Math.sqrt(dx * dx + dy * dy);
     }
+
+    rotate(angleRads) {
+        const cos = Math.cos(angleRads);
+        const sin = Math.sin(angleRads);
+        const x = this.x * cos - this.y * sin;
+        const y = this.x * sin + this.y * cos;
+        this.x = x;
+        this.y = y;
+    }
 }
 
 class Color {

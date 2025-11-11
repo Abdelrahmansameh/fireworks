@@ -9,6 +9,7 @@ import GameProfiler from '../profiling/GameProfiler.js';
 import * as Renderer2D from '../rendering/Renderer.js';
 import Engine from '../engine/Engine.js';
 import BuildingManager from '../buildings/BuildingManager.js';
+import AudioManager from '../audio/AudioManager.js';
 
 class FireworkGame extends Engine {
     constructor() {
@@ -50,6 +51,7 @@ class FireworkGame extends Engine {
         this.buildingManager = new BuildingManager(this);
         this.ui = new UIManager(this);
         this.profiler = new GameProfiler();
+        this.audioManager = new AudioManager();
 
         this.currentState = 'game';
         this.advancedCreatorUnlocked = JSON.parse(localStorage.getItem('advancedCreatorUnlocked') || 'false');
@@ -175,6 +177,8 @@ class FireworkGame extends Engine {
         });
 
         this.ui.initializeUnlockStates(this.unlockStates);
+
+        this.audioManager.init();
 
         this.start();
 

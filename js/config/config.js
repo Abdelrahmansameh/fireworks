@@ -3,13 +3,12 @@ const FIREWORK_CONFIG = {
     trailMaxPoints: 20,
     trailDistBetweenPoints: 5,
     trailWidth: 2.0,
-    baseSpeed: 500,
-    baseFriction: 2.0,
+    baseSpeed: 800,
+    baseFriction: 4.0,
     verticalFrictionMultiplier: .9,
-    gravityMultiplier: 5,
+    gravityMultiplier: 9,
     particleSize: 5.0,
-    particleDensity: 100,
-    ascentSpeed: 450,
+    ascentSpeed: 750,
     rocketTrailLength: 40,
     rocketSize: .8,
     rocketTrailSize: 1.2,
@@ -21,18 +20,18 @@ const FIREWORK_CONFIG = {
     autoLauncherTexture: 'assets/launcher.png',
     patternGravities: {
         spherical: 9.81,
-        solidsphere: 30,
+        solidsphere: 20,
         ring: 18.0,
         heart: 50.0,
         star: 13,
         brocade: 10,
         burst: 35,
-        palm: 25.0,
-        willow: 100,
+        palm: 40.0,
+        willow: 30,
         christmasTree: 20.4,
         brokenHeart: 2,
         spinner: 2,
-        helix: 0.3,
+        helix: 150,
         default: 0.7
     },
     patternFriction: {
@@ -42,14 +41,19 @@ const FIREWORK_CONFIG = {
         heart: 2.0,
         star: 2.0,
         brocade: 2.0,
-        burst: 2.0,
-        palm: 3.0,
+        burst: 1.0,
+        palm: 5.0,
         willow: 2,
         christmasTree: 1.5,
         brokenHeart: 2.0,
         spinner: 0.0,
-        helix: 0.0,
+        helix: 0,
         default: 0.0
+    },
+    patternParticleCounts: {
+        willow: 50,
+        helix: 300,
+        default: 100
     },
     supportedShapes: ['sphere', 'star', 'ring', 'crystalDroplet', 'sliceBurst']
 };
@@ -61,7 +65,7 @@ const AUTO_SPAWN_INTERVAL_RATIO = 0.9;
 
 const DEFAULT_RECIPE_COMPONENTS = [{
     pattern: 'spherical',
-    color: '#b05111',
+    color: '#4ba0d1',
     size: 0.3,
     lifetime: 3.7,
     shape: 'ring',

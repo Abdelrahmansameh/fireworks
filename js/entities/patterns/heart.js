@@ -12,12 +12,12 @@ const heartRecipe = new ParticleRecipe({
         const angle = Math.atan2(yOffset, xOffset);
         const magnitude = ctx.speed * Math.sqrt(xOffset * xOffset + yOffset * yOffset) * 0.07;
         const risingVelocity = 300;
-
+        const randomSpread = (Math.random() - 0.5) * 10;
         return {
             pos: ctx.rocketPos.clone(),
             vel: new Renderer2D.Vector2(
-                Math.cos(angle) * magnitude,
-                Math.sin(angle) * magnitude + risingVelocity
+                Math.cos(angle) * magnitude + randomSpread,
+                Math.sin(angle) * magnitude + risingVelocity + randomSpread
             ),
             accel: new Renderer2D.Vector2(),
         };

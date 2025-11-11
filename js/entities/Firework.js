@@ -279,8 +279,8 @@ class Firework {
         this.trailParticles = [];
 
         this.components.forEach(component => {
-            const particleCount = Math.floor(FIREWORK_CONFIG.particleDensity);
             const pattern = component.pattern;
+            const particleCount = Math.floor(FIREWORK_CONFIG.patternParticleCounts[pattern] || FIREWORK_CONFIG.patternParticleCounts.default);
             const gravity = FIREWORK_CONFIG.gravityMultiplier * FIREWORK_CONFIG.patternGravities[pattern] || FIREWORK_CONFIG.patternGravities.default;
             const friction = FIREWORK_CONFIG.patternFriction[pattern] + FIREWORK_CONFIG.baseFriction;
             const speed = FIREWORK_CONFIG.baseSpeed;
@@ -311,7 +311,7 @@ class Firework {
                                         0.6,
                                         component.glowStrength,
                                         0);
-
+            const randomSeed = Math.random() * 2 - 1;
             const sharedCtx = {
                 rocketPos,
                 particleCount,
@@ -323,6 +323,7 @@ class Firework {
                 component,
                 secondaryColor,
                 primaryColor: color,
+                randomSeed
             };
 
             const recipe = recipeMap[pattern];
