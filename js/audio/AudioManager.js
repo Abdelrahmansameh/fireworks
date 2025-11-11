@@ -2,6 +2,7 @@ class AudioManager {
     constructor() {
         this.backgroundMusic = null;
         this.initialized = false;
+        this.wasPlayingBeforeHidden = false;
     }
 
     init() {
@@ -16,7 +17,24 @@ class AudioManager {
 
         this.playBackgroundMusic();
 
+        this.handleVisibilityChange = this.handleVisibilityChange.bind(this);
+        document.addEventListener('visibilitychange', this.handleVisibilityChange);
+
         this.initialized = true;
+    }
+
+    handleVisibilityChange() {
+        if (document.hidden) {
+            if (this.backgroundMusic && !this.backgroundMusic.paused) {
+                this.wasPlayingBeforeHidden = true;
+                this.pauseBackgroundMusic();
+            }
+        } else {
+            if (this.wasPlayingBeforeHidden) {
+                this.resumeBackgroundMusic();
+                this.wasPlayingBeforeHidden = false;
+            }
+        }
     }
 
     playBackgroundMusic() {
@@ -53,6 +71,9 @@ class AudioManager {
     }
 
     dispose() {
+        // Remove visibility change listener
+        document.removeEventListener('visibilitychange', this.handleVisibilityChange);
+        
         if (this.backgroundMusic) {
             this.backgroundMusic.pause();
             this.backgroundMusic.src = '';
