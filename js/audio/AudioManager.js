@@ -11,7 +11,7 @@ class AudioManager {
         this.backgroundMusic.loop = true;
         
         const savedVolume = localStorage.getItem('musicVolume');
-        const volume = savedVolume !== null ? parseInt(savedVolume) / 100 : 0.5;
+        const volume = savedVolume !== null ? parseInt(savedVolume) / 100 : 0.15;
         this.backgroundMusic.volume = volume;
 
         this.playBackgroundMusic();
