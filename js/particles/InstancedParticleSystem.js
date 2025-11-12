@@ -7,36 +7,16 @@ class InstancedParticleSystem {
         this.profiler = profiler;
         this.renderer = renderer;
         this.glows = [];
+        this.pendingTrails = []; // Queue for trail particles to spawn after update loop
 
         this.renderer.loadTexture('assets/glow.png', 'glow');
 
         this.maxParticles = FIREWORK_CONFIG.maxParticles;
-        this.maxTrailPoints = FIREWORK_CONFIG.trailMaxPoints;
-        this.trailWidth = FIREWORK_CONFIG.trailWidth;
-        this.trailDistBetweenPoints = FIREWORK_CONFIG.trailDistBetweenPoints;
         this.meshes = {};
         this.activeCounts = {};
         this.instanceData = {};
-        this.trailPoints = {};
         this.particleUpdateFns = {};
         this.particleState = {};
-
-        const quadVerts = new Float32Array([
-            -0.5, 0,    // bottom-left
-            0.5, 0,    // bottom-right
-            0.5, 1,    // top-right
-            -0.5, 1,    // top-left
-        ]);
-        const quadIdx = new Uint16Array([0, 1, 2, 0, 2, 3]);
-
-        this.trailGroup = this.renderer.createInstancedGroup({
-            vertices: quadVerts,
-            indices: quadIdx,
-            maxInstances: this.maxParticles,
-            blendMode: BlendMode.ADDITIVE,
-            zIndex: 5,
-            useGlow: false,
-        });
 
         const geometries = {
             sphere: Renderer2D.buildCircle(1),
@@ -56,8 +36,7 @@ class InstancedParticleSystem {
                 zIndex: 10,
             });
             this.activeCounts[shape] = 0;
-            this.instanceData[shape] = new Float32Array(this.maxParticles * 35).fill(0);
-            this.trailPoints[shape] = new Float32Array(this.maxParticles * this.maxTrailPoints * 2);
+            this.instanceData[shape] = new Float32Array(this.maxParticles * 24).fill(0);
             this.particleUpdateFns[shape] = new Array(this.maxParticles).fill(null);
             this.particleState[shape] = {
                 position: new Vector2(),
@@ -82,30 +61,27 @@ class InstancedParticleSystem {
         this.initialLifetimeIdx = 13;
         this.gravityIdx = 14;
         this.rotationIdx = 15;
-        this.frictionIdx = 16;        
-        // trail properties
-        this.hasTrailIdx = 17;
-        this.trailLengthIdx = 18;
-        this.trailWidthIdx = 19;
-        this.trailHeadIndexIdx = 20;
-        this.trailPointsCountIdx = 21;
-        this.trailGlowStrengthIdx = 22;
-        this.trailBlurStrengthIdx = 23;        
+        this.frictionIdx = 16;
         // gradient properties
-        this.enableColorGradientIdx = 24;
-        this.originalColorRIdx = 25;
-        this.originalColorGIdx = 26;
-        this.originalColorBIdx = 27;
-        this.originalColorAIdx = 28;
-        this.gradientFinalColorRIdx = 29;
-        this.gradientFinalColorGIdx = 30;
-        this.gradientFinalColorBIdx = 31;
-        this.gradientFinalColorAIdx = 32;
-        this.gradientStartTimeIdx = 33;
-        this.gradientDurationIdx = 34;
+        this.enableColorGradientIdx = 17;
+        this.originalColorRIdx = 18;
+        this.originalColorGIdx = 19;
+        this.originalColorBIdx = 20;
+        this.originalColorAIdx = 21;
+        this.gradientFinalColorRIdx = 22;
+        this.gradientFinalColorGIdx = 23;
+        this.gradientFinalColorBIdx = 24;
+        this.gradientFinalColorAIdx = 25;
+        this.gradientStartTimeIdx = 26;
+        this.gradientDurationIdx = 27;
 
-        this.strideFloats = 35;
-    }    
+        // Trail system indices
+        this.trailTimerIdx = 28;           // accumulator for spawn timing
+        this.isTrailParticleIdx = 29;      // 1.0 if this IS a trail
+        this.trailCurrentCountIdx = 30;    // current trail count
+
+        this.strideFloats = 31;
+    }
     addGlow(position, color, initialSize, finalSize, lifetime, initialAlpha, finalAlpha) {
         const glowTexture = this.renderer.getTexture('glow');
         if (!glowTexture) return;
@@ -114,9 +90,9 @@ class InstancedParticleSystem {
             ...Renderer2D.buildTexturedSquare(initialSize, initialSize),
             texture: glowTexture,
             position: new Vector2(position.x, position.y),
-            color: new Color(color.r, color.g, color.b, 0.5), 
+            color: new Color(color.r, color.g, color.b, 0.5),
             blendMode: BlendMode.ADDITIVE,
-            zIndex: -500 
+            zIndex: -500
         });
 
         this.glows.push({
@@ -138,9 +114,6 @@ class InstancedParticleSystem {
         gravity,
         shape = 'circle',
         acceleration = new Vector2(),
-        enableTrail = true,
-        trailLength = 4,
-        trailWidth = 1.5,
         friction = FIREWORK_CONFIG.baseFriction,
         glowStrength = 0,
         blurStrength = 0,
@@ -148,17 +121,11 @@ class InstancedParticleSystem {
         enableColorGradient = false,
         gradientFinalColor = null,
         gradientStartTime = 0.0,
-        gradientDuration = 1.0) 
-        {
+        gradientDuration = 1.0,
+        isTrailParticle = false) {
         if (!this.meshes[shape]) shape = 'circle';
         const idx = this.activeCounts[shape];
         if (idx >= this.maxParticles) return -1;
-
-        if (enableTrail) {
-            trailLength = Math.max(1, Math.round(trailLength));
-        }
-
-        trailLength = Math.min(trailLength, this.maxTrailPoints);
 
         const base = idx * this.strideFloats;
         const d = this.instanceData[shape];
@@ -195,23 +162,6 @@ class InstancedParticleSystem {
             blurStrength
         );
 
-        if (enableTrail) {
-            d[base + this.hasTrailIdx] = 1.0;
-            d[base + this.trailLengthIdx] = trailLength;
-            d[base + this.trailWidthIdx] = trailWidth;
-            d[base + this.trailHeadIndexIdx] = 1;
-            d[base + this.trailPointsCountIdx] = 1;
-            d[base + this.trailGlowStrengthIdx] = glowStrength;
-            d[base + this.trailBlurStrengthIdx] = blurStrength;
-
-            const trailBuffer = this.trailPoints[shape];
-            const trailStartIndex = idx * this.maxTrailPoints * 2;
-            trailBuffer[trailStartIndex] = position.x;
-            trailBuffer[trailStartIndex + 1] = position.y;
-        } 
-        else {
-            d[base + this.hasTrailIdx] = 0.0;
-        }       
         if (enableColorGradient && gradientFinalColor) {
             d[base + this.enableColorGradientIdx] = 1.0;
             d[base + this.originalColorRIdx] = color.r;
@@ -224,10 +174,15 @@ class InstancedParticleSystem {
             d[base + this.gradientFinalColorAIdx] = gradientFinalColor.a;
             d[base + this.gradientStartTimeIdx] = gradientStartTime;
             d[base + this.gradientDurationIdx] = gradientDuration;
-        } 
+        }
         else {
             d[base + this.enableColorGradientIdx] = 0.0;
         }
+
+        // Initialize trail data
+        d[base + this.trailTimerIdx] = 0.0;
+        d[base + this.isTrailParticleIdx] = isTrailParticle ? 1.0 : 0.0;
+        d[base + this.trailCurrentCountIdx] = 0.0;
 
         this.particleUpdateFns[shape][idx] = updateFn;
         this.activeCounts[shape]++;
@@ -247,9 +202,9 @@ class InstancedParticleSystem {
                 this.glows.splice(i, 1);
             } else {
                 const lifePercent = glow.lifetime / glow.initialLifetime;
-                glow.shape.color.a = glow.initialAlpha + ((glow.finalAlpha - glow.initialAlpha) * (1-lifePercent));
-                const currentSize = glow.initialSize + ((glow.finalSize - glow.initialSize) * (1-lifePercent));
-                glow.shape.scale.set(currentSize, currentSize); 
+                glow.shape.color.a = glow.initialAlpha + ((glow.finalAlpha - glow.initialAlpha) * (1 - lifePercent));
+                const currentSize = glow.initialSize + ((glow.finalSize - glow.initialSize) * (1 - lifePercent));
+                glow.shape.scale.set(currentSize, currentSize);
             }
         }
 
@@ -257,7 +212,6 @@ class InstancedParticleSystem {
             if (!this.instanceData[shape]) return;
 
             const d = this.instanceData[shape];
-            const trailBuffer = this.trailPoints[shape];
             const grp = this.meshes[shape];
             const gpu = grp.instanceData;
             const sStr = this.strideFloats;
@@ -286,21 +240,14 @@ class InstancedParticleSystem {
                 d[sBase + this.lifetimeIdx] -= delta;
                 if (d[sBase + this.lifetimeIdx] <= 0) {
                     const lastIdx = count - 1;
-                    const trailSegmentSize = this.maxTrailPoints * 2;
 
                     if (i !== lastIdx) {
                         const sLast = lastIdx * sStr, gLast = lastIdx * gStr;
                         d.set(d.subarray(sLast, sLast + sStr), sBase);
                         gpu.set(gpu.subarray(gLast, gLast + gStr), gBase);
-
-                        const lastTrailOffset = lastIdx * trailSegmentSize;
-                        const deadTrailOffset = i * trailSegmentSize;
-                        trailBuffer.copyWithin(deadTrailOffset, lastTrailOffset, lastTrailOffset + trailSegmentSize);
                         updateFns[i] = updateFns[lastIdx];
                     }
 
-                    const lastTrailOffset = lastIdx * trailSegmentSize;
-                    trailBuffer.fill(0, lastTrailOffset, lastTrailOffset + trailSegmentSize);
                     updateFns[lastIdx] = null;
 
                     count--; i--;
@@ -316,31 +263,91 @@ class InstancedParticleSystem {
                 d[sBase + this.velocityIdx] *= hf;
                 d[sBase + this.velocityIdx + 1] *= vf;
                 d[sBase + this.positionIdx] += d[sBase + this.velocityIdx] * delta;
-                d[sBase + this.positionIdx + 1] += d[sBase + this.velocityIdx + 1] * delta;                
+                d[sBase + this.positionIdx + 1] += d[sBase + this.velocityIdx + 1] * delta;
                 const n = d[sBase + this.lifetimeIdx] / d[sBase + this.initialLifetimeIdx];
-                d[sBase + this.colorIdx + 3] = (n * n) * (2 * Math.random());               
+                d[sBase + this.colorIdx + 3] = (n * n) * (2 * Math.random());
                 if (d[sBase + this.enableColorGradientIdx] > 0.5) {
-                    const normalizedLifetime = 1 - n; 
+                    const normalizedLifetime = 1 - n;
                     const gradientStartTime = d[sBase + this.gradientStartTimeIdx];
                     const gradientDuration = d[sBase + this.gradientDurationIdx];
-                    
+
                     const safeDuration = Math.max(0.01, gradientDuration);
                     const gradientEndTime = gradientStartTime + safeDuration;
 
                     if (normalizedLifetime >= gradientStartTime && normalizedLifetime <= gradientEndTime) {
                         const gradientProgress = (normalizedLifetime - gradientStartTime) / safeDuration;
-                        
+
                         const originalR = d[sBase + this.originalColorRIdx];
                         const originalG = d[sBase + this.originalColorGIdx];
                         const originalB = d[sBase + this.originalColorBIdx];
-                        
+
                         const finalR = d[sBase + this.gradientFinalColorRIdx];
                         const finalG = d[sBase + this.gradientFinalColorGIdx];
                         const finalB = d[sBase + this.gradientFinalColorBIdx];
-                        
+
                         d[sBase + this.colorIdx] = originalR + (finalR - originalR) * gradientProgress;
                         d[sBase + this.colorIdx + 1] = originalG + (finalG - originalG) * gradientProgress;
                         d[sBase + this.colorIdx + 2] = originalB + (finalB - originalB) * gradientProgress;
+                    }
+                }
+
+                // Trail spawning logic - queue trails instead of spawning immediately
+                const isTrail = d[sBase + this.isTrailParticleIdx] > 0.5;
+
+                if (FIREWORK_CONFIG.trails.enabled && !isTrail) {
+                    d[sBase + this.trailTimerIdx] += delta;
+                    const currentCount = d[sBase + this.trailCurrentCountIdx];
+
+                    if (d[sBase + this.trailTimerIdx] >= FIREWORK_CONFIG.trails.spawnRate
+                        && currentCount < FIREWORK_CONFIG.trails.maxCount) {
+                        d[sBase + this.trailTimerIdx] = 0.0;
+                        d[sBase + this.trailCurrentCountIdx]++;
+
+                        // Queue trail particle for spawning after the update loop
+                        const trailSize = FIREWORK_CONFIG.trails.size;
+                        const trailColor = new Color(
+                            d[sBase + this.colorIdx],
+                            d[sBase + this.colorIdx + 1],
+                            d[sBase + this.colorIdx + 2],
+                            d[sBase + this.colorIdx + 3] * FIREWORK_CONFIG.trails.alphaMultiplier
+                        );
+
+                        // Get the particle's velocity to determine the trail direction
+                        const velX = d[sBase + this.velocityIdx];
+                        const velY = d[sBase + this.velocityIdx + 1];
+                        const speed = Math.sqrt(velX * velX + velY * velY);
+
+                        // Calculate spawn position along a line opposite to velocity
+                        // Spawn along a line representing the particle's "past"
+
+                        let trailSpawnX = d[sBase + this.positionIdx];
+                        let trailSpawnY = d[sBase + this.positionIdx + 1];
+                        /*
+                        if (speed > 0.01) {
+                                                const trailLineLength = Math.max(20, speed * 0.05); // Scale with velocity
+                        const randomOffset = Math.random(); // 0 to 1
+                        
+                            // Normalize velocity and reverse it
+                            const dirX = -velX / speed;
+                            const dirY = -velY / speed;
+                            
+                            // Spawn along the line from current position backwards
+                            trailSpawnX += dirX * trailLineLength * randomOffset;
+                            trailSpawnY += dirY * trailLineLength * randomOffset;
+                        }*/
+
+                        // Generate random initial velocity
+                        const velocitySpread = FIREWORK_CONFIG.trails.velocitySpread;
+                        const randomVelX = (Math.random() - 0.5) * 2 * velocitySpread;
+                        const randomVelY = (Math.random() - 0.5) * 2 * velocitySpread;
+
+                        this.pendingTrails.push({
+                            position: new Vector2(trailSpawnX, trailSpawnY),
+                            velocity: new Vector2(randomVelX, randomVelY),
+                            color: trailColor,
+                            size: trailSize,
+                            lifetime: FIREWORK_CONFIG.trails.lifetime * n
+                        });
                     }
                 }
 
@@ -353,136 +360,35 @@ class InstancedParticleSystem {
                 gpu[gBase + 6] = d[sBase + this.colorIdx + 1];
                 gpu[gBase + 7] = d[sBase + this.colorIdx + 2];
                 gpu[gBase + 8] = d[sBase + this.colorIdx + 3];
-
-                if (d[sBase + this.hasTrailIdx] > 0.5) {
-                    const trailLength = d[sBase + this.trailLengthIdx];
-                    const trailStartIndex = i * this.maxTrailPoints * 2;
-                    let headIdx = d[sBase + this.trailHeadIndexIdx];
-
-                    const lastPointLocalIdx = (headIdx - 1 + trailLength) % trailLength;
-                    const lastPointAbsIdx = trailStartIndex + lastPointLocalIdx * 2;
-
-                    const dx = d[sBase + this.positionIdx] - trailBuffer[lastPointAbsIdx];
-                    const dy = d[sBase + this.positionIdx + 1] - trailBuffer[lastPointAbsIdx + 1];
-                    const dist = Math.hypot(dx, dy);
-
-                    if (dist > this.trailDistBetweenPoints) {
-                        const newPointAbsIdx = trailStartIndex + headIdx * 2;
-                        trailBuffer[newPointAbsIdx] = d[sBase + this.positionIdx];
-                        trailBuffer[newPointAbsIdx + 1] = d[sBase + this.positionIdx + 1];
-
-                        d[sBase + this.trailHeadIndexIdx] = (headIdx + 1) % trailLength;
-                        d[sBase + this.trailPointsCountIdx] = Math.min(trailLength, d[sBase + this.trailPointsCountIdx] + 1);
-                    }
-                }
             }
 
             this.activeCounts[shape] = count;
             grp.instanceCount = count;
         });
 
-        this.profiler?.startFunction?.('updateTrails');
-        this.trailGroup.clear();
-        FIREWORK_CONFIG.supportedShapes.forEach(shape => {
-            if (!this.instanceData[shape]) return;
-            const d = this.instanceData[shape];
-            const trailBuffer = this.trailPoints[shape];
-            const count = this.activeCounts[shape];
-            const sStr = this.strideFloats;
-
-            for (let i = 0; i < count; i++) {
-                const sBase = i * sStr;
-                if (d[sBase + this.hasTrailIdx] < 0.5) continue;
-
-                const lifetime = d[sBase + this.lifetimeIdx];
-                const initialLifetime = d[sBase + this.initialLifetimeIdx];
-                const trailWidth = d[sBase + this.trailWidthIdx];
-                const trailLength = d[sBase + this.trailLengthIdx];
-                const pointsCount = d[sBase + this.trailPointsCountIdx];
-                const headIdx = d[sBase + this.trailHeadIndexIdx];               
-                const trailStartIndex = i * this.maxTrailPoints * 2;                
-                let baseColorR, baseColorG, baseColorB;
-                let currentParticleColorR, currentParticleColorG, currentParticleColorB;
-                let hasGradient = false;
-                let trailGradientProgress = 0;
-                
-                if (d[sBase + this.enableColorGradientIdx] > 0.5) {
-                    baseColorR = d[sBase + this.originalColorRIdx];
-                    baseColorG = d[sBase + this.originalColorGIdx];
-                    baseColorB = d[sBase + this.originalColorBIdx];
-                    
-                    currentParticleColorR = d[sBase + this.colorIdx];
-                    currentParticleColorG = d[sBase + this.colorIdx + 1];
-                    currentParticleColorB = d[sBase + this.colorIdx + 2];
-                    
-                    const normalizedLifetime = 1 - (lifetime / initialLifetime);
-                    const gradientStartTime = d[sBase + this.gradientStartTimeIdx];
-                    const gradientDuration = d[sBase + this.gradientDurationIdx];
-                    const trailGradientDuration = gradientDuration * 2; 
-                    
-                    if (normalizedLifetime >= gradientStartTime) {
-                        trailGradientProgress = Math.min(1, (normalizedLifetime - gradientStartTime) / trailGradientDuration);
-                        hasGradient = true;
-                    }
-                } 
-                else {
-                    baseColorR = d[sBase + this.colorIdx];
-                    baseColorG = d[sBase + this.colorIdx + 1];
-                    baseColorB = d[sBase + this.colorIdx + 2];
-                }
-
-                const lifeNorm = lifetime / initialLifetime;
-                const fadeAlpha = lifeNorm * lifeNorm * lifeNorm;                for (let j = 0; j < pointsCount - 1; j++) {
-                    const p1_local_idx = (headIdx - pointsCount + j + trailLength) % trailLength;
-                    const p2_local_idx = (headIdx - pointsCount + j + 1 + trailLength) % trailLength;
-
-                    const p1_abs_idx = trailStartIndex + p1_local_idx * 2;
-                    const p2_abs_idx = trailStartIndex + p2_local_idx * 2;
-
-                    const ax = trailBuffer[p1_abs_idx];
-                    const ay = trailBuffer[p1_abs_idx + 1];
-                    const bx = trailBuffer[p2_abs_idx];
-                    const by = trailBuffer[p2_abs_idx + 1];
-
-                    const dx = bx - ax, dy = by - ay;
-                    const len = Math.hypot(dx, dy);
-                    if (len < 0.001) continue;
-
-                    const ang = Math.atan2(dy, dx) - Math.PI * 0.5;
-                    const mx = (ax + bx) * 0.5;                    const my = (ay + by) * 0.5;
-                    
-                    let segmentColorR, segmentColorG, segmentColorB;
-                    if (hasGradient && trailGradientProgress > 0) {
-
-                        const segmentPositionFromTail = j / Math.max(1, pointsCount - 2);
-
-                        if (segmentPositionFromTail >= (1 - trailGradientProgress)) {
-                            segmentColorR = currentParticleColorR;
-                            segmentColorG = currentParticleColorG;
-                            segmentColorB = currentParticleColorB;
-                        } 
-                        else {
-                            segmentColorR = baseColorR;
-                            segmentColorG = baseColorG;
-                            segmentColorB = baseColorB;
-                        }
-                    } 
-                    else {
-                        segmentColorR = baseColorR;
-                        segmentColorG = baseColorG;
-                        segmentColorB = baseColorB;
-                    }
-
-                    this.trailGroup.addInstanceRaw(
-                        mx, my,
-                        ang,
-                        trailWidth, len,
-                        segmentColorR, segmentColorG, segmentColorB, fadeAlpha * 2 * Math.random(), d[sBase + this.trailGlowStrengthIdx], d[sBase + this.trailBlurStrengthIdx]
-                    );
-                }
-            }
-        });
-        this.profiler?.endFunction?.('updateTrails');
+        // Spawn all queued trail particles after the main update loop
+        while (this.pendingTrails.length > 0) {
+            const trail = this.pendingTrails.pop();
+            this.addParticle(
+                trail.position,
+                trail.velocity,
+                trail.color,
+                trail.size,
+                trail.lifetime,
+                FIREWORK_CONFIG.trails.gravity,
+                FIREWORK_CONFIG.trails.shape,
+                new Vector2(0, 0),
+                FIREWORK_CONFIG.trails.friction,
+                0, // no glow
+                0, // no blur
+                null, // no update function
+                false, // no gradient
+                null,
+                0.0,
+                1.0,
+                true // this IS a trail particle
+            );
+        }
 
         this.profiler?.endFunction?.('particleSystemUpdate');
     }
@@ -491,14 +397,10 @@ class InstancedParticleSystem {
         Object.keys(this.activeCounts).forEach(shape => {
             this.activeCounts[shape] = 0;
             if (this.meshes[shape]) this.meshes[shape].instanceCount = 0;
-            if (this.trailPoints[shape]) {
-                this.trailPoints[shape].fill(0);
-            }
             if (this.particleUpdateFns[shape]) {
                 this.particleUpdateFns[shape].fill(null);
             }
         });
-        this.trailGroup.clear();
     }
 
     dispose() {
@@ -509,7 +411,6 @@ class InstancedParticleSystem {
         FIREWORK_CONFIG.supportedShapes.forEach(shape =>
             this.renderer.removeInstancedGroup(this.meshes[shape])
         );
-        this.renderer.removeInstancedGroup(this.trailGroup);
     }
 }
 

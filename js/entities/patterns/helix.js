@@ -5,10 +5,10 @@ const helixRecipe = new ParticleRecipe({
     name: 'helix',
     count: ctx => ctx.particleCount,
     calcInitialState: (index, ctx) => {
-        const helixIndex = Math.floor(index / 100);
+        const helixIndex = Math.floor(index / 50);
         const randomOffset = (helixIndex * 20 );
         const subIndex = index % 100;
-        const helixRadius = 30 * ctx.spread;
+        const helixRadius = 50 * ctx.spread;
         const riseSpeed = 0; //ctx.speed * 0.15 * ctx.spread;
         const rotationSpeed = 2;
         const particlesPerStream = Math.floor(100 / 2);
@@ -18,7 +18,7 @@ const helixRecipe = new ParticleRecipe({
         const angle = t + stream * Math.PI;
         const randomSpread = (Math.random() - 0.5) * 0.1;
         const minVelocity = riseSpeed * 10 +  (1 + randomSpread);
-        const maxVelocity = riseSpeed * 10 +  (1 + randomSpread) + particlesPerStream *15 * ctx.spread;
+        const maxVelocity = riseSpeed * 10 +  (1 + randomSpread) + particlesPerStream *25 * ctx.spread;
         const vel = new Renderer2D.Vector2(
            randomOffset -Math.sin(angle) * rotationSpeed + Math.cos(angle) * helixRadius * (1 + randomSpread) + -Math.sin(angle) * rotationSpeed + Math.cos(angle) * helixRadius * (1 + randomSpread) * 3,
             minVelocity + (maxVelocity - minVelocity) * (i / particlesPerStream) -40

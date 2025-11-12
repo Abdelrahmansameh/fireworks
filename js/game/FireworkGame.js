@@ -21,7 +21,6 @@ class FireworkGame extends Engine {
 
         this.recipes = [];
         this.currentRecipeComponents = [];
-        this.currentTrailEffect = 'sparkle';
         this.currentBackground = BACKGROUND_IMAGES[0].path;
         this.fireworkCount = 0;
         this.autoLauncherCost = AUTO_LAUNCHER_COST_BASE;
@@ -388,7 +387,6 @@ class FireworkGame extends Engine {
             totalSparklesPerSec.toFixed(2), 
             this.fireworkCount,
             launcherCount,
-            this.currentTrailEffect,
             this.calculateAutoLauncherCost(launcherCount)
         );
     }
@@ -442,7 +440,6 @@ class FireworkGame extends Engine {
         localStorage.setItem('autoLauncherCost', this.autoLauncherCost);
         localStorage.setItem('sparkles', this.getSparkles());
         localStorage.setItem('fireworkRecipes', JSON.stringify(this.recipes));
-        localStorage.setItem('currentTrailEffect', this.currentTrailEffect);
 
         localStorage.setItem('buildingManagerData', JSON.stringify(this.buildingManager.serialize()));
         
@@ -505,7 +502,7 @@ class FireworkGame extends Engine {
     }
 
     // dont use every frame because js is weird 
-    launchFireworkAt(x, targetY = null, minY = null, recipeComponents = null, trailEffect = null) {
+    launchFireworkAt(x, targetY = null, minY = null, recipeComponents = null) {
         const components = recipeComponents || this.currentRecipeComponents;
 
         if (components.length === 0) {
@@ -514,11 +511,10 @@ class FireworkGame extends Engine {
         }
 
         const y = minY || GAME_BOUNDS.WORLD_LAUNCHER_Y;
-        const effect = trailEffect || this.currentTrailEffect;
         const spawnX = x + (Math.random() - 0.5) * FIREWORK_CONFIG.autoLauncherMeshWidth;
         const spawnY = y + FIREWORK_CONFIG.autoLauncherMeshHeight / 2;
 
-        this.launch(spawnX, spawnY, components, effect, Math.max(targetY, minY));
+        this.launch(spawnX, spawnY, components, Math.max(targetY, minY));
         this.fireworkCount++;
         const sparkleAmount = components.reduce((sum, c) => sum + this.getComponentSparkles(c), 0);
         this.addSparkles(sparkleAmount);
@@ -527,8 +523,8 @@ class FireworkGame extends Engine {
     }
 
     // dont use every frame because js is weird 
-    launch(x, y, components, trailEffect, targetY = null) {
-        const firework = new Firework(x, y, components, this.renderer2D, trailEffect, this.particleSystem, targetY);
+    launch(x, y, components, targetY = null) {
+        const firework = new Firework(x, y, components, this.renderer2D, this.particleSystem, targetY);
         this.gameState.fireworks.push(firework);
     }
 
@@ -570,7 +566,6 @@ class FireworkGame extends Engine {
         this.ui.hideActiveTab();
         this.fireworkCount = 0;
         this.recipes = [];
-        this.currentTrailEffect = 'sparkle';
         this.currentRecipeComponents = [...DEFAULT_RECIPE_COMPONENTS];
         this.baseSparkleMultiplier = 1;
         this.patternSparkleMultipliers = { default: 1 };
@@ -664,12 +659,10 @@ class FireworkGame extends Engine {
 
     saveCurrentRecipeComponents() {
         localStorage.setItem('currentRecipeComponents', JSON.stringify(this.currentRecipeComponents));
-        localStorage.setItem('currentTrailEffect', this.currentTrailEffect);
     }
 
     loadCurrentRecipe() {
         const savedRecipeComponents = localStorage.getItem('currentRecipeComponents');
-        const savedTrailEffect = localStorage.getItem('currentTrailEffect');
         const savedRecipeName = localStorage.getItem('currentRecipeName');
         if (savedRecipeComponents) {
             this.currentRecipeComponents = JSON.parse(savedRecipeComponents);
@@ -683,21 +676,9 @@ class FireworkGame extends Engine {
                 if (!('secondaryColor' in component)) {
                     component.secondaryColor = '#00ff00';
                 }
-                if (!('enableTrail' in component)) {
-                    component.enableTrail = false;
-                }
-                if (!('trailLength' in component)) {
-                    component.trailLength = 4;
-                }
-                if (!('trailWidth' in component)) {
-                    component.trailWidth = 1.5;
-                }
             });
         } else {
             this.currentRecipeComponents = [...DEFAULT_RECIPE_COMPONENTS];
-        }
-        if (savedTrailEffect) {
-            this.currentTrailEffect = savedTrailEffect;
         }
         if (savedRecipeName) {
             document.getElementById('recipe-name').value = savedRecipeName;
@@ -736,13 +717,11 @@ class FireworkGame extends Engine {
 
         if (existingIndex !== -1) {
             this.recipes[existingIndex].components = this.currentRecipeComponents.map(component => ({ ...component }));
-            this.recipes[existingIndex].trailEffect = this.currentTrailEffect;
             this.showNotification("Recipe overwritten successfully!");
         } else {
             const recipe = {
                 name: recipeName,
-                components: this.currentRecipeComponents.map(component => ({ ...component })),
-                trailEffect: this.currentTrailEffect
+                components: this.currentRecipeComponents.map(component => ({ ...component }))
             };
             this.recipes.push(recipe);
             this.showNotification("Recipe saved successfully!");
@@ -787,9 +766,6 @@ class FireworkGame extends Engine {
                 lifetime: randomValue('lifetime'),
                 shape: possibleShapes[Math.floor(Math.random() * possibleShapes.length)],
                 spread: randomValue('spread'),
-                enableTrail: Math.random() < 0.8,
-                trailLength: randomIntValue('trailLength'),
-                trailWidth: randomValue('trailWidth'),
                 glowStrength: randomValue('glowStrength'),
                 blurStrength: randomValue('blurStrength'),
             };
@@ -817,15 +793,6 @@ class FireworkGame extends Engine {
                     if (!('secondaryColor' in component)) {
                         component.secondaryColor = '#00ff00';
                     }
-                    if (!('enableTrail' in component)) {
-                        component.enableTrail = false;
-                    }
-                    if (!('trailLength' in component)) {
-                        component.trailLength = 4;
-                    }
-                    if (!('trailWidth' in component)) {
-                        component.trailWidth = 1.5;
-                    }
                 });
             });
             this.updateRecipeList();
@@ -840,7 +807,6 @@ class FireworkGame extends Engine {
 
     selectRecipe(index) {
         this.currentRecipeComponents = this.recipes[index].components.map(component => ({ ...component }));
-        this.currentTrailEffect = this.recipes[index].trailEffect;
         this.updateComponentsList();
         this.saveCurrentRecipeComponents();
         document.getElementById('recipe-name').value = this.recipes[index].name;
@@ -906,7 +872,6 @@ class FireworkGame extends Engine {
             autoLauncherCost: this.autoLauncherCost,
             sparkles: this.getSparkles(),
             recipes: this.recipes,
-            currentTrailEffect: this.currentTrailEffect,
             buildingManagerData: this.buildingManager.serialize(),
             currentRecipeComponents: this.currentRecipeComponents,
             backgroundColor: localStorage.getItem('backgroundColor') || '#000000',
@@ -935,7 +900,6 @@ class FireworkGame extends Engine {
         this.fireworkCount = data.fireworkCount || 0;
         this.autoLauncherCost = data.autoLauncherCost || AUTO_LAUNCHER_COST_BASE;
         this.recipes = data.recipes || [];
-        this.currentTrailEffect = data.currentTrailEffect || 'sparkle';
         this.currentRecipeComponents = data.currentRecipeComponents || [...DEFAULT_RECIPE_COMPONENTS];
 
         const bgColor = data.backgroundColor || '#000000';
@@ -1105,8 +1069,6 @@ class FireworkGame extends Engine {
         this.previewParticleSystem = new InstancedParticleSystem(this.previewRenderer, this.profiler);
 
         this.updateComponentsList('creator-components-list');
-        const trailSelect = document.getElementById('creator-trail-effect');
-        if (trailSelect) trailSelect.value = this.currentTrailEffect;
         const nameInput = document.getElementById('creator-recipe-name');
         if (nameInput) nameInput.value = document.getElementById('recipe-name').value;
 
@@ -1131,8 +1093,6 @@ class FireworkGame extends Engine {
         this.previewFirework = null;
 
         this.updateComponentsList('components-list');
-        const trailSelect = document.getElementById('recipe-trail-effect');
-        if (trailSelect) trailSelect.value = this.currentTrailEffect;
 
         this.currentState = 'game';
     }
@@ -1171,7 +1131,7 @@ class FireworkGame extends Engine {
 
         if (!this.previewFirework && !this.previewFireworkTimer) {
             const y = GAME_BOUNDS.WORLD_LAUNCHER_Y;
-            this.previewFirework = new Firework(0, y, this.currentRecipeComponents, this.previewRenderer, this.currentTrailEffect, this.previewParticleSystem, y);
+            this.previewFirework = new Firework(0, y, this.currentRecipeComponents, this.previewRenderer, this.previewParticleSystem, y);
             this.previewFireworkTimer = lifetime;
         }
     }

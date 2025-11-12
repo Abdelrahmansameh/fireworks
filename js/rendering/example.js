@@ -124,6 +124,19 @@ window.addEventListener('DOMContentLoaded', () => {
         isStroke: false
     });
 
+    const burstData = Renderer2D.buildSliceBurst(8, 60, 20);
+    const burstShape = renderer.createNormalShape({
+        vertices: burstData.vertices,
+        indices: burstData.indices,
+        color: new Renderer2D.Color(1, 0.5, 0, 0.8),
+        position: new Renderer2D.Vector2(700, 400),
+        rotation: 0,
+        scale: new Renderer2D.Vector2(10, 10),
+        zIndex: 4,
+        blendMode: Renderer2D.BlendMode.ADDITIVE,
+        isStroke: false
+    });
+
     const smallStarData = Renderer2D.buildStar(5, 0.5, 0.25);
     const starGroup = renderer.createInstancedGroup({
         vertices: smallStarData.vertices,

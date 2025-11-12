@@ -4,10 +4,9 @@ import * as Renderer2D from '../rendering/Renderer.js';
 import { recipeMap } from './patterns/index.js';
 
 class Firework {
-    constructor(x, y, components, renderer, trailEffect, particleSystem, targetY = null) {
+    constructor(x, y, components, renderer, particleSystem, targetY = null) {
         this.components = components;
         this.renderer = renderer;
-        this.trailEffect = trailEffect;
         this.particleSystem = particleSystem;
         this.exploded = false;
         this.alive = true;
@@ -18,23 +17,14 @@ class Firework {
         });
 
         this.rocket = this.createRocket(x, y);
-        this.trailParticles = [];
 
         const minY = GAME_BOUNDS.WORLD_MIN_EXPLOSION_Y;
         const maxY = GAME_BOUNDS.WORLD_MAX_EXPLOSION_Y;
 
         this.targetY = targetY || minY + Math.random() * (maxY - minY);
 
-        this.lastTrailIndex = 0;
-        const geometry = Renderer2D.buildCircle(.8);
-        this.trailInstanceGroup = this.renderer.createInstancedGroup({
-            vertices: geometry.vertices,
-            indices: geometry.indices,
-            maxInstances: FIREWORK_CONFIG.rocketTrailLength,
-            zIndex: 0,
-            blendMode: Renderer2D.BlendMode.ADDITIVE,
-            useGlow: false,
-        });
+        // Initialize rocket trail timer
+        this.rocketTrailTimer = 0;
     }
 
     _hexToRgbA(hex) {
@@ -51,15 +41,15 @@ class Firework {
         if (this.components && this.components.length > 0 && this.components[0].color) {
             return this._hexToRgbA(this.components[0].color);
         }
-        return { r: 1, g: 1, b: 1, a: 1 }; 
+        return { r: 1, g: 1, b: 1, a: 1 };
     }
 
     createRocket(x, y) {
         const geometry = Renderer2D.buildTriangle(6, 10);
-        
+
         const firstComponentColor = this._getFirstComponentColor();
         const rocketColor = new Renderer2D.Color(firstComponentColor.r, firstComponentColor.g, firstComponentColor.b, 1);
-        
+
         const rocket = this.renderer.createNormalShape({
             vertices: geometry.vertices,
             indices: geometry.indices,
@@ -79,16 +69,51 @@ class Firework {
         if (!this.exploded) {
             this.rocket.position.y += FIREWORK_CONFIG.ascentSpeed * delta;
 
-            if (this.trailParticles.length < FIREWORK_CONFIG.rocketTrailLength) {
-                this.createTrailParticle(this.rocket.position.x, this.rocket.position.y);
-            }
-            else {
-                for (let i = 0; i < this.trailParticles.length; i++) {
-                    this.trailInstanceGroup.moveInstance(i, 0, FIREWORK_CONFIG.ascentSpeed * delta);
+            // Spawn rocket trail particles
+            if (FIREWORK_CONFIG.rocketTrails.enabled) {
+                this.rocketTrailTimer += delta;
+
+                if (this.rocketTrailTimer >= FIREWORK_CONFIG.rocketTrails.spawnRate) {
+                    this.rocketTrailTimer = 0;
+
+                    for (let i = 0; i < FIREWORK_CONFIG.rocketTrails.perBurst; i++) {
+                        // Get rocket color
+                        const rocketColor = this._getFirstComponentColor();
+                        const trailColor = new Renderer2D.Color(
+                            rocketColor.r,
+                            rocketColor.g,
+                            rocketColor.b,
+                            rocketColor.a * FIREWORK_CONFIG.rocketTrails.alphaMultiplier
+                        );
+
+                        // Generate random velocity spread
+                        const spread = FIREWORK_CONFIG.rocketTrails.velocitySpread;
+                        const randomVelX = (Math.random() - 0.5) * 2 * spread;
+                        const randomVelY = (Math.random() - 0.5) * 2 * spread;
+
+                        // Spawn trail particle at rocket position
+                        this.particleSystem.addParticle(
+                            this.rocket.position.clone(),
+                            new Renderer2D.Vector2(randomVelX, randomVelY),
+                            trailColor,
+                            FIREWORK_CONFIG.rocketTrails.size,
+                            FIREWORK_CONFIG.rocketTrails.lifetime,
+                            FIREWORK_CONFIG.rocketTrails.gravity,
+                            FIREWORK_CONFIG.rocketTrails.shape,
+                            new Renderer2D.Vector2(0, 0),
+                            FIREWORK_CONFIG.rocketTrails.friction,
+                            0, // no glow
+                            0, // no blur
+                            null, // no update function
+                            false, // no gradient
+                            null,
+                            0.0,
+                            1.0,
+                            true // this IS a trail particle (don't spawn trails from trails)
+                        );
+                    }
                 }
             }
-
-            this.updateTrailParticles(delta);
 
             if (this.rocket.position.y >= this.targetY) {
                 this.explode();
@@ -101,148 +126,6 @@ class Firework {
                 }
             });
         }
-    }
-
-    createTrailParticle(x, y) {
-        switch (this.trailEffect) {
-            case 'sparkle':
-                const spread = 0.3;
-                const offsetX = x + spread * Math.random();
-                const offsetY = y + spread * Math.random();
-
-                this.trailInstanceGroup.addInstance(
-                    new Renderer2D.Vector2(offsetX, offsetY),
-                    0,
-                    new Renderer2D.Vector2(FIREWORK_CONFIG.rocketTrailSize, FIREWORK_CONFIG.rocketTrailSize),
-                    new Renderer2D.Color(1, 1, 1, 1)
-                );
-
-                this.trailParticles.push({
-                    index: this.lastTrailIndex,
-                    createdAt: Date.now(),
-                    initialOpacity: 1,
-                });
-
-                this.lastTrailIndex++;
-                break;
-
-            case 'rainbow':
-                const hue = (Date.now() * 0.001) % 1;
-                const color = this._hslToRgb(hue, 1, 0.5);
-
-                this.trailInstanceGroup.addInstance(
-                    new Renderer2D.Vector2(x, y),
-                    0,
-                    new Renderer2D.Vector2(FIREWORK_CONFIG.rocketTrailSize, FIREWORK_CONFIG.rocketTrailSize),
-                    new Renderer2D.Color(color.r, color.g, color.b, 1)
-                );
-
-                this.trailParticles.push({
-                    index: this.lastTrailIndex,
-                    createdAt: Date.now(),
-                    initialOpacity: 1,
-                    hue: hue
-                });
-
-                this.lastTrailIndex++;
-                break;
-
-            case 'comet':
-                this.trailInstanceGroup.addInstance(
-                    new Renderer2D.Vector2(x, y),
-                    0,
-                    new Renderer2D.Vector2(FIREWORK_CONFIG.rocketTrailSize, FIREWORK_CONFIG.rocketTrailSize),
-                    new Renderer2D.Color(1, 0.67, 0, 1)
-                );
-
-                this.trailParticles.push({
-                    index: this.lastTrailIndex,
-                    createdAt: Date.now(),
-                    initialOpacity: 1,
-                    scale: 1.0
-                });
-
-                this.lastTrailIndex++;
-                break;
-
-            case 'fade':
-            default:
-                const firstComponentColor = this._getFirstComponentColor();
-                this.trailInstanceGroup.addInstance(
-                    new Renderer2D.Vector2(x, y),
-                    0,
-                    new Renderer2D.Vector2(FIREWORK_CONFIG.rocketTrailSize, FIREWORK_CONFIG.rocketTrailSize),
-                    new Renderer2D.Color(firstComponentColor.r, firstComponentColor.g, firstComponentColor.b, 0.8)
-                );
-
-                this.trailParticles.push({
-                    index: this.lastTrailIndex,
-                    createdAt: Date.now(),
-                    initialOpacity: 0.8
-                });
-
-                this.lastTrailIndex++;
-                break;
-        }
-    }
-
-    updateTrailParticles(delta) {
-        const now = Date.now();
-        const flickerSpeed = 8;
-
-        this.trailParticles.forEach((particle, index) => {
-            const age = index / this.trailParticles.length;
-            switch (this.trailEffect) {
-                case 'sparkle':
-                    this.trailInstanceGroup.updateInstanceScale(
-                        particle.index,
-                        FIREWORK_CONFIG.rocketTrailSize * (Math.random() * 0.8) * (age *2) + 0.3,
-                        FIREWORK_CONFIG.rocketTrailSize * (Math.random() * 0.8) * (age *2) + 0.3
-                    );
-                    this.trailInstanceGroup.updateInstanceColor(
-                        particle.index,
-                        1, 1, 1,
-                        particle.initialOpacity
-                    );
-                    break;
-
-                case 'rainbow':
-                    const groupPhase = (now * flickerSpeed + index * 1000) / 1000;
-                    const groupHue = (groupPhase + index * 0.1) % 1;
-                    const color = this._hslToRgb(groupHue, 1, 0.5);
-
-                    this.trailInstanceGroup.updateInstanceColor(
-                        particle.index,
-                        color.r, color.g, color.b,
-                        particle.initialOpacity * (age)
-                    );
-                    break;
-
-                case 'comet':
-                    const scale = FIREWORK_CONFIG.rocketTrailSize * (1.0 - (age * 0.5));
-                    this.trailInstanceGroup.updateInstanceScale(
-                        particle.index,
-                        scale,
-                        scale
-                    );
-                    this.trailInstanceGroup.updateInstanceColor(
-                        particle.index,
-                        1, 0.67, 0,
-                        particle.initialOpacity * (age)
-                    );
-                    break;
-
-                case 'fade':
-                default:
-                    const firstComponentColor = this._getFirstComponentColor();
-                    this.trailInstanceGroup.updateInstanceColor(
-                        particle.index,
-                        firstComponentColor.r, firstComponentColor.g, firstComponentColor.b,
-                        particle.initialOpacity * (age)
-                    );
-                    break;
-            }
-        });
     }
 
     _hslToRgb(h, s, l) {
@@ -274,9 +157,6 @@ class Firework {
         this.alive = false;
         this.exploded = true;
         if (this.rocket) this.renderer.removeNormalShape(this.rocket);
-        if (this.trailInstanceGroup) { this.renderer.removeInstancedGroup(this.trailInstanceGroup); }
-
-        this.trailParticles = [];
 
         this.components.forEach(component => {
             const pattern = component.pattern;
@@ -304,13 +184,13 @@ class Firework {
             const acceleration = new Renderer2D.Vector2();
             const shape = component.shape;
             const spread = component.spread;
-            this.particleSystem.addGlow(this.rocket.position, 
-                                        color,  
-                                        component.glowStrength,
-                                        500* component.glowStrength,
-                                        0.6,
-                                        component.glowStrength,
-                                        0);
+            this.particleSystem.addGlow(this.rocket.position,
+                color,
+                component.glowStrength,
+                500 * component.glowStrength,
+                0.6,
+                component.glowStrength,
+                0);
             const randomSeed = Math.random() * 2 - 1;
             const sharedCtx = {
                 rocketPos,
@@ -348,9 +228,6 @@ class Firework {
                         g,
                         shape,
                         accel,
-                        component.enableTrail,
-                        component.trailLength,
-                        component.trailWidth,
                         friction,
                         component.glowStrength,
                         component.blurStrength,
@@ -358,7 +235,8 @@ class Firework {
                         component.enableColorGradient,
                         gradientFinalColor,
                         component.gradientStartTime,
-                        component.gradientDuration
+                        component.gradientDuration,
+                        false // not a trail particle
                     );
 
                     if (index !== -1) this.particles[shape].add(index);
@@ -373,13 +251,6 @@ class Firework {
             this.renderer.removeNormalShape(this.rocket);
             this.rocket = null;
         }
-
-        if (this.trailInstanceGroup) {
-            this.renderer.removeInstancedGroup(this.trailInstanceGroup);
-            this.trailInstanceGroup = null;
-        }
-
-        this.trailParticles = [];
 
         FIREWORK_CONFIG.supportedShapes.forEach(shape => {
             this.particles[shape].clear();

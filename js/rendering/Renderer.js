@@ -604,7 +604,8 @@ function buildDroplet(scale = 1, steps = 100) {
             5 * Math.cos(2 * t) -
             2 * Math.cos(3 * t) -
             Math.cos(4 * t);
-        coords.push(x * scale * 0.2, y * scale * 0.2);
+        // Swap x and y to orient upward, and negate x to point up
+        coords.push(-y * scale * 0.2, x * scale * 0.2);
     }
     coords.push(coords[0], coords[1]);
     const triIndices = earcut(coords, null, 2);
@@ -616,8 +617,9 @@ function buildDroplet(scale = 1, steps = 100) {
 
 function buildSliceBurst(size = 10) {
     const coords = [];
-    const x1 = 0, x2 = size / 2, x3 = size;
-    const y1 = 0, y2 = size / 20, y3 = 0;
+    // Orient upward: center at origin, pointing up
+    const x1 = -size / 40, x2 = 0, x3 = size / 40;
+    const y1 = 0, y2 = size, y3 = 0;
     coords.push(x1, y1, x2, y2, x3, y3);
     const triIndices = earcut(coords, null, 2);
     return {

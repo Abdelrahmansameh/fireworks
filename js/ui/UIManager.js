@@ -167,15 +167,6 @@ class UIManager {
             });
         }
 
-        const trailSelects = [
-            document.getElementById('recipe-trail-effect'),
-            document.getElementById('creator-trail-effect')
-        ];
-        trailSelects.forEach(sel => sel && sel.addEventListener('change', (e) => {
-            this.game.currentTrailEffect = e.target.value;
-            this.game.saveCurrentRecipeComponents();
-        }));
-
         const gameContainer = document.getElementById('game-canvas');
         gameContainer.addEventListener('pointerdown', (e) => {
             if (!this.game.isClickInsideUI(e)) {
@@ -592,7 +583,7 @@ class UIManager {
         return document.elementFromPoint(x, y) !== gameContainer;
     }
 
-    updateUI(sparklesCount, totalSparklesRate, fireworkCount, autoLauncherCount, trailEffect, nextCost) {
+    updateUI(sparklesCount, totalSparklesRate, fireworkCount, autoLauncherCount, nextCost) {
         const sparklesElement = document.getElementById('ressource-count');
         const isCompact = sparklesElement.classList.contains('compact');
 
@@ -644,9 +635,6 @@ class UIManager {
 
         document.getElementById('firework-count').textContent = fireworkCount;
         document.getElementById('auto-launcher-level').textContent = autoLauncherCount;
-        document.getElementById('recipe-trail-effect').value = trailEffect;
-        const creatorTrail = document.getElementById('creator-trail-effect');
-        if (creatorTrail) creatorTrail.value = trailEffect;
         document.getElementById('auto-launcher-cost').textContent = nextCost;
     }
 
@@ -657,15 +645,6 @@ class UIManager {
         components.forEach((component, index) => {
             if (!('secondaryColor' in component)) {
                 component.secondaryColor = '#00ff00';
-            }
-            if (!('enableTrail' in component)) {
-                component.enableTrail = false;
-            }
-            if (!('trailLength' in component)) {
-                component.trailLength = 4;
-            }
-            if (!('trailWidth' in component)) {
-                component.trailWidth = 1.5;
             }
             if (!('glowStrength' in component)) {
                 component.glowStrength = 0.0;
@@ -756,16 +735,6 @@ class UIManager {
                         <label>Spread:</label>
                         <input type="range" class="spread-select" data-index="${index}" min="${COMPONENT_PROPERTY_RANGES.spread.min}" max="${COMPONENT_PROPERTY_RANGES.spread.max}" step="${COMPONENT_PROPERTY_RANGES.spread.step}" value="${component.spread}">
                     </div>
-                    <div class="recipes-option trail-container">
-                        <label>Trail:</label>
-                        <input type="checkbox" class="trail-toggle" data-index="${index}" ${component.enableTrail ? 'checked' : ''}>
-                    </div>                    
-                    <div class="recipes-option trail-options" style="display: ${component.enableTrail ? 'block' : 'none'};">
-                        <label>Trail Length:</label>
-                        <input type="range" class="trail-length-select" data-index="${index}" min="${COMPONENT_PROPERTY_RANGES.trailLength.min}" max="${COMPONENT_PROPERTY_RANGES.trailLength.max}" step="${COMPONENT_PROPERTY_RANGES.trailLength.step}" value="${component.trailLength}">
-                        <label>Trail Width:</label>
-                        <input type="range" class="trail-width-select" data-index="${index}" min="${COMPONENT_PROPERTY_RANGES.trailWidth.min}" max="${COMPONENT_PROPERTY_RANGES.trailWidth.max}" step="${COMPONENT_PROPERTY_RANGES.trailWidth.step}" value="${component.trailWidth}">
-                    </div>
                     <div class="recipes-option">
                         <label>Glow Strength:</label>
                         <input type="range" class="glow-strength-select" data-index="${index}" min="${COMPONENT_PROPERTY_RANGES.glowStrength.min}" max="${COMPONENT_PROPERTY_RANGES.glowStrength.max}" step="${COMPONENT_PROPERTY_RANGES.glowStrength.step}" value="${component.glowStrength}">
@@ -804,10 +773,6 @@ class UIManager {
             const sizeSelect = componentDiv.querySelector('.size-select');
             const lifetimeSelect = componentDiv.querySelector('.lifetime-select');
             const spreadSelect = componentDiv.querySelector('.spread-select');
-            const trailContainer = componentDiv.querySelector('.trail-container'); const trailToggle = componentDiv.querySelector('.trail-toggle');
-            const trailOptions = componentDiv.querySelector('.trail-options');
-            const trailLengthSelect = componentDiv.querySelector('.trail-length-select');
-            const trailWidthSelect = componentDiv.querySelector('.trail-width-select');
             const glowStrengthSelect = componentDiv.querySelector('.glow-strength-select');
             const blurStrengthSelect = componentDiv.querySelector('.blur-strength-select');
 
@@ -819,30 +784,12 @@ class UIManager {
                 }
             };
 
-            const updateTrailAvailability = () => {
-                const idx = patternSelect.getAttribute('data-index');
-                if (patternSelect.value === 'helix') {
-                    trailContainer.style.display = 'none';
-                    trailOptions.style.display = 'none';
-                    if (components[idx].enableTrail) {
-                        components[idx].enableTrail = false;
-                        trailToggle.checked = false;
-                        onUpdate();
-                    }
-                } else {
-                    trailContainer.style.display = 'block';
-                    trailOptions.style.display = trailToggle.checked ? 'block' : 'none';
-                }
-            };
-
             updateSecondaryColorVisibility();
-            updateTrailAvailability();
 
             patternSelect.addEventListener('change', (e) => {
                 const idx = e.target.getAttribute('data-index');
                 components[idx].pattern = e.target.value;
                 updateSecondaryColorVisibility();
-                updateTrailAvailability();
                 onUpdate();
             });
 
@@ -915,24 +862,6 @@ class UIManager {
             spreadSelect.addEventListener('input', (e) => {
                 const idx = e.target.getAttribute('data-index');
                 components[idx].spread = parseFloat(e.target.value);
-                onUpdate();
-            });
-
-            trailToggle.addEventListener('change', (e) => {
-                const idx = e.target.getAttribute('data-index');
-                components[idx].enableTrail = e.target.checked;
-                trailOptions.style.display = e.target.checked ? 'block' : 'none';
-                onUpdate();
-            });
-
-            trailLengthSelect.addEventListener('input', (e) => {
-                const idx = e.target.getAttribute('data-index');
-                components[idx].trailLength = parseFloat(e.target.value);
-                onUpdate();
-            });
-            trailWidthSelect.addEventListener('input', (e) => {
-                const idx = e.target.getAttribute('data-index');
-                components[idx].trailWidth = parseFloat(e.target.value);
                 onUpdate();
             });
 
@@ -1053,21 +982,6 @@ class UIManager {
                 }
             });
         });
-    }
-
-    getReadableTrailEffect(effect) {
-        switch (effect) {
-            case 'fade':
-                return 'Fade';
-            case 'sparkle':
-                return 'Sparkle';
-            case 'rainbow':
-                return 'Rainbow Gradient';
-            case 'comet':
-                return 'Comet Tail';
-            default:
-                return 'None';
-        }
     }
 
     getReadableShape(shape) {

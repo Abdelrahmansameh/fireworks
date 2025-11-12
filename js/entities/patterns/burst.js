@@ -7,8 +7,8 @@ const burstRecipe = new ParticleRecipe({
     calcInitialState: (i, ctx) => {
         const angle = Math.random() * Math.PI * 2;
         const magnitude = ctx.speed * Math.random() * ctx.spread * 0.75;
-        const risingVelocity = 100;
-        const randomAngle = ctx.randomSeed * Math.PI * 2;
+        const risingVelocity = 300;
+        const randomAngle = ctx.randomSeed * Math.PI / 4;
         const vel = new Renderer2D.Vector2(
             Math.cos(angle) * magnitude,
             Math.sin(angle) * magnitude + risingVelocity

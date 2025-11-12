@@ -26,19 +26,15 @@ class AutoLauncher extends Building {
         
         let recipe = this.game.recipes[this.assignedRecipeIndex];
         let recipeComponents = null;
-        let trailEffect = null;
 
         if (recipe) {
             recipeComponents = recipe.components;
-            trailEffect = recipe.trailEffect;
         } else {
             if (this.game.recipes.length > 0) {
                 const randomRecipe = this.game.recipes[Math.floor(Math.random() * this.game.recipes.length)];
                 recipeComponents = randomRecipe.components;
-                trailEffect = randomRecipe.trailEffect;
             } else {
                 recipeComponents = this.game.currentRecipeComponents;
-                trailEffect = this.game.currentTrailEffect;
             }
         }
 
@@ -48,8 +44,6 @@ class AutoLauncher extends Building {
             return;
         }
 
-        const effect = trailEffect || this.game.currentTrailEffect;
-        
         const spawnX = x + (Math.random() * 0.5 - 0.25) * this.config.width;
         
         const firework = new Firework(
@@ -57,7 +51,6 @@ class AutoLauncher extends Building {
             launchY, 
             components, 
             this.game.renderer2D, 
-            effect, 
             this.game.particleSystem
         );
         

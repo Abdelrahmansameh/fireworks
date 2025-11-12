@@ -1,17 +1,12 @@
 const FIREWORK_CONFIG = {
     maxParticles: 500000,
-    trailMaxPoints: 20,
-    trailDistBetweenPoints: 5,
-    trailWidth: 2.0,
     baseSpeed: 800,
     baseFriction: 4.0,
     verticalFrictionMultiplier: .9,
     gravityMultiplier: 9,
     particleSize: 5.0,
     ascentSpeed: 750,
-    rocketTrailLength: 40,
-    rocketSize: .8,
-    rocketTrailSize: 1.2,
+    rocketSize: 1.5,
     minExplosionHeightPercent: 0.4,
     maxExplosionHeightPercent: 0.8,
     autoLauncherMeshWidth: 30,
@@ -19,20 +14,8 @@ const FIREWORK_CONFIG = {
     autoLauncherMeshColor: { r: 136 / 255, g: 136 / 255, b: 136 / 255, a: 1 },
     autoLauncherTexture: 'assets/launcher.png',
     patternGravities: {
-        spherical: 9.81,
-        solidsphere: 20,
-        ring: 18.0,
-        heart: 50.0,
-        star: 13,
-        brocade: 10,
-        burst: 35,
-        palm: 40.0,
-        willow: 30,
-        christmasTree: 20.4,
-        brokenHeart: 2,
-        spinner: 2,
-        helix: 150,
-        default: 0.7
+        default: 110,        
+        helix: 60,
     },
     patternFriction: {
         spherical: 1.0,
@@ -52,10 +35,38 @@ const FIREWORK_CONFIG = {
     },
     patternParticleCounts: {
         willow: 50,
-        helix: 300,
+        helix: 200,
+        ring: 30,
+        heart: 40,
         default: 100
     },
-    supportedShapes: ['sphere', 'star', 'ring', 'crystalDroplet', 'sliceBurst']
+    supportedShapes: ['sphere', 'star', 'ring', 'crystalDroplet', 'sliceBurst'],
+
+    trails: {
+        enabled: true,
+        spawnRate: 0.025,           // seconds between trail spawns
+        lifetime: 0.75,             // trail particle lifetime
+        size: 1.5,                 // size multiplier (relative to parent)
+        gravity: 0,              // gravity for trail particles
+        friction: 1,             // air resistance
+        maxCount: 100,              // max trails per particle
+        alphaMultiplier: .8,      // transparency of trails
+        shape: 'sphere',           // shape for trail particles
+        velocitySpread: 15       // random velocity spread (pixels/sec)
+    },
+
+    rocketTrails: {
+        enabled: true,
+        spawnRate: 0.015,           // seconds between trail spawns
+        lifetime: 0.2,              // trail particle lifetime
+        size: 1.2,                  // absolute size of trail particles
+        gravity: 0,               // slight upward drift
+        friction: 1,              // air resistance
+        alphaMultiplier: 0.7,       // transparency of trails
+        shape: 'sphere',            // shape for trail particles
+        velocitySpread: 75,         // random velocity spread (pixels/sec)
+        perBurst: 5               // trails to spawn per burst
+    }
 };
 
 const AUTO_LAUNCHER_COST_BASE = 10;
@@ -67,13 +78,10 @@ const DEFAULT_RECIPE_COMPONENTS = [{
     pattern: 'spherical',
     color: '#4ba0d1',
     size: 0.3,
-    lifetime: 3.7,
+    lifetime: 3,
     shape: 'ring',
     spread: .7,
     secondaryColor: '#00ff00',
-    enableTrail: true,
-    trailLength: 11,
-    trailWidth: 2.8,
     glowStrength: 1.0,
     blurStrength: .7
 }];
@@ -88,9 +96,9 @@ const GAME_BOUNDS = {
     CROWD_RIGHT_X: -900,
     CROWD_LEFT_X: -100,
     CROWD_Y: -515,
-    WORLD_GROUND_Y: -540, 
-    WORLD_MIN_EXPLOSION_Y: -105, 
-    WORLD_MAX_EXPLOSION_Y: 324, 
+    WORLD_GROUND_Y: -540,
+    WORLD_MIN_EXPLOSION_Y: -105,
+    WORLD_MAX_EXPLOSION_Y: 324,
     WORLD_LAUNCHER_Y: -535,
     IS_ZOOM_LOCKED: true,
     MAX_ZOOM: 5,
@@ -98,10 +106,10 @@ const GAME_BOUNDS = {
 };
 
 const GENERIC_RECIPE_NAMES = [
-    'Boom','Starburst', 'Shooting Star', 'Rainbow Rocket',
+    'Boom', 'Starburst', 'Shooting Star', 'Rainbow Rocket',
     'Golden Shower', 'Silver Sparkle', 'Crimson Comet', 'Emerald',
     'Blaster', 'Pulse', 'Wonder', 'Pop',
-    'Orb', 'Twinkle', 'Twink','Violet Vortex', 'Cyclone',
+    'Orb', 'Twinkle', 'Twink', 'Violet Vortex', 'Cyclone',
     'Yonder', 'Black Blast', 'Gay Glimmer', 'Brown Burst',
     'Nova', 'Pastel Paradise', 'Metallic Meteor', 'Glittering Galaxy',
     'Firefly Flicker', 'Twilight Twirl', 'Midnight Magic', 'Sunset Spark',
@@ -115,29 +123,27 @@ const GENERIC_RECIPE_NAMES = [
     'Celestial Comet', 'Galactic Glow', 'Nebula Nova', 'Luminous Lagoon',
     'Radiant Ripple', 'Twilight Tangle', 'Midnight Mirage', 'Sunrise Sparkle',
     'Dusk Dazzle', 'Aurora Aura', 'Starlit Symphony', 'Wedding Beige', 'Quebec',
-     'Wedding'
+    'Wedding'
 ];
 
 const BACKGROUND_IMAGES = [
-    {name: 'Black Forest', path: 'assets/black-forest.png' },
-    {name: 'Blank', path: 'assets/background.png' },
-    {name: 'Black Town', path: 'assets/mountain-town.png' },
-    {name: 'Black City', path: 'assets/black-city.png' },
-    {name: 'Black Mountains', path: 'assets/black-mountains.png', skyPath: 'assets/black-mountains-sky.png'},
-    {name: 'Black Ruins', path: 'assets/black-ruins.png' },
-    {name: 'Forest', path: 'assets/darkened_forest.png'},
-    {name: 'Town', path: 'assets/darkened_town.png'},
-    {name: 'City', path: 'assets/darkened_city.png'},
-    {name: 'Mountain', path: 'assets/mountains-loop.png' },
-    {name: 'Ruins', path: 'assets/ruins.png' },
+    { name: 'Black Forest', path: 'assets/black-forest.png' },
+    { name: 'Blank', path: 'assets/background.png' },
+    { name: 'Black Town', path: 'assets/mountain-town.png' },
+    { name: 'Black City', path: 'assets/black-city.png' },
+    { name: 'Black Mountains', path: 'assets/black-mountains.png', skyPath: 'assets/black-mountains-sky.png' },
+    { name: 'Black Ruins', path: 'assets/black-ruins.png' },
+    { name: 'Forest', path: 'assets/darkened_forest.png' },
+    { name: 'Town', path: 'assets/darkened_town.png' },
+    { name: 'City', path: 'assets/darkened_city.png' },
+    { name: 'Mountain', path: 'assets/mountains-loop.png' },
+    { name: 'Ruins', path: 'assets/ruins.png' },
 ];
 
 const COMPONENT_PROPERTY_RANGES = {
     size: { min: 0.1, max: 0.7, step: 0.05 },
-    lifetime: { min: 1.5, max: 5, step: 0.1 },
+    lifetime: { min: 1.5, max: 4, step: 0.1 },
     spread: { min: 0.4, max: 1, step: 0.1 },
-    trailLength: { min: 1, max: 18, step: 0.5 },
-    trailWidth: { min: 0.5, max: 7, step: 0.1 },
     glowStrength: { min: 0, max: 1.25, step: 0.05 },
     blurStrength: { min: 0.2, max: 1, step: 0.05 },
 };
@@ -169,7 +175,7 @@ const BUILDING_TYPES = {
         currency: 'gold',
         width: 40,
         height: 60,
-        color: { r: 1, g: 0.84, b: 0, a: 1 }, 
+        color: { r: 1, g: 0.84, b: 0, a: 1 },
         texture: null,
         textureKey: null,
         baseUpgradeCost: 25,
