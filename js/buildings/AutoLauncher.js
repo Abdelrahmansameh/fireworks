@@ -51,7 +51,9 @@ class AutoLauncher extends Building {
             launchY, 
             components, 
             this.game.renderer2D, 
-            this.game.particleSystem
+            this.game.particleSystem,
+            null,
+            this.game.audioManager
         );
         
         this.game.gameState.fireworks.push(firework);

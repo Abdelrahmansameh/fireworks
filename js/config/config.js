@@ -15,7 +15,8 @@ const FIREWORK_CONFIG = {
     autoLauncherTexture: 'assets/launcher.png',
     patternGravities: {
         default: 110,        
-        helix: 60,
+        helix: 80,
+        willow: 60,
     },
     patternFriction: {
         spherical: 1.0,
@@ -45,7 +46,7 @@ const FIREWORK_CONFIG = {
     trails: {
         enabled: true,
         spawnRate: 0.025,           // seconds between trail spawns
-        lifetime: 0.75,             // trail particle lifetime
+        lifetime: 1,             // trail particle lifetime
         size: 1.5,                 // size multiplier (relative to parent)
         gravity: 0,              // gravity for trail particles
         friction: 1,             // air resistance
@@ -58,13 +59,13 @@ const FIREWORK_CONFIG = {
     rocketTrails: {
         enabled: true,
         spawnRate: 0.015,           // seconds between trail spawns
-        lifetime: 0.2,              // trail particle lifetime
+        lifetime: 0.5,              // trail particle lifetime
         size: 1.2,                  // absolute size of trail particles
         gravity: 0,               // slight upward drift
-        friction: 1,              // air resistance
+        friction: 2,              // air resistance
         alphaMultiplier: 0.7,       // transparency of trails
         shape: 'sphere',            // shape for trail particles
-        velocitySpread: 75,         // random velocity spread (pixels/sec)
+        velocitySpread: 25,         // random velocity spread (pixels/sec)
         perBurst: 5               // trails to spawn per burst
     }
 };

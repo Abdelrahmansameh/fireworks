@@ -524,7 +524,7 @@ class FireworkGame extends Engine {
 
     // dont use every frame because js is weird 
     launch(x, y, components, targetY = null) {
-        const firework = new Firework(x, y, components, this.renderer2D, this.particleSystem, targetY);
+        const firework = new Firework(x, y, components, this.renderer2D, this.particleSystem, targetY, this.audioManager);
         this.gameState.fireworks.push(firework);
     }
 
@@ -1131,7 +1131,7 @@ class FireworkGame extends Engine {
 
         if (!this.previewFirework && !this.previewFireworkTimer) {
             const y = GAME_BOUNDS.WORLD_LAUNCHER_Y;
-            this.previewFirework = new Firework(0, y, this.currentRecipeComponents, this.previewRenderer, this.previewParticleSystem, y);
+            this.previewFirework = new Firework(0, y, this.currentRecipeComponents, this.previewRenderer, this.previewParticleSystem, y, this.audioManager);
             this.previewFireworkTimer = lifetime;
         }
     }

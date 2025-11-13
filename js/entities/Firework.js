@@ -4,10 +4,11 @@ import * as Renderer2D from '../rendering/Renderer.js';
 import { recipeMap } from './patterns/index.js';
 
 class Firework {
-    constructor(x, y, components, renderer, particleSystem, targetY = null) {
+    constructor(x, y, components, renderer, particleSystem, targetY = null, audioManager = null) {
         this.components = components;
         this.renderer = renderer;
         this.particleSystem = particleSystem;
+        this.audioManager = audioManager;
         this.exploded = false;
         this.alive = true;
         this.particles = {};
@@ -23,7 +24,14 @@ class Firework {
 
         this.targetY = targetY || minY + Math.random() * (maxY - minY);
 
-        // Initialize rocket trail timer
+        // im so glad god is not real so he doesnt see this
+        const timeToExplode = (this.targetY - y) / FIREWORK_CONFIG.ascentSpeed;
+        const explosionSoundStartTime = 1.768;
+         const soundStartTime = Math.max(0, explosionSoundStartTime - timeToExplode);
+        if (this.audioManager) {
+            this.audioManager.playFireworkSound(soundStartTime);
+        }
+
         this.rocketTrailTimer = 0;
     }
 
@@ -69,7 +77,6 @@ class Firework {
         if (!this.exploded) {
             this.rocket.position.y += FIREWORK_CONFIG.ascentSpeed * delta;
 
-            // Spawn rocket trail particles
             if (FIREWORK_CONFIG.rocketTrails.enabled) {
                 this.rocketTrailTimer += delta;
 
@@ -77,7 +84,6 @@ class Firework {
                     this.rocketTrailTimer = 0;
 
                     for (let i = 0; i < FIREWORK_CONFIG.rocketTrails.perBurst; i++) {
-                        // Get rocket color
                         const rocketColor = this._getFirstComponentColor();
                         const trailColor = new Renderer2D.Color(
                             rocketColor.r,
@@ -86,14 +92,12 @@ class Firework {
                             rocketColor.a * FIREWORK_CONFIG.rocketTrails.alphaMultiplier
                         );
 
-                        // Generate random velocity spread
                         const spread = FIREWORK_CONFIG.rocketTrails.velocitySpread;
                         const randomVelX = (Math.random() - 0.5) * 2 * spread;
                         const randomVelY = (Math.random() - 0.5) * 2 * spread;
-
-                        // Spawn trail particle at rocket position
+                        const randomXOffset = (Math.random() - 0.5) * 10; 
                         this.particleSystem.addParticle(
-                            this.rocket.position.clone(),
+                            this.rocket.position.clone().add(new Renderer2D.Vector2(randomXOffset, 0)),
                             new Renderer2D.Vector2(randomVelX, randomVelY),
                             trailColor,
                             FIREWORK_CONFIG.rocketTrails.size,
@@ -157,6 +161,8 @@ class Firework {
         this.alive = false;
         this.exploded = true;
         if (this.rocket) this.renderer.removeNormalShape(this.rocket);
+
+
 
         this.components.forEach(component => {
             const pattern = component.pattern;

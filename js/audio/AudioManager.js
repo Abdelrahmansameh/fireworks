@@ -1,8 +1,11 @@
 class AudioManager {
     constructor() {
         this.backgroundMusic = null;
+        this.fireworkSound = null;
         this.initialized = false;
         this.wasPlayingBeforeHidden = false;
+        this.maxSoundsPerSecond = 5;
+        this.recentSoundTimestamps = [];
     }
 
     init() {
@@ -14,6 +17,8 @@ class AudioManager {
         const savedVolume = localStorage.getItem('musicVolume');
         const volume = savedVolume !== null ? parseInt(savedVolume) / 100 : 0.15;
         this.backgroundMusic.volume = volume;
+
+        this.fireworkSound = new Audio('assets/firework2.mp3');
 
         this.playBackgroundMusic();
 
@@ -68,6 +73,30 @@ class AudioManager {
         if (this.backgroundMusic) {
             this.backgroundMusic.volume = Math.max(0, Math.min(1, volume));
         }
+    }
+
+    playFireworkSound(startTime = 0) {
+        if (!this.fireworkSound) return;
+
+        const now = Date.now();
+        
+        // Remove timestamps older than 1 second
+        this.recentSoundTimestamps = this.recentSoundTimestamps.filter(
+            timestamp => now - timestamp < 1000
+        );
+        
+        // Check if we've exceeded the rate limit
+        if (this.recentSoundTimestamps.length >= this.maxSoundsPerSecond) {
+            return; // Skip playing this sound
+        }
+        
+        // Play the sound and record the timestamp
+        const sound = this.fireworkSound.cloneNode();
+        sound.currentTime = startTime;
+        sound.volume = this.backgroundMusic.volume * 0.3 * ((this.maxSoundsPerSecond - this.recentSoundTimestamps.length + 1) / this.maxSoundsPerSecond);
+        sound.play().catch(err => console.log('Failed to play firework sound:', err));
+        
+        this.recentSoundTimestamps.push(now);
     }
 
     dispose() {
