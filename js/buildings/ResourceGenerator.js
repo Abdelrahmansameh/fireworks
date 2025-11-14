@@ -1,4 +1,5 @@
 import Building from './Building.js';
+import * as Renderer2D from '../rendering/Renderer.js';
 
 class ResourceGenerator extends Building {
     constructor(game, x, y, data = {}) {
@@ -21,8 +22,67 @@ class ResourceGenerator extends Building {
             const resource = this.game.resourceManager.resources[this.resourceType];
             if (resource) {
                 resource.add(this.productionRate * this.multiplier);
+                
+                // Emit trail particle burst when generating sparkles
+                if (this.resourceType === 'sparkles') {
+                    this.emitSparkleTrailBurst();
+                }
             }
             this.accumulator -= 1.0;
+        }
+    }
+
+    emitSparkleTrailBurst() {
+        if (!this.game.particleSystem) return;
+        
+        const burstCount = 15; 
+        const particleLifetime = 1;
+        const particleSize = 1.5;
+        const velocitySpread = 100;
+        
+        const centerX = this.x;
+        const centerY = this.y;
+        
+        for (let i = 0; i < burstCount; i++) {
+            const randomColor = new Renderer2D.Color(
+                Math.random(),
+                Math.random(),
+                Math.random(),
+                0.8
+            );
+            
+            const angle = Math.random() * Math.PI * 2;
+            const randomSpread = Math.random() * velocitySpread;
+            const risingSpeed = (Math.random() + 0.5) * 150;
+            const velocity = new Renderer2D.Vector2(
+                Math.cos(angle) * randomSpread,
+                risingSpeed
+            );
+            
+            const position = new Renderer2D.Vector2(
+                centerX + (Math.random() - 0.5) * 10,
+                centerY + this.config.height /2 
+            );
+            
+            this.game.particleSystem.addParticle(
+                position,
+                velocity,
+                randomColor,
+                particleSize,
+                particleLifetime,
+                130, // gravity
+                'sphere',
+                new Renderer2D.Vector2(0, 0),
+                2.0, // friction
+                0, //  glow
+                0, //  blur
+                null, //  update function
+                false, //  gradient
+                null, 
+                0.0,
+                1.0,
+                true // this IS a trail particle
+            );
         }
     }
 
