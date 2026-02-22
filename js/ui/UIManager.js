@@ -412,12 +412,12 @@ class UIManager {
 
             const spinSpeed = spinDirection * (20 + Math.random() * 14);
             const updateFn = (state, delta) => {
-                state.rotation += spinSpeed * delta;
+                //state.rotation += spinSpeed * delta;
 
                 const toCursorX = this.grabCursorWorldX - state.position.x;
                 const toCursorY = this.grabCursorWorldY - state.position.y;
                 const distSq = toCursorX * toCursorX + toCursorY * toCursorY;
-                const minAttractDistance = 40;
+                const minAttractDistance = 100;
 
                 if (distSq > minAttractDistance * minAttractDistance) {
                     const dist = Math.sqrt(distSq);
@@ -437,7 +437,7 @@ class UIManager {
                 0, // gravity
                 'triangle', // shape
                 new Renderer2D.Vector2(0, 0), // acceleration
-                8, // friction
+                5, // friction
                 0, // glowStrength
                 0, // blurStrength
                 updateFn, // update function
