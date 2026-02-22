@@ -417,12 +417,12 @@ class UIManager {
                 const toCursorX = this.grabCursorWorldX - state.position.x;
                 const toCursorY = this.grabCursorWorldY - state.position.y;
                 const distSq = toCursorX * toCursorX + toCursorY * toCursorY;
-                const minAttractDistance = 30;
+                const minAttractDistance = 40;
 
                 if (distSq > minAttractDistance * minAttractDistance) {
                     const dist = Math.sqrt(distSq);
                     const invDist = 1 / dist;
-                    const attractAccel = 30000;
+                    const attractAccel = 10000;
 
                     state.velocity.x += toCursorX * invDist * attractAccel * delta;
                 }
