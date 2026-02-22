@@ -24,6 +24,7 @@ class InstancedParticleSystem {
             ring: Renderer2D.buildRing(),
             crystalDroplet: Renderer2D.buildDroplet(),
             sliceBurst: Renderer2D.buildSliceBurst(),
+            triangle: Renderer2D.buildTriangle(1, Math.sqrt(3) / 2),
         };
 
         FIREWORK_CONFIG.supportedShapes.forEach(shape => {
@@ -228,6 +229,7 @@ class InstancedParticleSystem {
                     state.position.set(d[sBase + this.positionIdx], d[sBase + this.positionIdx + 1]);
                     state.velocity.set(d[sBase + this.velocityIdx], d[sBase + this.velocityIdx + 1]);
                     state.acceleration.set(d[sBase + this.accelerationIdx], d[sBase + this.accelerationIdx + 1]);
+                    state.rotation = d[sBase + this.rotationIdx];
                     updateFn(state, delta);
                     d[sBase + this.positionIdx] = state.position.x;
                     d[sBase + this.positionIdx + 1] = state.position.y;
@@ -235,6 +237,7 @@ class InstancedParticleSystem {
                     d[sBase + this.velocityIdx + 1] = state.velocity.y;
                     d[sBase + this.accelerationIdx] = state.acceleration.x;
                     d[sBase + this.accelerationIdx + 1] = state.acceleration.y;
+                    d[sBase + this.rotationIdx] = state.rotation;
                 }
 
                 d[sBase + this.lifetimeIdx] -= delta;

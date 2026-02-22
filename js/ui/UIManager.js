@@ -6,8 +6,15 @@ class UIManager {
         this.game = game;
         this.isDragging = false;
         this.isScrollDragging = false;
+        this.isScrollDragReady = false;
+        this.hasScrolledDuringDrag = false;
+        this.scrollDragHoldTimeout = null;
+        this.scrollDragStartX = 0;
+        this.minCameraDragHoldMs = 180;
         this.draggingLauncher = null;
         this.lastPointerX = 0;
+        this.grabCursorWorldX = 0;
+        this.grabCursorWorldY = 0;
         this.notificationTimeout = null;
         this.activeFloatingSparkle = null;
         this.floatingSparkleTimeout = null;
@@ -336,6 +343,9 @@ class UIManager {
             return;
         }
 
+        this.grabCursorWorldX = worldPos.x;
+        this.grabCursorWorldY = worldPos.y;
+
         const intersectedBuilding = this.game.getLauncherAt(worldPos.x, worldPos.y);
 
         if (intersectedBuilding) {
@@ -344,16 +354,27 @@ class UIManager {
             this.game.selectLauncher(intersectedBuilding.id);
             this.game.updateLauncherList();
 
-            document.body.style.cursor = 'grabbing';
+            document.body.style.cursor = 'none';
 
             document.addEventListener('pointermove', this.pointerMoveHandler, { passive: false });
             document.addEventListener('pointerup', this.pointerUpHandler);
             document.addEventListener('pointercancel', this.pointerUpHandler);
         } else {
             this.isScrollDragging = true;
+            this.isScrollDragReady = false;
+            this.hasScrolledDuringDrag = false;
             this.game.cameraTargetX = null;
             this.lastPointerX = event.clientX;
-            document.body.style.cursor = 'grabbing';
+            this.scrollDragStartX = event.clientX;
+
+            if (this.scrollDragHoldTimeout) {
+                clearTimeout(this.scrollDragHoldTimeout);
+            }
+            this.scrollDragHoldTimeout = setTimeout(() => {
+                this.isScrollDragReady = true;
+                this.emitGrabModeBurst(worldPos.x, worldPos.y); 
+                document.body.style.cursor = 'none';
+            }, this.minCameraDragHoldMs);
 
 
 
@@ -364,17 +385,97 @@ class UIManager {
         }
     }
 
+    emitGrabModeBurst(centerX, centerY) {
+        if (!this.game.particleSystem) return;
+
+        const burstCount = 7;
+        const white = new Renderer2D.Color(1, 1, 1, 0.95);
+
+        for (let i = 0; i < burstCount; i++) {
+            const angle = i / burstCount * Math.PI * 2  * (2 * Math.PI / burstCount);
+            const radius = 3 + Math.random();
+            const dirX = Math.cos(angle);
+            const dirY = Math.sin(angle);
+            const tangentX = -dirY;
+            const tangentY = dirX;
+            const spinDirection = Math.random() < 0.5 ? -1 : 1;
+
+            const velocity = new Renderer2D.Vector2(
+                dirX * (200 + Math.random() * 45) + tangentX * (85 + Math.random() * 55) * spinDirection,
+                dirY * (200 + Math.random() * 45) + tangentY * (85 + Math.random() * 55) * spinDirection
+            );
+
+            const position = new Renderer2D.Vector2(
+                centerX + dirX * radius,
+                centerY + dirY * radius
+            );
+
+            const spinSpeed = spinDirection * (20 + Math.random() * 14);
+            const updateFn = (state, delta) => {
+                state.rotation += spinSpeed * delta;
+
+                const toCursorX = this.grabCursorWorldX - state.position.x;
+                const toCursorY = this.grabCursorWorldY - state.position.y;
+                const distSq = toCursorX * toCursorX + toCursorY * toCursorY;
+                const minAttractDistance = 30;
+
+                if (distSq > minAttractDistance * minAttractDistance) {
+                    const dist = Math.sqrt(distSq);
+                    const invDist = 1 / dist;
+                    const attractAccel = 30000;
+
+                    state.velocity.x += toCursorX * invDist * attractAccel * delta;
+                }
+            };
+
+            this.game.particleSystem.addParticle(
+                position, // initial position
+                velocity, // initial velocity
+                white, // color
+                6, // scale
+                .33, // lifetime
+                0, // gravity
+                'triangle', // shape
+                new Renderer2D.Vector2(0, 0), // acceleration
+                8, // friction
+                0, // glowStrength
+                0, // blurStrength
+                updateFn, // update function
+                false, // enableColorGradient
+                null, // gradientFinalColor
+                0.0, // gradientStartTime
+                1.0, // gradientDuration
+                true
+            );
+        }
+    }
+
     pointerMoveHandler(e) {
         if (this.isDragging && this.draggingLauncher) {
             e.preventDefault();
             const worldPos = this.game.screenToWorld(e.clientX, e.clientY);
+            this.grabCursorWorldX = worldPos.x;
+            this.grabCursorWorldY = worldPos.y;
             const clampedX = Math.max(GAME_BOUNDS.LAUNCHER_MIN_X, Math.min(worldPos.x, GAME_BOUNDS.LAUNCHER_MAX_X));
 
             this.draggingLauncher.setPosition(clampedX, this.draggingLauncher.y);
             this.game.saveProgress();
         } else if (this.isScrollDragging) {
+            const worldPos = this.game.screenToWorld(e.clientX, e.clientY);
+            this.grabCursorWorldX = worldPos.x;
+            this.grabCursorWorldY = worldPos.y;
+
+            if (!this.isScrollDragReady) {
+                this.lastPointerX = e.clientX;
+                return;
+            }
+
             const deltaX = e.clientX - this.lastPointerX;
             const dragScrollSpeed = 1;
+
+            if (Math.abs(deltaX) > 0) {
+                this.hasScrolledDuringDrag = true;
+            }
 
             this.game.renderer2D.cameraX -= deltaX * dragScrollSpeed;
 
@@ -400,23 +501,31 @@ class UIManager {
 
     pointerUpHandler(e) {
         if (this.isDragging || this.isScrollDragging) {
+            if (this.scrollDragHoldTimeout) {
+                clearTimeout(this.scrollDragHoldTimeout);
+                this.scrollDragHoldTimeout = null;
+            }
 
 
             if (this.isScrollDragging) {
-                const deltaX = Math.abs(e.clientX - this.lastPointerX);
-                if (deltaX < 20 && !this.game.isClickInsideUI(e)) {
+                const shouldLaunch = !this.hasScrolledDuringDrag && !this.game.isClickInsideUI(e);
+                if (shouldLaunch) {
                     const worldPos = this.game.screenToWorld(e.clientX, e.clientY);
-                    const res = this.game.launchFireworkAt(worldPos.x,  worldPos.y);
+                    const res = this.game.launchFireworkAt(worldPos.x, worldPos.y);
                     if (res.sparkleAmount) {
                         const screenPos = this.game.renderer2D.worldToScreen(res.spawnX, res.spawnY);
                         this.showFloatingSparkle(e.clientX + 30, screenPos.y - 50, res.sparkleAmount);
                     }
                 }
-                document.body.style.cursor = 'default';
             }
+
+            document.body.style.cursor = 'default';
 
             this.isDragging = false;
             this.isScrollDragging = false;
+            this.isScrollDragReady = false;
+            this.hasScrolledDuringDrag = false;
+            this.scrollDragStartX = 0;
             this.draggingLauncher = null;
 
             document.removeEventListener('pointermove', this.pointerMoveHandler);
@@ -436,12 +545,12 @@ class UIManager {
 
         const oldZoom = this.game.renderer2D.cameraZoom;
         const oldCameraY = this.game.renderer2D.cameraY;
-        
+
         const oldViewHeight = this.game.renderer2D.virtualHeight / oldZoom;
         const bottomEdgeY = oldCameraY - oldViewHeight / 2;
-        
+
         const zoomFactor = 1.1;
-        
+
         if (event.deltaY < 0) {
             this.game.renderer2D.cameraZoom *= zoomFactor;
         } else {
@@ -596,19 +705,19 @@ class UIManager {
 
         const sparkleTotalElements = sparklesElement.querySelectorAll('.sparkle-total');
         sparkleTotalElements.forEach(el => {
-            const countText = isCompact ? 
-                `${formatCompactNumber(sparklesCount)} sp` : 
+            const countText = isCompact ?
+                `${formatCompactNumber(sparklesCount)} sp` :
                 `${sparklesCount}`;
             const rateText = isCompact ?
                 ` (+${formatCompactNumber(totalSparklesRate)}/s)` :
                 ` (+${totalSparklesRate}/s)`;
-            
+
             el.innerHTML = `${countText}<span style="font-size: 0.8em; opacity: 0.8;">${rateText}</span>`;
         });
 
         const sparkleRateEl = sparklesElement.querySelector('.sparkle-rate');
         if (sparkleRateEl) sparkleRateEl.textContent = '';
-        
+
         const totalRateEl = sparklesElement.querySelector('.total-rate');
         if (totalRateEl) totalRateEl.textContent = '';
 
@@ -617,7 +726,7 @@ class UIManager {
         goldTotalElements.forEach(el => {
             const countText = gold.formatAmount();
             const rateText = ` (+${gold.perSecond.toFixed(1)}/s)`;
-            
+
             el.innerHTML = `${countText}<span style="font-size: 0.8em; opacity: 0.8;">${rateText}</span>`;
         });
 
@@ -930,7 +1039,7 @@ class UIManager {
             const launcherDiv = document.createElement('div');
             launcherDiv.classList.add('launcher-card');
             launcherDiv.dataset.buildingId = launcher.id;
-            
+
             if (launcher.id === selectedBuildingId) {
                 launcherDiv.classList.add('selected');
             }
@@ -1085,7 +1194,7 @@ class UIManager {
     showFloatingSparkle(screenX, screenY, amount) {
         if (!this.showFloatingSparkleEnabled) return;
 
-        const THRESHOLD_X_DIST = 50; 
+        const THRESHOLD_X_DIST = 50;
 
         if (this.activeFloatingSparkle && document.body.contains(this.activeFloatingSparkle)) {
             const existingX = parseFloat(this.activeFloatingSparkle.style.left || '0');
@@ -1120,7 +1229,7 @@ class UIManager {
             }
             this.activeFloatingSparkle = null;
             if (this.floatingSparkleTimeout) {
-                this.floatingSparkleTimeout = null; 
+                this.floatingSparkleTimeout = null;
             }
         }
 
@@ -1150,11 +1259,11 @@ class UIManager {
         this.hideTabMenu();
         this.hideCollapseButton();
         this.hideAllTabs();
-        
+
         if (unlockStates.sparkleCounter) {
             this.showSparkleCounter();
         }
-        
+
         if (unlockStates.tabMenu) {
             this.showTabMenu();
             this.showCollapseButton();
@@ -1162,28 +1271,28 @@ class UIManager {
                 this.addGlimmer('tabMenu');
             }
         }
-        
+
         if (unlockStates.buildingsTab) {
             this.showBuildingsTab();
             if (!this.game.firstClickStates.buildingsTab) {
                 this.addGlimmer('buildingsTab');
             }
         }
-        
+
         if (unlockStates.upgradesTab) {
             this.showUpgradesTab();
             if (!this.game.firstClickStates.upgradesTab) {
                 this.addGlimmer('upgradesTab');
             }
         }
-        
+
         if (unlockStates.backgroundTab) {
             this.showBackgroundTab();
             if (!this.game.firstClickStates.backgroundTab) {
                 this.addGlimmer('backgroundTab');
             }
         }
-        
+
         if (unlockStates.crowdsTab) {
             this.showCrowdsTab();
             if (!this.game.firstClickStates.crowdsTab) {
@@ -1198,7 +1307,7 @@ class UIManager {
     hideAllTabs() {
         const tabs = [
             'recipes-tab',
-            'stats-tab', 
+            'stats-tab',
             'crowd-tab',
             'buildings-tab',
             'settings-tab',
@@ -1206,7 +1315,7 @@ class UIManager {
             'background-tab',
             'cheats-tab'
         ];
-        
+
         tabs.forEach(tabId => {
             const tab = document.getElementById(tabId);
             if (tab) {
@@ -1241,7 +1350,7 @@ class UIManager {
         if (tabs) {
             tabs.classList.remove('unlock-hidden');
         }
-        
+
         this.showRecipesTab();
         this.showStatsTab();
         this.showSettingsTab();
@@ -1392,9 +1501,9 @@ class UIManager {
 
     updateBuildingListByType(buildingType) {
         const buildings = this.game.buildingManager.getBuildingsByType(buildingType);
-        
+
         if (buildingType === 'AUTO_LAUNCHER') {
-            this.updateLauncherList(buildings, this.game.selectedBuildingId, 
+            this.updateLauncherList(buildings, this.game.selectedBuildingId,
                 (id) => this.game.selectLauncher(id),
                 (id) => this.game.upgradeLauncher(id)
             );
@@ -1439,7 +1548,7 @@ class UIManager {
             const generatorDiv = document.createElement('div');
             generatorDiv.classList.add('launcher-card');
             generatorDiv.dataset.buildingId = generator.id;
-            
+
             if (generator.id === selectedBuildingId) {
                 generatorDiv.classList.add('selected');
             }
@@ -1486,7 +1595,7 @@ class UIManager {
             const boosterDiv = document.createElement('div');
             boosterDiv.classList.add('launcher-card');
             boosterDiv.dataset.buildingId = booster.id;
-            
+
             if (booster.id === selectedBuildingId) {
                 boosterDiv.classList.add('selected');
             }

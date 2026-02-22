@@ -41,7 +41,7 @@ const FIREWORK_CONFIG = {
         heart: 40,
         default: 100
     },
-    supportedShapes: ['sphere', 'star', 'ring', 'crystalDroplet', 'sliceBurst'],
+    supportedShapes: ['sphere', 'star', 'ring', 'crystalDroplet', 'sliceBurst', 'triangle'],
 
     trails: {
         enabled: true,
