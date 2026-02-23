@@ -400,6 +400,8 @@ class InstancedDroneSystem {
                                 return;
                             }
                             state.alpha = pullElapsed / cfg.maxCaptureTime; 
+                            state.scale = pullElapsed / cfg.maxCaptureTime;
+
                             state.lifetime = 1.0;
                             // Accelerate toward drone
                             const eInv = 1 / eDist;
