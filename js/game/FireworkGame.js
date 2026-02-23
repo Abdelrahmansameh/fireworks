@@ -11,6 +11,7 @@ import * as Renderer2D from '../rendering/Renderer.js';
 import Engine from '../engine/Engine.js';
 import BuildingManager from '../buildings/BuildingManager.js';
 import AudioManager from '../audio/AudioManager.js';
+import StatsTracker from '../stats/StatsTracker.js';
 
 class FireworkGame extends Engine {
     constructor() {
@@ -53,6 +54,7 @@ class FireworkGame extends Engine {
         this.ui = new UIManager(this);
         this.profiler = new GameProfiler();
         this.audioManager = new AudioManager();
+        this.statsTracker = new StatsTracker();
 
         this.currentState = 'game';
         this.advancedCreatorUnlocked = JSON.parse(localStorage.getItem('advancedCreatorUnlocked') || 'false');
@@ -111,6 +113,8 @@ class FireworkGame extends Engine {
                 console.error('Failed to load resources:', e);
             }
         }
+
+        this.statsTracker.load();
 
         const savedGameState = JSON.parse(localStorage.getItem('gameState'));
         
@@ -362,8 +366,9 @@ class FireworkGame extends Engine {
         this.ui.toggleTab(tab);
     }
 
-    addSparkles(amount) {
+    addSparkles(amount, source = 'unknown') {
         this.resourceManager.resources.sparkles.add(amount);
+        this.statsTracker.record('sparkles', amount, source);
     }
 
 
@@ -407,7 +412,10 @@ class FireworkGame extends Engine {
         this.profiler.startFrame();
 
         this.particleSystem.update(deltaTime);
-        this.droneSystem?.update(deltaTime, (sparkles) => this.addSparkles(sparkles));
+        this.droneSystem?.update(deltaTime, (sparkles) => {
+            this.addSparkles(sparkles, 'drone');
+            this.statsTracker.recordDroneParticle();
+        });
 
         this.updateCameraPosition(deltaTime);
 
@@ -424,6 +432,12 @@ class FireworkGame extends Engine {
         this.resourceManager.update();
 
         this.crowd.update(deltaTime);
+
+        // Update peak records in StatsTracker
+        const rollingSPS = this.statsTracker.getRollingRate('sparkles');
+        const rollingGPS = this.statsTracker.getRollingRate('gold');
+        const rollingFPS = this.statsTracker.getFireworksPerSecond();
+        this.statsTracker.updatePeaks(rollingSPS, rollingGPS, rollingFPS, this.crowd.people.length);
 
         this.checkUnlockConditions();
 
@@ -472,6 +486,7 @@ class FireworkGame extends Engine {
         localStorage.setItem('patternSparkleMultipliers', JSON.stringify(this.patternSparkleMultipliers));
         localStorage.setItem('purchasedUpgrades', JSON.stringify(this.purchasedUpgrades));
         this.saveUnlockStates();
+        this.statsTracker.save();
     }
 
     dismissNotification() {
@@ -530,7 +545,8 @@ class FireworkGame extends Engine {
         this.launch(spawnX, spawnY, components, Math.max(targetY, minY));
         this.fireworkCount++;
         const sparkleAmount = components.reduce((sum, c) => sum + this.getComponentSparkles(c), 0);
-        this.addSparkles(sparkleAmount);
+        this.addSparkles(sparkleAmount, 'manual');
+        this.statsTracker.recordFirework('manual');
         this.checkUnlockConditions(); 
         return { sparkleAmount, spawnX, spawnY };
     }
@@ -645,6 +661,7 @@ class FireworkGame extends Engine {
         this.autoLauncherCost = AUTO_LAUNCHER_COST_BASE;
 
         localStorage.clear();
+        this.statsTracker.reset();
 
         this.ui.initializeUnlockStates(this.unlockStates);
 
@@ -1222,8 +1239,9 @@ class FireworkGame extends Engine {
         this.showNotification('Upgrade purchased!');
     }
 
-    addGold(amount) {
+    addGold(amount, source = 'unknown') {
         this.resourceManager.resources.gold.add(amount);
+        this.statsTracker.record('gold', amount, source);
     }
 
     unlockAllUpgrades() {

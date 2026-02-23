@@ -22,7 +22,14 @@ class ResourceGenerator extends Building {
         if (this.accumulator >= 1.0) {
             const resource = this.game.resourceManager.resources[this.resourceType];
             if (resource) {
-                resource.add(this.productionRate * this.multiplier);
+                const amount = this.productionRate * this.multiplier;
+                if (this.resourceType === 'sparkles') {
+                    this.game.addSparkles(amount, 'resource_generator');
+                } else if (this.resourceType === 'gold') {
+                    this.game.addGold(amount, 'resource_generator');
+                } else {
+                    resource.add(amount);
+                }
                 
                 // Emit trail particle burst when generating sparkles
                 if (this.resourceType === 'sparkles') {

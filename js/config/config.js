@@ -12,7 +12,7 @@ const DRONE_CONFIG = {
     collectionRadius: 70,       // world-units radius to scan for particles
     defaultLifetime: 10,         // seconds a drone lives before despawning
     sparklesPerParticle: 1,      // sparkles awarded per collected particle
-    wanderSpeed: 700,            // world-units/sec target chase speed
+    wanderSpeed: 300,            // world-units/sec target chase speed
     acceleration: 100,           // wu/s² ramp-up from standstill
     deceleration: 200,           // wu/s² braking when a sharp turn is detected
     turnThresholdDot: 0.75,      // dot(currentHeading, desiredDir) below this triggers braking (~70°)
@@ -28,7 +28,7 @@ const DRONE_CONFIG = {
     defaultScale: 14,            // render scale of the drone mesh
     glowStrength: 0.8,           // emissive glow intensity
     scanInterval: 4,             // scan for particles once every N frames (1 = every frame)
-    minParticleAge: 0.15,          // seconds a particle must have been alive before a drone can pull it
+    minParticleAge: 0.5,          // seconds a particle must have been alive before a drone can pull it
     color: { r: 0.4, g: 0.9, b: 1.0, a: 1.0 },  // default drone color (cyan-ish)
 
     oscillationAmplitude: 1100,    // wu/s — perpendicular speed added by the sine wave
@@ -285,5 +285,16 @@ const BUILDING_TYPES = {
     }
 };
 
-export { FIREWORK_CONFIG, GAME_BOUNDS, DEFAULT_RECIPE_COMPONENTS, GENERIC_RECIPE_NAMES, BACKGROUND_IMAGES, AUTO_LAUNCHER_COST_BASE, AUTO_LAUNCHER_COST_RATIO, AUTO_UPGRADE_COST_RATIO, AUTO_SPAWN_INTERVAL_RATIO, COMPONENT_PROPERTY_RANGES, BUILDING_TYPES, PARTICLE_TYPES, DRONE_CONFIG };
+/**
+ * Stats / telemetry configuration.
+ */
+const STATS_CONFIG = {
+    /**
+     * Duration (in seconds) of the rolling-average window used for all
+     * per-second rates in the stats tab (sparkles/s, gold/s, fireworks/s).
+     */
+    rollingWindowSeconds: 5,
+};
+
+export { FIREWORK_CONFIG, GAME_BOUNDS, DEFAULT_RECIPE_COMPONENTS, GENERIC_RECIPE_NAMES, BACKGROUND_IMAGES, AUTO_LAUNCHER_COST_BASE, AUTO_LAUNCHER_COST_RATIO, AUTO_UPGRADE_COST_RATIO, AUTO_SPAWN_INTERVAL_RATIO, COMPONENT_PROPERTY_RANGES, BUILDING_TYPES, PARTICLE_TYPES, DRONE_CONFIG, STATS_CONFIG };
 

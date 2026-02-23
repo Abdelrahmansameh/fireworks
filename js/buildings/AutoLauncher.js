@@ -63,7 +63,8 @@ class AutoLauncher extends Building {
             (sum, c) => sum + this.game.getComponentSparkles(c), 
             0
         );
-        this.game.resourceManager.resources.sparkles.add(sparkleAmount);
+        this.game.addSparkles(sparkleAmount, 'auto_launcher');
+        this.game.statsTracker.recordFirework('auto_launcher');
     }
 
     onUpgrade() {

@@ -86,12 +86,216 @@
 
     <div class="tab-content" id="stats-content">
         <div class="panel scrollable-panel">
-            <h2 class="panel-title">Firework Factory</h2>
+            <h2 class="panel-title">Statistics</h2>
 
-            <div class="firework-counter">
-                Total Fireworks Launched: <span id="firework-count">0</span>
+            <!-- ── Production Rates (5-second rolling average) ───────────── -->
+            <div class="stats-section">
+                <h3 class="stats-section-title">⚡ Production Rates <span class="stats-note">(5s avg)</span></h3>
+
+                <div class="stats-group">
+                    <div class="stats-label">✨ Sparkles / sec</div>
+                    <div class="stats-value" id="stat-sps-total">0.00</div>
+                </div>
+                <div class="stats-subgroup">
+                    <div class="stats-row">
+                        <span class="stats-source-label">› Auto-Launchers</span>
+                        <span class="stats-value" id="stat-sps-auto">0.00</span>
+                    </div>
+                    <div class="stats-row">
+                        <span class="stats-source-label">› Resource Generators</span>
+                        <span class="stats-value" id="stat-sps-gen">0.00</span>
+                    </div>
+                    <div class="stats-row">
+                        <span class="stats-source-label">› Drones</span>
+                        <span class="stats-value" id="stat-sps-drone">0.00</span>
+                    </div>
+                    <div class="stats-row">
+                        <span class="stats-source-label">› Manual Clicks</span>
+                        <span class="stats-value" id="stat-sps-manual">0.00</span>
+                    </div>
+                    <div class="stats-row" id="stat-sps-cheat-row" style="display:none">
+                        <span class="stats-source-label">› Cheats</span>
+                        <span class="stats-value" id="stat-sps-cheat">0.00</span>
+                    </div>
+                </div>
+
+                <div class="stats-group">
+                    <div class="stats-label">🪙 Gold / sec</div>
+                    <div class="stats-value" id="stat-gps-total">0.00</div>
+                </div>
+                <div class="stats-subgroup">
+                    <div class="stats-row">
+                        <span class="stats-source-label">› Crowd</span>
+                        <span class="stats-value" id="stat-gps-crowd">0.00</span>
+                    </div>
+                    <div class="stats-row" id="stat-gps-cheat-row" style="display:none">
+                        <span class="stats-source-label">› Cheats</span>
+                        <span class="stats-value" id="stat-gps-cheat">0.00</span>
+                    </div>
+                </div>
+
+                <div class="stats-group">
+                    <div class="stats-label">🎆 Fireworks / sec</div>
+                    <div class="stats-value" id="stat-fps-total">0.00</div>
+                </div>
+                <div class="stats-subgroup">
+                    <div class="stats-row">
+                        <span class="stats-source-label">› Auto-Launchers</span>
+                        <span class="stats-value" id="stat-fps-auto">0.00</span>
+                    </div>
+                    <div class="stats-row">
+                        <span class="stats-source-label">› Manual</span>
+                        <span class="stats-value" id="stat-fps-manual">0.00</span>
+                    </div>
+                </div>
             </div>
 
+            <!-- ── Current State ─────────────────────────────────────────── -->
+            <div class="stats-section">
+                <h3 class="stats-section-title">📊 Current State</h3>
+                <div class="stats-group">
+                    <div class="stats-label">Sparkles Balance</div>
+                    <div class="stats-value" id="stat-bal-sparkles">0</div>
+                </div>
+                <div class="stats-group">
+                    <div class="stats-label">Gold Balance</div>
+                    <div class="stats-value" id="stat-bal-gold">0</div>
+                </div>
+                <div class="stats-group">
+                    <div class="stats-label">Crowd Size</div>
+                    <div class="stats-value" id="stat-crowd-size">0</div>
+                </div>
+                <div class="stats-group">
+                    <div class="stats-label">Auto-Launchers</div>
+                    <div class="stats-value" id="stat-bld-auto">0</div>
+                </div>
+                <div class="stats-group">
+                    <div class="stats-label">Resource Generators</div>
+                    <div class="stats-value" id="stat-bld-gen">0</div>
+                </div>
+                <div class="stats-group">
+                    <div class="stats-label">Efficiency Boosters</div>
+                    <div class="stats-value" id="stat-bld-boost">0</div>
+                </div>
+                <div class="stats-group">
+                    <div class="stats-label">Drone Hubs</div>
+                    <div class="stats-value" id="stat-bld-drone">0</div>
+                </div>
+            </div>
+
+            <!-- ── Session Totals ─────────────────────────────────────────── -->
+            <div class="stats-section">
+                <h3 class="stats-section-title">🕑 This Session</h3>
+                <div class="stats-group">
+                    <div class="stats-label">Time Played</div>
+                    <div class="stats-value" id="stat-session-time">0s</div>
+                </div>
+                <div class="stats-group">
+                    <div class="stats-label">Sparkles Earned</div>
+                    <div class="stats-value" id="stat-sess-sparkles">0</div>
+                </div>
+                <div class="stats-subgroup">
+                    <div class="stats-row">
+                        <span class="stats-source-label">› Auto-Launchers</span>
+                        <span class="stats-value" id="stat-sess-sp-auto">0</span>
+                    </div>
+                    <div class="stats-row">
+                        <span class="stats-source-label">› Resource Generators</span>
+                        <span class="stats-value" id="stat-sess-sp-gen">0</span>
+                    </div>
+                    <div class="stats-row">
+                        <span class="stats-source-label">› Drones</span>
+                        <span class="stats-value" id="stat-sess-sp-drone">0</span>
+                    </div>
+                    <div class="stats-row">
+                        <span class="stats-source-label">› Manual</span>
+                        <span class="stats-value" id="stat-sess-sp-manual">0</span>
+                    </div>
+                </div>
+                <div class="stats-group">
+                    <div class="stats-label">Gold Earned</div>
+                    <div class="stats-value" id="stat-sess-gold">0</div>
+                </div>
+                <div class="stats-subgroup">
+                    <div class="stats-row">
+                        <span class="stats-source-label">› Crowd</span>
+                        <span class="stats-value" id="stat-sess-g-crowd">0</span>
+                    </div>
+                </div>
+                <div class="stats-group">
+                    <div class="stats-label">Fireworks Launched</div>
+                    <div class="stats-value" id="stat-sess-fw">0</div>
+                </div>
+                <div class="stats-subgroup">
+                    <div class="stats-row">
+                        <span class="stats-source-label">› Manual</span>
+                        <span class="stats-value" id="stat-sess-fw-manual">0</span>
+                    </div>
+                    <div class="stats-row">
+                        <span class="stats-source-label">› Auto-Launchers</span>
+                        <span class="stats-value" id="stat-sess-fw-auto">0</span>
+                    </div>
+                </div>
+                <div class="stats-group">
+                    <div class="stats-label">Drone Particles Collected</div>
+                    <div class="stats-value" id="stat-sess-drone-parts">0</div>
+                </div>
+            </div>
+
+            <!-- ── Lifetime Records ───────────────────────────────────────── -->
+            <div class="stats-section">
+                <h3 class="stats-section-title">🏆 Lifetime Records</h3>
+                <div class="stats-group">
+                    <div class="stats-label">Total Fireworks Launched</div>
+                    <div class="stats-value" id="firework-count">0</div>
+                </div>
+                <div class="stats-group">
+                    <div class="stats-label">All-time Sparkles Earned</div>
+                    <div class="stats-value" id="stat-life-sparkles">0</div>
+                </div>
+                <div class="stats-subgroup">
+                    <div class="stats-row">
+                        <span class="stats-source-label">› Auto-Launchers</span>
+                        <span class="stats-value" id="stat-life-sp-auto">0</span>
+                    </div>
+                    <div class="stats-row">
+                        <span class="stats-source-label">› Resource Generators</span>
+                        <span class="stats-value" id="stat-life-sp-gen">0</span>
+                    </div>
+                    <div class="stats-row">
+                        <span class="stats-source-label">› Drones</span>
+                        <span class="stats-value" id="stat-life-sp-drone">0</span>
+                    </div>
+                    <div class="stats-row">
+                        <span class="stats-source-label">› Manual</span>
+                        <span class="stats-value" id="stat-life-sp-manual">0</span>
+                    </div>
+                </div>
+                <div class="stats-group">
+                    <div class="stats-label">All-time Gold Earned</div>
+                    <div class="stats-value" id="stat-life-gold">0</div>
+                </div>
+                <div class="stats-group">
+                    <div class="stats-label">All-time Drone Particles</div>
+                    <div class="stats-value" id="stat-life-drone-parts">0</div>
+                </div>
+                <div class="stats-group">
+                    <div class="stats-label">Peak Sparkles / sec</div>
+                    <div class="stats-value" id="stat-peak-sps">0.00</div>
+                </div>
+                <div class="stats-group">
+                    <div class="stats-label">Peak Gold / sec</div>
+                    <div class="stats-value" id="stat-peak-gps">0.00</div>
+                </div>
+                <div class="stats-group">
+                    <div class="stats-label">Peak Fireworks / sec</div>
+                    <div class="stats-value" id="stat-peak-fps">0.00</div>
+                </div>
+                <div class="stats-group">
+                    <div class="stats-label">Peak Crowd Size</div>
+                    <div class="stats-value" id="stat-peak-crowd">0</div>
+                </div>
+            </div>
 
         </div>
     </div>

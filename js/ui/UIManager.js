@@ -1,5 +1,6 @@
-import { GAME_BOUNDS, BACKGROUND_IMAGES, DEFAULT_RECIPE_COMPONENTS, COMPONENT_PROPERTY_RANGES, PARTICLE_TYPES } from '../config/config.js';
+import { GAME_BOUNDS, BACKGROUND_IMAGES, DEFAULT_RECIPE_COMPONENTS, COMPONENT_PROPERTY_RANGES, PARTICLE_TYPES, STATS_CONFIG } from '../config/config.js';
 import * as Renderer2D from '../rendering/Renderer.js';
+import StatsTracker from '../stats/StatsTracker.js';
 
 class UIManager {
     constructor(game) {
@@ -147,7 +148,7 @@ class UIManager {
                 const amtInput = document.getElementById('cheat-sparkles-amount');
                 const amount = parseFloat(amtInput.value) || 0;
                 if (amount > 0) {
-                    this.game.addSparkles(amount);
+                    this.game.addSparkles(amount, 'cheat');
                     this.showNotification(`Added ${amount.toLocaleString()} sparkles`);
                 }
             });
@@ -159,7 +160,7 @@ class UIManager {
                 const amtInput = document.getElementById('cheat-gold-amount');
                 const amount = parseFloat(amtInput.value) || 0;
                 if (amount > 0) {
-                    this.game.addGold(amount);
+                    this.game.addGold(amount, 'cheat');
                     this.showNotification(`Added ${amount.toLocaleString()} gold`);
                 }
             });
@@ -767,6 +768,122 @@ class UIManager {
         document.getElementById('firework-count').textContent = fireworkCount;
         document.getElementById('auto-launcher-level').textContent = autoLauncherCount;
         document.getElementById('auto-launcher-cost').textContent = nextCost;
+
+        // Update stats tab (throttled to every 250 ms)
+        const now = performance.now();
+        if (!this._lastStatsUpdate || now - this._lastStatsUpdate > 250) {
+            this._lastStatsUpdate = now;
+            this.updateStatsTab();
+        }
+    }
+
+    updateStatsTab() {
+        const st = this.game.statsTracker;
+        if (!st) return;
+
+        // Keep the section title's window-size note in sync with config
+        const noteEl = document.querySelector('#stats-content .stats-note');
+        if (noteEl) noteEl.textContent = `(${STATS_CONFIG.rollingWindowSeconds}s avg)`;
+
+        const fmt = (n) => {
+            if (n >= 1e9) return (n / 1e9).toFixed(2) + 'B';
+            if (n >= 1e6) return (n / 1e6).toFixed(2) + 'M';
+            if (n >= 1e3) return (n / 1e3).toFixed(2) + 'K';
+            return n.toFixed ? n.toFixed(0) : String(n);
+        };
+        const fmtRate = (n) => n.toFixed(2);
+
+        const set = (id, val) => {
+            const el = document.getElementById(id);
+            if (el) el.textContent = val;
+        };
+
+        // ── Rolling rates ───────────────────────────────────────────────────
+        const spsTot  = st.getRollingRate('sparkles');
+        const spsAuto = st.getRollingRate('sparkles', 'auto_launcher');
+        const spsGen  = st.getRollingRate('sparkles', 'resource_generator');
+        const spsDrn  = st.getRollingRate('sparkles', 'drone');
+        const spsMnl  = st.getRollingRate('sparkles', 'manual');
+        const spsCheat = st.getRollingRate('sparkles', 'cheat');
+
+        const gpsTot   = st.getRollingRate('gold');
+        const gpsCrowd = st.getRollingRate('gold', 'crowd');
+        const gpsCheat = st.getRollingRate('gold', 'cheat');
+
+        const fpsTot  = st.getFireworksPerSecond();
+        const fpsAuto = st.getFireworksPerSecond('auto_launcher');
+        const fpsMnl  = st.getFireworksPerSecond('manual');
+
+        set('stat-sps-total',  fmtRate(spsTot)  + ' /s');
+        set('stat-sps-auto',   fmtRate(spsAuto) + ' /s');
+        set('stat-sps-gen',    fmtRate(spsGen)  + ' /s');
+        set('stat-sps-drone',  fmtRate(spsDrn)  + ' /s');
+        set('stat-sps-manual', fmtRate(spsMnl)  + ' /s');
+        set('stat-sps-cheat',  fmtRate(spsCheat)+ ' /s');
+
+        const cheatSpRow = document.getElementById('stat-sps-cheat-row');
+        if (cheatSpRow) cheatSpRow.style.display = spsCheat > 0 ? '' : 'none';
+
+        set('stat-gps-total',  fmtRate(gpsTot)   + ' /s');
+        set('stat-gps-crowd',  fmtRate(gpsCrowd) + ' /s');
+        set('stat-gps-cheat',  fmtRate(gpsCheat) + ' /s');
+
+        const cheatGRow = document.getElementById('stat-gps-cheat-row');
+        if (cheatGRow) cheatGRow.style.display = gpsCheat > 0 ? '' : 'none';
+
+        set('stat-fps-total',  fmtRate(fpsTot)  + ' /s');
+        set('stat-fps-auto',   fmtRate(fpsAuto) + ' /s');
+        set('stat-fps-manual', fmtRate(fpsMnl)  + ' /s');
+
+        // ── Current state ───────────────────────────────────────────────────
+        const g = this.game;
+        const sparklesBal = g.resourceManager.resources.sparkles.amount;
+        const goldBal     = g.resourceManager.resources.gold.amount;
+        const crowdSize   = g.crowd ? g.crowd.people.length : 0;
+
+        set('stat-bal-sparkles', fmt(sparklesBal) + ' sp');
+        set('stat-bal-gold',     fmt(goldBal) + ' G');
+        set('stat-crowd-size',   crowdSize);
+
+        const getBldCount = (type) => g.buildingManager.getBuildingsByType(type).length;
+        set('stat-bld-auto',   getBldCount('AUTO_LAUNCHER'));
+        set('stat-bld-gen',    getBldCount('RESOURCE_GENERATOR'));
+        set('stat-bld-boost',  getBldCount('EFFICIENCY_BOOSTER'));
+        set('stat-bld-drone',  getBldCount('DRONE_HUB'));
+
+        // ── Session totals ──────────────────────────────────────────────────
+        set('stat-session-time', StatsTracker.formatDuration(st.getSessionDurationSeconds()));
+
+        set('stat-sess-sparkles',  fmt(st.sessionSparkles));
+        set('stat-sess-sp-auto',   fmt(st.sessionSparklesBySource['auto_launcher'] ?? 0));
+        set('stat-sess-sp-gen',    fmt(st.sessionSparklesBySource['resource_generator'] ?? 0));
+        set('stat-sess-sp-drone',  fmt(st.sessionSparklesBySource['drone'] ?? 0));
+        set('stat-sess-sp-manual', fmt(st.sessionSparklesBySource['manual'] ?? 0));
+
+        set('stat-sess-gold',      fmt(st.sessionGold));
+        set('stat-sess-g-crowd',   fmt(st.sessionGoldBySource['crowd'] ?? 0));
+
+        set('stat-sess-fw',        fmt(st.sessionFireworks));
+        set('stat-sess-fw-manual', fmt(st.sessionFireworksBySource['manual'] ?? 0));
+        set('stat-sess-fw-auto',   fmt(st.sessionFireworksBySource['auto_launcher'] ?? 0));
+
+        set('stat-sess-drone-parts', fmt(st.sessionDroneParticles));
+
+        // ── Lifetime records ────────────────────────────────────────────────
+        set('firework-count',       fmt(g.fireworkCount));
+        set('stat-life-sparkles',   fmt(st.lifetimeSparkles));
+        set('stat-life-sp-auto',    fmt(st.lifetimeSparklesBySource['auto_launcher'] ?? 0));
+        set('stat-life-sp-gen',     fmt(st.lifetimeSparklesBySource['resource_generator'] ?? 0));
+        set('stat-life-sp-drone',   fmt(st.lifetimeSparklesBySource['drone'] ?? 0));
+        set('stat-life-sp-manual',  fmt(st.lifetimeSparklesBySource['manual'] ?? 0));
+
+        set('stat-life-gold',       fmt(st.lifetimeGold));
+        set('stat-life-drone-parts',fmt(st.lifetimeDroneParticles));
+
+        set('stat-peak-sps',   fmtRate(st.peakSPS)  + ' /s');
+        set('stat-peak-gps',   fmtRate(st.peakGPS)  + ' /s');
+        set('stat-peak-fps',   fmtRate(st.peakFPS)  + ' /s');
+        set('stat-peak-crowd', st.peakCrowdSize);
     }
 
     updateComponentsList(components, onUpdate, containerId = 'components-list') {
