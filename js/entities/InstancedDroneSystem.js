@@ -380,6 +380,7 @@ class InstancedDroneSystem {
                         let pullElapsed = 0;
                         const pullFn = (state, delta) => {
                             if (!droneRef.active) return;
+                            // todo, if you have very low fps you wont get
                             if (droneRef.lifetime <= 0.2) 
                             {                                
                                 droneRef.collected++;
