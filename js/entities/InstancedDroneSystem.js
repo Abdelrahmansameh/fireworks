@@ -380,7 +380,12 @@ class InstancedDroneSystem {
                         let pullElapsed = 0;
                         const pullFn = (state, delta) => {
                             if (!droneRef.active) return;
-
+                            if (droneRef.lifetime <= 0.2) 
+                            {                                
+                                droneRef.collected++;
+                                state.lifetime = 0;
+                                return;
+                            }
                             pullElapsed += delta;
 
                             const ex = droneRef.x - state.position.x;
@@ -393,6 +398,7 @@ class InstancedDroneSystem {
                                 state.lifetime = 0; // kill particle
                                 return;
                             }
+                            state.alpha = pullElapsed / cfg.maxCaptureTime; 
                             state.lifetime = 1.0;
                             // Accelerate toward drone
                             const eInv = 1 / eDist;
@@ -437,7 +443,7 @@ class InstancedDroneSystem {
             // ── Write GPU slot ───────────────────────────────────────
             // Gentle pulse so drones are visually distinct from static objects
             const pulse = 1.0 + 0.45 * Math.sin(now * 0.003 + i * 1.3);
-            const alpha = 1 + pulse;
+            const alpha =  pulse;
 
             gpu[gBase + 0] = d[base + this.PX];
             gpu[gBase + 1] = d[base + this.PY];
