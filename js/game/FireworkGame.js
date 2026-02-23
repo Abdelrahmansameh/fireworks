@@ -36,7 +36,8 @@ class FireworkGame extends Engine {
             crowdsTab: false,
             backgroundTab: false,
             resourceGenerator: false,
-            efficiencyBooster: false
+            efficiencyBooster: false,
+            droneHub: false
         };
 
         this.firstClickStates = {
@@ -594,7 +595,8 @@ class FireworkGame extends Engine {
             crowdsTab: false,
             backgroundTab: false,
             resourceGenerator: false,
-            efficiencyBooster: false
+            efficiencyBooster: false,
+            droneHub: false
         };
 
         this.firstClickStates = {
@@ -1331,6 +1333,16 @@ class FireworkGame extends Engine {
             }
         }
 
+        if (!this.unlockStates.droneHub) {
+            const boosterCount = this.buildingManager.getBuildingsByType('EFFICIENCY_BOOSTER').length;
+            if (boosterCount >= 1) {
+                this.unlockStates.droneHub = true;
+                this.showNotification("New building unlocked: Drone Hub!");
+                this.ui.updateBuildingTypeVisibility();
+                unlockUpdated = true;
+            }
+        }
+
         if (unlockUpdated) {
             this.saveUnlockStates();
         }
@@ -1352,6 +1364,8 @@ class FireworkGame extends Engine {
                 return this.unlockStates.resourceGenerator || false;
             case 'EFFICIENCY_BOOSTER':
                 return this.unlockStates.efficiencyBooster || false;
+            case 'DRONE_HUB':
+                return this.unlockStates.droneHub || false;
             default:
                 return false;
         }

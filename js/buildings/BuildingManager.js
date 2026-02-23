@@ -1,6 +1,7 @@
 import AutoLauncher from './AutoLauncher.js';
 import ResourceGenerator from './ResourceGenerator.js';
 import EfficiencyBooster from './EfficiencyBooster.js';
+import DroneHub from './DroneHub.js';
 import Building from './Building.js';
 import { BUILDING_TYPES, GAME_BOUNDS } from '../config/config.js';
 
@@ -14,6 +15,7 @@ class BuildingManager {
             'AUTO_LAUNCHER': AutoLauncher,
             'RESOURCE_GENERATOR': ResourceGenerator,
             'EFFICIENCY_BOOSTER': EfficiencyBooster,
+            'DRONE_HUB': DroneHub,
         };
     }
 

@@ -12,15 +12,42 @@ const DRONE_CONFIG = {
     collectionRadius: 100,       // world-units radius to scan for particles
     defaultLifetime: 10,         // seconds a drone lives before despawning
     sparklesPerParticle: 1,      // sparkles awarded per collected particle
-    wanderSpeed: 220,            // world-units/sec target chase speed
+    wanderSpeed: 2000,            // world-units/sec target chase speed
+    acceleration: 100,           // wu/s² ramp-up from standstill
+    deceleration: 200,           // wu/s² braking when a sharp turn is detected
+    turnThresholdDot: 0.75,      // dot(currentHeading, desiredDir) below this triggers braking (~70°)
+    minTurnSpeed: 2,            // wu/s — floor drone slows to before turning hard
+    steerRateHigh:8.0,          // exponential steer constant at full speed (sluggish)
+    steerRateLow: 2.0,          // exponential steer constant near-zero speed (nimble)
+    visualTurnSpeed: 4.5,        // rad/s max rate for visual rotation to chase velocity angle
     wanderTargetChangeTime: 3.0, // seconds between wander target changes
-    pullForce: 2500,             // world-units/sec² acceleration toward drone
+    spawnLaunchAngleDeg: 30,     // degrees from vertical for initial hub-spawn launch direction
+    pullForce: 4500,             // world-units/sec² acceleration toward drone
     arrivalThreshold: 10,        // world-units — particle "collected" within this dist
     maxCaptureTime: 1.2,         // seconds before a targeted particle is force-collected
     defaultScale: 14,            // render scale of the drone mesh
     glowStrength: 0.8,           // emissive glow intensity
     scanInterval: 4,             // scan for particles once every N frames (1 = every frame)
+    minParticleAge: 0.15,          // seconds a particle must have been alive before a drone can pull it
     color: { r: 0.4, g: 0.9, b: 1.0, a: 1.0 },  // default drone color (cyan-ish)
+
+    oscillationAmplitude: 1100,    // wu/s — perpendicular speed added by the sine wave
+    oscillationFrequency: .9,    // Hz — cycles per second of the side-to-side wave
+
+    droneTrails: {
+        enabled: true,
+        spawnRate: 0.03,        // seconds between trail bursts per drone
+        perBurst: 3,            // particles spawned per burst
+        lifetime: 0.08,         // very short particle lifetime
+        size: 2.5,              // particle size (world units)
+        speed: 130,             // ejection speed (world-units/sec)
+        coneAngle: 90,          // half-cone angle in degrees — wide spread
+        gravity: 0,             // no gravity
+        friction: 4,            // strong air resistance so they die quickly
+        alphaMultiplier: 1,   // base opacity of trail particles
+        shape: 'sphere',
+        color: { r: .3, g: 0.3, b: 0.9, a: 1.0 } // orange
+    },
 };
 
 const FIREWORK_CONFIG = {
@@ -230,6 +257,31 @@ const BUILDING_TYPES = {
         radiusRatio: 1.1,
         baseMultiplier: 1.1,
         multiplierRatio: 1.05,
+    },
+    DRONE_HUB: {
+        id: 'drone_hub',
+        name: 'Drone Hub',
+        description: 'Periodically launches drones that collect firework particles',
+        baseCost: 75,
+        costRatio: 1.4,
+        currency: 'gold',
+        width: 40,
+        height: 50,
+        color: { r: 0.2, g: 0.7, b: 1.0, a: 1 },
+        texture: null,
+        textureKey: null,
+        baseUpgradeCost: 40,
+        upgradeCostRatio: 1.3,
+        // Spawn interval (seconds) between drone launches
+        baseSpawnInterval: 12,
+        spawnIntervalRatio: 0.88,   // multiplied each level (shrinks interval)
+        // Drone lifetime and speed scale up each level
+        baseDroneLifetime: 10,
+        droneLifetimeRatio: 1.15,
+        baseDroneSpeed: 600,
+        droneSpeedRatio: 1.08,
+        droneScale: 16,
+        droneColor: { r:0.1, g: 0.65, b: 0.8, a: 1.0 }, 
     }
 };
 

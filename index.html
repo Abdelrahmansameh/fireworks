@@ -104,6 +104,7 @@
                 <button class="building-type-tab active" data-building-type="AUTO_LAUNCHER">Auto-Launchers</button>
                 <button class="building-type-tab" data-building-type="RESOURCE_GENERATOR">Resource Generators</button>
                 <button class="building-type-tab" data-building-type="EFFICIENCY_BOOSTER">Efficiency Boosters</button>
+                <button class="building-type-tab" data-building-type="DRONE_HUB">Drone Hubs</button>
             </div>
 
             <!-- Auto-Launcher Section -->
@@ -144,6 +145,19 @@
                 </div>
                 <br>
                 <div id="booster-list"></div>
+            </div>
+
+            <!-- Drone Hub Section -->
+            <div class="building-section" data-building-type="DRONE_HUB">
+                <div class="building-buy-section">
+                    <h3>Drone Hubs Owned: <span id="drone-hub-count">0</span></h3>
+                    <p>Cost: <span id="drone-hub-cost">75</span> gold</p>
+                    <p class="building-description">Periodically launches drones that collect firework particles</p>
+                    <button id="buy-drone-hub">Buy Drone Hub</button>
+                    <button id="upgrade-all-drone-hubs">Upgrade All</button>
+                </div>
+                <br>
+                <div id="drone-hub-list"></div>
             </div>
         </div>
     </div>

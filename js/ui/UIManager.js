@@ -294,6 +294,14 @@ class UIManager {
             this.game.upgradeAllBuildingsByType('EFFICIENCY_BOOSTER');
         });
 
+        document.getElementById('buy-drone-hub').addEventListener('click', () => {
+            this.game.buyBuilding('DRONE_HUB');
+        });
+
+        document.getElementById('upgrade-all-drone-hubs').addEventListener('click', () => {
+            this.game.upgradeAllBuildingsByType('DRONE_HUB');
+        });
+
         const backButton = document.getElementById('back-to-game');
         if (backButton) {
             backButton.addEventListener('click', () => {
@@ -366,6 +374,7 @@ class UIManager {
             this.draggingLauncher = intersectedBuilding;
             this.game.selectLauncher(intersectedBuilding.id);
             this.game.updateLauncherList();
+            this.emitGrabModeBurst(worldPos.x, worldPos.y);
 
             document.body.style.cursor = 'none';
 
@@ -385,7 +394,7 @@ class UIManager {
             }
             this.scrollDragHoldTimeout = setTimeout(() => {
                 this.isScrollDragReady = true;
-                this.emitGrabModeBurst(worldPos.x, worldPos.y); 
+                this.emitGrabModeBurst(worldPos.x, worldPos.y);
                 document.body.style.cursor = 'none';
             }, this.minCameraDragHoldMs);
 
@@ -405,7 +414,7 @@ class UIManager {
         const white = new Renderer2D.Color(1, 1, 1, 0.95);
 
         for (let i = 0; i < burstCount; i++) {
-            const angle = i / burstCount * Math.PI * 2  * (2 * Math.PI / burstCount);
+            const angle = i / burstCount * Math.PI * 2 * (2 * Math.PI / burstCount);
             const radius = 3 + Math.random();
             const dirX = Math.cos(angle);
             const dirY = Math.sin(angle);
@@ -1542,6 +1551,17 @@ class UIManager {
                     }
                 }
             );
+        } else if (buildingType === 'DRONE_HUB') {
+            this.updateDroneHubList(buildings, this.game.selectedBuildingId,
+                (id) => this.game.selectLauncher(id),
+                (id) => {
+                    const building = this.game.buildingManager.getBuildingById(id);
+                    if (building) {
+                        this.game.buildingManager.upgradeBuilding(building);
+                        this.updateBuildingListByType('DRONE_HUB');
+                    }
+                }
+            );
         }
 
         // Update counts
@@ -1646,24 +1666,76 @@ class UIManager {
         });
     }
 
+    updateDroneHubList(hubs, selectedBuildingId, onSelect, onUpgrade) {
+        const hubList = document.getElementById('drone-hub-list');
+        hubList.innerHTML = '';
+
+        if (hubs.length === 0) {
+            hubList.innerHTML = '<p>No drone hubs owned yet.</p>';
+            return;
+        }
+
+        hubs.forEach((hub, index) => {
+            const hubDiv = document.createElement('div');
+            hubDiv.classList.add('launcher-card');
+            hubDiv.dataset.buildingId = hub.id;
+
+            if (hub.id === selectedBuildingId) {
+                hubDiv.classList.add('selected');
+            }
+
+            const upgradeCost = hub.getUpgradeCost();
+            const spawnRate = hub.getSpawnRate().toFixed(3);
+
+            hubDiv.innerHTML = `
+                <h3>Drone Hub ${index + 1}</h3>
+                <div class="launcher-details">
+                    <p>Level: ${hub.level}</p>
+                    <p>Spawn interval: ${hub.spawnInterval.toFixed(1)}s</p>
+                    <p>Drone lifetime: ${hub.droneLifetime.toFixed(1)}s</p>
+                    <p>Drone speed: ${hub.droneSpeed.toFixed(0)}</p>
+                    <p>Upgrade Cost: ${upgradeCost} gold</p>
+                    <button class="upgrade-button" data-building-id="${hub.id}">Upgrade</button>
+                </div>
+            `;
+            hubList.appendChild(hubDiv);
+
+            hubDiv.querySelector('.upgrade-button').addEventListener('click', (e) => {
+                e.stopPropagation();
+                onUpgrade(hub.id);
+            });
+
+            hubDiv.addEventListener('click', () => {
+                onSelect(hub.id);
+                if (hub.x !== undefined) this.game.setCameraTarget(hub.x);
+            });
+        });
+    }
+
     updateBuildingCounts() {
         const autoLaunchers = this.game.buildingManager.getBuildingsByType('AUTO_LAUNCHER');
         const generators = this.game.buildingManager.getBuildingsByType('RESOURCE_GENERATOR');
         const boosters = this.game.buildingManager.getBuildingsByType('EFFICIENCY_BOOSTER');
+        const droneHubs = this.game.buildingManager.getBuildingsByType('DRONE_HUB');
 
         document.getElementById('auto-launcher-level').textContent = autoLaunchers.length;
         document.getElementById('resource-generator-count').textContent = generators.length;
         document.getElementById('efficiency-booster-count').textContent = boosters.length;
+        const droneHubCountEl = document.getElementById('drone-hub-count');
+        if (droneHubCountEl) droneHubCountEl.textContent = droneHubs.length;
     }
 
     updateBuildingCosts() {
         const autoLauncherCost = this.game.buildingManager.getBuyCost('AUTO_LAUNCHER');
         const generatorCost = this.game.buildingManager.getBuyCost('RESOURCE_GENERATOR');
         const boosterCost = this.game.buildingManager.getBuyCost('EFFICIENCY_BOOSTER');
+        const droneHubCost = this.game.buildingManager.getBuyCost('DRONE_HUB');
 
         document.getElementById('auto-launcher-cost').textContent = autoLauncherCost;
         document.getElementById('resource-generator-cost').textContent = generatorCost;
         document.getElementById('efficiency-booster-cost').textContent = boosterCost;
+        const droneHubCostEl = document.getElementById('drone-hub-cost');
+        if (droneHubCostEl) droneHubCostEl.textContent = droneHubCost;
     }
 
     updateBuildingTypeVisibility() {
@@ -1687,11 +1759,22 @@ class UIManager {
             }
         }
 
+        const droneHubTab = document.querySelector('.building-type-tab[data-building-type="DRONE_HUB"]');
+        if (droneHubTab) {
+            if (this.game.unlockStates.droneHub) {
+                droneHubTab.style.display = 'block';
+            } else {
+                droneHubTab.style.display = 'none';
+            }
+        }
+
         // If currently viewing a locked building type, switch to auto launcher
         const activeBuildingType = document.querySelector('.building-type-tab.active')?.getAttribute('data-building-type');
         if (activeBuildingType === 'RESOURCE_GENERATOR' && !this.game.unlockStates.resourceGenerator) {
             this.switchBuildingType('AUTO_LAUNCHER');
         } else if (activeBuildingType === 'EFFICIENCY_BOOSTER' && !this.game.unlockStates.efficiencyBooster) {
+            this.switchBuildingType('AUTO_LAUNCHER');
+        } else if (activeBuildingType === 'DRONE_HUB' && !this.game.unlockStates.droneHub) {
             this.switchBuildingType('AUTO_LAUNCHER');
         }
     }
