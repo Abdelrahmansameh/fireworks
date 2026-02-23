@@ -36,16 +36,17 @@ const DRONE_CONFIG = {
 
     droneTrails: {
         enabled: true,
-        spawnRate: 0.03,        // seconds between trail bursts per drone
-        perBurst: 3,            // particles spawned per burst
-        lifetime: 0.08,         // very short particle lifetime
-        size: 2.5,              // particle size (world units)
-        speed: 130,             // ejection speed (world-units/sec)
-        coneAngle: 90,          // half-cone angle in degrees — wide spread
-        gravity: 0,             // no gravity
-        friction: 4,            // strong air resistance so they die quickly
-        alphaMultiplier: 1,   // base opacity of trail particles
+        spawnRate: 0.03,        
+        perBurst: 3,            
+        lifetime: 0.2,         
+        size: 3.5,              
+        speed: 0,            
+        coneAngle: 130,          
+        gravity: -400,           
+        friction: 4,           
+        alphaMultiplier: 1,   
         shape: 'sphere',
+        scale: 1.0,
         color: { r: .3, g: 0.3, b: 0.9, a: 1.0 } // orange
     },
 };
