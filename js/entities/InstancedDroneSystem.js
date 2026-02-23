@@ -6,12 +6,12 @@ const { BlendMode } = Renderer2D;
 // When rotation = atan2(vy, vx), the drone faces its movement direction.
 function buildDroneMesh() {
     const vertices = new Float32Array([
-         1.0,  0.0,   // 0 – front tip
-         0.05,  0.45, // 1 – upper wing tip
-        -0.55,  0.18, // 2 – upper back shoulder
-        -0.8,   0.0,  // 3 – tail
+        1.0, 0.0,   // 0 – front tip
+        0.05, 0.45, // 1 – upper wing tip
+        -0.55, 0.18, // 2 – upper back shoulder
+        -0.8, 0.0,  // 3 – tail
         -0.55, -0.12, // 4 – lower back shoulder
-         0.05, -0.30, // 5 – lower wing tip
+        0.05, -0.30, // 5 – lower wing tip
     ]);
     // Four triangles fanning from front tip
     const indices = new Uint16Array([
@@ -249,15 +249,21 @@ class InstancedDroneSystem {
             d[base + this.OSC_PHASE] += delta * cfg.oscillationFrequency * Math.PI * 2;
             // Perpendicular unit vector to desired direction: (-y, x)
             const perpX = -desiredDirY;
-            const perpY =  desiredDirX;
+            const perpY = desiredDirX;
             // Suppress oscillation mid-turn so it doesn't fight the steering
             const oscScale = isTurning ? 0.0 : Math.sin(d[base + this.OSC_PHASE]);
             const oscVX = perpX * oscScale * cfg.oscillationAmplitude;
             const oscVY = perpY * oscScale * cfg.oscillationAmplitude;
 
             // Drive velocity toward (desiredDir * currentSpeed) + oscillation
-            const targetVX = desiredDirX * currentSpeed ;
+            const targetVX = desiredDirX * currentSpeed;
             const targetVY = desiredDirY * currentSpeed;
+            // safety in case current speed is close to 0
+            if (currentSpeed < 1) {
+                targetVX = desiredDirX * 1;
+                targetVY = desiredDirY * 1;
+            }
+
             d[base + this.VX] += (targetVX - d[base + this.VX]) * steerK + oscVX * delta;
             d[base + this.VY] += (targetVY - d[base + this.VY]) * steerK + oscVY * delta;
 
@@ -276,15 +282,8 @@ class InstancedDroneSystem {
             const vx = d[base + this.VX];
             const vy = d[base + this.VY];
             if (vx * vx + vy * vy > 1) {
-                const targetRot = Math.atan2(vy, vx);
-                let dAngle = targetRot - d[base + this.ROTATION];
-                // Wrap delta to [-π, π]
-                if (dAngle >  Math.PI) dAngle -= 2 * Math.PI;
-                if (dAngle < -Math.PI) dAngle += 2 * Math.PI;
-                const maxTurn = cfg.visualTurnSpeed * delta;
-                d[base + this.ROTATION] += Math.max(-maxTurn, Math.min(dAngle, maxTurn));
+                d[base + this.ROTATION] = Math.atan2(vy, vx);
             }
-
             // Sync the live ref position so pull closures are current
             ref.x = d[base + this.PX];
             ref.y = d[base + this.PY];
@@ -340,76 +339,76 @@ class InstancedDroneSystem {
 
             // ── Particle scan ────────────────────────────────────────
             if (doScan) {
-            const droneX = d[base + this.PX];
-            const droneY = d[base + this.PY];
-            const radius = d[base + this.RADIUS];
-            const droneRef = ref; // captured by pull closure
+                const droneX = d[base + this.PX];
+                const droneY = d[base + this.PY];
+                const radius = d[base + this.RADIUS];
+                const droneRef = ref; // captured by pull closure
 
-            for (let si = 0; si < this._shapes.length; si++) {
-                const shape = this._shapes[si];
-                const sd = ps.instanceData[shape];
-                if (!sd) continue;
+                for (let si = 0; si < this._shapes.length; si++) {
+                    const shape = this._shapes[si];
+                    const sd = ps.instanceData[shape];
+                    if (!sd) continue;
 
-                const pCount = ps.activeCounts[shape];
-                if (pCount === 0) continue;
+                    const pCount = ps.activeCounts[shape];
+                    if (pCount === 0) continue;
 
-                const sStr = ps.strideFloats;
-                const updateFns = ps.particleUpdateFns[shape];
-                const pTypeIdx = ps.particleTypeIdx;
-                const pPosIdx = ps.positionIdx;
+                    const sStr = ps.strideFloats;
+                    const updateFns = ps.particleUpdateFns[shape];
+                    const pTypeIdx = ps.particleTypeIdx;
+                    const pPosIdx = ps.positionIdx;
 
-                for (let pi = 0; pi < pCount; pi++) {
-                    const pBase = pi * sStr;
+                    for (let pi = 0; pi < pCount; pi++) {
+                        const pBase = pi * sStr;
 
-                    // Only collect firework-explosion particles
-                    if (sd[pBase + pTypeIdx] !== PARTICLE_TYPES.FIREWORK_EXPLOSION) continue;
+                        // Only collect firework-explosion particles
+                        if (sd[pBase + pTypeIdx] !== PARTICLE_TYPES.FIREWORK_EXPLOSION) continue;
 
-                    // Skip particles that haven't been alive long enough
-                    const pAge = sd[pBase + ps.initialLifetimeIdx] - sd[pBase + ps.lifetimeIdx];
-                    if (pAge < cfg.minParticleAge) continue;
+                        // Skip particles that haven't been alive long enough
+                        const pAge = sd[pBase + ps.initialLifetimeIdx] - sd[pBase + ps.lifetimeIdx];
+                        if (pAge < cfg.minParticleAge) continue;
 
-                    const pdx = sd[pBase + pPosIdx] - droneX;
-                    if (pdx > radius || pdx < -radius) continue;
-                    const pdy = sd[pBase + pPosIdx + 1] - droneY;
-                    if (pdy > radius || pdy < -radius) continue;
+                        const pdx = sd[pBase + pPosIdx] - droneX;
+                        if (pdx > radius || pdx < -radius) continue;
+                        const pdy = sd[pBase + pPosIdx + 1] - droneY;
+                        if (pdy > radius || pdy < -radius) continue;
 
-                    // Don't override a pull that's already in progress
-                    const existingFn = updateFns[pi];
-                    if (existingFn && existingFn._isDronePull) continue;
+                        // Don't override a pull that's already in progress
+                        const existingFn = updateFns[pi];
+                        if (existingFn && existingFn._isDronePull) continue;
 
-                    // Build pull closure — captures droneRef (live object)
-                    let pullElapsed = 0;
-                    const pullFn = (state, delta) => {
-                        if (!droneRef.active) return;
+                        // Build pull closure — captures droneRef (live object)
+                        let pullElapsed = 0;
+                        const pullFn = (state, delta) => {
+                            if (!droneRef.active) return;
 
-                        pullElapsed += delta;
+                            pullElapsed += delta;
 
-                        const ex = droneRef.x - state.position.x;
-                        const ey = droneRef.y - state.position.y;
-                        const eDist = Math.sqrt(ex * ex + ey * ey);
+                            const ex = droneRef.x - state.position.x;
+                            const ey = droneRef.y - state.position.y;
+                            const eDist = Math.sqrt(ex * ex + ey * ey);
 
-                        if (eDist < cfg.arrivalThreshold || pullElapsed >= cfg.maxCaptureTime) {
-                            // Particle reached the drone (or timed out) — collect it
-                            droneRef.collected++;
-                            state.lifetime = 0; // kill particle
-                            return;
-                        }
+                            if (eDist < cfg.arrivalThreshold || pullElapsed >= cfg.maxCaptureTime) {
+                                // Particle reached the drone (or timed out) — collect it
+                                droneRef.collected++;
+                                state.lifetime = 0; // kill particle
+                                return;
+                            }
 
-                        // Accelerate toward drone
-                        const eInv = 1 / eDist;
-                        state.velocity.x += ex * eInv * cfg.pullForce * delta;
-                        state.velocity.y += ey * eInv * cfg.pullForce * delta;
+                            // Accelerate toward drone
+                            const eInv = 1 / eDist;
+                            state.velocity.x += ex * eInv * cfg.pullForce * delta;
+                            state.velocity.y += ey * eInv * cfg.pullForce * delta;
 
-                        // Shift color toward warm gold/white
-                        state.color.r += (1.0  - state.color.r)  * delta;
-                        state.color.g += (0.92 - state.color.g)  * delta;
-                        state.color.b += (0.25 - state.color.b)  * delta;
-                    };
-                    pullFn._isDronePull = true;
+                            // Shift color toward warm gold/white
+                            state.color.r += 0.5 * delta;
+                            state.color.g += 0.5 * delta;
+                            state.color.b += 0.5 * delta;
+                        };
+                        pullFn._isDronePull = true;
 
-                    updateFns[pi] = pullFn;
+                        updateFns[pi] = pullFn;
+                    }
                 }
-            }
             }  // doScan
 
             // ── Lifetime ─────────────────────────────────────────────

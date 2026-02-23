@@ -16,11 +16,11 @@ const DRONE_CONFIG = {
     acceleration: 100,           // wu/s² ramp-up from standstill
     deceleration: 200,           // wu/s² braking when a sharp turn is detected
     turnThresholdDot: 0.75,      // dot(currentHeading, desiredDir) below this triggers braking (~70°)
-    minTurnSpeed: 2,            // wu/s — floor drone slows to before turning hard
-    steerRateHigh:8.0,          // exponential steer constant at full speed (sluggish)
-    steerRateLow: 2.0,          // exponential steer constant near-zero speed (nimble)
+    minTurnSpeed: 10,            // wu/s — floor drone slows to before turning hard
+    steerRateHigh: 5.0,          // exponential steer constant at full speed (sluggish)
+    steerRateLow: 2,          // exponential steer constant near-zero speed (nimble)
     visualTurnSpeed: 4.5,        // rad/s max rate for visual rotation to chase velocity angle
-    wanderTargetChangeTime: 3.0, // seconds between wander target changes
+    wanderTargetChangeTime: 4.0, // seconds between wander target changes
     spawnLaunchAngleDeg: 30,     // degrees from vertical for initial hub-spawn launch direction
     pullForce: 4500,             // world-units/sec² acceleration toward drone
     arrivalThreshold: 10,        // world-units — particle "collected" within this dist
