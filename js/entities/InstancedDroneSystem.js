@@ -259,7 +259,7 @@ class InstancedDroneSystem {
             const targetVX = desiredDirX * currentSpeed;
             const targetVY = desiredDirY * currentSpeed;
             // safety in case current speed is close to 0
-            if (currentSpeed < 1) {
+            if (currentSpeed < 5) {
                 targetVX = desiredDirX * 1;
                 targetVY = desiredDirY * 1;
             }
@@ -393,7 +393,7 @@ class InstancedDroneSystem {
                                 state.lifetime = 0; // kill particle
                                 return;
                             }
-
+                            state.lifetime = 1.0;
                             // Accelerate toward drone
                             const eInv = 1 / eDist;
                             state.velocity.x += ex * eInv * cfg.pullForce * delta;
