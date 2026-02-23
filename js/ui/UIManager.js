@@ -1,4 +1,4 @@
-import { GAME_BOUNDS, BACKGROUND_IMAGES, DEFAULT_RECIPE_COMPONENTS, COMPONENT_PROPERTY_RANGES } from '../config/config.js';
+import { GAME_BOUNDS, BACKGROUND_IMAGES, DEFAULT_RECIPE_COMPONENTS, COMPONENT_PROPERTY_RANGES, PARTICLE_TYPES } from '../config/config.js';
 import * as Renderer2D from '../rendering/Renderer.js';
 
 class UIManager {
@@ -171,6 +171,19 @@ class UIManager {
             cheatUnlockUpgradesBtn.addEventListener('click', () => {
                 this.game.unlockAllUpgrades();
                 this.showNotification('All upgrades unlocked!');
+            });
+        }
+
+        // Cheat: spawn drones
+        const cheatSpawnDroneBtn = document.getElementById('cheat-spawn-drone');
+        if (cheatSpawnDroneBtn) {
+            cheatSpawnDroneBtn.addEventListener('click', () => {
+                const countInput = document.getElementById('cheat-drone-count');
+                const count = Math.max(1, parseInt(countInput?.value) || 1);
+                for (let i = 0; i < count; i++) {
+                    this.game.spawnDrone();
+                }
+                this.showNotification(`Spawned ${count} drone${count !== 1 ? 's' : ''}!`);
             });
         }
 
@@ -445,7 +458,7 @@ class UIManager {
                 null, // gradientFinalColor
                 0.0, // gradientStartTime
                 1.0, // gradientDuration
-                true
+                PARTICLE_TYPES.UI_EFFECT
             );
         }
     }

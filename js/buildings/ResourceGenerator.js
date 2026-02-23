@@ -1,5 +1,6 @@
 import Building from './Building.js';
 import * as Renderer2D from '../rendering/Renderer.js';
+import { PARTICLE_TYPES } from '../config/config.js';
 
 class ResourceGenerator extends Building {
     constructor(game, x, y, data = {}) {
@@ -81,7 +82,7 @@ class ResourceGenerator extends Building {
                 null, 
                 0.0,
                 1.0,
-                true // this IS a trail particle
+                PARTICLE_TYPES.RESOURCE_GENERATOR
             );
         }
     }

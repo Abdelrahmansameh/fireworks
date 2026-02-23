@@ -1,3 +1,28 @@
+const PARTICLE_TYPES = {
+    DEFAULT: 0,
+    FIREWORK_EXPLOSION: 1,
+    TRAIL: 2,
+    ROCKET_TRAIL: 3,
+    UI_EFFECT: 4,
+    RESOURCE_GENERATOR: 5,
+};
+
+const DRONE_CONFIG = {
+    maxDrones: 20,
+    collectionRadius: 100,       // world-units radius to scan for particles
+    defaultLifetime: 10,         // seconds a drone lives before despawning
+    sparklesPerParticle: 1,      // sparkles awarded per collected particle
+    wanderSpeed: 220,            // world-units/sec target chase speed
+    wanderTargetChangeTime: 3.0, // seconds between wander target changes
+    pullForce: 2500,             // world-units/sec² acceleration toward drone
+    arrivalThreshold: 10,        // world-units — particle "collected" within this dist
+    maxCaptureTime: 1.2,         // seconds before a targeted particle is force-collected
+    defaultScale: 14,            // render scale of the drone mesh
+    glowStrength: 0.8,           // emissive glow intensity
+    scanInterval: 4,             // scan for particles once every N frames (1 = every frame)
+    color: { r: 0.4, g: 0.9, b: 1.0, a: 1.0 },  // default drone color (cyan-ish)
+};
+
 const FIREWORK_CONFIG = {
     maxParticles: 500000,
     baseSpeed: 800,
@@ -208,5 +233,5 @@ const BUILDING_TYPES = {
     }
 };
 
-export { FIREWORK_CONFIG, GAME_BOUNDS, DEFAULT_RECIPE_COMPONENTS, GENERIC_RECIPE_NAMES, BACKGROUND_IMAGES, AUTO_LAUNCHER_COST_BASE, AUTO_LAUNCHER_COST_RATIO, AUTO_UPGRADE_COST_RATIO, AUTO_SPAWN_INTERVAL_RATIO, COMPONENT_PROPERTY_RANGES, BUILDING_TYPES };
+export { FIREWORK_CONFIG, GAME_BOUNDS, DEFAULT_RECIPE_COMPONENTS, GENERIC_RECIPE_NAMES, BACKGROUND_IMAGES, AUTO_LAUNCHER_COST_BASE, AUTO_LAUNCHER_COST_RATIO, AUTO_UPGRADE_COST_RATIO, AUTO_SPAWN_INTERVAL_RATIO, COMPONENT_PROPERTY_RANGES, BUILDING_TYPES, PARTICLE_TYPES, DRONE_CONFIG };
 

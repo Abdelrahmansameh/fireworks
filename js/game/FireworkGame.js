@@ -1,6 +1,7 @@
 import { FIREWORK_CONFIG, GAME_BOUNDS, DEFAULT_RECIPE_COMPONENTS, GENERIC_RECIPE_NAMES, BACKGROUND_IMAGES, AUTO_LAUNCHER_COST_BASE, AUTO_LAUNCHER_COST_RATIO, AUTO_UPGRADE_COST_RATIO, AUTO_SPAWN_INTERVAL_RATIO, COMPONENT_PROPERTY_RANGES, BUILDING_TYPES } from '../config/config.js';
 import { UPGRADE_DEFINITIONS } from '../upgrades/upgrades.js';
 import InstancedParticleSystem from '../particles/InstancedParticleSystem.js';
+import InstancedDroneSystem from '../entities/InstancedDroneSystem.js';
 import Crowd from '../entities/Crowd.js';
 import Firework from '../entities/Firework.js';
 import UIManager from '../ui/UIManager.js';
@@ -151,6 +152,7 @@ class FireworkGame extends Engine {
         this.gameState.autoLaunchers = [];
 
         this.particleSystem = new InstancedParticleSystem(this.renderer2D, this.profiler);
+        this.droneSystem = new InstancedDroneSystem(this.renderer2D, this.particleSystem);
         this.crowd = new Crowd(this.renderer2D);
 
         const initialSps = this.calculateTotalSparklesPerSecond();
@@ -363,6 +365,15 @@ class FireworkGame extends Engine {
         this.resourceManager.resources.sparkles.add(amount);
     }
 
+
+    spawnDrone(x, y) {
+        const spawnX = x ?? (GAME_BOUNDS.LAUNCHER_MIN_X
+            + Math.random() * (GAME_BOUNDS.LAUNCHER_MAX_X - GAME_BOUNDS.LAUNCHER_MIN_X));
+        const spawnY = y ?? (GAME_BOUNDS.WORLD_LAUNCHER_Y
+            + Math.random() * (GAME_BOUNDS.WORLD_MAX_EXPLOSION_Y - GAME_BOUNDS.WORLD_LAUNCHER_Y));
+        this.droneSystem.spawnDrone(spawnX, spawnY);
+    }
+
     subtractSparkles(amount) {
         this.resourceManager.resources.sparkles.subtract(amount);
     }
@@ -395,6 +406,7 @@ class FireworkGame extends Engine {
         this.profiler.startFrame();
 
         this.particleSystem.update(deltaTime);
+        this.droneSystem?.update(deltaTime, (sparkles) => this.addSparkles(sparkles));
 
         this.updateCameraPosition(deltaTime);
 

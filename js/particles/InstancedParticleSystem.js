@@ -1,4 +1,4 @@
-import { FIREWORK_CONFIG } from '../config/config.js';
+import { FIREWORK_CONFIG, PARTICLE_TYPES } from '../config/config.js';
 import * as Renderer2D from '../rendering/Renderer.js';
 const { BlendMode, Color, Vector2 } = Renderer2D;
 
@@ -78,7 +78,7 @@ class InstancedParticleSystem {
 
         // Trail system indices
         this.trailTimerIdx = 28;           // accumulator for spawn timing
-        this.isTrailParticleIdx = 29;      // 1.0 if this IS a trail
+        this.particleTypeIdx = 29;         // PARTICLE_TYPES int (0=default,1=firework explosion,2=trail,3=rocket trail,4=ui,5=resgen)
         this.trailCurrentCountIdx = 30;    // current trail count
 
         this.strideFloats = 31;
@@ -123,7 +123,7 @@ class InstancedParticleSystem {
         gradientFinalColor = null,
         gradientStartTime = 0.0,
         gradientDuration = 1.0,
-        isTrailParticle = false) {
+        particleType = PARTICLE_TYPES.DEFAULT) {
         if (!this.meshes[shape]) shape = 'circle';
         const idx = this.activeCounts[shape];
         if (idx >= this.maxParticles) return -1;
@@ -182,7 +182,7 @@ class InstancedParticleSystem {
 
         // Initialize trail data
         d[base + this.trailTimerIdx] = 0.0;
-        d[base + this.isTrailParticleIdx] = isTrailParticle ? 1.0 : 0.0;
+        d[base + this.particleTypeIdx] = particleType;
         d[base + this.trailCurrentCountIdx] = 0.0;
 
         this.particleUpdateFns[shape][idx] = updateFn;
@@ -229,7 +229,12 @@ class InstancedParticleSystem {
                     state.position.set(d[sBase + this.positionIdx], d[sBase + this.positionIdx + 1]);
                     state.velocity.set(d[sBase + this.velocityIdx], d[sBase + this.velocityIdx + 1]);
                     state.acceleration.set(d[sBase + this.accelerationIdx], d[sBase + this.accelerationIdx + 1]);
+                    state.color.r = d[sBase + this.colorIdx];
+                    state.color.g = d[sBase + this.colorIdx + 1];
+                    state.color.b = d[sBase + this.colorIdx + 2];
+                    state.color.a = d[sBase + this.colorIdx + 3];
                     state.rotation = d[sBase + this.rotationIdx];
+                    state.lifetime = d[sBase + this.lifetimeIdx];
                     updateFn(state, delta);
                     d[sBase + this.positionIdx] = state.position.x;
                     d[sBase + this.positionIdx + 1] = state.position.y;
@@ -238,6 +243,11 @@ class InstancedParticleSystem {
                     d[sBase + this.accelerationIdx] = state.acceleration.x;
                     d[sBase + this.accelerationIdx + 1] = state.acceleration.y;
                     d[sBase + this.rotationIdx] = state.rotation;
+                    d[sBase + this.lifetimeIdx] = state.lifetime;
+                    d[sBase + this.colorIdx] = state.color.r;
+                    d[sBase + this.colorIdx + 1] = state.color.g;
+                    d[sBase + this.colorIdx + 2] = state.color.b;
+                    d[sBase + this.colorIdx + 3] = state.color.a;
                 }
 
                 d[sBase + this.lifetimeIdx] -= delta;
@@ -294,10 +304,10 @@ class InstancedParticleSystem {
                     }
                 }
 
-                // Trail spawning logic - queue trails instead of spawning immediately
-                const isTrail = d[sBase + this.isTrailParticleIdx] > 0.5;
+                // Trail spawning logic — only firework explosion particles spawn trails
+                const particleType = d[sBase + this.particleTypeIdx];
 
-                if (FIREWORK_CONFIG.trails.enabled && !isTrail) {
+                if (FIREWORK_CONFIG.trails.enabled && particleType === PARTICLE_TYPES.FIREWORK_EXPLOSION) {
                     d[sBase + this.trailTimerIdx] += delta;
                     const currentCount = d[sBase + this.trailCurrentCountIdx];
 
@@ -389,7 +399,7 @@ class InstancedParticleSystem {
                 null,
                 0.0,
                 1.0,
-                true // this IS a trail particle
+                PARTICLE_TYPES.TRAIL // mark as trail so it won't chain-spawn more trails
             );
         }
 

@@ -1,4 +1,4 @@
-import { FIREWORK_CONFIG, GAME_BOUNDS } from '../config/config.js';
+import { FIREWORK_CONFIG, GAME_BOUNDS, PARTICLE_TYPES } from '../config/config.js';
 import InstancedParticleSystem from '../particles/InstancedParticleSystem.js';
 import * as Renderer2D from '../rendering/Renderer.js';
 import { recipeMap } from './patterns/index.js';
@@ -113,7 +113,7 @@ class Firework {
                             null,
                             0.0,
                             1.0,
-                            true // this IS a trail particle (don't spawn trails from trails)
+                            PARTICLE_TYPES.ROCKET_TRAIL
                         );
                     }
                 }
@@ -242,7 +242,7 @@ class Firework {
                         gradientFinalColor,
                         component.gradientStartTime,
                         component.gradientDuration,
-                        false // not a trail particle
+                        PARTICLE_TYPES.FIREWORK_EXPLOSION
                     );
 
                     if (index !== -1) this.particles[shape].add(index);
