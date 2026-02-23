@@ -12,7 +12,7 @@ const DRONE_CONFIG = {
     collectionRadius: 100,       // world-units radius to scan for particles
     defaultLifetime: 10,         // seconds a drone lives before despawning
     sparklesPerParticle: 1,      // sparkles awarded per collected particle
-    wanderSpeed: 2000,            // world-units/sec target chase speed
+    wanderSpeed: 1000,            // world-units/sec target chase speed
     acceleration: 100,           // wu/s² ramp-up from standstill
     deceleration: 200,           // wu/s² braking when a sharp turn is detected
     turnThresholdDot: 0.75,      // dot(currentHeading, desiredDir) below this triggers braking (~70°)
@@ -22,9 +22,9 @@ const DRONE_CONFIG = {
     visualTurnSpeed: 4.5,        // rad/s max rate for visual rotation to chase velocity angle
     wanderTargetChangeTime: 4.0, // seconds between wander target changes
     spawnLaunchAngleDeg: 30,     // degrees from vertical for initial hub-spawn launch direction
-    pullForce: 4500,             // world-units/sec² acceleration toward drone
-    arrivalThreshold: 10,        // world-units — particle "collected" within this dist
-    maxCaptureTime: 1.2,         // seconds before a targeted particle is force-collected
+    pullForce: 5000,             // world-units/sec² acceleration toward drone
+    arrivalThreshold: 7,        // world-units — particle "collected" within this dist
+    maxCaptureTime: 1.5,         // seconds before a targeted particle is force-collected
     defaultScale: 14,            // render scale of the drone mesh
     glowStrength: 0.8,           // emissive glow intensity
     scanInterval: 4,             // scan for particles once every N frames (1 = every frame)
