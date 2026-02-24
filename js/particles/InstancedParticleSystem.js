@@ -7,51 +7,18 @@ class InstancedParticleSystem {
         this.profiler = profiler;
         this.renderer = renderer;
         this.glows = [];
-        this.pendingTrails = []; // Queue for trail particles to spawn after update loop
 
         this.renderer.loadTexture('assets/glow.png', 'glow');
 
         this.maxParticles = FIREWORK_CONFIG.maxParticles;
+        this.pendingTrailsStride = 10;
+        this.pendingTrailsData = new Float32Array(this.maxParticles * this.pendingTrailsStride);
+        this.pendingTrailsCount = 0;
         this.meshes = {};
         this.activeCounts = {};
         this.instanceData = {};
         this.particleUpdateFns = {};
         this.particleState = {};
-
-        const geometries = {
-            sphere: Renderer2D.buildCircle(1),
-            star: Renderer2D.buildStar(),
-            ring: Renderer2D.buildRing(),
-            crystalDroplet: Renderer2D.buildDroplet(),
-            sliceBurst: Renderer2D.buildSliceBurst(),
-            triangle: Renderer2D.buildTriangle(1, Math.sqrt(3) / 2),
-        };
-
-        FIREWORK_CONFIG.supportedShapes.forEach(shape => {
-            const g = geometries[shape] || geometries.sphere;
-            this.meshes[shape] = this.renderer.createInstancedGroup({
-                vertices: g.vertices,
-                indices: g.indices,
-                maxInstances: this.maxParticles,
-                blendMode: BlendMode.ADDITIVE,
-                zIndex: 10,
-            });
-            this.activeCounts[shape] = 0;
-            this.instanceData[shape] = new Float32Array(this.maxParticles * 24).fill(0);
-            this.particleUpdateFns[shape] = new Array(this.maxParticles).fill(null);
-            this.particleState[shape] = {
-                position: new Vector2(),
-                velocity: new Vector2(),
-                acceleration: new Vector2(),
-                color: new Color(),
-                scale: 0,
-                lifetime: 0,
-                initialLifetime: 0,
-                gravity: 0,
-                friction: 0,
-                rotation: 0,
-            };
-        });
 
         this.positionIdx = 0;
         this.velocityIdx = 2;
@@ -75,14 +42,70 @@ class InstancedParticleSystem {
         this.gradientFinalColorAIdx = 25;
         this.gradientStartTimeIdx = 26;
         this.gradientDurationIdx = 27;
-
         // Trail system indices
         this.trailTimerIdx = 28;           // accumulator for spawn timing
         this.particleTypeIdx = 29;         // PARTICLE_TYPES int (0=default,1=firework explosion,2=trail,3=rocket trail,4=ui,5=resgen)
-        this.trailCurrentCountIdx = 30;    // current trail count
-
+        this.trailCurrentCountIdx = 30;    
         this.strideFloats = 31;
+
+        const geometries = {
+            sphere: Renderer2D.buildCircle(1),
+            star: Renderer2D.buildStar(),
+            ring: Renderer2D.buildRing(),
+            crystalDroplet: Renderer2D.buildDroplet(),
+            sliceBurst: Renderer2D.buildSliceBurst(),
+            triangle: Renderer2D.buildTriangle(1, Math.sqrt(3) / 2),
+        };
+
+        FIREWORK_CONFIG.supportedShapes.forEach(shape => {
+            const g = geometries[shape] || geometries.sphere;
+            this.meshes[shape] = this.renderer.createInstancedGroup({
+                vertices: g.vertices,
+                indices: g.indices,
+                maxInstances: this.maxParticles,
+                blendMode: BlendMode.ADDITIVE,
+                zIndex: 10,
+            });
+            this.activeCounts[shape] = 0;
+            this.instanceData[shape] = new Float32Array(this.maxParticles * this.strideFloats).fill(0);
+            this.particleUpdateFns[shape] = new Array(this.maxParticles).fill(null);
+            this.particleState[shape] = {
+                position: new Vector2(),
+                velocity: new Vector2(),
+                acceleration: new Vector2(),
+                color: new Color(),
+                scale: 0,
+                lifetime: 0,
+                initialLifetime: 0,
+                gravity: 0,
+                friction: 0,
+                rotation: 0,
+            };
+        });
+
+        this._frictionCache = new Map();
+
+        this._randomPool = new Float32Array(4096);
+        this._randomIdx = 4096; 
+        this._refillRandomPool();
+
+        this._trailPosVec = new Vector2(0, 0);
+        this._trailVelVec = new Vector2(0, 0);
+        this._trailAccVec = new Vector2(0, 0); 
+        this._trailColor  = new Color(0, 0, 0, 0);
     }
+    _refillRandomPool() {
+        for (let i = 0; i < this._randomPool.length; i++) {
+            this._randomPool[i] = Math.random();
+        }
+        this._randomIdx = 0;
+    }
+
+    _fastRandom() {
+        if (this._randomIdx >= this._randomPool.length) this._randomIdx = 0;
+        return this._randomPool[this._randomIdx++];
+    }
+
     addGlow(position, color, initialSize, finalSize, lifetime, initialAlpha, finalAlpha) {
         const glowTexture = this.renderer.getTexture('glow');
         if (!glowTexture) return;
@@ -194,6 +217,9 @@ class InstancedParticleSystem {
         if (!delta) return;
         this.profiler?.startFunction?.('particleSystemUpdate');
 
+        
+        this._frictionCache.clear();
+
         for (let i = this.glows.length - 1; i >= 0; i--) {
             const glow = this.glows[i];
             glow.lifetime -= delta;
@@ -268,8 +294,15 @@ class InstancedParticleSystem {
                 }
 
                 const f = d[sBase + this.frictionIdx];
-                const hf = Math.exp(-f * delta);
-                const vf = Math.exp(-f * FIREWORK_CONFIG.verticalFrictionMultiplier * delta);
+                let _fc = this._frictionCache.get(f);
+                if (!_fc) {
+                    _fc = {
+                        hf: Math.exp(-f * delta),
+                        vf: Math.exp(-f * FIREWORK_CONFIG.verticalFrictionMultiplier * delta)
+                    };
+                    this._frictionCache.set(f, _fc);
+                }
+                const hf = _fc.hf, vf = _fc.vf;
                 d[sBase + this.velocityIdx] += d[sBase + this.accelerationIdx] * delta;
                 d[sBase + this.velocityIdx + 1] += (d[sBase + this.accelerationIdx + 1]
                     - d[sBase + this.gravityIdx]) * delta;
@@ -278,7 +311,7 @@ class InstancedParticleSystem {
                 d[sBase + this.positionIdx] += d[sBase + this.velocityIdx] * delta;
                 d[sBase + this.positionIdx + 1] += d[sBase + this.velocityIdx + 1] * delta;
                 const n = d[sBase + this.lifetimeIdx] / d[sBase + this.initialLifetimeIdx];
-                d[sBase + this.colorIdx + 3] = (n * n) * (2 * Math.random());
+                d[sBase + this.colorIdx + 3] = (n * n) * (2 * this._fastRandom());
                 if (d[sBase + this.enableColorGradientIdx] > 0.5) {
                     const normalizedLifetime = 1 - n;
                     const gradientStartTime = d[sBase + this.gradientStartTimeIdx];
@@ -316,51 +349,22 @@ class InstancedParticleSystem {
                         d[sBase + this.trailTimerIdx] = 0.0;
                         d[sBase + this.trailCurrentCountIdx]++;
 
-                        // Queue trail particle for spawning after the update loop
-                        const trailSize = FIREWORK_CONFIG.trails.size;
-                        const trailColor = new Color(
-                            d[sBase + this.colorIdx],
-                            d[sBase + this.colorIdx + 1],
-                            d[sBase + this.colorIdx + 2],
-                            d[sBase + this.colorIdx + 3] * FIREWORK_CONFIG.trails.alphaMultiplier
-                        );
-
-                        // Get the particle's velocity to determine the trail direction
-                        const velX = d[sBase + this.velocityIdx];
-                        const velY = d[sBase + this.velocityIdx + 1];
-                        const speed = Math.sqrt(velX * velX + velY * velY);
-
-                        // Calculate spawn position along a line opposite to velocity
-                        // Spawn along a line representing the particle's "past"
-
-                        let trailSpawnX = d[sBase + this.positionIdx];
-                        let trailSpawnY = d[sBase + this.positionIdx + 1];
-                        /*
-                        if (speed > 0.01) {
-                                                const trailLineLength = Math.max(20, speed * 0.05); // Scale with velocity
-                        const randomOffset = Math.random(); // 0 to 1
-                        
-                            // Normalize velocity and reverse it
-                            const dirX = -velX / speed;
-                            const dirY = -velY / speed;
-                            
-                            // Spawn along the line from current position backwards
-                            trailSpawnX += dirX * trailLineLength * randomOffset;
-                            trailSpawnY += dirY * trailLineLength * randomOffset;
-                        }*/
-
-                        // Generate random initial velocity
+                        // Queue trail particle for spawning after the update loop.
                         const velocitySpread = FIREWORK_CONFIG.trails.velocitySpread;
-                        const randomVelX = (Math.random() - 0.5) * 2 * velocitySpread;
-                        const randomVelY = (Math.random() - 0.5) * 2 * velocitySpread;
-
-                        this.pendingTrails.push({
-                            position: new Vector2(trailSpawnX, trailSpawnY),
-                            velocity: new Vector2(randomVelX, randomVelY),
-                            color: trailColor,
-                            size: trailSize,
-                            lifetime: FIREWORK_CONFIG.trails.lifetime * n
-                        });
+                        if (this.pendingTrailsCount < this.maxParticles) {
+                            const tBase = this.pendingTrailsCount * this.pendingTrailsStride;
+                            this.pendingTrailsData[tBase + 0] = d[sBase + this.positionIdx];
+                            this.pendingTrailsData[tBase + 1] = d[sBase + this.positionIdx + 1];
+                            this.pendingTrailsData[tBase + 2] = (this._fastRandom() - 0.5) * 2 * velocitySpread;
+                            this.pendingTrailsData[tBase + 3] = (this._fastRandom() - 0.5) * 2 * velocitySpread;
+                            this.pendingTrailsData[tBase + 4] = d[sBase + this.colorIdx];
+                            this.pendingTrailsData[tBase + 5] = d[sBase + this.colorIdx + 1];
+                            this.pendingTrailsData[tBase + 6] = d[sBase + this.colorIdx + 2];
+                            this.pendingTrailsData[tBase + 7] = d[sBase + this.colorIdx + 3] * FIREWORK_CONFIG.trails.alphaMultiplier;
+                            this.pendingTrailsData[tBase + 8] = FIREWORK_CONFIG.trails.size;
+                            this.pendingTrailsData[tBase + 9] = FIREWORK_CONFIG.trails.lifetime * n;
+                            this.pendingTrailsCount++;
+                        }
                     }
                 }
 
@@ -379,18 +383,26 @@ class InstancedParticleSystem {
             grp.instanceCount = count;
         });
 
-        // Spawn all queued trail particles after the main update loop
-        while (this.pendingTrails.length > 0) {
-            const trail = this.pendingTrails.pop();
+        // Spawn all queued trail particles after the main update loop.
+        for (let i = 0; i < this.pendingTrailsCount; i++) {
+            const tBase = i * this.pendingTrailsStride;
+            this._trailPosVec.x = this.pendingTrailsData[tBase + 0];
+            this._trailPosVec.y = this.pendingTrailsData[tBase + 1];
+            this._trailVelVec.x = this.pendingTrailsData[tBase + 2];
+            this._trailVelVec.y = this.pendingTrailsData[tBase + 3];
+            this._trailColor.r  = this.pendingTrailsData[tBase + 4];
+            this._trailColor.g  = this.pendingTrailsData[tBase + 5];
+            this._trailColor.b  = this.pendingTrailsData[tBase + 6];
+            this._trailColor.a  = this.pendingTrailsData[tBase + 7];
             this.addParticle(
-                trail.position,
-                trail.velocity,
-                trail.color,
-                trail.size,
-                trail.lifetime,
+                this._trailPosVec,
+                this._trailVelVec,
+                this._trailColor,
+                this.pendingTrailsData[tBase + 8],
+                this.pendingTrailsData[tBase + 9],
                 FIREWORK_CONFIG.trails.gravity,
                 FIREWORK_CONFIG.trails.shape,
-                new Vector2(0, 0),
+                this._trailAccVec, 
                 FIREWORK_CONFIG.trails.friction,
                 0, // no glow
                 0, // no blur
@@ -402,6 +414,7 @@ class InstancedParticleSystem {
                 PARTICLE_TYPES.TRAIL // mark as trail so it won't chain-spawn more trails
             );
         }
+        this.pendingTrailsCount = 0;
 
         this.profiler?.endFunction?.('particleSystemUpdate');
     }
