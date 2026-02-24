@@ -32,17 +32,17 @@ const DRONE_CONFIG = {
     color: { r: 0.4, g: 0.9, b: 1.0, a: 1.0 },  // default drone color (cyan-ish)
 
     oscillationAmplitude: 1100,    // wu/s — perpendicular speed added by the sine wave
-    oscillationFrequency: .9,    // Hz — cycles per second of the side-to-side wave
+    oscillationFrequency: 1.5,    // Hz — cycles per second of the side-to-side wave
 
     droneTrails: {
         enabled: true,
         spawnRate: 0.03,        
         perBurst: 3,            
-        lifetime: 0.2,         
-        size: 3.5,              
+        lifetime: 0.15,         
+        size: 3.0,              
         speed: 0,            
         coneAngle: 130,          
-        gravity: -400,           
+        gravity: -800,           
         friction: 4,           
         alphaMultiplier: 1,   
         shape: 'sphere',
