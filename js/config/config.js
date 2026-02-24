@@ -22,13 +22,13 @@ const DRONE_CONFIG = {
     visualTurnSpeed: 4.5,        // rad/s max rate for visual rotation to chase velocity angle
     wanderTargetChangeTime: 4.0, // seconds between wander target changes
     spawnLaunchAngleDeg: 30,     // degrees from vertical for initial hub-spawn launch direction
-    pullForce: 8500,             // world-units/sec² acceleration toward drone
-    arrivalThreshold: 15,        // world-units — particle "collected" within this dist
+    pullForce: 9000,             // world-units/sec² acceleration toward drone
+    arrivalThreshold: 25,        // world-units — particle "collected" within this dist
     maxCaptureTime: 1.0,         // seconds before a targeted particle is force-collected
     defaultScale: 14,            // render scale of the drone mesh
     glowStrength: 0.8,           // emissive glow intensity
     scanInterval: 4,             // scan for particles once every N frames (1 = every frame)
-    minParticleAge: 0.5,          // seconds a particle must have been alive before a drone can pull it
+    minParticleAge: 0.3,          // seconds a particle must have been alive before a drone can pull it
     color: { r: 0.4, g: 0.9, b: 1.0, a: 1.0 },  // default drone color (cyan-ish)
 
     oscillationAmplitude: 1100,    // wu/s — perpendicular speed added by the sine wave

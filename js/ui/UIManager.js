@@ -103,6 +103,17 @@ class UIManager {
             );
         });
 
+        document.getElementById('reset-upgrades').addEventListener('click', () => {
+            this.showConfirmation(
+                'Reset All Upgrades',
+                'Are you sure you want to reset all upgrades? You will be refunded their full cost.',
+                () => {
+                    const refunds = this.game.resetUpgrades();
+                    this.showNotification(`Upgrades reset! Refunded ${Math.floor(refunds.sparkles)} sparkles` + (refunds.gold > 0 ? ` and ${Math.floor(refunds.gold)} gold` : ''));
+                }
+            );
+        });
+
         document.getElementById('recipes-tab').addEventListener('click', () => {
             this.toggleTab('recipes');
         });

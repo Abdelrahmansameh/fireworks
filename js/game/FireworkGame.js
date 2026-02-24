@@ -100,8 +100,6 @@ class FireworkGame extends Engine {
 
         this.loadUnlockStates();
 
-        this.recomputeUpgrades();
-
         this.init();
     }
 
@@ -196,6 +194,8 @@ class FireworkGame extends Engine {
         this.start();
 
         this.ui.bindEvents();
+
+        this.recomputeUpgrades();
     }
 
     initRenderer2D() {
@@ -1233,6 +1233,35 @@ class FireworkGame extends Engine {
         if (this.droneSystem) {
             this.droneSystem.maxDrones = this.droneStats.maxDrones;
         }
+    }
+
+    resetUpgrades() {
+        const refunds = { sparkles: 0, gold: 0 };
+
+        for (const up of this.upgrades) {
+            const level = this.purchasedUpgrades[up.id] ?? 0;
+            if (level > 0) {
+                for (let l = 0; l < level; l++) {
+                    const cost = Math.floor(up.baseCost * Math.pow(up.costRatio, l));
+                    if (up.currency === 'gold') {
+                        refunds.gold += cost;
+                    } else {
+                        refunds.sparkles += cost;
+                    }
+                }
+            }
+        }
+
+        this.purchasedUpgrades = {};
+        this.recomputeUpgrades();
+
+        if (refunds.sparkles > 0) this.resourceManager.resources.sparkles.add(refunds.sparkles);
+        if (refunds.gold > 0) this.resourceManager.resources.gold.add(refunds.gold);
+
+        this.saveProgress();
+        if (this.ui && this.ui.renderUpgrades) this.ui.renderUpgrades();
+
+        return refunds;
     }
 
     buyUpgrade(id) {
