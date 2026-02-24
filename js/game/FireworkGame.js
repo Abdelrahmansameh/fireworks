@@ -66,10 +66,11 @@ class FireworkGame extends Engine {
         this.baseSparkleMultiplier = 1;
         this.patternSparkleMultipliers = { default: 1 };
         this.droneStats = {
-            lifetimeMultiplier:         1,
-            speedMultiplier:            1,
-            collectionRadiusMultiplier: 1,
-            maxDrones:                  DRONE_CONFIG.maxDrones,
+            lifetimeMultiplier:            1,
+            speedMultiplier:               1,
+            collectionRadiusMultiplier:    1,
+            maxDrones:                     DRONE_CONFIG.maxDrones,
+            sparklesPerParticleMultiplier: 1,
         };
 
         this.upgrades = UPGRADE_DEFINITIONS;                       
@@ -420,7 +421,8 @@ class FireworkGame extends Engine {
 
         this.particleSystem.update(deltaTime);
         this.droneSystem?.update(deltaTime, (sparkles) => {
-            this.addSparkles(sparkles, 'drone');
+            const multiplied = sparkles * (this.droneStats.sparklesPerParticleMultiplier ?? 1);
+            this.addSparkles(multiplied, 'drone');
             this.statsTracker.recordDroneParticle();
         });
 
@@ -606,10 +608,11 @@ class FireworkGame extends Engine {
         this.baseSparkleMultiplier = 1;
         this.patternSparkleMultipliers = { default: 1 };
         this.droneStats = {
-            lifetimeMultiplier:         1,
-            speedMultiplier:            1,
-            collectionRadiusMultiplier: 1,
-            maxDrones:                  DRONE_CONFIG.maxDrones,
+            lifetimeMultiplier:            1,
+            speedMultiplier:               1,
+            collectionRadiusMultiplier:    1,
+            maxDrones:                     DRONE_CONFIG.maxDrones,
+            sparklesPerParticleMultiplier: 1,
         };
 
         this.resourceManager.reset();
@@ -1217,10 +1220,11 @@ class FireworkGame extends Engine {
         this.baseSparkleMultiplier = 1;
         this.patternSparkleMultipliers = { default: 1 };
         this.droneStats = {
-            lifetimeMultiplier:         1,
-            speedMultiplier:            1,
-            collectionRadiusMultiplier: 1,
-            maxDrones:                  DRONE_CONFIG.maxDrones,
+            lifetimeMultiplier:            1,
+            speedMultiplier:               1,
+            collectionRadiusMultiplier:    1,
+            maxDrones:                     DRONE_CONFIG.maxDrones,
+            sparklesPerParticleMultiplier: 1,
         };
 
         for (const up of this.upgrades) {

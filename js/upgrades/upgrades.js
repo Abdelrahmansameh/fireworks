@@ -97,6 +97,21 @@ const UPGRADE_DEFINITIONS = [
             if (game.droneSystem) game.droneSystem.maxDrones = game.droneStats.maxDrones;
         },
     },
+    {
+        id: 'drone_sparkle_yield',
+        group: 'DRONE',
+        pattern: null,
+        name: 'Energy Siphon',
+        desc: '+50% sparkles per collected particle per level',
+        baseCost: 300,
+        costRatio: 1.7,
+        currency: 'gold',
+        maxLevel: 5,
+        isVisible: (game) => game.isBuildingTypeUnlocked('DRONE_HUB'),
+        apply: (game, level) => {
+            game.droneStats.sparklesPerParticleMultiplier = 1 + 0.5 * level;
+        },
+    },
 ];
 
 import { FIREWORK_CONFIG, DRONE_CONFIG } from '../config/config.js';
