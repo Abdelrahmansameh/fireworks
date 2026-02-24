@@ -1284,6 +1284,9 @@ class UIManager {
 
         const { upgrades, purchasedUpgrades } = this.game;
         upgrades.forEach(up => {
+            // Skip upgrades that have a visibility gate which isn't satisfied yet
+            if (up.isVisible && !up.isVisible(this.game)) return;
+
             const lvl = purchasedUpgrades[up.id] ?? 0;
             const maxLevel = up.maxLevel ?? 1;
 

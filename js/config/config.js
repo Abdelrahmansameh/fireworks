@@ -8,7 +8,7 @@ const PARTICLE_TYPES = {
 };
 
 const DRONE_CONFIG = {
-    maxDrones: 20,
+    maxDrones: 200,
     collectionRadius: 70,       // world-units radius to scan for particles
     defaultLifetime: 10,         // seconds a drone lives before despawning
     sparklesPerParticle: 1,      // sparkles awarded per collected particle
@@ -276,11 +276,9 @@ const BUILDING_TYPES = {
         // Spawn interval (seconds) between drone launches
         baseSpawnInterval: 12,
         spawnIntervalRatio: 0.88,   // multiplied each level (shrinks interval)
-        // Drone lifetime and speed scale up each level
+        // Drone base stats (global upgrades apply multipliers on top of these)
         baseDroneLifetime: 10,
-        droneLifetimeRatio: 1.15,
         baseDroneSpeed: 600,
-        droneSpeedRatio: 1.08,
         droneScale: 16,
         droneColor: { r:0.1, g: 0.65, b: 0.8, a: 1.0 }, 
     }

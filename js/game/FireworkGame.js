@@ -1,4 +1,4 @@
-import { FIREWORK_CONFIG, GAME_BOUNDS, DEFAULT_RECIPE_COMPONENTS, GENERIC_RECIPE_NAMES, BACKGROUND_IMAGES, AUTO_LAUNCHER_COST_BASE, AUTO_LAUNCHER_COST_RATIO, AUTO_UPGRADE_COST_RATIO, AUTO_SPAWN_INTERVAL_RATIO, COMPONENT_PROPERTY_RANGES, BUILDING_TYPES } from '../config/config.js';
+import { FIREWORK_CONFIG, GAME_BOUNDS, DEFAULT_RECIPE_COMPONENTS, GENERIC_RECIPE_NAMES, BACKGROUND_IMAGES, AUTO_LAUNCHER_COST_BASE, AUTO_LAUNCHER_COST_RATIO, AUTO_UPGRADE_COST_RATIO, AUTO_SPAWN_INTERVAL_RATIO, COMPONENT_PROPERTY_RANGES, BUILDING_TYPES, DRONE_CONFIG } from '../config/config.js';
 import { UPGRADE_DEFINITIONS } from '../upgrades/upgrades.js';
 import InstancedParticleSystem from '../particles/InstancedParticleSystem.js';
 import InstancedDroneSystem from '../entities/InstancedDroneSystem.js';
@@ -65,6 +65,12 @@ class FireworkGame extends Engine {
 
         this.baseSparkleMultiplier = 1;
         this.patternSparkleMultipliers = { default: 1 };
+        this.droneStats = {
+            lifetimeMultiplier:         1,
+            speedMultiplier:            1,
+            collectionRadiusMultiplier: 1,
+            maxDrones:                  DRONE_CONFIG.maxDrones,
+        };
 
         this.upgrades = UPGRADE_DEFINITIONS;                       
         this.upgradeLookup = Object.fromEntries(UPGRADE_DEFINITIONS.map(u => [u.id, u]));
@@ -158,6 +164,7 @@ class FireworkGame extends Engine {
 
         this.particleSystem = new InstancedParticleSystem(this.renderer2D, this.profiler);
         this.droneSystem = new InstancedDroneSystem(this.renderer2D, this.particleSystem);
+        this.droneSystem.maxDrones = this.droneStats.maxDrones;
         this.crowd = new Crowd(this.renderer2D);
 
         const initialSps = this.calculateTotalSparklesPerSecond();
@@ -598,6 +605,12 @@ class FireworkGame extends Engine {
         this.currentRecipeComponents = [...DEFAULT_RECIPE_COMPONENTS];
         this.baseSparkleMultiplier = 1;
         this.patternSparkleMultipliers = { default: 1 };
+        this.droneStats = {
+            lifetimeMultiplier:         1,
+            speedMultiplier:            1,
+            collectionRadiusMultiplier: 1,
+            maxDrones:                  DRONE_CONFIG.maxDrones,
+        };
 
         this.resourceManager.reset();
 
@@ -1203,12 +1216,22 @@ class FireworkGame extends Engine {
     recomputeUpgrades() {
         this.baseSparkleMultiplier = 1;
         this.patternSparkleMultipliers = { default: 1 };
+        this.droneStats = {
+            lifetimeMultiplier:         1,
+            speedMultiplier:            1,
+            collectionRadiusMultiplier: 1,
+            maxDrones:                  DRONE_CONFIG.maxDrones,
+        };
 
         for (const up of this.upgrades) {
             const level = this.purchasedUpgrades[up.id] ?? 0;
             if (level > 0) {
                 up.apply(this, level);
             }
+        }
+
+        if (this.droneSystem) {
+            this.droneSystem.maxDrones = this.droneStats.maxDrones;
         }
     }
 

@@ -256,10 +256,10 @@ class InstancedDroneSystem {
             const oscVY = perpY * oscScale * cfg.oscillationAmplitude;
 
             // Drive velocity toward (desiredDir * currentSpeed) + oscillation
-            const targetVX = desiredDirX * currentSpeed;
-            const targetVY = desiredDirY * currentSpeed;
+            let targetVX = desiredDirX * currentSpeed;
+            let targetVY = desiredDirY * currentSpeed;
             // safety in case current speed is close to 0
-            if (currentSpeed < 5) {
+            if (currentSpeed < 20) {
                 targetVX = desiredDirX * 1;
                 targetVY = desiredDirY * 1;
             }

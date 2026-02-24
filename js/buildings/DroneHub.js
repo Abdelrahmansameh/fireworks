@@ -4,13 +4,12 @@ import { GAME_BOUNDS, DRONE_CONFIG } from '../config/config.js';
 /**
  * DroneHub – a building that periodically spawns drones into the world.
  *
- * Each drone will wander the sky collecting firework explosion particles and
- * converting them into sparkles, just like a manually-spawned drone.
- *
- * Level scaling:
+ * Level scaling (building upgrades):
  *   - Spawn interval shrinks by `spawnIntervalRatio` per level.
- *   - Drone lifetime grows by `droneLifetimeRatio` per level.
- *   - Drone speed grows by `droneSpeedRatio` per level.
+ *
+ * Drone stats (lifetime, speed, collection radius, max count) are controlled
+ * exclusively by global upgrades purchased in the Upgrades tab, which modify
+ * `game.droneStats`.
  */
 class DroneHub extends Building {
     constructor(game, x, y, data = {}) {
@@ -26,20 +25,18 @@ class DroneHub extends Building {
         this._updateDroneOptions();
     }
 
-    /** Recalculate the drone options that scale with level. */
+    /** Rebuild drone options from base config + global upgrade multipliers. */
     _updateDroneOptions() {
         const cfg = this.config;
-        const lvl = this.level - 1; // 0-based exponent
-
-        this.droneLifetime = cfg.baseDroneLifetime * Math.pow(cfg.droneLifetimeRatio, lvl);
-        this.droneSpeed    = cfg.baseDroneSpeed    * Math.pow(cfg.droneSpeedRatio,    lvl);
+        const ds  = this.game.droneStats ?? {};
 
         this.droneOptions = {
-            lifetime:       this.droneLifetime,
-            speed:          this.droneSpeed,
-            color:          cfg.droneColor,
-            scale:          cfg.droneScale,
-            launchAngleDeg: DRONE_CONFIG.spawnLaunchAngleDeg,
+            lifetime:         cfg.baseDroneLifetime  * (ds.lifetimeMultiplier         ?? 1),
+            speed:            cfg.baseDroneSpeed     * (ds.speedMultiplier             ?? 1),
+            collectionRadius: DRONE_CONFIG.collectionRadius * (ds.collectionRadiusMultiplier ?? 1),
+            color:            cfg.droneColor,
+            scale:            cfg.droneScale,
+            launchAngleDeg:   DRONE_CONFIG.spawnLaunchAngleDeg,
         };
     }
 
@@ -56,6 +53,9 @@ class DroneHub extends Building {
         const droneSystem = this.game.droneSystem;
         if (!droneSystem) return;
 
+        // Always recalculate so that global drone upgrades are reflected immediately
+        this._updateDroneOptions();
+
         // Spawn slightly above the building so it's visually clear where it came from
         const spawnX = this.x + (Math.random() - 0.5) * this.config.width;
         const spawnY = this.y + this.config.height * 0.6;
@@ -64,9 +64,9 @@ class DroneHub extends Building {
     }
 
     onUpgrade() {
-        // Reduce spawn interval each level
+        // Building upgrades only reduce the spawn interval
         this.spawnInterval *= this.config.spawnIntervalRatio;
-        // Improve drone stats each level
+        // Refresh drone options so any current global upgrades are reflected
         this._updateDroneOptions();
     }
 
