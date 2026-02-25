@@ -1,4 +1,4 @@
-import { FIREWORK_CONFIG, GAME_BOUNDS, DEFAULT_RECIPE_COMPONENTS, GENERIC_RECIPE_NAMES, BACKGROUND_IMAGES, AUTO_LAUNCHER_COST_BASE, AUTO_LAUNCHER_COST_RATIO, AUTO_UPGRADE_COST_RATIO, AUTO_SPAWN_INTERVAL_RATIO, COMPONENT_PROPERTY_RANGES, BUILDING_TYPES, DRONE_CONFIG } from '../config/config.js';
+import { FIREWORK_CONFIG, GAME_BOUNDS, DEFAULT_RECIPE_COMPONENTS, GENERIC_RECIPE_NAMES, BACKGROUND_IMAGES, AUTO_LAUNCHER_COST_BASE, AUTO_LAUNCHER_COST_RATIO, AUTO_UPGRADE_COST_RATIO, AUTO_SPAWN_INTERVAL_RATIO, COMPONENT_PROPERTY_RANGES, BUILDING_TYPES, DRONE_CONFIG, PATTERN_UNLOCK_ORDER } from '../config/config.js';
 import { UPGRADE_DEFINITIONS } from '../upgrades/upgrades.js';
 import InstancedParticleSystem from '../particles/InstancedParticleSystem.js';
 import InstancedDroneSystem from '../entities/InstancedDroneSystem.js';
@@ -41,6 +41,9 @@ class FireworkGame extends Engine {
             droneHub: false,
             recipesTab: false
         };
+
+        // Patterns unlocked progressively via AutoLauncher purchases
+        this.unlockedPatternKeys = [PATTERN_UNLOCK_ORDER[0]];
 
         this.firstClickStates = {
             tabMenu: false,
@@ -609,11 +612,19 @@ class FireworkGame extends Engine {
         let components = recipeComponents || this.currentRecipeComponents;
 
         if (!this.unlockStates.recipesTab) {
-            const autoLauncherCount = this.buildingManager.getBuildingsByType('AUTO_LAUNCHER').length;
-            const availableRecipes = Math.max(1, autoLauncherCount);
-            const cycleIndex = this.fireworkCount % availableRecipes;
-            if (this.recipes.length > cycleIndex) {
-                components = this.recipes[cycleIndex].components;
+            const launchers = this.buildingManager.getBuildingsByType('AUTO_LAUNCHER');
+            // Cycle: slot 0 = DEFAULT_RECIPE_COMPONENTS, slots 1..N = each launcher's patternOverride variant
+            const cycleCount = launchers.length + 1;
+            const cycleIndex = this.fireworkCount % cycleCount;
+            if (cycleIndex === 0) {
+                components = DEFAULT_RECIPE_COMPONENTS;
+            } else {
+                const launcher = launchers[cycleIndex - 1];
+                if (launcher && launcher.patternOverride) {
+                    components = DEFAULT_RECIPE_COMPONENTS.map(c => ({ ...c, pattern: launcher.patternOverride }));
+                } else {
+                    components = DEFAULT_RECIPE_COMPONENTS;
+                }
             }
         }
 
@@ -645,9 +656,18 @@ class FireworkGame extends Engine {
         const building = this.buildingManager.buyBuilding('AUTO_LAUNCHER');
         if (building) {
             if (!this.unlockStates.recipesTab) {
-                const autoLauncherCount = this.buildingManager.getBuildingsByType('AUTO_LAUNCHER').length;
-                const recipeIndex = autoLauncherCount - 1;
-                building.assignedRecipeIndex = recipeIndex % this.recipes.length;
+                // Unlock the next pattern in sequence (if any remain)
+                const nextIndex = this.unlockedPatternKeys.length;
+                let assignedPattern;
+                if (nextIndex < PATTERN_UNLOCK_ORDER.length) {
+                    assignedPattern = PATTERN_UNLOCK_ORDER[nextIndex];
+                    this.unlockedPatternKeys.push(assignedPattern);
+                } else {
+                    // All patterns already unlocked – assign a random one
+                    assignedPattern = PATTERN_UNLOCK_ORDER[Math.floor(Math.random() * PATTERN_UNLOCK_ORDER.length)];
+                }
+                building.patternOverride = assignedPattern;
+                this.saveProgress();
             }
             this.updateLauncherList();
         }
@@ -711,6 +731,8 @@ class FireworkGame extends Engine {
             droneHub: false,
             recipesTab: false
         };
+
+        this.unlockedPatternKeys = [PATTERN_UNLOCK_ORDER[0]];
 
         this.firstClickStates = {
             tabMenu: false,
@@ -1009,7 +1031,8 @@ class FireworkGame extends Engine {
             patternSparkleMultipliers: this.patternSparkleMultipliers,
             purchasedUpgrades: this.purchasedUpgrades,
             unlockStates: this.unlockStates,
-            firstClickStates: this.firstClickStates
+            firstClickStates: this.firstClickStates,
+            unlockedPatternKeys: this.unlockedPatternKeys
         };
         return JSON.stringify(data);
     }
@@ -1411,11 +1434,17 @@ class FireworkGame extends Engine {
 
         const clickStates = JSON.parse(localStorage.getItem('firstClickStates') || '{}');
         this.firstClickStates = { ...this.firstClickStates, ...clickStates };
+
+        const savedPatterns = JSON.parse(localStorage.getItem('unlockedPatternKeys') || 'null');
+        if (Array.isArray(savedPatterns) && savedPatterns.length > 0) {
+            this.unlockedPatternKeys = savedPatterns;
+        }
     }
 
     saveUnlockStates() {
         localStorage.setItem('unlockStates', JSON.stringify(this.unlockStates));
         localStorage.setItem('firstClickStates', JSON.stringify(this.firstClickStates));
+        localStorage.setItem('unlockedPatternKeys', JSON.stringify(this.unlockedPatternKeys));
     }
 
     checkUnlockConditions() {

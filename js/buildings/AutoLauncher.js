@@ -9,7 +9,8 @@ class AutoLauncher extends Building {
         this.spawnInterval = data.spawnInterval || this.config.baseSpawnInterval;
         this.accumulator = data.accumulator || Math.random() * 5;
         this.assignedRecipeIndex = data.assignedRecipeIndex ?? null;
-        this.colorOverride = data.colorOverride || null;
+        this.colorOverride = data.colorOverride || AutoLauncher._randomColor();
+        this.patternOverride = data.patternOverride || null;
     }
 
     update(deltaTime, boostMultiplier = 1.0) {
@@ -26,28 +27,31 @@ class AutoLauncher extends Building {
         const x = this.x;
         const launchY = GAME_BOUNDS.WORLD_LAUNCHER_Y;
 
-        let recipe = this.game.recipes[this.assignedRecipeIndex];
-        let recipeComponents = null;
+        let components;
 
-        if (recipe) {
-            recipeComponents = recipe.components;
+        if (!this.game.unlockStates.recipesTab) {
+            // Pre-recipe-tab: use currentRecipeComponents with pattern/color overrides
+            components = this.game.currentRecipeComponents;
+            if (this.patternOverride) {
+                components = components.map(c => ({ ...c, pattern: this.patternOverride }));
+            }
+            if (this.colorOverride) {
+                components = components.map(c => ({ ...c, color: this.colorOverride }));
+            }
         } else {
-            if (this.game.recipes.length > 0) {
+            const recipe = this.game.recipes[this.assignedRecipeIndex];
+            if (recipe) {
+                components = recipe.components;
+            } else if (this.game.recipes.length > 0) {
                 const randomRecipe = this.game.recipes[Math.floor(Math.random() * this.game.recipes.length)];
-                recipeComponents = randomRecipe.components;
+                components = randomRecipe.components;
             } else {
-                recipeComponents = this.game.currentRecipeComponents;
+                components = this.game.currentRecipeComponents;
             }
         }
 
-        let components = recipeComponents || this.game.currentRecipeComponents;
-
         if (components.length === 0) {
             return;
-        }
-
-        if (this.colorOverride && !this.game.unlockStates.recipesTab) {
-            components = components.map(c => ({ ...c, color: this.colorOverride }));
         }
 
         const spawnX = x + (Math.random() * 0.5 - 0.25) * this.config.width;
@@ -82,13 +86,15 @@ class AutoLauncher extends Building {
     }
 
     getSparklesPerSecond() {
-        let recipe = this.game.recipes[this.assignedRecipeIndex];
         let components;
 
-        if (recipe) {
-            components = recipe.components;
+        if (!this.game.unlockStates.recipesTab) {
+            components = this.game.currentRecipeComponents;
         } else {
-            if (this.game.recipes.length > 0) {
+            const recipe = this.game.recipes[this.assignedRecipeIndex];
+            if (recipe) {
+                components = recipe.components;
+            } else if (this.game.recipes.length > 0) {
                 components = this.game.recipes[0].components;
             } else {
                 components = this.game.currentRecipeComponents;
@@ -110,7 +116,24 @@ class AutoLauncher extends Building {
             accumulator: this.accumulator,
             assignedRecipeIndex: this.assignedRecipeIndex,
             colorOverride: this.colorOverride,
+            patternOverride: this.patternOverride,
         };
+    }
+
+    static _randomColor() {
+        const hue = Math.floor(Math.random() * 360);
+        const saturation = 80 + Math.floor(Math.random() * 20); // 80–100%
+        const lightness = 50 + Math.floor(Math.random() * 15);  // 50–65%
+        // Convert HSL to hex
+        const s = saturation / 100;
+        const l = lightness / 100;
+        const a = s * Math.min(l, 1 - l);
+        const f = n => {
+            const k = (n + hue / 30) % 12;
+            const color = l - a * Math.max(Math.min(k - 3, 9 - k, 1), -1);
+            return Math.round(255 * color).toString(16).padStart(2, '0');
+        };
+        return `#${f(0)}${f(8)}${f(4)}`;
     }
 }
 

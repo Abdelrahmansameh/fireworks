@@ -299,5 +299,39 @@ const STATS_CONFIG = {
     rollingWindowSeconds: 5,
 };
 
-export { FIREWORK_CONFIG, GAME_BOUNDS, DEFAULT_RECIPE_COMPONENTS, GENERIC_RECIPE_NAMES, BACKGROUND_IMAGES, AUTO_LAUNCHER_COST_BASE, AUTO_LAUNCHER_COST_RATIO, AUTO_UPGRADE_COST_RATIO, AUTO_SPAWN_INTERVAL_RATIO, LAUNCHER_WORLD_HIGHLIGHT_DURATION, COMPONENT_PROPERTY_RANGES, BUILDING_TYPES, PARTICLE_TYPES, DRONE_CONFIG, STATS_CONFIG };
+// Ordered list of patterns to progressively unlock via AutoLauncher purchases.
+// Index 0 is unlocked at game start; each subsequent index unlocks on purchase.
+const PATTERN_UNLOCK_ORDER = [
+    'spherical',
+    'burst',
+    'ring',
+    'palm',
+    'star',
+    'brocade',
+    'willow',
+    'heart',
+    'brokenHeart',
+    'spinner',
+    'helix',
+    'christmasTree',
+    'solidsphere',
+];
+
+const PATTERN_DISPLAY_NAMES = {
+    spherical:    'Spherical',
+    burst:        'Burst',
+    ring:         'Ring',
+    palm:         'Palm',
+    star:         'Star',
+    brocade:      'Brocade',
+    willow:       'Willow',
+    heart:        'Heart',
+    brokenHeart:  'Broken Heart',
+    spinner:      'Spinner',
+    helix:        'Helix',
+    christmasTree:'Christmas Tree',
+    solidsphere:  'Solid Sphere',
+};
+
+export { FIREWORK_CONFIG, GAME_BOUNDS, DEFAULT_RECIPE_COMPONENTS, GENERIC_RECIPE_NAMES, BACKGROUND_IMAGES, AUTO_LAUNCHER_COST_BASE, AUTO_LAUNCHER_COST_RATIO, AUTO_UPGRADE_COST_RATIO, AUTO_SPAWN_INTERVAL_RATIO, LAUNCHER_WORLD_HIGHLIGHT_DURATION, COMPONENT_PROPERTY_RANGES, BUILDING_TYPES, PARTICLE_TYPES, DRONE_CONFIG, STATS_CONFIG, PATTERN_UNLOCK_ORDER, PATTERN_DISPLAY_NAMES };
 

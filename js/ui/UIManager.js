@@ -1,4 +1,4 @@
-import { GAME_BOUNDS, BACKGROUND_IMAGES, DEFAULT_RECIPE_COMPONENTS, COMPONENT_PROPERTY_RANGES, PARTICLE_TYPES, STATS_CONFIG, LAUNCHER_WORLD_HIGHLIGHT_DURATION } from '../config/config.js';
+import { GAME_BOUNDS, BACKGROUND_IMAGES, DEFAULT_RECIPE_COMPONENTS, COMPONENT_PROPERTY_RANGES, PARTICLE_TYPES, STATS_CONFIG, LAUNCHER_WORLD_HIGHLIGHT_DURATION, PATTERN_DISPLAY_NAMES } from '../config/config.js';
 import * as Renderer2D from '../rendering/Renderer.js';
 import StatsTracker from '../stats/StatsTracker.js';
 
@@ -1217,6 +1217,14 @@ class UIManager {
                     <label>Color:</label>
                     <input type="color" class="launcher-color-input" data-building-id="${launcher.id}" value="${launcher.colorOverride || '#ffffff'}">
                 </div>
+                <div class="recipes-option">
+                    <label>Pattern:</label>
+                    <select class="launcher-pattern-select" data-building-id="${launcher.id}">
+                        ${(this.game.unlockedPatternKeys || []).map(key => `
+                            <option value="${key}" ${launcher.patternOverride === key ? 'selected' : ''}>${PATTERN_DISPLAY_NAMES[key] || key}</option>
+                        `).join('')}
+                    </select>
+                </div>
                 `}
                 <div class="launcher-details">
                     <p>Level: ${launcher.level}</p>
@@ -1252,6 +1260,18 @@ class UIManager {
                         const building = this.game.buildingManager.getBuildingById(buildingId);
                         if (building) {
                             building.colorOverride = e.target.value;
+                            this.game.saveProgress();
+                        }
+                    });
+                }
+
+                const patternSelect = launcherDiv.querySelector('.launcher-pattern-select');
+                if (patternSelect) {
+                    patternSelect.addEventListener('change', (e) => {
+                        const buildingId = e.target.getAttribute('data-building-id');
+                        const building = this.game.buildingManager.getBuildingById(buildingId);
+                        if (building) {
+                            building.patternOverride = e.target.value;
                             this.game.saveProgress();
                         }
                     });
