@@ -9,6 +9,7 @@ class AutoLauncher extends Building {
         this.spawnInterval = data.spawnInterval || this.config.baseSpawnInterval;
         this.accumulator = data.accumulator || Math.random() * 5;
         this.assignedRecipeIndex = data.assignedRecipeIndex ?? null;
+        this.colorOverride = data.colorOverride || null;
     }
 
     update(deltaTime, boostMultiplier = 1.0) {
@@ -39,10 +40,14 @@ class AutoLauncher extends Building {
             }
         }
 
-        const components = recipeComponents || this.game.currentRecipeComponents;
+        let components = recipeComponents || this.game.currentRecipeComponents;
 
         if (components.length === 0) {
             return;
+        }
+
+        if (this.colorOverride && !this.game.unlockStates.recipesTab) {
+            components = components.map(c => ({ ...c, color: this.colorOverride }));
         }
 
         const spawnX = x + (Math.random() * 0.5 - 0.25) * this.config.width;
@@ -104,6 +109,7 @@ class AutoLauncher extends Building {
             spawnInterval: this.spawnInterval,
             accumulator: this.accumulator,
             assignedRecipeIndex: this.assignedRecipeIndex,
+            colorOverride: this.colorOverride,
         };
     }
 }

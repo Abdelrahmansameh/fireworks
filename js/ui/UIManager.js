@@ -1212,7 +1212,12 @@ class UIManager {
                         `).join('')}
                     </select>
                 </div>
-                ` : ''}
+                ` : `
+                <div class="recipes-option">
+                    <label>Color:</label>
+                    <input type="color" class="launcher-color-input" data-building-id="${launcher.id}" value="${launcher.colorOverride || '#ffffff'}">
+                </div>
+                `}
                 <div class="launcher-details">
                     <p>Level: ${launcher.level}</p>
                     <p>Spawn Rate: Every ${launcher.spawnInterval.toFixed(1)}s</p>
@@ -1235,6 +1240,18 @@ class UIManager {
                             } else {
                                 building.assignedRecipeIndex = null;
                             }
+                            this.game.saveProgress();
+                        }
+                    });
+                }
+            } else {
+                const colorInput = launcherDiv.querySelector('.launcher-color-input');
+                if (colorInput) {
+                    colorInput.addEventListener('input', (e) => {
+                        const buildingId = e.target.getAttribute('data-building-id');
+                        const building = this.game.buildingManager.getBuildingById(buildingId);
+                        if (building) {
+                            building.colorOverride = e.target.value;
                             this.game.saveProgress();
                         }
                     });
