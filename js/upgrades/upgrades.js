@@ -114,23 +114,6 @@ const UPGRADE_DEFINITIONS = [
     },
 ];
 
-import { FIREWORK_CONFIG, DRONE_CONFIG } from '../config/config.js';
-Object.keys(FIREWORK_CONFIG.patternGravities).forEach(pattern => {
-    UPGRADE_DEFINITIONS.push({
-        id: `pattern_${pattern}_boost`,
-        group: 'PATTERN',
-        pattern,
-        name: `${pattern.charAt(0).toUpperCase() + pattern.slice(1)} Booster`,
-        desc: `x2 sparkles per '${pattern}' component`,
-        baseCost: 750,
-        costRatio: 1.0,
-        currency: 'sparkles',
-        maxLevel: 1,
-        apply: (game, level) => {
-            const current = game.patternSparkleMultipliers[pattern] ?? 1;
-            game.patternSparkleMultipliers[pattern] = current * (2 ** level);
-        }
-    });
-});
+import { DRONE_CONFIG } from '../config/config.js';
 
 export { UPGRADE_DEFINITIONS }; 

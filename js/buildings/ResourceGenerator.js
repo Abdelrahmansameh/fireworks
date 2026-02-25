@@ -17,6 +17,7 @@ class ResourceGenerator extends Building {
     }
 
     update(deltaTime) {
+        super.update(deltaTime);
         this.accumulator += deltaTime;
         
         if (this.accumulator >= 1.0) {

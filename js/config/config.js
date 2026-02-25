@@ -9,7 +9,7 @@ const PARTICLE_TYPES = {
 
 const DRONE_CONFIG = {
     maxDrones: 200,
-    collectionRadius: 70,       // world-units radius to scan for particles
+    collectionRadius: 50,       // world-units radius to scan for particles
     defaultLifetime: 10,         // seconds a drone lives before despawning
     sparklesPerParticle: 1,      // sparkles awarded per collected particle
     wanderSpeed: 300,            // world-units/sec target chase speed
@@ -127,6 +127,10 @@ const AUTO_LAUNCHER_COST_BASE = 10;
 const AUTO_LAUNCHER_COST_RATIO = 1.2;
 const AUTO_UPGRADE_COST_RATIO = 1.2;
 const AUTO_SPAWN_INTERVAL_RATIO = 0.9;
+
+// How long (seconds) the world-side colour-pulse highlight lasts when a
+// launcher card is clicked from the buildings menu.
+const LAUNCHER_WORLD_HIGHLIGHT_DURATION = 2.5;
 
 const DEFAULT_RECIPE_COMPONENTS = [{
     pattern: 'spherical',
@@ -295,5 +299,5 @@ const STATS_CONFIG = {
     rollingWindowSeconds: 5,
 };
 
-export { FIREWORK_CONFIG, GAME_BOUNDS, DEFAULT_RECIPE_COMPONENTS, GENERIC_RECIPE_NAMES, BACKGROUND_IMAGES, AUTO_LAUNCHER_COST_BASE, AUTO_LAUNCHER_COST_RATIO, AUTO_UPGRADE_COST_RATIO, AUTO_SPAWN_INTERVAL_RATIO, COMPONENT_PROPERTY_RANGES, BUILDING_TYPES, PARTICLE_TYPES, DRONE_CONFIG, STATS_CONFIG };
+export { FIREWORK_CONFIG, GAME_BOUNDS, DEFAULT_RECIPE_COMPONENTS, GENERIC_RECIPE_NAMES, BACKGROUND_IMAGES, AUTO_LAUNCHER_COST_BASE, AUTO_LAUNCHER_COST_RATIO, AUTO_UPGRADE_COST_RATIO, AUTO_SPAWN_INTERVAL_RATIO, LAUNCHER_WORLD_HIGHLIGHT_DURATION, COMPONENT_PROPERTY_RANGES, BUILDING_TYPES, PARTICLE_TYPES, DRONE_CONFIG, STATS_CONFIG };
 

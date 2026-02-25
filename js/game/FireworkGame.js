@@ -38,7 +38,8 @@ class FireworkGame extends Engine {
             backgroundTab: false,
             resourceGenerator: false,
             efficiencyBooster: false,
-            droneHub: false
+            droneHub: false,
+            recipesTab: false
         };
 
         this.firstClickStates = {
@@ -66,14 +67,14 @@ class FireworkGame extends Engine {
         this.baseSparkleMultiplier = 1;
         this.patternSparkleMultipliers = { default: 1 };
         this.droneStats = {
-            lifetimeMultiplier:            1,
-            speedMultiplier:               1,
-            collectionRadiusMultiplier:    1,
-            maxDrones:                     DRONE_CONFIG.maxDrones,
+            lifetimeMultiplier: 1,
+            speedMultiplier: 1,
+            collectionRadiusMultiplier: 1,
+            maxDrones: DRONE_CONFIG.maxDrones,
             sparklesPerParticleMultiplier: 1,
         };
 
-        this.upgrades = UPGRADE_DEFINITIONS;                       
+        this.upgrades = UPGRADE_DEFINITIONS;
         this.upgradeLookup = Object.fromEntries(UPGRADE_DEFINITIONS.map(u => [u.id, u]));
         this.purchasedUpgrades = {};
 
@@ -122,7 +123,7 @@ class FireworkGame extends Engine {
         this.statsTracker.load();
 
         const savedGameState = JSON.parse(localStorage.getItem('gameState'));
-        
+
         this.initRenderer2D();
         this.initBackgroundColor();
 
@@ -144,10 +145,10 @@ class FireworkGame extends Engine {
                     launcherData.level = 1;
                     launcherData.spawnInterval = 5;
                 }
-                
+
                 launcherData.x = this.clampToLauncherBounds(launcherData.x);
                 launcherData.y = launcherData.y || GAME_BOUNDS.WORLD_LAUNCHER_Y;
-                
+
                 this.buildingManager.createBuilding(
                     'AUTO_LAUNCHER',
                     launcherData.x,
@@ -155,10 +156,10 @@ class FireworkGame extends Engine {
                     launcherData
                 );
             });
-            
+
             this.gameState.autoLaunchers = [];
         }
-        
+
         this.gameState.autoLaunchers = [];
 
         this.particleSystem = new InstancedParticleSystem(this.renderer2D, this.profiler);
@@ -190,6 +191,8 @@ class FireworkGame extends Engine {
 
         this.ui.initializeUnlockStates(this.unlockStates);
 
+        this.generatePredefinedRecipes();
+
         this.audioManager.init();
 
         this.start();
@@ -197,6 +200,69 @@ class FireworkGame extends Engine {
         this.ui.bindEvents();
 
         this.recomputeUpgrades();
+    }
+
+    generatePredefinedRecipes() {
+        if (this.recipes.length >= 20) return;
+
+        const needed = 20 - this.recipes.length;
+        for (let i = 0; i < needed; i++) {
+            const recipeComponents = [];
+            const numComponents = 1; //Math.floor(Math.random() * 3) + 1; // 1 to 3 components
+
+            for (let j = 0; j < numComponents; j++) {
+                const possiblePatterns = ['spherical', 'ring', 'heart', 'burst', 'palm', 'willow', 'helix', 'spinner', 'star', 'brokenHeart', 'christmasTree'];
+                const possibleShapes = ['sphere', 'star'];
+                const randomHex = `#${Math.floor(Math.random() * 0xFFFFFF).toString(16).padStart(6, '0')}`;
+                const randomSecondaryHex = `#${Math.floor(Math.random() * 0xFFFFFF).toString(16).padStart(6, '0')}`;
+
+                const randomValue = (prop) => {
+                    const range = COMPONENT_PROPERTY_RANGES[prop];
+                    if (range) {
+                        return Math.random() * (range.max - range.min) + range.min;
+                    }
+                    return 1.0;
+                };
+
+                recipeComponents.push({
+                    pattern: possiblePatterns[Math.floor(Math.random() * possiblePatterns.length)],
+                    color: randomHex,
+                    secondaryColor: randomSecondaryHex,
+                    size: randomValue('size'),
+                    lifetime: randomValue('lifetime'),
+                    shape: possibleShapes[Math.floor(Math.random() * possibleShapes.length)],
+                    spread: randomValue('spread'),
+                    glowStrength: randomValue('glowStrength'),
+                    blurStrength: randomValue('blurStrength'),
+                });
+            }
+
+            let recipeName = GENERIC_RECIPE_NAMES[Math.floor(Math.random() * GENERIC_RECIPE_NAMES.length)];
+            let existingIndex = this.recipes.findIndex(recipe => recipe.name.toLowerCase() === recipeName.toLowerCase());
+            let attempts = 0;
+            while (existingIndex !== -1 && attempts < 10) {
+                recipeName = GENERIC_RECIPE_NAMES[Math.floor(Math.random() * GENERIC_RECIPE_NAMES.length)];
+                existingIndex = this.recipes.findIndex(recipe => recipe.name.toLowerCase() === recipeName.toLowerCase());
+                attempts++;
+            }
+            if (existingIndex !== -1) {
+                recipeName += ` (${this.recipes.length + 1})`;
+            }
+
+            this.recipes.push({
+                name: recipeName,
+                components: recipeComponents
+            });
+        }
+
+        // Ensure the current recipe matches the first one if not explicitly set
+        if (!this.unlockStates.recipesTab && this.recipes.length > 0) {
+            this.currentRecipeComponents = this.recipes[0].components.map(component => ({ ...component }));
+            this.saveCurrentRecipeComponents();
+        }
+
+        this.updateRecipeList();
+        localStorage.setItem('fireworkRecipes', JSON.stringify(this.recipes));
     }
 
     initRenderer2D() {
@@ -248,14 +314,14 @@ class FireworkGame extends Engine {
             this._backgroundMeshes.forEach(mesh => this.renderer2D.removeNormalShape(mesh));
             this._backgroundMeshes = [];
         }
-        
+
         if (this._skyMeshes) {
             this._skyMeshes.forEach(mesh => this.renderer2D.removeNormalShape(mesh));
             this._skyMeshes = [];
         }
 
         const currentBgConfig = BACKGROUND_IMAGES.find(bg => bg.path === this.currentBackground);
-        
+
         const textureKey = `bg_${this.currentBackground}`;
         await this.renderer2D.loadTexture(this.currentBackground, textureKey);
         const tex = this.renderer2D.getTexture(textureKey);
@@ -291,11 +357,11 @@ class FireworkGame extends Engine {
             const skyTextureKey = `sky_${currentBgConfig.skyPath}`;
             await this.renderer2D.loadTexture(currentBgConfig.skyPath, skyTextureKey);
             const skyTex = this.renderer2D.getTexture(skyTextureKey);
-            
+
             if (skyTex) {
                 const skyMeshes = [];
                 const skyLayers = 4;
-                
+
                 for (let x = -repeatCount / 2; x <= repeatCount / 2; x++) {
                     for (let y = 1; y <= skyLayers; y++) {
                         const skyMesh = this.renderer2D.createNormalShape({
@@ -310,7 +376,7 @@ class FireworkGame extends Engine {
                             position: new Renderer2D.Vector2(x * width, y * height),
                             rotation: 0,
                             scale: new Renderer2D.Vector2(1, 1),
-                            zIndex: -999, 
+                            zIndex: -999,
                             blendMode: Renderer2D.BlendMode.NORMAL,
                             isStroke: false
                         });
@@ -327,7 +393,7 @@ class FireworkGame extends Engine {
     onWindowResize() {
         this.renderer2D._updateProjectionMatrix();
         const yPos = GAME_BOUNDS.WORLD_LAUNCHER_Y;
-        
+
         for (const building of this.buildingManager.buildings) {
             building.setPosition(building.x, yPos);
         }
@@ -409,7 +475,7 @@ class FireworkGame extends Engine {
 
         this.ui.updateUI(
             Math.floor(this.getSparkles()),
-            totalSparklesPerSec.toFixed(2), 
+            totalSparklesPerSec.toFixed(2),
             this.fireworkCount,
             launcherCount,
             this.calculateAutoLauncherCost(launcherCount)
@@ -478,7 +544,7 @@ class FireworkGame extends Engine {
         localStorage.setItem('fireworkRecipes', JSON.stringify(this.recipes));
 
         localStorage.setItem('buildingManagerData', JSON.stringify(this.buildingManager.serialize()));
-        
+
         const gameStateData = {
             autoLaunchers: []
         };
@@ -540,7 +606,16 @@ class FireworkGame extends Engine {
 
     // dont use every frame because js is weird 
     launchFireworkAt(x, targetY = null, minY = null, recipeComponents = null) {
-        const components = recipeComponents || this.currentRecipeComponents;
+        let components = recipeComponents || this.currentRecipeComponents;
+
+        if (!this.unlockStates.recipesTab) {
+            const autoLauncherCount = this.buildingManager.getBuildingsByType('AUTO_LAUNCHER').length;
+            const availableRecipes = Math.max(1, autoLauncherCount);
+            const cycleIndex = this.fireworkCount % availableRecipes;
+            if (this.recipes.length > cycleIndex) {
+                components = this.recipes[cycleIndex].components;
+            }
+        }
 
         if (components.length === 0) {
             this.showNotification("Add at least one component to launch a firework!");
@@ -556,7 +631,7 @@ class FireworkGame extends Engine {
         const sparkleAmount = components.reduce((sum, c) => sum + this.getComponentSparkles(c), 0);
         this.addSparkles(sparkleAmount, 'manual');
         this.statsTracker.recordFirework('manual');
-        this.checkUnlockConditions(); 
+        this.checkUnlockConditions();
         return { sparkleAmount, spawnX, spawnY };
     }
 
@@ -569,6 +644,11 @@ class FireworkGame extends Engine {
     buyAutoLauncher() {
         const building = this.buildingManager.buyBuilding('AUTO_LAUNCHER');
         if (building) {
+            if (!this.unlockStates.recipesTab) {
+                const autoLauncherCount = this.buildingManager.getBuildingsByType('AUTO_LAUNCHER').length;
+                const recipeIndex = autoLauncherCount - 1;
+                building.assignedRecipeIndex = recipeIndex % this.recipes.length;
+            }
             this.updateLauncherList();
         }
     }
@@ -595,7 +675,7 @@ class FireworkGame extends Engine {
 
     resetAutoLaunchers() {
         const refundAmount = this.buildingManager.resetBuildingsOfType('AUTO_LAUNCHER');
-        this.autoLauncherCost = AUTO_LAUNCHER_COST_BASE; 
+        this.autoLauncherCost = AUTO_LAUNCHER_COST_BASE;
         this.updateLauncherList();
         return refundAmount;
     }
@@ -608,17 +688,17 @@ class FireworkGame extends Engine {
         this.baseSparkleMultiplier = 1;
         this.patternSparkleMultipliers = { default: 1 };
         this.droneStats = {
-            lifetimeMultiplier:            1,
-            speedMultiplier:               1,
-            collectionRadiusMultiplier:    1,
-            maxDrones:                     DRONE_CONFIG.maxDrones,
+            lifetimeMultiplier: 1,
+            speedMultiplier: 1,
+            collectionRadiusMultiplier: 1,
+            maxDrones: DRONE_CONFIG.maxDrones,
             sparklesPerParticleMultiplier: 1,
         };
 
         this.resourceManager.reset();
 
         this.purchasedUpgrades = {};
-        
+
         this.unlockStates = {
             sparkleCounter: false,
             tabMenu: false,
@@ -628,7 +708,8 @@ class FireworkGame extends Engine {
             backgroundTab: false,
             resourceGenerator: false,
             efficiencyBooster: false,
-            droneHub: false
+            droneHub: false,
+            recipesTab: false
         };
 
         this.firstClickStates = {
@@ -638,7 +719,7 @@ class FireworkGame extends Engine {
             crowdsTab: false,
             backgroundTab: false
         };
-        
+
         this.recomputeUpgrades();
 
         if (this.gameState.fireworks) {
@@ -647,7 +728,7 @@ class FireworkGame extends Engine {
             });
         }
         this.gameState.fireworks = [];
-        
+
         // Reset all buildings
         this.buildingManager.destroy();
         this.buildingManager = new BuildingManager(this);
@@ -788,13 +869,13 @@ class FireworkGame extends Engine {
             const randomSecondaryHex = `#${Math.floor(Math.random() * 0xFFFFFF)
                 .toString(16)
                 .padStart(6, '0')}`;
-            
+
             const randomValue = (prop) => {
                 const range = COMPONENT_PROPERTY_RANGES[prop];
                 if (range) {
                     return Math.random() * (range.max - range.min) + range.min;
                 }
-                return 1.0; 
+                return 1.0;
             };
 
             const randomIntValue = (prop) => {
@@ -873,7 +954,7 @@ class FireworkGame extends Engine {
     selectLauncher(buildingId) {
         const building = this.buildingManager.getBuildingById(buildingId);
         this.buildingManager.selectBuilding(building);
-        
+
         const launcherCards = document.querySelectorAll('.launcher-card');
         launcherCards.forEach((card) => {
             if (card.dataset.buildingId === buildingId) {
@@ -1036,7 +1117,15 @@ class FireworkGame extends Engine {
     }
 
     setCameraTarget(targetX) {
-        this.cameraTargetX = targetX;
+        const viewHalfWidth = (this.renderer2D.canvas.width / this.renderer2D.cameraZoom) / 2;
+        const minCameraX = GAME_BOUNDS.SCROLL_MIN_X;
+        const maxCameraX = GAME_BOUNDS.SCROLL_MAX_X - viewHalfWidth;
+        
+        if (minCameraX > maxCameraX) {
+            this.cameraTargetX = (GAME_BOUNDS.SCROLL_MIN_X + GAME_BOUNDS.SCROLL_MAX_X) / 2;
+        } else {
+            this.cameraTargetX = Math.max(minCameraX, Math.min(maxCameraX, targetX));
+        }
     }
 
     isTabContentActive() {
@@ -1090,7 +1179,7 @@ class FireworkGame extends Engine {
 
     randomizeLauncherRecipes() {
         const launchers = this.buildingManager.getBuildingsByType('AUTO_LAUNCHER');
-        
+
         launchers.forEach(launcher => {
             launcher.assignedRecipeIndex = null;
         });
@@ -1220,10 +1309,10 @@ class FireworkGame extends Engine {
         this.baseSparkleMultiplier = 1;
         this.patternSparkleMultipliers = { default: 1 };
         this.droneStats = {
-            lifetimeMultiplier:            1,
-            speedMultiplier:               1,
-            collectionRadiusMultiplier:    1,
-            maxDrones:                     DRONE_CONFIG.maxDrones,
+            lifetimeMultiplier: 1,
+            speedMultiplier: 1,
+            collectionRadiusMultiplier: 1,
+            maxDrones: DRONE_CONFIG.maxDrones,
             sparklesPerParticleMultiplier: 1,
         };
 
@@ -1319,7 +1408,7 @@ class FireworkGame extends Engine {
     loadUnlockStates() {
         const states = JSON.parse(localStorage.getItem('unlockStates') || '{}');
         this.unlockStates = { ...this.unlockStates, ...states };
-        
+
         const clickStates = JSON.parse(localStorage.getItem('firstClickStates') || '{}');
         this.firstClickStates = { ...this.firstClickStates, ...clickStates };
     }
@@ -1413,6 +1502,16 @@ class FireworkGame extends Engine {
                 this.unlockStates.droneHub = true;
                 this.showNotification("New building unlocked: Drone Hub!");
                 this.ui.updateBuildingTypeVisibility();
+                unlockUpdated = true;
+            }
+        }
+
+        if (!this.unlockStates.recipesTab) {
+            const launcherCount = this.buildingManager.getBuildingsByType('AUTO_LAUNCHER').length;
+            if (launcherCount >= 20) {
+                this.unlockStates.recipesTab = true;
+                this.ui.showRecipesTab();
+                this.showNotification("Recipe system unlocked! You can now create and assign custom recipes.");
                 unlockUpdated = true;
             }
         }

@@ -5,15 +5,16 @@ import { GAME_BOUNDS } from '../config/config.js';
 class AutoLauncher extends Building {
     constructor(game, x, y, data = {}) {
         super(game, 'AUTO_LAUNCHER', x, y, data);
-        
+
         this.spawnInterval = data.spawnInterval || this.config.baseSpawnInterval;
         this.accumulator = data.accumulator || Math.random() * 5;
         this.assignedRecipeIndex = data.assignedRecipeIndex ?? null;
     }
 
     update(deltaTime, boostMultiplier = 1.0) {
+        super.update(deltaTime);
         this.accumulator += deltaTime * boostMultiplier;
-        
+
         if (this.accumulator >= this.spawnInterval) {
             this.spawnFirework();
             this.accumulator -= this.spawnInterval;
@@ -23,7 +24,7 @@ class AutoLauncher extends Building {
     spawnFirework() {
         const x = this.x;
         const launchY = GAME_BOUNDS.WORLD_LAUNCHER_Y;
-        
+
         let recipe = this.game.recipes[this.assignedRecipeIndex];
         let recipeComponents = null;
 
@@ -45,22 +46,22 @@ class AutoLauncher extends Building {
         }
 
         const spawnX = x + (Math.random() * 0.5 - 0.25) * this.config.width;
-        
+
         const firework = new Firework(
-            spawnX, 
-            launchY, 
-            components, 
-            this.game.renderer2D, 
+            spawnX,
+            launchY,
+            components,
+            this.game.renderer2D,
             this.game.particleSystem,
             null,
             this.game.audioManager
         );
-        
+
         this.game.gameState.fireworks.push(firework);
         this.game.fireworkCount++;
-        
+
         const sparkleAmount = components.reduce(
-            (sum, c) => sum + this.game.getComponentSparkles(c), 
+            (sum, c) => sum + this.game.getComponentSparkles(c),
             0
         );
         this.game.addSparkles(sparkleAmount, 'auto_launcher');
@@ -78,7 +79,7 @@ class AutoLauncher extends Building {
     getSparklesPerSecond() {
         let recipe = this.game.recipes[this.assignedRecipeIndex];
         let components;
-        
+
         if (recipe) {
             components = recipe.components;
         } else {
@@ -90,10 +91,10 @@ class AutoLauncher extends Building {
         }
 
         const sparklePerFirework = components.reduce(
-            (sum, c) => sum + this.game.getComponentSparkles(c), 
+            (sum, c) => sum + this.game.getComponentSparkles(c),
             0
         );
-        
+
         return sparklePerFirework / this.spawnInterval;
     }
 

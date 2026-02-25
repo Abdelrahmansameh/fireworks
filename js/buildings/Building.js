@@ -73,6 +73,28 @@ class Building {
     }
 
     update(deltaTime) {
+        if (this.highlightTimer > 0) {
+            this.highlightTimer -= deltaTime;
+            if (this.highlightTimer <= 0) {
+                this.mesh.color = this.originalColor.clone();
+            } else {
+                // Pulse effect
+                const pulse = (Math.sin(this.highlightTimer * 10) + 1) / 2; // 0 to 1
+                this.mesh.color = new Renderer2D.Color(
+                    this.originalColor.r + (1 - this.originalColor.r) * pulse,
+                    this.originalColor.g + (1 - this.originalColor.g) * pulse,
+                    this.originalColor.b + (0 - this.originalColor.b) * pulse, // Yellowish tint
+                    this.originalColor.a
+                );
+            }
+        }
+    }
+
+    highlight(duration = 2.0) {
+        this.highlightTimer = duration;
+        if (!this.originalColor) {
+            this.originalColor = this.mesh.color.clone();
+        }
     }
 
     upgrade() {
