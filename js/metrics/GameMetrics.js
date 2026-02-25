@@ -1,11 +1,11 @@
 import { STATS_CONFIG } from '../config/config.js';
 
 /**
- * StatsTracker — tracks resource gains with source labels and computes
+ * GameMetrics — tracks resource gains with source labels and computes
  * rolling averages. Window duration is set by STATS_CONFIG.rollingWindowSeconds.
  * Lifetime totals are persisted to localStorage.
  */
-export default class StatsTracker {
+export default class GameMetrics {
     /** Rolling-average window in seconds (driven by config). */
     static get WINDOW() { return STATS_CONFIG.rollingWindowSeconds; }
 
@@ -98,7 +98,7 @@ export default class StatsTracker {
 
     /**
      * Record a drone particle collection (already counted through sparkle 'drone' source,
-     * but we keep a separate raw count for the stats panel).
+     * but we keep a separate raw count for the metrics panel).
      */
     recordDroneParticle() {
         this.sessionDroneParticles++;
@@ -117,7 +117,7 @@ export default class StatsTracker {
      * @returns {number}
      */
     getRollingRate(resource, source = null) {
-        const W = StatsTracker.WINDOW;
+        const W = GameMetrics.WINDOW;
         const now = performance.now();
         const cutoff = now - W * 1000;
 
@@ -143,7 +143,7 @@ export default class StatsTracker {
      * @returns {number}
      */
     getFireworksPerSecond(source = null) {
-        const W = StatsTracker.WINDOW;
+        const W = GameMetrics.WINDOW;
         const now = performance.now();
         const cutoff = now - W * 1000;
 
@@ -209,12 +209,12 @@ export default class StatsTracker {
             peakFPS: this.peakFPS,
             peakCrowdSize: this.peakCrowdSize
         };
-        localStorage.setItem('statsTracker', JSON.stringify(data));
+        localStorage.setItem('gameMetrics', JSON.stringify(data));
     }
 
     load() {
         try {
-            const raw = localStorage.getItem('statsTracker');
+            const raw = localStorage.getItem('gameMetrics');
             if (!raw) return;
             const data = JSON.parse(raw);
 
@@ -230,7 +230,7 @@ export default class StatsTracker {
             this.peakFPS = data.peakFPS ?? 0;
             this.peakCrowdSize = data.peakCrowdSize ?? 0;
         } catch (e) {
-            console.warn('StatsTracker: failed to load saved data', e);
+            console.warn('GameMetrics: failed to load saved data', e);
         }
     }
 

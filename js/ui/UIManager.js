@@ -1,6 +1,6 @@
 import { GAME_BOUNDS, BACKGROUND_IMAGES, DEFAULT_RECIPE_COMPONENTS, COMPONENT_PROPERTY_RANGES, PARTICLE_TYPES, STATS_CONFIG, LAUNCHER_WORLD_HIGHLIGHT_DURATION, PATTERN_DISPLAY_NAMES } from '../config/config.js';
 import * as Renderer2D from '../rendering/Renderer.js';
-import StatsTracker from '../stats/StatsTracker.js';
+import GameMetrics from '../metrics/GameMetrics.js';
 
 class UIManager {
     constructor(game) {
@@ -867,7 +867,7 @@ class UIManager {
         set('stat-bld-drone', getBldCount('DRONE_HUB'));
 
         // ── Session totals ──────────────────────────────────────────────────
-        set('stat-session-time', StatsTracker.formatDuration(st.getSessionDurationSeconds()));
+        set('stat-session-time', GameMetrics.formatDuration(st.getSessionDurationSeconds()));
 
         set('stat-sess-sparkles', fmt(st.sessionSparkles));
         set('stat-sess-sp-auto', fmt(st.sessionSparklesBySource['auto_launcher'] ?? 0));

@@ -11,7 +11,7 @@ import * as Renderer2D from '../rendering/Renderer.js';
 import Engine from '../engine/Engine.js';
 import BuildingManager from '../buildings/BuildingManager.js';
 import AudioManager from '../audio/AudioManager.js';
-import StatsTracker from '../stats/StatsTracker.js';
+import GameMetrics from '../metrics/GameMetrics.js';
 
 class FireworkGame extends Engine {
     constructor() {
@@ -58,7 +58,7 @@ class FireworkGame extends Engine {
         this.ui = new UIManager(this);
         this.profiler = new GameProfiler();
         this.audioManager = new AudioManager();
-        this.statsTracker = new StatsTracker();
+        this.statsTracker = new GameMetrics();
 
         this.currentState = 'game';
         this.advancedCreatorUnlocked = JSON.parse(localStorage.getItem('advancedCreatorUnlocked') || 'false');
@@ -511,7 +511,7 @@ class FireworkGame extends Engine {
 
         this.crowd.update(deltaTime);
 
-        // Update peak records in StatsTracker
+        // Update peak records in GameMetrics
         const rollingSPS = this.statsTracker.getRollingRate('sparkles');
         const rollingGPS = this.statsTracker.getRollingRate('gold');
         const rollingFPS = this.statsTracker.getFireworksPerSecond();
@@ -621,7 +621,7 @@ class FireworkGame extends Engine {
             } else {
                 const launcher = launchers[cycleIndex - 1];
                 if (launcher && launcher.patternOverride) {
-                    components = DEFAULT_RECIPE_COMPONENTS.map(c => ({ ...c, pattern: launcher.patternOverride }));
+                    components = DEFAULT_RECIPE_COMPONENTS.map(c => ({ ...c, pattern: launcher.patternOverride, color: launcher.colorOverride || c.color }));
                 } else {
                     components = DEFAULT_RECIPE_COMPONENTS;
                 }
