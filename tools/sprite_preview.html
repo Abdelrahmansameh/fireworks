@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sprite Preview Tool</title>
+<style>
+  :root {
+    --bg: #1e1e2e;
+    --surface: #282840;
+    --border: #3a3a5c;
+    --text: #e0e0f0;
+    --accent: #ffa347;
+    --accent2: #47c8ff;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  header {
+    background: var(--surface);
+    border-bottom: 2px solid var(--border);
+    padding: 16px 24px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  header h1 {
+    font-size: 1.4rem;
+    color: var(--accent);
+  }
+
+  header .subtitle {
+    font-size: 0.85rem;
+    color: #888;
+  }
+
+  .controls {
+    display: flex;
+    gap: 12px;
+    margin-left: auto;
+    align-items: center;
+  }
+
+  .controls label {
+    font-size: 0.8rem;
+    color: #aaa;
+  }
+
+  .controls select, .controls input {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.85rem;
+  }
+
+  .tab-bar {
+    display: flex;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 24px;
+    gap: 0;
+  }
+
+  .tab {
+    padding: 10px 20px;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    font-size: 0.9rem;
+    color: #888;
+    transition: all 0.2s;
+    user-select: none;
+  }
+
+  .tab:hover { color: var(--text); }
+
+  .tab.active {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+  }
+
+  main {
+    padding: 24px;
+  }
+
+  .section { display: none; }
+  .section.active { display: block; }
+
+  /* ── Sprite Sheet Grid ─────────────────────────── */
+  .sprite-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+
+  .sprite-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    transition: transform 0.15s;
+  }
+
+  .sprite-card:hover { transform: translateY(-2px); }
+
+  .sprite-card .card-header {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .sprite-card .card-header h3 {
+    font-size: 0.95rem;
+    color: var(--accent2);
+  }
+
+  .sprite-card .card-header .meta {
+    font-size: 0.75rem;
+    color: #888;
+  }
+
+  .sprite-card .card-body {
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .sprite-card .full-sheet {
+    max-width: 100%;
+    height: auto;
+    image-rendering: pixelated;
+    border: 1px dashed var(--border);
+    background: repeating-conic-gradient(#333 0% 25%, #222 0% 50%) 0 0 / 16px 16px;
+    object-fit: contain;
+  }
+
+  .sprite-card .card-body {
+    overflow-x: auto;
+  }
+
+  /* ── Animation Player ──────────────────────────── */
+  .anim-section {
+    margin-top: 12px;
+    width: 100%;
+  }
+
+  .anim-section h4 {
+    font-size: 0.82rem;
+    color: #aaa;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .anim-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 6px 0;
+    border-top: 1px solid var(--border);
+  }
+
+  .anim-row .anim-name {
+    min-width: 100px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text);
+  }
+
+  .anim-canvas {
+    border: 1px solid var(--border);
+    background: repeating-conic-gradient(#333 0% 25%, #222 0% 50%) 0 0 / 10px 10px;
+    image-rendering: pixelated;
+  }
+
+  .anim-frames {
+    display: flex;
+    gap: 4px;
+    flex-wrap: wrap;
+  }
+
+  .anim-frames canvas {
+    border: 1px solid var(--border);
+    image-rendering: pixelated;
+    background: repeating-conic-gradient(#333 0% 25%, #222 0% 50%) 0 0 / 8px 8px;
+  }
+
+  .anim-frames canvas.active-frame {
+    border-color: var(--accent);
+    box-shadow: 0 0 6px rgba(255, 163, 71, 0.4);
+  }
+
+  /* ── Static Images Grid ────────────────────────── */
+  .image-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 20px;
+  }
+
+  .image-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    transition: transform 0.15s;
+  }
+
+  .image-card:hover { transform: translateY(-2px); }
+
+  .image-card .card-header {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .image-card .card-header h3 {
+    font-size: 0.9rem;
+    color: var(--accent2);
+    word-break: break-all;
+  }
+
+  .image-card .card-header .dims {
+    font-size: 0.72rem;
+    color: #888;
+    white-space: nowrap;
+    margin-left: 8px;
+  }
+
+  .image-card .card-body {
+    padding: 12px;
+    display: flex;
+    justify-content: center;
+    background: repeating-conic-gradient(#333 0% 25%, #222 0% 50%) 0 0 / 16px 16px;
+    min-height: 100px;
+  }
+
+  .image-card .card-body img {
+    max-width: 100%;
+    max-height: 300px;
+    image-rendering: pixelated;
+  }
+
+  .play-controls {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+  }
+
+  .play-controls button {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-radius: 4px;
+    padding: 2px 8px;
+    cursor: pointer;
+    font-size: 0.78rem;
+  }
+
+  .play-controls button:hover { border-color: var(--accent); color: var(--accent); }
+  .play-controls button.active { background: var(--accent); color: #000; border-color: var(--accent); }
+
+  .speed-label {
+    font-size: 0.72rem;
+    color: #888;
+  }
+
+  .zoom-control {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .zoom-control input[type="range"] {
+    width: 80px;
+    accent-color: var(--accent);
+  }
+
+  .empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: #666;
+    font-size: 0.95rem;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🎆 Sprite Preview Tool</h1>
+  <span class="subtitle">Fireworks Project — Asset Viewer</span>
+  <div class="controls">
+    <div class="zoom-control">
+      <label>Zoom:</label>
+      <input type="range" id="globalZoom" min="0.5" max="6" value="2" step="0.5">
+      <span id="zoomLabel">2x</span>
+    </div>
+    <label>BG:</label>
+    <select id="bgSelect">
+      <option value="checker">Checker</option>
+      <option value="black">Black</option>
+      <option value="white">White</option>
+      <option value="magenta">Magenta</option>
+    </select>
+  </div>
+</header>
+
+<div class="tab-bar">
+  <div class="tab active" data-section="sprite-sheets">Sprite Sheets</div>
+  <div class="tab" data-section="static-images">Static Images</div>
+  <div class="tab" data-section="backgrounds">Backgrounds</div>
+</div>
+
+<main>
+  <!-- Sprite Sheets Section -->
+  <div id="sprite-sheets" class="section active">
+    <div class="sprite-grid" id="spriteGrid"></div>
+  </div>
+
+  <!-- Static Images Section -->
+  <div id="static-images" class="section">
+    <div class="image-grid" id="staticGrid"></div>
+  </div>
+
+  <!-- Backgrounds Section -->
+  <div id="backgrounds" class="section">
+    <div class="image-grid" id="bgGrid"></div>
+  </div>
+</main>
+
+<script type="module">
+// ────────────────────────────────────────────────────
+// Sprite-sheet animation definitions (mirrored from spriteAnimations.js)
+// ────────────────────────────────────────────────────
+const SPRITE_SHEETS = [
+  {
+    id: 'crowd_sheet_a',
+    texture: '../assets/crowd_member_sheet.png',
+    columns: 4,
+    rows: 3,
+    animations: {
+      idle:  { row: 0, frameCount: 4, frameDuration: 0.25, loop: true },
+      cheer: { row: 1, frameCount: 4, frameDuration: 0.12, loop: true },
+      wave:  { row: 2, frameCount: 4, frameDuration: 0.18, loop: true },
+    },
+    defaultAnimation: 'cheer',
+  },
+  {
+    id: 'crowd_sheet_b',
+    texture: '../assets/crowd_member_sheet_2.png',
+    columns: 4,
+    rows: 3,
+    animations: {
+      falling:       { row: 0, frameCount: 4, frameDuration: 0.20, loop: true },
+      walking_right: { row: 1, frameCount: 4, frameDuration: 0.05, loop: true },
+      toss_coin:     { row: 2, frameCount: 4, frameDuration: 0.15, loop: true },
+    },
+    defaultAnimation: 'falling',
+  },
+  {
+    id: 'crowd_sheet_2b',
+    texture: '../assets/crowd_member_sheet_2_b.png',
+    columns: 4,
+    rows: 3,
+    animations: {
+      row_0: { row: 0, frameCount: 4, frameDuration: 0.20, loop: true },
+      row_1: { row: 1, frameCount: 4, frameDuration: 0.15, loop: true },
+      row_2: { row: 2, frameCount: 4, frameDuration: 0.15, loop: true },
+    },
+    defaultAnimation: 'row_0',
+  },
+  {
+    id: 'crowd_sheet_3',
+    texture: '../assets/crowd_member_sheet_3.png',
+    columns: 4,
+    rows: 3,
+    animations: {
+      row_0: { row: 0, frameCount: 4, frameDuration: 0.20, loop: true },
+      row_1: { row: 1, frameCount: 4, frameDuration: 0.15, loop: true },
+      row_2: { row: 2, frameCount: 4, frameDuration: 0.15, loop: true },
+    },
+    defaultAnimation: 'row_0',
+  },
+];
+
+const STATIC_IMAGES = [
+  { name: 'Crowd Member (single)', path: '../assets/crowd_member.png' },
+  { name: 'Glow',                  path: '../assets/glow.png' },
+  { name: 'Noise',                 path: '../assets/noise.jpg' },
+];
+
+const BACKGROUNDS = [
+  { name: 'Black Forest',    path: '../assets/black-forest.png' },
+  { name: 'Blank',           path: '../assets/background.png' },
+  { name: 'Black Town',      path: '../assets/mountain-town.png' },
+  { name: 'Black City',      path: '../assets/black-city.png' },
+  { name: 'Black Mountains', path: '../assets/black-mountains.png' },
+  { name: 'Black Mtn Sky',   path: '../assets/black-mountains-sky.png' },
+  { name: 'Black Ruins',     path: '../assets/black-ruins.png' },
+  { name: 'Forest',          path: '../assets/darkened_forest.png' },
+  { name: 'Town',            path: '../assets/darkened_town.png' },
+  { name: 'City',            path: '../assets/darkened_city.png' },
+  { name: 'Mountains Loop',  path: '../assets/mountains-loop.png' },
+  { name: 'Mountains',       path: '../assets/mountains.png' },
+  { name: 'Background Loop', path: '../assets/background_loop.png' },
+  { name: 'Ruins',           path: '../assets/ruins.png' },
+  { name: 'Black Town 2',    path: '../assets/black-town-lowered.png' },
+  { name: 'Town (original)', path: '../assets/town.png' },
+  { name: 'City (original)', path: '../assets/city.png' },
+  { name: 'Forest (orig)',   path: '../assets/forest.png' },
+];
+
+// ────────────────────────────────────────────────────
+// Global state
+// ────────────────────────────────────────────────────
+let globalZoom = 2;
+const animPlayers = []; // { canvas, ctx, sheet, animKey, frame, lastTime, playing, speed }
+
+// ────────────────────────────────────────────────────
+// Tab switching
+// ────────────────────────────────────────────────────
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById(tab.dataset.section).classList.add('active');
+  });
+});
+
+// ────────────────────────────────────────────────────
+// Background selector
+// ────────────────────────────────────────────────────
+const bgMap = {
+  checker: `repeating-conic-gradient(#333 0% 25%, #222 0% 50%) 0 0 / 16px 16px`,
+  black: '#000',
+  white: '#fff',
+  magenta: '#ff00ff',
+};
+
+document.getElementById('bgSelect').addEventListener('change', e => {
+  document.querySelectorAll('.full-sheet, .anim-canvas, .anim-frames canvas, .image-card .card-body').forEach(el => {
+    const val = bgMap[e.target.value];
+    if (e.target.value === 'checker') {
+      el.style.background = val;
+    } else {
+      el.style.background = val;
+    }
+  });
+});
+
+// ────────────────────────────────────────────────────
+// Zoom slider
+// ────────────────────────────────────────────────────
+document.getElementById('globalZoom').addEventListener('input', e => {
+  globalZoom = parseFloat(e.target.value);
+  document.getElementById('zoomLabel').textContent = globalZoom + 'x';
+  rebuildSpriteSheets();
+});
+
+// ────────────────────────────────────────────────────
+// Load an image as a promise
+// ────────────────────────────────────────────────────
+function loadImage(src) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = () => reject(new Error(`Failed to load: ${src}`));
+    img.src = src;
+  });
+}
+
+// ────────────────────────────────────────────────────
+// Build Sprite Sheet cards
+// ────────────────────────────────────────────────────
+async function rebuildSpriteSheets() {
+  const grid = document.getElementById('spriteGrid');
+  grid.innerHTML = '';
+  animPlayers.length = 0;
+
+  for (const sheet of SPRITE_SHEETS) {
+    let img;
+    try { img = await loadImage(sheet.texture); } catch { continue; }
+
+    const frameW = img.width / sheet.columns;
+    const frameH = img.height / sheet.rows;
+
+    const card = document.createElement('div');
+    card.className = 'sprite-card';
+
+    // Header
+    const header = document.createElement('div');
+    header.className = 'card-header';
+    header.innerHTML = `
+      <h3>${sheet.id}</h3>
+      <span class="meta">${img.width}×${img.height} • ${sheet.columns}×${sheet.rows} grid • frame ${Math.round(frameW)}×${Math.round(frameH)}</span>
+    `;
+    card.appendChild(header);
+
+    const body = document.createElement('div');
+    body.className = 'card-body';
+
+    // Full sheet preview (scaled)
+    const sheetCanvas = document.createElement('canvas');
+    sheetCanvas.className = 'full-sheet';
+    const sheetScale = Math.min(globalZoom, 4);
+    sheetCanvas.width = Math.round(img.width * sheetScale);
+    sheetCanvas.height = Math.round(img.height * sheetScale);
+    sheetCanvas.style.width = sheetCanvas.width + 'px';
+    sheetCanvas.style.maxWidth = '100%';
+    sheetCanvas.style.height = 'auto';
+    const sheetCtx = sheetCanvas.getContext('2d');
+    sheetCtx.imageSmoothingEnabled = false;
+    sheetCtx.drawImage(img, 0, 0, sheetCanvas.width, sheetCanvas.height);
+
+    // Draw grid lines
+    sheetCtx.strokeStyle = 'rgba(255,163,71,0.35)';
+    sheetCtx.lineWidth = 1;
+    const scaledFW = sheetCanvas.width / sheet.columns;
+    const scaledFH = sheetCanvas.height / sheet.rows;
+    for (let c = 1; c < sheet.columns; c++) {
+      sheetCtx.beginPath();
+      sheetCtx.moveTo(c * scaledFW, 0);
+      sheetCtx.lineTo(c * scaledFW, sheetCanvas.height);
+      sheetCtx.stroke();
+    }
+    for (let r = 1; r < sheet.rows; r++) {
+      sheetCtx.beginPath();
+      sheetCtx.moveTo(0, r * scaledFH);
+      sheetCtx.lineTo(sheetCanvas.width, r * scaledFH);
+      sheetCtx.stroke();
+    }
+    body.appendChild(sheetCanvas);
+
+    // Animations
+    const animSection = document.createElement('div');
+    animSection.className = 'anim-section';
+    animSection.innerHTML = '<h4>Animations</h4>';
+
+    for (const [animKey, anim] of Object.entries(sheet.animations)) {
+      const row = document.createElement('div');
+      row.className = 'anim-row';
+
+      // Name
+      const nameEl = document.createElement('span');
+      nameEl.className = 'anim-name';
+      nameEl.textContent = animKey;
+      row.appendChild(nameEl);
+
+      // Animated preview canvas
+      const animCanvas = document.createElement('canvas');
+      animCanvas.className = 'anim-canvas';
+      animCanvas.width = Math.round(frameW * globalZoom);
+      animCanvas.height = Math.round(frameH * globalZoom);
+      animCanvas.style.width = animCanvas.width + 'px';
+      animCanvas.style.height = animCanvas.height + 'px';
+      const animCtx = animCanvas.getContext('2d');
+      animCtx.imageSmoothingEnabled = false;
+      row.appendChild(animCanvas);
+
+      // Individual frame thumbnails
+      const framesContainer = document.createElement('div');
+      framesContainer.className = 'anim-frames';
+      const frameCanvases = [];
+      for (let f = 0; f < anim.frameCount; f++) {
+        const fc = document.createElement('canvas');
+        const thumbZoom = Math.max(0.5, globalZoom * 0.75);
+        fc.width = Math.round(frameW * thumbZoom);
+        fc.height = Math.round(frameH * thumbZoom);
+        fc.style.width = fc.width + 'px';
+        fc.style.height = fc.height + 'px';
+        const fctx = fc.getContext('2d');
+        fctx.imageSmoothingEnabled = false;
+        fctx.drawImage(img,
+          f * frameW, anim.row * frameH, frameW, frameH,
+          0, 0, fc.width, fc.height
+        );
+        frameCanvases.push(fc);
+        framesContainer.appendChild(fc);
+      }
+      row.appendChild(framesContainer);
+
+      // Play controls
+      const controls = document.createElement('div');
+      controls.className = 'play-controls';
+      const playBtn = document.createElement('button');
+      playBtn.textContent = '⏸';
+      playBtn.className = 'active';
+      controls.appendChild(playBtn);
+      const speedLabel = document.createElement('span');
+      speedLabel.className = 'speed-label';
+      speedLabel.textContent = `${(anim.frameDuration * 1000).toFixed(0)}ms`;
+      controls.appendChild(speedLabel);
+      row.appendChild(controls);
+
+      animSection.appendChild(row);
+
+      // Register animation player
+      const player = {
+        canvas: animCanvas,
+        ctx: animCtx,
+        img,
+        frameW,
+        frameH,
+        anim,
+        frame: 0,
+        lastTime: 0,
+        playing: true,
+        speed: 1,
+        frameCanvases,
+      };
+
+      playBtn.addEventListener('click', () => {
+        player.playing = !player.playing;
+        playBtn.textContent = player.playing ? '⏸' : '▶';
+        playBtn.classList.toggle('active', player.playing);
+      });
+
+      animPlayers.push(player);
+    }
+
+    body.appendChild(animSection);
+    card.appendChild(body);
+    grid.appendChild(card);
+  }
+}
+
+// ────────────────────────────────────────────────────
+// Animation loop
+// ────────────────────────────────────────────────────
+function animLoop(timestamp) {
+  for (const p of animPlayers) {
+    if (!p.playing) continue;
+    const elapsed = timestamp - p.lastTime;
+    const interval = p.anim.frameDuration * 1000 / p.speed;
+
+    if (elapsed >= interval) {
+      p.frame = (p.frame + 1) % p.anim.frameCount;
+      p.lastTime = timestamp;
+
+      // Draw current frame
+      p.ctx.clearRect(0, 0, p.canvas.width, p.canvas.height);
+      p.ctx.drawImage(p.img,
+        p.frame * p.frameW, p.anim.row * p.frameH, p.frameW, p.frameH,
+        0, 0, p.canvas.width, p.canvas.height
+      );
+
+      // Highlight the active frame thumbnail
+      p.frameCanvases.forEach((fc, i) => {
+        fc.classList.toggle('active-frame', i === p.frame);
+      });
+    }
+  }
+  requestAnimationFrame(animLoop);
+}
+
+// ────────────────────────────────────────────────────
+// Build Static Image cards
+// ────────────────────────────────────────────────────
+async function buildStaticImages() {
+  const grid = document.getElementById('staticGrid');
+  grid.innerHTML = '';
+
+  for (const entry of STATIC_IMAGES) {
+    let img;
+    try { img = await loadImage(entry.path); } catch { continue; }
+
+    const card = document.createElement('div');
+    card.className = 'image-card';
+
+    const header = document.createElement('div');
+    header.className = 'card-header';
+    header.innerHTML = `
+      <h3>${entry.name}</h3>
+      <span class="dims">${img.width}×${img.height}</span>
+    `;
+    card.appendChild(header);
+
+    const body = document.createElement('div');
+    body.className = 'card-body';
+    const imgEl = document.createElement('img');
+    imgEl.src = entry.path;
+    imgEl.style.imageRendering = 'pixelated';
+    body.appendChild(imgEl);
+    card.appendChild(body);
+
+    grid.appendChild(card);
+  }
+}
+
+// ────────────────────────────────────────────────────
+// Build Background cards
+// ────────────────────────────────────────────────────
+async function buildBackgrounds() {
+  const grid = document.getElementById('bgGrid');
+  grid.innerHTML = '';
+
+  for (const entry of BACKGROUNDS) {
+    let img;
+    try { img = await loadImage(entry.path); } catch { continue; }
+
+    const card = document.createElement('div');
+    card.className = 'image-card';
+
+    const header = document.createElement('div');
+    header.className = 'card-header';
+    header.innerHTML = `
+      <h3>${entry.name}</h3>
+      <span class="dims">${img.width}×${img.height}</span>
+    `;
+    card.appendChild(header);
+
+    const body = document.createElement('div');
+    body.className = 'card-body';
+    body.style.background = '#000';
+    const imgEl = document.createElement('img');
+    imgEl.src = entry.path;
+    imgEl.style.imageRendering = 'auto';
+    body.appendChild(imgEl);
+    card.appendChild(body);
+
+    grid.appendChild(card);
+  }
+}
+
+// ────────────────────────────────────────────────────
+// Init
+// ────────────────────────────────────────────────────
+await rebuildSpriteSheets();
+buildStaticImages();
+buildBackgrounds();
+requestAnimationFrame(animLoop);
+</script>
+
+</body>
+</html>
