@@ -169,6 +169,7 @@ class FireworkGame extends Engine {
         this.droneSystem = new InstancedDroneSystem(this.renderer2D, this.particleSystem);
         this.droneSystem.maxDrones = this.droneStats.maxDrones;
         this.crowd = new Crowd(this.renderer2D);
+        this.crowd.onCoinDrop = (amount, source) => this.addGold(amount, source);
 
         const initialSps = this.calculateTotalSparklesPerSecond();
         const initialCrowd = this._calculateTargetCrowdCount(initialSps);
@@ -506,7 +507,6 @@ class FireworkGame extends Engine {
         const targetCrowdSize = this._calculateTargetCrowdCount(currentSps);
         this.crowd.setCount(targetCrowdSize);
 
-        this.resourceManager.updateGoldFromCrowd(this.crowd.people.length);
         this.resourceManager.update();
 
         this.crowd.update(deltaTime);
@@ -768,6 +768,7 @@ class FireworkGame extends Engine {
         if (this.crowd) {
             this.crowd.dispose();
             this.crowd = new Crowd(this.renderer2D);
+            this.crowd.onCoinDrop = (amount, source) => this.addGold(amount, source);
         }
 
 

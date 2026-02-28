@@ -16,16 +16,6 @@ export default class ResourceManager {
         // Sparkles self-accumulates via _perSecond (set from building SPS).
         this.resources.sparkles.update();
 
-        // Gold income is routed through game.addGold() so StatsTracker
-        // can attribute it to the 'crowd' source.
-        const goldIncome = this.resources.gold.computePassiveIncome();
-        if (goldIncome > 0) {
-            this.game.addGold(goldIncome, 'crowd');
-        }
-    }
-
-    updateGoldFromCrowd(crowdSize) {
-        this.resources.gold.updateFromCrowd(crowdSize);
     }
 
     reset() {

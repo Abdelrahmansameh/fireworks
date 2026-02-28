@@ -60,17 +60,17 @@ export const SPRITE_ANIMATIONS = {
                 walking_right: {
                     row: 1,
                     frameCount: 4,
+                    frameDuration: 0.05,
+                    loop: true,
+                },
+                toss_coin: {
+                    row: 2,
+                    frameCount: 4,
                     frameDuration: 0.15,
                     loop: true,
                 },
-                blinking: {
-                    row: 2,
-                    frameCount: 4,
-                    frameDuration: 0.30,
-                    loop: true,
-                },
             },
-            defaultAnimation: 'blinking',
+            defaultAnimation: 'falling',
         },
     ],
 

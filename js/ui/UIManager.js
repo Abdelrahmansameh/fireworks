@@ -776,31 +776,14 @@ class UIManager {
             const countText = isCompact ?
                 `${formatCompactNumber(sparklesCount)} sp` :
                 `${sparklesCount}`;
-            const rateText = isCompact ?
-                ` (+${formatCompactNumber(totalSparklesRate)}/s)` :
-                ` (+${totalSparklesRate}/s)`;
 
-            el.innerHTML = `${countText}<span style="font-size: 0.8em; opacity: 0.8;">${rateText}</span>`;
+            el.textContent = countText;
         });
-
-        const sparkleRateEl = sparklesElement.querySelector('.sparkle-rate');
-        if (sparkleRateEl) sparkleRateEl.textContent = '';
-
-        const totalRateEl = sparklesElement.querySelector('.total-rate');
-        if (totalRateEl) totalRateEl.textContent = '';
 
         const gold = this.game.resourceManager.resources.gold;
         const goldTotalElements = sparklesElement.querySelectorAll('.gold-total');
         goldTotalElements.forEach(el => {
-            const countText = gold.formatAmount();
-            const rateText = ` (+${gold.perSecond.toFixed(1)}/s)`;
-
-            el.innerHTML = `${countText}<span style="font-size: 0.8em; opacity: 0.8;">${rateText}</span>`;
-        });
-
-        const goldRateElements = sparklesElement.querySelectorAll('.gold-rate');
-        goldRateElements.forEach(el => {
-            el.textContent = '';
+            el.textContent = gold.formatAmount();
         });
 
         if (!sparklesElement._hasClickHandler) {

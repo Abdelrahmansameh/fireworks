@@ -26,6 +26,10 @@ class Crowd {
         this._grabOffsetY = 0;
         this._cursorHistory = [];      // ring-buffer of {x,y,t}
 
+        this.goldPerSecondPerPerson = 0.1; 
+        /** @type {((amount: number, source: string) => void) | null} */
+        this.onCoinDrop = null;             // set by FireworkGame
+
         this._initializeCrowd();
     }
 
@@ -224,6 +228,11 @@ class Crowd {
             animLoop: animDef ? animDef.loop : true,
             animTimer: Math.random() * (animDef ? animDef.frameDuration * animDef.frameCount : 1),
             animFrame: 0,
+            // Gold accumulation — fills up to 1.0 then drops a coin
+            goldAccumulator: Math.random(),  // stagger so coins don't all drop at once
+            // Coin-toss animation: countdown timer; when > 0 the toss_coin anim plays
+            coinAnimTimer: 0,
+            coinAnimPrevAnim: null,
         };
 
         // Compute initial absolute frame index
@@ -383,6 +392,43 @@ class Crowd {
         const GRAVITY = CROWD_CONFIG.gravity;
         const FRICTION = CROWD_CONFIG.friction;
         const WALK_SPEED = CROWD_CONFIG.walkSpeed;
+
+        // Gold accumulation — each person fills up independently
+        const goldRate = this.goldPerSecondPerPerson;
+        const tossCoinDef = this.animToSheet.get('toss_coin');
+        const tossCoinDuration = tossCoinDef
+            ? tossCoinDef.animDef.frameDuration * tossCoinDef.animDef.frameCount
+            : 0;
+
+        for (let i = 0; i < this.people.length; i++) {
+            const person = this.people[i];
+            person.goldAccumulator += goldRate * deltaTime;
+            if (person.goldAccumulator >= 1.0) {
+                const coins = Math.floor(person.goldAccumulator);
+                person.goldAccumulator -= coins;
+                if (this.onCoinDrop) {
+                    this.onCoinDrop(coins, 'crowd');
+                }
+                // Play toss_coin animation for one full cycle
+                if (tossCoinDef && person.coinAnimTimer <= 0) {
+                    person.coinAnimPrevAnim = person.animName;
+                    person.coinAnimTimer = tossCoinDuration;
+                    this.setAnimation(i, 'toss_coin');
+                }
+            }
+
+            // Count down the coin-toss animation and restore previous anim
+            if (person.coinAnimTimer > 0) {
+                person.coinAnimTimer -= deltaTime;
+                if (person.coinAnimTimer <= 0) {
+                    person.coinAnimTimer = 0;
+                    if (person.coinAnimPrevAnim) {
+                        this.setAnimation(i, person.coinAnimPrevAnim);
+                        person.coinAnimPrevAnim = null;
+                    }
+                }
+            }
+        }
 
         for (let i = 0; i < this.people.length; i++) {
             const person = this.people[i];
