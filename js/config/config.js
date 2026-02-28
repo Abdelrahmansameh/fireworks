@@ -288,6 +288,41 @@ const BUILDING_TYPES = {
     }
 };
 
+const CROWD_CONFIG = {
+    // Sprite geometry
+    spriteWidth: 30,
+    spriteHeight: 30,
+    fallbackRadius: 10,
+    fallbackSegments: 8,
+
+    // Instanced-group limits
+    maxInstances: 1000,
+    zIndex: -10,
+
+    // Spawn / positioning
+    minOverlapDistance: 10,          // world-units — min spacing between people
+    maxPlacementAttempts: 20,
+    ySpread: 70,                    // random Y offset below CROWD_Y
+    baseScale: 2,
+    scaleVariance: 0.4,             // scale = baseScale + random * scaleVariance
+
+    // Physics
+    gravity: 2200,                  // world-units / s²
+    friction: 1.0,                  // air-resistance damping factor (v *= e^(-friction*dt))
+    walkSpeed: 600,                 // world-units / s
+    landingSnapDistance: 5,         // close-enough to resume cheering after fall
+    walkArrivalDistance: 3,         // close-enough to stop walking
+
+    // Grab / throw interaction
+    pickRadius: 35,                 // world-units — max cursor-to-person dist for grab
+    cursorHistorySize: 6,           // samples kept for launch-velocity estimation
+    minDtForVelocity: 0.005,       // seconds — ignore tiny dt to avoid div-by-zero
+    maxThrowSpeedX: 1500,            // world-units / s
+    maxThrowSpeedY: 1800,            // world-units / s
+    wallBounce: 0.5,                // velocity retention when bouncing off world edges
+    wallBounceBuffer: 500,          // world-units — invisible buffer beyond scroll bounds for wall bounces
+};
+
 /**
  * Stats / telemetry configuration.
  */
@@ -315,6 +350,7 @@ const PATTERN_UNLOCK_ORDER = [
     'helix',
     'christmasTree',
     'solidsphere',
+    'dragonsBreath'
 ];
 
 const PATTERN_DISPLAY_NAMES = {
@@ -331,7 +367,8 @@ const PATTERN_DISPLAY_NAMES = {
     helix:        'Helix',
     christmasTree:'Christmas Tree',
     solidsphere:  'Solid Sphere',
+    dragonsBreath: 'Dragon\'s Breath',
 };
 
-export { FIREWORK_CONFIG, GAME_BOUNDS, DEFAULT_RECIPE_COMPONENTS, GENERIC_RECIPE_NAMES, BACKGROUND_IMAGES, AUTO_LAUNCHER_COST_BASE, AUTO_LAUNCHER_COST_RATIO, AUTO_UPGRADE_COST_RATIO, AUTO_SPAWN_INTERVAL_RATIO, LAUNCHER_WORLD_HIGHLIGHT_DURATION, COMPONENT_PROPERTY_RANGES, BUILDING_TYPES, PARTICLE_TYPES, DRONE_CONFIG, STATS_CONFIG, PATTERN_UNLOCK_ORDER, PATTERN_DISPLAY_NAMES };
+export { FIREWORK_CONFIG, GAME_BOUNDS, DEFAULT_RECIPE_COMPONENTS, GENERIC_RECIPE_NAMES, BACKGROUND_IMAGES, AUTO_LAUNCHER_COST_BASE, AUTO_LAUNCHER_COST_RATIO, AUTO_UPGRADE_COST_RATIO, AUTO_SPAWN_INTERVAL_RATIO, LAUNCHER_WORLD_HIGHLIGHT_DURATION, COMPONENT_PROPERTY_RANGES, BUILDING_TYPES, PARTICLE_TYPES, DRONE_CONFIG, CROWD_CONFIG, STATS_CONFIG, PATTERN_UNLOCK_ORDER, PATTERN_DISPLAY_NAMES };
 

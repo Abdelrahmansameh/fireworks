@@ -851,12 +851,25 @@ class InstancedGroup {
         this.blendMode = blendMode;
         this.texture = texture;
 
+        // Sprite-sheet animation support (opt-in)
+        this.spriteSheet = null;  // set by createInstancedGroup when spriteSheet config is provided
+
         this.instanceStrideFloats = 11;
         this.instanceData = new Float32Array(maxInstances * this.instanceStrideFloats);
         this.instanceCount = 0;
 
         this._instanceBuffer = null;
         this._vao = null;
+    }
+
+    /**
+     * Enable sprite-sheet mode. Called by Renderer2D.createInstancedGroup().
+     * Reallocates instance data with an extra float (frameIndex) at the end.
+     */
+    _enableSpriteSheet(spriteSheetConfig) {
+        this.spriteSheet = spriteSheetConfig; // { columns, rows }
+        this.instanceStrideFloats = 12; // 11 base + 1 frameIndex
+        this.instanceData = new Float32Array(this.maxInstances * this.instanceStrideFloats);
     }
 
     clear() {
@@ -866,7 +879,7 @@ class InstancedGroup {
     getInstanceCount() {
         return this.instanceCount;
     }
-    addInstance(pos, rotation, scale, color, glowStrength = 0, blurStrength = 0) {
+    addInstance(pos, rotation, scale, color, glowStrength = 0, blurStrength = 0, frameIndex = 0) {
         const i = this.instanceCount;
         if (i >= this.maxInstances) return;
         const base = i * this.instanceStrideFloats;
@@ -881,10 +894,11 @@ class InstancedGroup {
         this.instanceData[base + 8] = color.a;
         this.instanceData[base + 9] = glowStrength;
         this.instanceData[base + 10] = blurStrength;
+        if (this.spriteSheet) this.instanceData[base + 11] = frameIndex;
         this.instanceCount++;
     }
 
-    addInstanceRaw(posX, posY, rotation, scaleX, scaleY, colorR, colorG, colorB, colorA, glowStrength = 0, blurStrength = 0) {
+    addInstanceRaw(posX, posY, rotation, scaleX, scaleY, colorR, colorG, colorB, colorA, glowStrength = 0, blurStrength = 0, frameIndex = 0) {
         const i = this.instanceCount;
         if (i >= this.maxInstances) return;
         const base = i * this.instanceStrideFloats;
@@ -899,6 +913,7 @@ class InstancedGroup {
         this.instanceData[base + 8] = colorA;
         this.instanceData[base + 9] = glowStrength;
         this.instanceData[base + 10] = blurStrength;
+        if (this.spriteSheet) this.instanceData[base + 11] = frameIndex;
         this.instanceCount++;
     }
 
@@ -914,34 +929,15 @@ class InstancedGroup {
             const targetBase = index * this.instanceStrideFloats;
             const lastBase = lastIndex * this.instanceStrideFloats;
 
-            this.instanceData[targetBase + 0] = this.instanceData[lastBase + 0];
-            this.instanceData[targetBase + 1] = this.instanceData[lastBase + 1];
-
-            this.instanceData[targetBase + 2] = this.instanceData[lastBase + 2];
-
-            this.instanceData[targetBase + 3] = this.instanceData[lastBase + 3];
-            this.instanceData[targetBase + 4] = this.instanceData[lastBase + 4];
-
-            this.instanceData[targetBase + 5] = this.instanceData[lastBase + 5];
-            this.instanceData[targetBase + 6] = this.instanceData[lastBase + 6];
-            this.instanceData[targetBase + 7] = this.instanceData[lastBase + 7];
-            this.instanceData[targetBase + 8] = this.instanceData[lastBase + 8];
-            this.instanceData[targetBase + 9] = this.instanceData[lastBase + 9];
-            this.instanceData[targetBase + 10] = this.instanceData[lastBase + 10];
+            for (let j = 0; j < this.instanceStrideFloats; j++) {
+                this.instanceData[targetBase + j] = this.instanceData[lastBase + j];
+            }
         }
 
         const base = lastIndex * this.instanceStrideFloats;
-        this.instanceData[base + 0] = 0;
-        this.instanceData[base + 1] = 0;
-        this.instanceData[base + 2] = 0;
-        this.instanceData[base + 3] = 0;
-        this.instanceData[base + 4] = 0;
-        this.instanceData[base + 5] = 0;
-        this.instanceData[base + 6] = 0;
-        this.instanceData[base + 7] = 0;
-        this.instanceData[base + 8] = 0;
-        this.instanceData[base + 9] = 0;
-        this.instanceData[base + 10] = 0;
+        for (let j = 0; j < this.instanceStrideFloats; j++) {
+            this.instanceData[base + j] = 0;
+        }
 
         this.instanceCount--;
     }
@@ -1008,6 +1004,17 @@ class InstancedGroup {
         const base = index * this.instanceStrideFloats;
         this.instanceData[base + 2] += delta;
     }
+
+    /**
+     * Set the sprite-sheet frame index for an instance.
+     * Only meaningful when this group has spriteSheet enabled.
+     */
+    updateInstanceFrame(index, frameIndex) {
+        if (!this.spriteSheet) return;
+        if (index < 0 || index >= this.instanceCount) return;
+        const base = index * this.instanceStrideFloats;
+        this.instanceData[base + 11] = frameIndex;
+    }
 }
 
 
@@ -1064,10 +1071,13 @@ class Renderer2D {
         this.a_color_Inst = gl.getAttribLocation(this.instancedProgram, 'a_color');
         this.a_glowStrength_Inst = gl.getAttribLocation(this.instancedProgram, 'a_glowStrength');
         this.a_blurStrength_Inst = gl.getAttribLocation(this.instancedProgram, 'a_blurStrength');
+        this.a_frameIndex_Inst = gl.getAttribLocation(this.instancedProgram, 'a_frameIndex');
         this.u_proj_Inst = gl.getUniformLocation(this.instancedProgram, 'u_proj');
         this.u_texture_Inst = gl.getUniformLocation(this.instancedProgram, 'u_texture');
         this.u_useTexture_Inst = gl.getUniformLocation(this.instancedProgram, 'u_useTexture');
         this.u_isEmissivePass_Inst = gl.getUniformLocation(this.instancedProgram, 'u_isEmissivePass');
+        this.u_useSpriteSheet_Inst = gl.getUniformLocation(this.instancedProgram, 'u_useSpriteSheet');
+        this.u_spriteSheetSize_Inst = gl.getUniformLocation(this.instancedProgram, 'u_spriteSheetSize');
 
         this.emissiveProgram = this._initProgram(this._emissiveVS(), this._emissiveFS());
         this.u_sceneTexture_Emissive = gl.getUniformLocation(this.emissiveProgram, 'u_sceneTexture');
@@ -1266,7 +1276,7 @@ class Renderer2D {
         }
     }
 
-    createInstancedGroup({ vertices, indices, texCoords = null, texture = null, maxInstances = 10000, zIndex = 0, blendMode = BlendMode.NORMAL }) {
+    createInstancedGroup({ vertices, indices, texCoords = null, texture = null, maxInstances = 10000, zIndex = 0, blendMode = BlendMode.NORMAL, spriteSheet = null }) {
         const gl = this.gl;
         const baseGeom = {};
         baseGeom.vertexBuffer = gl.createBuffer();
@@ -1293,9 +1303,15 @@ class Renderer2D {
         }
 
         const group = new InstancedGroup({ baseGeometry: baseGeom, maxInstances, zIndex, blendMode, texture });
+
+        // Enable sprite-sheet mode if config was provided
+        if (spriteSheet) {
+            group._enableSpriteSheet(spriteSheet); // switches stride to 12
+        }
+
         group._instanceBuffer = gl.createBuffer();
         gl.bindBuffer(gl.ARRAY_BUFFER, group._instanceBuffer);
-        const totalBytes = maxInstances * 11 * 4; 
+        const totalBytes = maxInstances * group.instanceStrideFloats * 4; 
         gl.bufferData(gl.ARRAY_BUFFER, totalBytes, gl.DYNAMIC_DRAW);
 
         group._vao = gl.createVertexArray();
@@ -1317,9 +1333,9 @@ class Renderer2D {
             gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, baseGeom.indexBuffer);
         }
 
-        // instance buffer => offset(2), rotation(1), scale(2), color(4), glowStrength(1), blurStrength(1)
+        // instance buffer => offset(2), rotation(1), scale(2), color(4), glowStrength(1), blurStrength(1) [+ frameIndex(1) if spriteSheet]
         gl.bindBuffer(gl.ARRAY_BUFFER, group._instanceBuffer);
-        const stride = 11 * 4;
+        const stride = group.instanceStrideFloats * 4;
 
         // offset => loc= a_offset_Inst (location 2)
         gl.enableVertexAttribArray(this.a_offset_Inst);
@@ -1349,7 +1365,16 @@ class Renderer2D {
         // blurStrength => a_blurStrength_Inst (location 7)
         gl.enableVertexAttribArray(this.a_blurStrength_Inst);
         gl.vertexAttribPointer(this.a_blurStrength_Inst, 1, gl.FLOAT, false, stride, 10 * 4);
-        gl.vertexAttribDivisor(this.a_blurStrength_Inst, 1); gl.bindVertexArray(null);
+        gl.vertexAttribDivisor(this.a_blurStrength_Inst, 1);
+
+        // frameIndex => a_frameIndex_Inst (location 8) — only for sprite-sheet groups
+        if (spriteSheet && this.a_frameIndex_Inst !== -1) {
+            gl.enableVertexAttribArray(this.a_frameIndex_Inst);
+            gl.vertexAttribPointer(this.a_frameIndex_Inst, 1, gl.FLOAT, false, stride, 11 * 4);
+            gl.vertexAttribDivisor(this.a_frameIndex_Inst, 1);
+        }
+
+        gl.bindVertexArray(null);
 
         this.instancedGroups.push(group);
         return group;
@@ -1643,6 +1668,14 @@ class Renderer2D {
         }
         gl.uniformMatrix4fv(this.u_proj_Inst, false, this._projectionMatrix);
 
+        // Sprite-sheet uniforms
+        if (group.spriteSheet) {
+            gl.uniform1i(this.u_useSpriteSheet_Inst, 1);
+            gl.uniform2f(this.u_spriteSheetSize_Inst, group.spriteSheet.columns, group.spriteSheet.rows);
+        } else {
+            gl.uniform1i(this.u_useSpriteSheet_Inst, 0);
+        }
+
         gl.bindBuffer(gl.ARRAY_BUFFER, group._instanceBuffer);
         const subData = group.instanceData.subarray(0, group.instanceCount * group.instanceStrideFloats);
         gl.bufferSubData(gl.ARRAY_BUFFER, 0, subData);
@@ -1698,6 +1731,14 @@ class Renderer2D {
         }
 
         gl.uniformMatrix4fv(this.u_proj_Inst, false, this._projectionMatrix);
+
+        // Sprite-sheet uniforms
+        if (group.spriteSheet) {
+            gl.uniform1i(this.u_useSpriteSheet_Inst, 1);
+            gl.uniform2f(this.u_spriteSheetSize_Inst, group.spriteSheet.columns, group.spriteSheet.rows);
+        } else {
+            gl.uniform1i(this.u_useSpriteSheet_Inst, 0);
+        }
 
         const filteredData = new Float32Array(group.instanceCount * group.instanceStrideFloats);
         let filteredCount = 0;
@@ -1816,8 +1857,11 @@ class Renderer2D {
         layout(location=5) in vec4 a_color;
         layout(location=6) in float a_glowStrength;
         layout(location=7) in float a_blurStrength;
+        layout(location=8) in float a_frameIndex;
 
         uniform mat4 u_proj;
+        uniform bool u_useSpriteSheet;
+        uniform vec2 u_spriteSheetSize; // (columns, rows)
 
         out vec4 v_color;
         out vec2 v_uv;
@@ -1825,7 +1869,14 @@ class Renderer2D {
         out float v_blurStrength;
 
         void main(){
-            v_uv = a_texCoord;
+            if (u_useSpriteSheet) {
+                float col = mod(a_frameIndex, u_spriteSheetSize.x);
+                float row = floor(a_frameIndex / u_spriteSheetSize.x);
+                vec2 frameSize = vec2(1.0 / u_spriteSheetSize.x, 1.0 / u_spriteSheetSize.y);
+                v_uv = a_texCoord * frameSize + vec2(col, row) * frameSize;
+            } else {
+                v_uv = a_texCoord;
+            }
             v_glowStrength = a_glowStrength;
             v_blurStrength = a_blurStrength;
             float c = cos(a_rotation);

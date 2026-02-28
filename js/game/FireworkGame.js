@@ -214,7 +214,7 @@ class FireworkGame extends Engine {
             const numComponents = 1; //Math.floor(Math.random() * 3) + 1; // 1 to 3 components
 
             for (let j = 0; j < numComponents; j++) {
-                const possiblePatterns = ['spherical', 'ring', 'heart', 'burst', 'palm', 'willow', 'helix', 'spinner', 'star', 'brokenHeart', 'christmasTree'];
+                const possiblePatterns = ['spherical', 'ring', 'heart', 'burst', 'palm', 'willow', 'helix', 'spinner', 'star', 'brokenHeart', 'christmasTree', 'dragonsBreath'];
                 const possibleShapes = ['sphere', 'star'];
                 const randomHex = `#${Math.floor(Math.random() * 0xFFFFFF).toString(16).padStart(6, '0')}`;
                 const randomSecondaryHex = `#${Math.floor(Math.random() * 0xFFFFFF).toString(16).padStart(6, '0')}`;
@@ -883,7 +883,7 @@ class FireworkGame extends Engine {
 
     randomizeRecipe() {
         for (let i = 0; i < this.currentRecipeComponents.length; i++) {
-            const possiblePatterns = ['spherical', 'ring', 'heart', 'burst', 'palm', 'willow', 'helix', 'spinner', 'star', 'brokenHeart', 'christmasTree'];
+            const possiblePatterns = ['spherical', 'ring', 'heart', 'burst', 'palm', 'willow', 'helix', 'spinner', 'star', 'brokenHeart', 'christmasTree', 'dragonsBreath'];
             const possibleShapes = ['sphere', 'star'];
             const randomHex = `#${Math.floor(Math.random() * 0xFFFFFF)
                 .toString(16)

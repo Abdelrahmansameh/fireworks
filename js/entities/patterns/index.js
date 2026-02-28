@@ -9,6 +9,7 @@ import heart from './heart.js';
 import brokenHeart from './brokenHeart.js';
 import spinner from './spinner.js';
 import helix from './helix.js';
+import dragonsBreath from './dragonsBreath.js';
 
 export const recipeMap = {
     ring,
@@ -24,4 +25,5 @@ export const recipeMap = {
     brokenHeart,
     spinner,
     helix,
+    dragonsBreath
 }; 

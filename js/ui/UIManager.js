@@ -16,6 +16,7 @@ class UIManager {
         this.lastPointerX = 0;
         this.grabCursorWorldX = 0;
         this.grabCursorWorldY = 0;
+        this.isCrowdDragging = false;
         this.notificationTimeout = null;
         this.activeFloatingSparkle = null;
         this.floatingSparkleTimeout = null;
@@ -365,7 +366,6 @@ class UIManager {
     handlePointerDown(e) {
         if (!this.game.isClickInsideUI(e)) {
             e.preventDefault();
-
             const worldPos = this.game.screenToWorld(e.clientX, e.clientY);
             this.handlePointerClick(worldPos, e);
         }
@@ -375,6 +375,18 @@ class UIManager {
         if (this.game.isClickInsideUI(event)) {
             return;
         }
+
+
+        // Crowd grab takes priority over building drag / scroll-drag
+        if (this.game.crowd && this.game.crowd.tryGrab(worldPos.x, worldPos.y)) {
+            this.isCrowdDragging = true;
+            document.addEventListener('pointermove', this.pointerMoveHandler, { passive: false });
+            document.addEventListener('pointerup', this.pointerUpHandler);
+            document.addEventListener('pointercancel', this.pointerUpHandler);
+            document.body.style.cursor = 'none';
+            return;
+        }
+
 
         this.grabCursorWorldX = worldPos.x;
         this.grabCursorWorldY = worldPos.y;
@@ -387,7 +399,7 @@ class UIManager {
             this.game.selectLauncher(intersectedBuilding.id);
             this.game.updateLauncherList();
             this.emitGrabModeBurst(worldPos.x, worldPos.y);
-            
+
             if (intersectedBuilding.type === 'AUTO_LAUNCHER') {
                 this.focusBuildingInUI(intersectedBuilding);
             }
@@ -489,6 +501,13 @@ class UIManager {
     }
 
     pointerMoveHandler(e) {
+        if (this.isCrowdDragging) {
+            e.preventDefault();
+            const worldPos = this.game.screenToWorld(e.clientX, e.clientY);
+            this.game.crowd.dragTo(worldPos.x, worldPos.y);
+            return;
+        }
+
         if (this.isDragging && this.draggingLauncher) {
             e.preventDefault();
             const worldPos = this.game.screenToWorld(e.clientX, e.clientY);
@@ -538,6 +557,18 @@ class UIManager {
     }
 
     pointerUpHandler(e) {
+
+        document.body.style.cursor = 'default';
+
+        if (this.isCrowdDragging) {
+            this.game.crowd.release();
+            this.isCrowdDragging = false;
+            document.removeEventListener('pointermove', this.pointerMoveHandler);
+            document.removeEventListener('pointerup', this.pointerUpHandler);
+            document.removeEventListener('pointercancel', this.pointerUpHandler);
+            return;
+        }
+
         if (this.isDragging || this.isScrollDragging) {
             if (this.scrollDragHoldTimeout) {
                 clearTimeout(this.scrollDragHoldTimeout);
@@ -557,7 +588,6 @@ class UIManager {
                 }
             }
 
-            document.body.style.cursor = 'default';
 
             this.isDragging = false;
             this.isScrollDragging = false;
@@ -953,6 +983,7 @@ class UIManager {
                                 <option value="brocade">Brocade</option>
                                 <option value="brokenHeart">Broken Heart</option>
                                 <option value="christmasTree">Christmas Tree</option>
+                                <option value="dragonsBreath">Dragon's Breath</option>
                             </select>
                         </div>
                         <div class="flex-item">
@@ -1690,21 +1721,21 @@ class UIManager {
             this.toggleTab('buildings');
         }
         this.switchBuildingType(building.type);
-        
+
         // Wait for DOM to update
         setTimeout(() => {
             const buildingDiv = document.querySelector(`[data-building-id="${building.id}"]`);
             if (buildingDiv) {
                 buildingDiv.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                
+
                 // Highlight effect
                 buildingDiv.style.transition = 'box-shadow 0.3s ease, background-color 0.3s ease';
                 const originalBg = buildingDiv.style.backgroundColor;
                 const originalShadow = buildingDiv.style.boxShadow;
-                
+
                 buildingDiv.style.backgroundColor = 'rgba(255, 215, 0, 0.2)';
                 buildingDiv.style.boxShadow = '0 0 15px rgba(255, 215, 0, 0.8)';
-                
+
                 setTimeout(() => {
                     buildingDiv.style.backgroundColor = originalBg;
                     buildingDiv.style.boxShadow = originalShadow;
