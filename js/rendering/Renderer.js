@@ -1102,7 +1102,13 @@ class Renderer2D {
         }
 
         this.FLOAT_FMT = gl.RGBA16F;           
-        const FLOAT_TYP = gl.HALF_FLOAT;     
+        const FLOAT_TYP = gl.HALF_FLOAT;
+
+        this._resizeDirty = true; 
+        this._resizeObserver = new ResizeObserver(() => {
+            this._resizeDirty = true;
+        });
+        this._resizeObserver.observe(this.canvas);
     }
 
     _createWhiteTexture() {
@@ -2101,7 +2107,9 @@ class Renderer2D {
         return out;
     }
     _resizeIfNeeded() {
-        const gl = this.gl;
+        if (!this._resizeDirty) return;
+        this._resizeDirty = false;
+
         const dpr = window.devicePixelRatio || 1;
         const width = Math.floor(this.canvas.clientWidth * dpr);
         const height = Math.floor(this.canvas.clientHeight * dpr);
