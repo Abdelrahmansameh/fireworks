@@ -1,4 +1,4 @@
-import { GAME_BOUNDS, BACKGROUND_IMAGES, DEFAULT_RECIPE_COMPONENTS, COMPONENT_PROPERTY_RANGES, PARTICLE_TYPES, STATS_CONFIG, LAUNCHER_WORLD_HIGHLIGHT_DURATION, PATTERN_DISPLAY_NAMES } from '../config/config.js';
+import { GAME_BOUNDS, DEFAULT_RECIPE_COMPONENTS, COMPONENT_PROPERTY_RANGES, PARTICLE_TYPES, STATS_CONFIG, LAUNCHER_WORLD_HIGHLIGHT_DURATION, PATTERN_DISPLAY_NAMES } from '../config/config.js';
 import * as Renderer2D from '../rendering/Renderer.js';
 import GameMetrics from '../metrics/GameMetrics.js';
 
@@ -143,10 +143,6 @@ class UIManager {
                 this.renderUpgrades();
             });
         }
-        document.getElementById('background-tab').addEventListener('click', () => {
-            this.toggleTab('background');
-        });
-
         const cheatsTabBtn = document.getElementById('cheats-tab');
         if (cheatsTabBtn) {
             cheatsTabBtn.addEventListener('click', () => {
@@ -257,8 +253,6 @@ class UIManager {
         }
 
         document.addEventListener('wheel', this.handleWheelScroll, { passive: false });
-
-        this.updateBackgroundPicker();
 
         document.getElementById('spread-launchers').addEventListener('click', () => {
             this.game.spreadLaunchers();
@@ -1331,31 +1325,6 @@ class UIManager {
         }
     }
 
-    updateBackgroundPicker() {
-        const container = document.getElementById('background-picker-container');
-        if (!container) return;
-        container.innerHTML = '';
-
-        BACKGROUND_IMAGES.forEach(bg => {
-            const bgOption = document.createElement('div');
-            bgOption.className = 'background-option';
-            if (bg.path === this.game.currentBackground) {
-                bgOption.classList.add('selected');
-            }
-
-            bgOption.innerHTML = `
-                <img src="${bg.path}" alt="${bg.name}" />
-                <span>${bg.name}</span>
-            `;
-
-            bgOption.addEventListener('click', () => {
-                this.game.changeBackground(bg.path);
-            });
-
-            container.appendChild(bgOption);
-        });
-    }
-
     renderUpgrades() {
         const availableContainer = document.getElementById('upgrades-available');
         const ownedContainer = document.getElementById('upgrades-owned');
@@ -1510,13 +1479,6 @@ class UIManager {
             }
         }
 
-        if (unlockStates.backgroundTab) {
-            this.showBackgroundTab();
-            if (!this.game.firstClickStates.backgroundTab) {
-                this.addGlimmer('backgroundTab');
-            }
-        }
-
         if (unlockStates.crowdsTab) {
             this.showCrowdsTab();
             if (!this.game.firstClickStates.crowdsTab) {
@@ -1540,7 +1502,6 @@ class UIManager {
             'buildings-tab',
             'settings-tab',
             'upgrades-tab',
-            'background-tab',
             'cheats-tab'
         ];
 
@@ -1615,13 +1576,6 @@ class UIManager {
         }
     }
 
-    showBackgroundTab() {
-        const backgroundTab = document.getElementById('background-tab');
-        if (backgroundTab) {
-            backgroundTab.classList.remove('unlock-hidden');
-        }
-    }
-
     showSettingsTab() {
         const settingsTab = document.getElementById('settings-tab');
         if (settingsTab) {
@@ -1663,7 +1617,6 @@ class UIManager {
             tabMenu: 'stats-tab', // Use stats tab as the first visible tab since recipes might be hidden
             buildingsTab: 'buildings-tab',
             upgradesTab: 'upgrades-tab',
-            backgroundTab: 'background-tab',
             crowdsTab: 'crowd-tab'
         };
 
@@ -1683,7 +1636,6 @@ class UIManager {
             tabMenu: 'stats-tab',
             buildingsTab: 'buildings-tab',
             upgradesTab: 'upgrades-tab',
-            backgroundTab: 'background-tab',
             crowdsTab: 'crowd-tab'
         };
 

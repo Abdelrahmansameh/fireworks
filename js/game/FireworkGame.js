@@ -1,4 +1,4 @@
-import { FIREWORK_CONFIG, GAME_BOUNDS, DEFAULT_RECIPE_COMPONENTS, PRE_RECIPE_COMPONENT_DEFAULTS, GENERIC_RECIPE_NAMES, BACKGROUND_IMAGES, AUTO_LAUNCHER_COST_BASE, AUTO_LAUNCHER_COST_RATIO, AUTO_UPGRADE_COST_RATIO, AUTO_SPAWN_INTERVAL_RATIO, COMPONENT_PROPERTY_RANGES, BUILDING_TYPES, DRONE_CONFIG, CROWD_CATCHER_CONFIG, PATTERN_UNLOCK_ORDER } from '../config/config.js';
+import { FIREWORK_CONFIG, GAME_BOUNDS, PROCEDURAL_BACKGROUND_CONFIG, DEFAULT_RECIPE_COMPONENTS, PRE_RECIPE_COMPONENT_DEFAULTS, GENERIC_RECIPE_NAMES, AUTO_LAUNCHER_COST_BASE, AUTO_LAUNCHER_COST_RATIO, AUTO_UPGRADE_COST_RATIO, AUTO_SPAWN_INTERVAL_RATIO, COMPONENT_PROPERTY_RANGES, BUILDING_TYPES, DRONE_CONFIG, CROWD_CATCHER_CONFIG, PATTERN_UNLOCK_ORDER } from '../config/config.js';
 import { UPGRADE_DEFINITIONS } from '../upgrades/upgrades.js';
 import InstancedParticleSystem from '../particles/InstancedParticleSystem.js';
 import InstancedDroneSystem from '../entities/InstancedDroneSystem.js';
@@ -12,6 +12,7 @@ import Engine from '../engine/Engine.js';
 import BuildingManager from '../buildings/BuildingManager.js';
 import AudioManager from '../audio/AudioManager.js';
 import GameMetrics from '../metrics/GameMetrics.js';
+import ProcduralBackground from '../entities/ProcduralBackground.js';
 
 class FireworkGame extends Engine {
     constructor() {
@@ -23,7 +24,6 @@ class FireworkGame extends Engine {
 
         this.recipes = [];
         this.currentRecipeComponents = [];
-        this.currentBackground = BACKGROUND_IMAGES[0].path;
         this.fireworkCount = 0;
         this.autoLauncherCost = AUTO_LAUNCHER_COST_BASE;
         this.selectedLauncherIndex = null;
@@ -35,7 +35,6 @@ class FireworkGame extends Engine {
             buildingsTab: false,
             upgradesTab: false,
             crowdsTab: false,
-            backgroundTab: false,
             resourceGenerator: false,
             efficiencyBooster: false,
             droneHub: false,
@@ -49,8 +48,7 @@ class FireworkGame extends Engine {
             tabMenu: false,
             buildingsTab: false,
             upgradesTab: false,
-            crowdsTab: false,
-            backgroundTab: false
+            crowdsTab: false
         };
 
         this.resourceManager = new ResourceManager(this);
@@ -116,7 +114,6 @@ class FireworkGame extends Engine {
     init() {
         this.fireworkCount = parseInt(localStorage.getItem('fireworkCount')) || 0;
         this.autoLauncherCost = parseInt(localStorage.getItem('autoLauncherCost')) || AUTO_LAUNCHER_COST_BASE;
-        this.currentBackground = localStorage.getItem('currentBackground') || BACKGROUND_IMAGES[0].path;
 
         const savedResources = localStorage.getItem('resources');
         if (savedResources) {
@@ -287,6 +284,9 @@ class FireworkGame extends Engine {
         });
         this.renderer2D._resizeIfNeeded();
 
+        this.procduralBackground = new ProcduralBackground(this.renderer2D, PROCEDURAL_BACKGROUND_CONFIG);
+        this.procduralBackground.generate();
+
 
         this.autoLauncherTextureLoaded = false;
         if (FIREWORK_CONFIG.autoLauncherTexture) {
@@ -297,10 +297,6 @@ class FireworkGame extends Engine {
                 })
                 .catch(err => console.warn('Failed to load auto-launcher texture. Falling back to default mesh.', err));
         }
-
-        this._backgroundMeshes = [];
-        this._skyMeshes = [];
-        this.updateBackgroundMesh();
 
         this.cameraTargetX = 0;
         this.cameraTargetY = 0;
@@ -321,87 +317,6 @@ class FireworkGame extends Engine {
         for (const launcher of launchers) {
             launcher.destroy();
             launcher.createMesh();
-        }
-    }
-
-    async updateBackgroundMesh() {
-        if (this._backgroundMeshes) {
-            this._backgroundMeshes.forEach(mesh => this.renderer2D.removeNormalShape(mesh));
-            this._backgroundMeshes = [];
-        }
-
-        if (this._skyMeshes) {
-            this._skyMeshes.forEach(mesh => this.renderer2D.removeNormalShape(mesh));
-            this._skyMeshes = [];
-        }
-
-        const currentBgConfig = BACKGROUND_IMAGES.find(bg => bg.path === this.currentBackground);
-
-        const textureKey = `bg_${this.currentBackground}`;
-        await this.renderer2D.loadTexture(this.currentBackground, textureKey);
-        const tex = this.renderer2D.getTexture(textureKey);
-        if (!tex) return;
-
-        const width = this.renderer2D.virtualWidth;
-        const height = this.renderer2D.virtualHeight;
-
-        const repeatCount = 10;
-        const meshes = [];
-        for (let i = -repeatCount / 2; i <= repeatCount / 2; i++) {
-            const bgMesh = this.renderer2D.createNormalShape({
-                ...Renderer2D.buildTexturedSquare(width, height),
-                texCoords: new Float32Array([
-                    0, 1,
-                    1, 1,
-                    1, 0,
-                    0, 0
-                ]),
-                texture: tex,
-                position: new Renderer2D.Vector2(i * width, 0),
-                rotation: 0,
-                scale: new Renderer2D.Vector2(1, 1),
-                zIndex: -1000,
-                blendMode: Renderer2D.BlendMode.NORMAL,
-                isStroke: false
-            });
-            meshes.push(bgMesh);
-        }
-        this._backgroundMeshes = meshes;
-
-        if (currentBgConfig && currentBgConfig.skyPath) {
-            const skyTextureKey = `sky_${currentBgConfig.skyPath}`;
-            await this.renderer2D.loadTexture(currentBgConfig.skyPath, skyTextureKey);
-            const skyTex = this.renderer2D.getTexture(skyTextureKey);
-
-            if (skyTex) {
-                const skyMeshes = [];
-                const skyLayers = 4;
-
-                for (let x = -repeatCount / 2; x <= repeatCount / 2; x++) {
-                    for (let y = 1; y <= skyLayers; y++) {
-                        const skyMesh = this.renderer2D.createNormalShape({
-                            ...Renderer2D.buildTexturedSquare(width, height),
-                            texCoords: new Float32Array([
-                                0, 1,
-                                1, 1,
-                                1, 0,
-                                0, 0
-                            ]),
-                            texture: skyTex,
-                            position: new Renderer2D.Vector2(x * width, y * height),
-                            rotation: 0,
-                            scale: new Renderer2D.Vector2(1, 1),
-                            zIndex: -999,
-                            blendMode: Renderer2D.BlendMode.NORMAL,
-                            isStroke: false
-                        });
-                        skyMeshes.push(skyMesh);
-                    }
-                }
-                this._skyMeshes = skyMeshes;
-            }
-        } else {
-            this._skyMeshes = [];
         }
     }
 
@@ -548,7 +463,7 @@ class FireworkGame extends Engine {
     }
 
     initBackgroundColor() {
-        document.body.style.backgroundColor = '#171717';
+        document.body.style.backgroundColor = PROCEDURAL_BACKGROUND_CONFIG.bodyBackgroundColor;
     }
 
     saveProgress() {
@@ -566,7 +481,6 @@ class FireworkGame extends Engine {
 
         localStorage.setItem('currentRecipeComponents', JSON.stringify(this.currentRecipeComponents));
         localStorage.setItem('selectedLauncherIndex', this.selectedLauncherIndex || '');
-        localStorage.setItem('currentBackground', this.currentBackground);
 
         localStorage.setItem('resources', JSON.stringify(this.resourceManager.save()));
         localStorage.setItem('advancedCreatorUnlocked', JSON.stringify(this.advancedCreatorUnlocked));
@@ -747,7 +661,6 @@ class FireworkGame extends Engine {
             buildingsTab: false,
             upgradesTab: false,
             crowdsTab: false,
-            backgroundTab: false,
             resourceGenerator: false,
             efficiencyBooster: false,
             droneHub: false,
@@ -760,8 +673,7 @@ class FireworkGame extends Engine {
             tabMenu: false,
             buildingsTab: false,
             upgradesTab: false,
-            crowdsTab: false,
-            backgroundTab: false
+            crowdsTab: false
         };
 
         this.recomputeUpgrades();
@@ -776,16 +688,6 @@ class FireworkGame extends Engine {
         // Reset all buildings
         this.buildingManager.destroy();
         this.buildingManager = new BuildingManager(this);
-
-        if (this._backgroundMeshes) {
-            this._backgroundMeshes.forEach(mesh => this.renderer2D.removeNormalShape(mesh));
-            this._backgroundMeshes = [];
-        }
-        if (this._skyMeshes) {
-            this._skyMeshes.forEach(mesh => this.renderer2D.removeNormalShape(mesh));
-            this._skyMeshes = [];
-        }
-
 
         if (this.crowd) {
             this.crowd.dispose();
@@ -820,7 +722,7 @@ class FireworkGame extends Engine {
         this.updateLauncherList();
         this.showNotification("Game has been reset.");
 
-        document.body.style.backgroundColor = '#000000';
+        this.initBackgroundColor();
 
         this.updateCrowdDisplay();
     }
@@ -1055,9 +957,8 @@ class FireworkGame extends Engine {
             recipes: this.recipes,
             buildingManagerData: this.buildingManager.serialize(),
             currentRecipeComponents: this.currentRecipeComponents,
-            backgroundColor: localStorage.getItem('backgroundColor') || '#000000',
+            backgroundColor: '#f13b3b',
             resources: this.resourceManager.save(),
-            currentBackground: this.currentBackground,
             baseSparkleMultiplier: this.baseSparkleMultiplier,
             patternSparkleMultipliers: this.patternSparkleMultipliers,
             purchasedUpgrades: this.purchasedUpgrades,
@@ -1084,10 +985,8 @@ class FireworkGame extends Engine {
         this.recipes = data.recipes || [];
         this.currentRecipeComponents = data.currentRecipeComponents || [...DEFAULT_RECIPE_COMPONENTS];
 
-        const bgColor = data.backgroundColor || '#000000';
-        document.body.style.backgroundColor = bgColor;
-        localStorage.setItem('backgroundColor', bgColor);
-        this.currentBackground = data.currentBackground || BACKGROUND_IMAGES[0].path;
+        this.initBackgroundColor();
+        localStorage.setItem('backgroundColor', PROCEDURAL_BACKGROUND_CONFIG.bodyBackgroundColor);
 
         if (data.buildingManagerData) {
             this.buildingManager.deserialize(data.buildingManagerData);
@@ -1106,7 +1005,6 @@ class FireworkGame extends Engine {
         this.updateComponentsList();
         this.updateRecipeList();
         this.updateLauncherList();
-        this.updateBackgroundMesh();
 
         this.updateCrowdDisplay();
 
@@ -1326,14 +1224,6 @@ class FireworkGame extends Engine {
         }
     }
 
-    changeBackground(path) {
-        if (this.currentBackground === path) return;
-        this.currentBackground = path;
-        localStorage.setItem('currentBackground', path);
-        this.updateBackgroundMesh();
-        this.ui.updateBackgroundPicker();
-    }
-
     togglePostProcessing(enabled) {
         const usePP = !!enabled;
 
@@ -1529,15 +1419,6 @@ class FireworkGame extends Engine {
             this.ui.expandAllTabs();
             if (!this.firstClickStates.upgradesTab) {
                 this.ui.addGlimmer('upgradesTab');
-            }
-            unlockUpdated = true;
-        }
-
-        if (!this.unlockStates.backgroundTab && this.getSparkles() >= 50) {
-            this.unlockStates.backgroundTab = true;
-            this.ui.showBackgroundTab();
-            if (!this.firstClickStates.backgroundTab) {
-                this.ui.addGlimmer('backgroundTab');
             }
             unlockUpdated = true;
         }

@@ -175,6 +175,81 @@ const GAME_BOUNDS = {
     MIN_ZOOM: 0.1
 };
 
+const PROCEDURAL_BACKGROUND_CONFIG = {
+    seed: 343597,
+    bodyBackgroundColor: '#05070d',
+    world: {
+        xMin: GAME_BOUNDS.SCROLL_MIN_X - 1500,
+        xMax: GAME_BOUNDS.SCROLL_MAX_X + 500,
+        groundY: GAME_BOUNDS.WORLD_GROUND_Y,
+        skyTopY: 760,
+        groundDepth: 420,
+        horizonY: GAME_BOUNDS.WORLD_GROUND_Y + 160,
+    },
+    zIndex: {
+        sky: -2000,
+        stars: -1995,
+        treesFar: -1990,
+        treesMid: -1985,
+        treesNear: -1980,
+        ground: -1970,
+        groundRim: -1969,
+    },
+    sky: {
+        gradientBands: 28,
+        topColor: { r: 10 / 255, g: 18 / 255, b: 34 / 255, a: 1 },
+        midColor: { r: 11 / 255, g: 16 / 255, b: 28 / 255, a: 1 },
+        bottomColor: { r: 20 / 255, g: 20 / 255, b: 22 / 255, a: 1 },
+        midStop: 0.58,
+    },
+    stars: {
+        count: 200,
+        distributionJitter: 0.9,
+        minSize: 4,
+        maxSize: 8,
+        minAlpha: 0.2,
+        maxAlpha: 0.82,
+        minBrightness: 0.7,
+        maxBrightness: 1,
+        minYFromHorizon: 300,
+        maxYFromSkyTop: 24,
+    },
+    trees: {
+        layers: [
+            {
+                treeCount: 300,
+                distributionJitter: 0.75,
+                baseYJitter: 50,
+                widthMin: 36,
+                widthMax: 62,
+                heightMin: 78,
+                heightMax: 136,
+                tierCountMin: 4,
+                tierCountMax: 6,
+                trunkHeightRatioMin: 0.08,
+                trunkHeightRatioMax: 0.14,
+                trunkWidthRatioMin: 0.12,
+                trunkWidthRatioMax: 0.2,
+                tierInnerRatioMin: 0.68,
+                tierInnerRatioMax: 0.8,
+                tierHeightJitterRatio: 0.18,
+                tierWidthJitterRatio: 0.12,
+                edgeJitter: 2,
+                tipLeanRatioMin: -0.03,
+                tipLeanRatioMax: 0.03,
+                widthCurvePowerMin: 1.08,
+                widthCurvePowerMax: 1.28,
+                color: { r: 7 / 255, g: 9 / 255, b: 12 / 255, a: 1 },
+            }
+        ],
+    },
+    ground: {
+        color: { r: 10 / 255, g: 12 / 255, b: 18 / 255, a: 1 },
+        rimColor: { r: 28 / 255, g: 30 / 255, b: 36 / 255, a: 1 },
+        rimHeight: 100,
+    },
+};
+
 const GENERIC_RECIPE_NAMES = [
     'Boom', 'Starburst', 'Shooting Star', 'Rainbow Rocket',
     'Golden Shower', 'Silver Sparkle', 'Crimson Comet', 'Emerald',
@@ -194,20 +269,6 @@ const GENERIC_RECIPE_NAMES = [
     'Radiant Ripple', 'Twilight Tangle', 'Midnight Mirage', 'Sunrise Sparkle',
     'Dusk Dazzle', 'Aurora Aura', 'Starlit Symphony', 'Wedding Beige', 'Quebec',
     'Wedding'
-];
-
-const BACKGROUND_IMAGES = [
-    { name: 'Black Forest', path: 'assets/black-forest.png' },
-    { name: 'Blank', path: 'assets/background.png' },
-    { name: 'Black Town', path: 'assets/mountain-town.png' },
-    { name: 'Black City', path: 'assets/black-city.png' },
-    { name: 'Black Mountains', path: 'assets/black-mountains.png', skyPath: 'assets/black-mountains-sky.png' },
-    { name: 'Black Ruins', path: 'assets/black-ruins.png' },
-    { name: 'Forest', path: 'assets/darkened_forest.png' },
-    { name: 'Town', path: 'assets/darkened_town.png' },
-    { name: 'City', path: 'assets/darkened_city.png' },
-    { name: 'Mountain', path: 'assets/mountains-loop.png' },
-    { name: 'Ruins', path: 'assets/ruins.png' },
 ];
 
 const COMPONENT_PROPERTY_RANGES = {
@@ -396,5 +457,5 @@ const PATTERN_DISPLAY_NAMES = {
     dragonsBreath: 'Dragon\'s Breath',
 };
 
-export { FIREWORK_CONFIG, GAME_BOUNDS, DEFAULT_RECIPE_COMPONENTS, PRE_RECIPE_COMPONENT_DEFAULTS, GENERIC_RECIPE_NAMES, BACKGROUND_IMAGES, AUTO_LAUNCHER_COST_BASE, AUTO_LAUNCHER_COST_RATIO, AUTO_UPGRADE_COST_RATIO, AUTO_SPAWN_INTERVAL_RATIO, LAUNCHER_WORLD_HIGHLIGHT_DURATION, COMPONENT_PROPERTY_RANGES, BUILDING_TYPES, PARTICLE_TYPES, DRONE_CONFIG, CROWD_CONFIG, CROWD_CATCHER_CONFIG, STATS_CONFIG, PATTERN_UNLOCK_ORDER, PATTERN_DISPLAY_NAMES };
+export { FIREWORK_CONFIG, GAME_BOUNDS, PROCEDURAL_BACKGROUND_CONFIG, DEFAULT_RECIPE_COMPONENTS, PRE_RECIPE_COMPONENT_DEFAULTS, GENERIC_RECIPE_NAMES, AUTO_LAUNCHER_COST_BASE, AUTO_LAUNCHER_COST_RATIO, AUTO_UPGRADE_COST_RATIO, AUTO_SPAWN_INTERVAL_RATIO, LAUNCHER_WORLD_HIGHLIGHT_DURATION, COMPONENT_PROPERTY_RANGES, BUILDING_TYPES, PARTICLE_TYPES, DRONE_CONFIG, CROWD_CONFIG, CROWD_CATCHER_CONFIG, STATS_CONFIG, PATTERN_UNLOCK_ORDER, PATTERN_DISPLAY_NAMES };
 
