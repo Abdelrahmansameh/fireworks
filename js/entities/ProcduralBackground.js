@@ -6,6 +6,8 @@ class ProcduralBackground {
         this.renderer = renderer;
         this.config = config;
         this.shapes = [];
+        this.twinkleStars = [];
+        this.twinkleTime = 0;
     }
 
     generate() {
@@ -22,6 +24,30 @@ class ProcduralBackground {
             this.renderer.removeNormalShape(shape);
         }
         this.shapes.length = 0;
+        this.twinkleStars.length = 0;
+    }
+
+    update(deltaTime) {
+        const stars = this.config.stars;
+        if (!stars?.twinkleEnabled || this.twinkleStars.length === 0) {
+            return;
+        }
+
+        this.twinkleTime += Math.max(0, deltaTime);
+
+        for (const twinkle of this.twinkleStars) {
+            const t = this.twinkleTime * twinkle.speed + twinkle.phase;
+            const primary = Math.sin(t) * 0.5 + 0.5;
+            const secondary = Math.sin(t * 2.17 + twinkle.phase * 1.31) * 0.5 + 0.5;
+            const signal = primary * 0.72 + secondary * 0.28;
+            const brightnessScale = 1 - twinkle.amplitude * 0.5 + twinkle.amplitude * signal;
+            const alphaScale = 1 + (brightnessScale - 1) * twinkle.alphaInfluence;
+
+            twinkle.shape.color.r = this._clamp01(twinkle.baseBrightness * brightnessScale);
+            twinkle.shape.color.g = this._clamp01(twinkle.baseBrightness * brightnessScale);
+            twinkle.shape.color.b = this._clamp01(twinkle.baseBrightness * brightnessScale);
+            twinkle.shape.color.a = this._clamp01(twinkle.baseAlpha * alphaScale);
+        }
     }
 
     _buildSky() {
@@ -66,6 +92,11 @@ class ProcduralBackground {
         const { world, stars, zIndex } = this.config;
         const rng = this._createRng(this.config.seed ^ 0xA1B2C3D4);
         const distributionJitter = stars.distributionJitter ?? 0.9;
+        const twinkleMinSpeed = stars.twinkleMinSpeed ?? 0.35;
+        const twinkleMaxSpeed = stars.twinkleMaxSpeed ?? 1.6;
+        const twinkleMinAmount = stars.twinkleMinAmount ?? 0.1;
+        const twinkleMaxAmount = stars.twinkleMaxAmount ?? 0.45;
+        const twinkleAlphaInfluence = stars.twinkleAlphaInfluence ?? 0.55;
 
         const yMin = world.horizonY + stars.minYFromHorizon;
         const yMax = world.skyTopY - stars.maxYFromSkyTop;
@@ -102,9 +133,14 @@ class ProcduralBackground {
             const innerRadius = outerRadius * this._randRange(rng, 0.2, 0.44);
             const rotation = this._randRange(rng, 0, Math.PI * 2);
 
+            const phase = this._randRange(rng, 0, Math.PI * 2);
+            const twinkleSpeed = this._randRange(rng, twinkleMinSpeed, twinkleMaxSpeed);
+            const twinkleAmplitude = this._randRange(rng, twinkleMinAmount, twinkleMaxAmount);
+
             const starColor = new Renderer2D.Color(brightness, brightness, brightness, alpha);
             const starVerts = this._buildStarVertices(x, y, outerRadius, innerRadius, points, rotation);
-            this._addPolygon(starVerts, starColor, zIndex.stars);
+            const coreShape = this._addPolygon(starVerts, starColor, zIndex.stars);
+            this._registerTwinkle(coreShape, brightness, alpha, phase, twinkleSpeed, twinkleAmplitude, twinkleAlphaInfluence);
 
             const haloRadius = outerRadius * this._randRange(rng, 1.3, 1.85);
             const haloInnerRadius = haloRadius * this._randRange(rng, 0.42, 0.62);
@@ -116,9 +152,10 @@ class ProcduralBackground {
                 haloRadius,
                 haloInnerRadius,
                 4,
-                rotation + Math.PI * 0.25
+                rotation
             );
-            this._addPolygon(haloVerts, haloColor, zIndex.stars, Renderer2D.BlendMode.ADDITIVE);
+            const haloShape = this._addPolygon(haloVerts, haloColor, zIndex.stars, Renderer2D.BlendMode.ADDITIVE);
+            this._registerTwinkle(haloShape, brightness, haloAlpha, phase + 0.37, twinkleSpeed * 1.1, twinkleAmplitude * 0.7, twinkleAlphaInfluence * 0.75);
 
             if (rng() < 0.28) {
                 const sparkleOuterRadius = outerRadius * this._randRange(rng, 1.8, 2.7);
@@ -131,11 +168,28 @@ class ProcduralBackground {
                     sparkleOuterRadius,
                     sparkleInnerRadius,
                     4,
-                    rotation + Math.PI * 0.25
+                    rotation
                 );
-                this._addPolygon(sparkleVerts, sparkleColor, zIndex.stars, Renderer2D.BlendMode.ADDITIVE);
+                const sparkleShape = this._addPolygon(sparkleVerts, sparkleColor, zIndex.stars, Renderer2D.BlendMode.ADDITIVE);
+                this._registerTwinkle(sparkleShape, brightness, sparkleAlpha, phase + 1.11, twinkleSpeed * 1.35, twinkleAmplitude * 1.15, twinkleAlphaInfluence * 0.9);
             }
         }
+    }
+
+    _registerTwinkle(shape, baseBrightness, baseAlpha, phase, speed, amplitude, alphaInfluence) {
+        if (!this.config.stars?.twinkleEnabled || !shape) {
+            return;
+        }
+
+        this.twinkleStars.push({
+            shape,
+            baseBrightness,
+            baseAlpha,
+            phase,
+            speed,
+            amplitude,
+            alphaInfluence,
+        });
     }
 
     _buildTrees() {
@@ -250,7 +304,9 @@ class ProcduralBackground {
             );
             const innerHalf = Math.max(trunkHalfWidth * 1.05, outerHalf * tierInnerRatio);
 
-            const yBase = Math.max(lastY + tierStep * 0.15, foliageBottomY + tierStep * i);
+            const yBase = i === 0
+                ? foliageBottomY
+                : Math.max(lastY + tierStep * 0.15, foliageBottomY + tierStep * i);
             const yPeakBase = foliageBottomY + tierStep * nextT;
             const yJitter = tierStep * tierHeightJitterRatio;
             const yPeak = Math.max(
@@ -365,6 +421,7 @@ class ProcduralBackground {
         });
 
         this.shapes.push(shape);
+        return shape;
     }
 
     _buildStarVertices(cx, cy, outerRadius, innerRadius, points, rotation = 0) {

@@ -415,6 +415,8 @@ class FireworkGame extends Engine {
     updateGame(deltaTime) {
         this.profiler.startFrame();
 
+        this.procduralBackground?.update(deltaTime);
+
         this.particleSystem.update(deltaTime);
         this.droneSystem?.update(deltaTime, (sparkles) => {
             const multiplied = sparkles * (this.droneStats.sparklesPerParticleMultiplier ?? 1);
