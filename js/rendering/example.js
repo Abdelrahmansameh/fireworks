@@ -1,5 +1,6 @@
 import * as Renderer2D from './renderer.js';
 import { SmokeSystem } from '../entities/SmokeSystem.js';
+import { FireSystem } from '../entities/FireSystem.js';
 
 
 
@@ -138,6 +139,32 @@ window.addEventListener('DOMContentLoaded', () => {
         isStroke: false
     });
 
+    // ── Fire VFX ───────────────────────────────────────────────────────────
+    const fire = new FireSystem(renderer, { maxFlames: 2000, maxEmbers: 600, zIndex: 30 });
+
+    // Main campfire
+    fire.createEmitter({
+        x: 10, y: 100,
+        rate: 1000,
+        spread: 0.4,
+        speed: [60, 130],
+        lifetime: [2, 2],
+        startScale: [5, 15],
+        peakScale: [10, 30],
+        endScale: [4, 12],
+        startAlpha: [0.7, 1.0],
+        aspectRatio: [0.30, 0.50],
+        turbFreq: [3, 8],
+        gravity: -22,
+        emberRate: 8,
+        heat: 0.9,
+        width: 80,
+        convergence: 1.5,
+         direction: Math.PI / 2,
+    });
+
+
+
     // ── Smoke VFX ──────────────────────────────────────────────────────────
     const smoke = new SmokeSystem(renderer, { maxParticles: 3000, zIndex: 20 });
 
@@ -147,11 +174,11 @@ window.addEventListener('DOMContentLoaded', () => {
         rate: 18,
         direction: -Math.PI / 2,
         spread:0,
-        speed: [50,100],
-        lifetime: [2.0, 4.0],
+        speed: [200,300],
+        lifetime: [0.5, .7],
         startScale: [12, 24],
         endScale: [50, 70],
-        startAlpha: [0.28, 0.52],
+        startAlpha: [0.5, 0.7],
         turbulence: 18,
         gravity: -6,
     });
@@ -191,6 +218,7 @@ window.addEventListener('DOMContentLoaded', () => {
         requestAnimationFrame(animate);
 
         const dt = clock.getDelta();
+        fire.update(dt);
         smoke.update(dt);
 
         ringShape.rotation += 0.01;
