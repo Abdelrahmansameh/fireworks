@@ -1,4 +1,5 @@
 import * as Renderer2D from './renderer.js';
+import { SmokeSystem } from '../entities/SmokeSystem.js';
 
 
 
@@ -137,6 +138,46 @@ window.addEventListener('DOMContentLoaded', () => {
         isStroke: false
     });
 
+    // ── Smoke VFX ──────────────────────────────────────────────────────────
+    const smoke = new SmokeSystem(renderer, { maxParticles: 3000, zIndex: 20 });
+
+    // Central chimney-style emitter
+    smoke.createEmitter({
+        x: 400, y: 420,
+        rate: 18,
+        direction: -Math.PI / 2,
+        spread:0,
+        speed: [50,100],
+        lifetime: [2.0, 4.0],
+        startScale: [12, 24],
+        endScale: [50, 70],
+        startAlpha: [0.28, 0.52],
+        turbulence: 18,
+        gravity: -6,
+    });
+
+    // Darker, slower secondary emitter offset to the left
+    smoke.createEmitter({
+        x: 300, y: 460,
+        rate: 8,
+        direction: -Math.PI / 2,
+        spread: 0.1,
+        speed: [50,100],
+        lifetime: [2.5, 5.0],
+        startScale: [8, 16],
+        endScale: [50, 90],
+        startAlpha: [1,1],
+        turbulence: 10,
+        gravity: -4,
+        colorVariants: [
+            [0.30, 0.28, 0.26],
+            [0.20, 0.20, 0.20],
+            [0.40, 0.38, 0.35],
+        ],
+    });
+
+    const clock = new Renderer2D.Clock();
+
     const smallStarData = Renderer2D.buildStar(5, 0.5, 0.25);
     const starGroup = renderer.createInstancedGroup({
         vertices: smallStarData.vertices,
@@ -148,6 +189,9 @@ window.addEventListener('DOMContentLoaded', () => {
 
     function animate() {
         requestAnimationFrame(animate);
+
+        const dt = clock.getDelta();
+        smoke.update(dt);
 
         ringShape.rotation += 0.01;
         renderer.updateNormalShape(ringShape, { rotation: ringShape.rotation });
