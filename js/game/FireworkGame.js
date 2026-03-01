@@ -1,4 +1,4 @@
-import { FIREWORK_CONFIG, GAME_BOUNDS, DEFAULT_RECIPE_COMPONENTS, GENERIC_RECIPE_NAMES, BACKGROUND_IMAGES, AUTO_LAUNCHER_COST_BASE, AUTO_LAUNCHER_COST_RATIO, AUTO_UPGRADE_COST_RATIO, AUTO_SPAWN_INTERVAL_RATIO, COMPONENT_PROPERTY_RANGES, BUILDING_TYPES, DRONE_CONFIG, PATTERN_UNLOCK_ORDER } from '../config/config.js';
+import { FIREWORK_CONFIG, GAME_BOUNDS, DEFAULT_RECIPE_COMPONENTS, GENERIC_RECIPE_NAMES, BACKGROUND_IMAGES, AUTO_LAUNCHER_COST_BASE, AUTO_LAUNCHER_COST_RATIO, AUTO_UPGRADE_COST_RATIO, AUTO_SPAWN_INTERVAL_RATIO, COMPONENT_PROPERTY_RANGES, BUILDING_TYPES, DRONE_CONFIG, CROWD_CATCHER_CONFIG, PATTERN_UNLOCK_ORDER } from '../config/config.js';
 import { UPGRADE_DEFINITIONS } from '../upgrades/upgrades.js';
 import InstancedParticleSystem from '../particles/InstancedParticleSystem.js';
 import InstancedDroneSystem from '../entities/InstancedDroneSystem.js';
@@ -74,6 +74,11 @@ class FireworkGame extends Engine {
             speedMultiplier: 1,
             collectionRadiusMultiplier: 1,
             maxDrones: DRONE_CONFIG.maxDrones,
+            sparklesPerParticleMultiplier: 1,
+        };
+        this.crowdStats = {
+            catchingEnabled: false,
+            collectionRadiusMultiplier: 1,
             sparklesPerParticleMultiplier: 1,
         };
 
@@ -170,6 +175,12 @@ class FireworkGame extends Engine {
         this.droneSystem.maxDrones = this.droneStats.maxDrones;
         this.crowd = new Crowd(this.renderer2D);
         this.crowd.onCoinDrop = (amount, source) => this.addGold(amount, source);
+        this.crowd.particleSystem = this.particleSystem;
+        this.crowd.onCatchSparkles = (amount) => {
+            const multiplied = amount * (this.crowdStats.sparklesPerParticleMultiplier ?? 1);
+            this.addSparkles(multiplied, 'crowd_catch');
+            this.statsTracker.recordCrowdCatchParticle();
+        };
 
         const initialSps = this.calculateTotalSparklesPerSecond();
         const initialCrowd = this._calculateTargetCrowdCount(initialSps);
@@ -714,6 +725,11 @@ class FireworkGame extends Engine {
             maxDrones: DRONE_CONFIG.maxDrones,
             sparklesPerParticleMultiplier: 1,
         };
+        this.crowdStats = {
+            catchingEnabled: false,
+            collectionRadiusMultiplier: 1,
+            sparklesPerParticleMultiplier: 1,
+        };
 
         this.resourceManager.reset();
 
@@ -769,6 +785,12 @@ class FireworkGame extends Engine {
             this.crowd.dispose();
             this.crowd = new Crowd(this.renderer2D);
             this.crowd.onCoinDrop = (amount, source) => this.addGold(amount, source);
+            this.crowd.particleSystem = this.particleSystem;
+            this.crowd.onCatchSparkles = (amount) => {
+                const multiplied = amount * (this.crowdStats.sparklesPerParticleMultiplier ?? 1);
+                this.addSparkles(multiplied, 'crowd_catch');
+                this.statsTracker.recordCrowdCatchParticle();
+            };
         }
 
 
@@ -776,6 +798,8 @@ class FireworkGame extends Engine {
         if (this.particleSystem) {
             this.particleSystem.dispose();
             this.particleSystem = new InstancedParticleSystem(this.renderer2D, this.profiler);
+            // Re-point crowd at the fresh particle system
+            if (this.crowd) this.crowd.particleSystem = this.particleSystem;
         }
 
         this.autoLauncherCost = AUTO_LAUNCHER_COST_BASE;
@@ -1339,6 +1363,11 @@ class FireworkGame extends Engine {
             maxDrones: DRONE_CONFIG.maxDrones,
             sparklesPerParticleMultiplier: 1,
         };
+        this.crowdStats = {
+            catchingEnabled: false,
+            collectionRadiusMultiplier: 1,
+            sparklesPerParticleMultiplier: 1,
+        };
 
         for (const up of this.upgrades) {
             const level = this.purchasedUpgrades[up.id] ?? 0;
@@ -1350,6 +1379,15 @@ class FireworkGame extends Engine {
         if (this.droneSystem) {
             this.droneSystem.maxDrones = this.droneStats.maxDrones;
         }
+
+        this.syncCrowdStats();
+    }
+
+    syncCrowdStats() {
+        if (!this.crowd) return;
+        this.crowd.catchingEnabled = this.crowdStats.catchingEnabled;
+        this.crowd.collectionRadius = CROWD_CATCHER_CONFIG.collectionRadius
+            * (this.crowdStats.collectionRadiusMultiplier ?? 1);
     }
 
     resetUpgrades() {
@@ -1402,6 +1440,7 @@ class FireworkGame extends Engine {
         this.purchasedUpgrades[id] = currentLevel + 1;
 
         up.apply(this, this.purchasedUpgrades[id]);
+        this.syncCrowdStats();
 
         this.saveProgress();
         this.ui.renderUpgrades();

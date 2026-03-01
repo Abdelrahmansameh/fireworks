@@ -831,6 +831,7 @@ class UIManager {
         const spsAuto = st.getRollingRate('sparkles', 'auto_launcher');
         const spsGen = st.getRollingRate('sparkles', 'resource_generator');
         const spsDrn = st.getRollingRate('sparkles', 'drone');
+        const spsCrowdCatch = st.getRollingRate('sparkles', 'crowd_catch');
         const spsMnl = st.getRollingRate('sparkles', 'manual');
         const spsCheat = st.getRollingRate('sparkles', 'cheat');
 
@@ -846,6 +847,7 @@ class UIManager {
         set('stat-sps-auto', fmtRate(spsAuto) + ' /s');
         set('stat-sps-gen', fmtRate(spsGen) + ' /s');
         set('stat-sps-drone', fmtRate(spsDrn) + ' /s');
+        set('stat-sps-crowd-catch', fmtRate(spsCrowdCatch) + ' /s');
         set('stat-sps-manual', fmtRate(spsMnl) + ' /s');
         set('stat-sps-cheat', fmtRate(spsCheat) + ' /s');
 
@@ -886,6 +888,7 @@ class UIManager {
         set('stat-sess-sp-auto', fmt(st.sessionSparklesBySource['auto_launcher'] ?? 0));
         set('stat-sess-sp-gen', fmt(st.sessionSparklesBySource['resource_generator'] ?? 0));
         set('stat-sess-sp-drone', fmt(st.sessionSparklesBySource['drone'] ?? 0));
+        set('stat-sess-sp-crowd-catch', fmt(st.sessionSparklesBySource['crowd_catch'] ?? 0));
         set('stat-sess-sp-manual', fmt(st.sessionSparklesBySource['manual'] ?? 0));
 
         set('stat-sess-gold', fmt(st.sessionGold));
@@ -896,6 +899,7 @@ class UIManager {
         set('stat-sess-fw-auto', fmt(st.sessionFireworksBySource['auto_launcher'] ?? 0));
 
         set('stat-sess-drone-parts', fmt(st.sessionDroneParticles));
+        set('stat-sess-crowd-parts', fmt(st.sessionCrowdCatchParticles));
 
         // ── Lifetime records ────────────────────────────────────────────────
         set('firework-count', fmt(g.fireworkCount));
@@ -903,10 +907,12 @@ class UIManager {
         set('stat-life-sp-auto', fmt(st.lifetimeSparklesBySource['auto_launcher'] ?? 0));
         set('stat-life-sp-gen', fmt(st.lifetimeSparklesBySource['resource_generator'] ?? 0));
         set('stat-life-sp-drone', fmt(st.lifetimeSparklesBySource['drone'] ?? 0));
+        set('stat-life-sp-crowd-catch', fmt(st.lifetimeSparklesBySource['crowd_catch'] ?? 0));
         set('stat-life-sp-manual', fmt(st.lifetimeSparklesBySource['manual'] ?? 0));
 
         set('stat-life-gold', fmt(st.lifetimeGold));
         set('stat-life-drone-parts', fmt(st.lifetimeDroneParticles));
+        set('stat-life-crowd-parts', fmt(st.lifetimeCrowdCatchParticles));
 
         set('stat-peak-sps', fmtRate(st.peakSPS) + ' /s');
         set('stat-peak-gps', fmtRate(st.peakGPS) + ' /s');

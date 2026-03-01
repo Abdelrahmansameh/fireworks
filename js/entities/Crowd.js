@@ -1,4 +1,4 @@
-import { GAME_BOUNDS, CROWD_CONFIG } from '../config/config.js';
+import { GAME_BOUNDS, CROWD_CONFIG, CROWD_CATCHER_CONFIG, PARTICLE_TYPES } from '../config/config.js';
 import { SPRITE_ANIMATIONS } from '../config/spriteAnimations.js';
 import * as Renderer2D from '../rendering/Renderer.js';
 
@@ -25,6 +25,14 @@ class Crowd {
         this._grabOffsetX = 0;
         this._grabOffsetY = 0;
         this._cursorHistory = [];      // ring-buffer of {x,y,t}
+
+        // Particle-catching (falling state)
+        this.particleSystem = null;        // set by FireworkGame after init
+        this.catchingEnabled = false;      // true once crowd_catcher_unlock is purchased
+        this.collectionRadius = CROWD_CATCHER_CONFIG.collectionRadius; // synced from game each frame
+        /** @type {((amount: number) => void) | null} */
+        this.onCatchSparkles = null;       // set by FireworkGame
+        this._scanFrameCounter = 0;
 
         this.goldPerSecondPerPerson = 0.1; 
         /** @type {((amount: number, source: string) => void) | null} */
@@ -233,6 +241,8 @@ class Crowd {
             // Coin-toss animation: countdown timer; when > 0 the toss_coin anim plays
             coinAnimTimer: 0,
             coinAnimPrevAnim: null,
+            // Particle catching (used when state === 'falling' and catching is enabled)
+            collected: 0,
         };
 
         // Compute initial absolute frame index
@@ -451,6 +461,12 @@ class Crowd {
                 }
 
                 case 'falling': {
+                    if (this.catchingEnabled
+                        && this.particleSystem
+                        && (this._scanFrameCounter % CROWD_CATCHER_CONFIG.scanInterval) === 0) {
+                        this._scanParticlesForPerson(person);
+                    }
+
                     // Projectile kinematics with air friction
                     const decay = Math.exp(-FRICTION * deltaTime);
                     person.vx *= decay;
@@ -472,6 +488,7 @@ class Crowd {
                         person.y  = person.spawnY;
                         person.vy = 0;
                         person.vx = 0;
+                        person.collected = 0;  
 
                         const distToSpawn = Math.abs(person.x - person.spawnX);
                         if (distToSpawn < CROWD_CONFIG.landingSnapDistance) {
@@ -545,6 +562,89 @@ class Crowd {
                     this.sheets[person.sheetIndex].instancedGroup
                         .updateInstanceFrame(person.instanceIndex, absoluteFrame);
                 }
+            }
+        }
+
+        this._scanFrameCounter++;
+    }
+
+    /**
+     * Scan nearby FIREWORK_EXPLOSION particles and install pull closures toward
+     * this crowd member — mirrors the drone collection mechanic.
+     * Sparkles are awarded immediately on each particle arrival via onCatchSparkles.
+     * @private
+     */
+    _scanParticlesForPerson(person) {
+        const ps = this.particleSystem;
+        const cfg = CROWD_CATCHER_CONFIG;
+        const radius = this.collectionRadius;
+        const onCatch = this.onCatchSparkles;
+        const personRef = person; // captured by pull closure
+
+        for (const shape of Object.keys(ps.activeCounts)) {
+            const sd = ps.instanceData[shape];
+            if (!sd) continue;
+
+            const pCount = ps.activeCounts[shape];
+            if (pCount === 0) continue;
+
+            const sStr = ps.strideFloats;
+            const updateFns = ps.particleUpdateFns[shape];
+            const pTypeIdx = ps.particleTypeIdx;
+            const pPosIdx = ps.positionIdx;
+
+            for (let pi = 0; pi < pCount; pi++) {
+                const pBase = pi * sStr;
+
+                // Only collect firework-explosion particles
+                if (sd[pBase + pTypeIdx] !== PARTICLE_TYPES.FIREWORK_EXPLOSION) continue;
+
+                // Skip particles that haven't been alive long enough
+                const pAge = sd[pBase + ps.initialLifetimeIdx] - sd[pBase + ps.lifetimeIdx];
+                if (pAge < cfg.minParticleAge) continue;
+
+                // Fast AABB rejection
+                const pdx = sd[pBase + pPosIdx] - personRef.x;
+                if (pdx > radius || pdx < -radius) continue;
+                const pdy = sd[pBase + pPosIdx + 1] - personRef.y;
+                if (pdy > radius || pdy < -radius) continue;
+
+                const existingFn = updateFns[pi];
+                if (existingFn && (existingFn._isDronePull || existingFn._isCrowdPull)) continue;
+
+                // Build pull closure — captures personRef (live object)
+                let pullElapsed = 0;
+                const pullFn = (state, delta) => {
+                    pullElapsed += delta;
+
+                    const ex = personRef.x - state.position.x;
+                    const ey = personRef.y - state.position.y;
+                    const eDist = Math.sqrt(ex * ex + ey * ey);
+
+                    if (eDist < cfg.arrivalThreshold || pullElapsed >= cfg.maxCaptureTime) {
+                        personRef.collected++;
+                        if (onCatch) onCatch(cfg.sparklesPerParticle);
+                        state.lifetime = 0;
+                        return;
+                    }
+
+                    state.lifetime = 1.0;
+                    state.alpha = pullElapsed / cfg.maxCaptureTime;
+                    state.scale = pullElapsed / cfg.maxCaptureTime;
+
+                    // Accelerate particle toward crowd member
+                    const eInv = 1 / eDist;
+                    state.velocity.x += ex * eInv * cfg.pullForce * delta;
+                    state.velocity.y += ey * eInv * cfg.pullForce * delta;
+
+                    // Shift colour toward warm gold/white (mirrors drone visual)
+                    state.color.r += 0.05 * delta;
+                    state.color.g += 0.05 * delta;
+                    state.color.b += 0.05 * delta;
+                };
+                pullFn._isCrowdPull = true;
+
+                updateFns[pi] = pullFn;
             }
         }
     }

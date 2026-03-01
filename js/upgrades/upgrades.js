@@ -112,6 +112,52 @@ const UPGRADE_DEFINITIONS = [
             game.droneStats.sparklesPerParticleMultiplier = 1 + 0.5 * level;
         },
     },
+    // ── Crowd Catcher upgrades — unlock when the crowd exists ————————————
+    {
+        id: 'crowd_catcher_unlock',
+        group: 'CROWD',
+        pattern: null,
+        name: 'Crowd Catchers',
+        desc: 'Thrown crowd members collect firework particles while airborne, awarding sparkles.',
+        baseCost: 500,
+        costRatio: 1,
+        currency: 'sparkles',
+        maxLevel: 1,
+        isVisible: (game) => (game.crowd?.people?.length ?? 0) > 0,
+        apply: (game, _level) => {
+            game.crowdStats.catchingEnabled = true;
+        },
+    },
+    {
+        id: 'crowd_catcher_radius',
+        group: 'CROWD',
+        pattern: null,
+        name: 'Wide Arms',
+        desc: '+25% catching radius per level',
+        baseCost: 300,
+        costRatio: 2.5,
+        currency: 'gold',
+        maxLevel: 3,
+        isVisible: (game) => (game.purchasedUpgrades['crowd_catcher_unlock'] ?? 0) > 0,
+        apply: (game, level) => {
+            game.crowdStats.collectionRadiusMultiplier = 1 + 0.25 * level;
+        },
+    },
+    {
+        id: 'crowd_catcher_yield',
+        group: 'CROWD',
+        pattern: null,
+        name: 'Greedy Hands',
+        desc: '+50% sparkles per caught particle per level',
+        baseCost: 400,
+        costRatio: 2.5,
+        currency: 'gold',
+        maxLevel: 3,
+        isVisible: (game) => (game.purchasedUpgrades['crowd_catcher_unlock'] ?? 0) > 0,
+        apply: (game, level) => {
+            game.crowdStats.sparklesPerParticleMultiplier = 1 + 0.5 * level;
+        },
+    },
 ];
 
 import { DRONE_CONFIG } from '../config/config.js';

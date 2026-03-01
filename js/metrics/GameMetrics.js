@@ -29,6 +29,7 @@ export default class GameMetrics {
         this.sessionFireworks = 0;
         this.sessionFireworksBySource = {};
         this.sessionDroneParticles = 0;
+        this.sessionCrowdCatchParticles = 0;
 
         // ── Lifetime totals (persisted to localStorage) ──────────────────────
         this.lifetimeSparkles = 0;
@@ -38,6 +39,7 @@ export default class GameMetrics {
         this.lifetimeFireworks = 0;
         this.lifetimeFireworksBySource = {};
         this.lifetimeDroneParticles = 0;
+        this.lifetimeCrowdCatchParticles = 0;
 
         // ── Peak records (persisted) ──────────────────────────────────────────
         this.peakSPS = 0;
@@ -103,6 +105,14 @@ export default class GameMetrics {
     recordDroneParticle() {
         this.sessionDroneParticles++;
         this.lifetimeDroneParticles++;
+    }
+
+    /**
+     * Record a crowd-catch particle collection.
+     */
+    recordCrowdCatchParticle() {
+        this.sessionCrowdCatchParticles++;
+        this.lifetimeCrowdCatchParticles++;
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -204,6 +214,7 @@ export default class GameMetrics {
             lifetimeFireworks: this.lifetimeFireworks,
             lifetimeFireworksBySource: { ...this.lifetimeFireworksBySource },
             lifetimeDroneParticles: this.lifetimeDroneParticles,
+            lifetimeCrowdCatchParticles: this.lifetimeCrowdCatchParticles,
             peakSPS: this.peakSPS,
             peakGPS: this.peakGPS,
             peakFPS: this.peakFPS,
@@ -225,6 +236,7 @@ export default class GameMetrics {
             this.lifetimeFireworks = data.lifetimeFireworks ?? 0;
             this.lifetimeFireworksBySource = data.lifetimeFireworksBySource ?? {};
             this.lifetimeDroneParticles = data.lifetimeDroneParticles ?? 0;
+            this.lifetimeCrowdCatchParticles = data.lifetimeCrowdCatchParticles ?? 0;
             this.peakSPS = data.peakSPS ?? 0;
             this.peakGPS = data.peakGPS ?? 0;
             this.peakFPS = data.peakFPS ?? 0;
@@ -245,6 +257,7 @@ export default class GameMetrics {
         this.sessionFireworks = 0;
         this.sessionFireworksBySource = {};
         this.sessionDroneParticles = 0;
+        this.sessionCrowdCatchParticles = 0;
 
         this.lifetimeSparkles = 0;
         this.lifetimeSparklesBySource = {};
@@ -253,6 +266,7 @@ export default class GameMetrics {
         this.lifetimeFireworks = 0;
         this.lifetimeFireworksBySource = {};
         this.lifetimeDroneParticles = 0;
+        this.lifetimeCrowdCatchParticles = 0;
         this.peakSPS = 0;
         this.peakGPS = 0;
         this.peakFPS = 0;

@@ -317,10 +317,20 @@ const CROWD_CONFIG = {
     pickRadius: 35,                 // world-units — max cursor-to-person dist for grab
     cursorHistorySize: 6,           // samples kept for launch-velocity estimation
     minDtForVelocity: 0.005,       // seconds — ignore tiny dt to avoid div-by-zero
-    maxThrowSpeedX: 1500,            // world-units / s
+    maxThrowSpeedX: 1800,            // world-units / s
     maxThrowSpeedY: 1800,            // world-units / s
     wallBounce: 0.5,                // velocity retention when bouncing off world edges
     wallBounceBuffer: 500,          // world-units — invisible buffer beyond scroll bounds for wall bounces
+};
+
+const CROWD_CATCHER_CONFIG = {
+    collectionRadius: 60,     // world-units scan radius (slightly wider than drone's 50)
+    pullForce: 7000,          // wu/s² — acceleration toward person
+    arrivalThreshold: 10,     // wu — particle collected when closer than this
+    maxCaptureTime: 5.5,      // s — force-collect after this long
+    minParticleAge: 0.3,      // s — ignore freshly-spawned particles
+    sparklesPerParticle: 1,   // base sparkle reward per collected particle
+    scanInterval: 4,          // throttle: scan every N frames
 };
 
 /**
@@ -370,5 +380,5 @@ const PATTERN_DISPLAY_NAMES = {
     dragonsBreath: 'Dragon\'s Breath',
 };
 
-export { FIREWORK_CONFIG, GAME_BOUNDS, DEFAULT_RECIPE_COMPONENTS, GENERIC_RECIPE_NAMES, BACKGROUND_IMAGES, AUTO_LAUNCHER_COST_BASE, AUTO_LAUNCHER_COST_RATIO, AUTO_UPGRADE_COST_RATIO, AUTO_SPAWN_INTERVAL_RATIO, LAUNCHER_WORLD_HIGHLIGHT_DURATION, COMPONENT_PROPERTY_RANGES, BUILDING_TYPES, PARTICLE_TYPES, DRONE_CONFIG, CROWD_CONFIG, STATS_CONFIG, PATTERN_UNLOCK_ORDER, PATTERN_DISPLAY_NAMES };
+export { FIREWORK_CONFIG, GAME_BOUNDS, DEFAULT_RECIPE_COMPONENTS, GENERIC_RECIPE_NAMES, BACKGROUND_IMAGES, AUTO_LAUNCHER_COST_BASE, AUTO_LAUNCHER_COST_RATIO, AUTO_UPGRADE_COST_RATIO, AUTO_SPAWN_INTERVAL_RATIO, LAUNCHER_WORLD_HIGHLIGHT_DURATION, COMPONENT_PROPERTY_RANGES, BUILDING_TYPES, PARTICLE_TYPES, DRONE_CONFIG, CROWD_CONFIG, CROWD_CATCHER_CONFIG, STATS_CONFIG, PATTERN_UNLOCK_ORDER, PATTERN_DISPLAY_NAMES };
 
