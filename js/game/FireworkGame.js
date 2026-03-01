@@ -1,4 +1,4 @@
-import { FIREWORK_CONFIG, GAME_BOUNDS, DEFAULT_RECIPE_COMPONENTS, GENERIC_RECIPE_NAMES, BACKGROUND_IMAGES, AUTO_LAUNCHER_COST_BASE, AUTO_LAUNCHER_COST_RATIO, AUTO_UPGRADE_COST_RATIO, AUTO_SPAWN_INTERVAL_RATIO, COMPONENT_PROPERTY_RANGES, BUILDING_TYPES, DRONE_CONFIG, CROWD_CATCHER_CONFIG, PATTERN_UNLOCK_ORDER } from '../config/config.js';
+import { FIREWORK_CONFIG, GAME_BOUNDS, DEFAULT_RECIPE_COMPONENTS, PRE_RECIPE_COMPONENT_DEFAULTS, GENERIC_RECIPE_NAMES, BACKGROUND_IMAGES, AUTO_LAUNCHER_COST_BASE, AUTO_LAUNCHER_COST_RATIO, AUTO_UPGRADE_COST_RATIO, AUTO_SPAWN_INTERVAL_RATIO, COMPONENT_PROPERTY_RANGES, BUILDING_TYPES, DRONE_CONFIG, CROWD_CATCHER_CONFIG, PATTERN_UNLOCK_ORDER } from '../config/config.js';
 import { UPGRADE_DEFINITIONS } from '../upgrades/upgrades.js';
 import InstancedParticleSystem from '../particles/InstancedParticleSystem.js';
 import InstancedDroneSystem from '../entities/InstancedDroneSystem.js';
@@ -624,17 +624,23 @@ class FireworkGame extends Engine {
 
         if (!this.unlockStates.recipesTab) {
             const launchers = this.buildingManager.getBuildingsByType('AUTO_LAUNCHER');
-            // Cycle: slot 0 = DEFAULT_RECIPE_COMPONENTS, slots 1..N = each launcher's patternOverride variant
+            // Cycle: slot 0 = base defaults, slots 1..N = each launcher's patternOverride variant
             const cycleCount = launchers.length + 1;
             const cycleIndex = this.fireworkCount % cycleCount;
+            // Base component: fixed defaults + color/pattern from DEFAULT_RECIPE_COMPONENTS
+            const baseComponents = DEFAULT_RECIPE_COMPONENTS.map(c => ({
+                ...PRE_RECIPE_COMPONENT_DEFAULTS,
+                color: c.color,
+                pattern: c.pattern,
+            }));
             if (cycleIndex === 0) {
-                components = DEFAULT_RECIPE_COMPONENTS;
+                components = baseComponents;
             } else {
                 const launcher = launchers[cycleIndex - 1];
                 if (launcher && launcher.patternOverride) {
-                    components = DEFAULT_RECIPE_COMPONENTS.map(c => ({ ...c, pattern: launcher.patternOverride, color: launcher.colorOverride || c.color }));
+                    components = baseComponents.map(c => ({ ...c, pattern: launcher.patternOverride, color: launcher.colorOverride || c.color }));
                 } else {
-                    components = DEFAULT_RECIPE_COMPONENTS;
+                    components = baseComponents;
                 }
             }
         }

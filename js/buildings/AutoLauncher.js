@@ -1,6 +1,6 @@
 import Building from './Building.js';
 import Firework from '../entities/Firework.js';
-import { GAME_BOUNDS } from '../config/config.js';
+import { GAME_BOUNDS, PRE_RECIPE_COMPONENT_DEFAULTS } from '../config/config.js';
 
 class AutoLauncher extends Building {
     constructor(game, x, y, data = {}) {
@@ -30,8 +30,13 @@ class AutoLauncher extends Building {
         let components;
 
         if (!this.game.unlockStates.recipesTab) {
-            // Pre-recipe-tab: use currentRecipeComponents with pattern/color overrides
-            components = this.game.currentRecipeComponents;
+            // Pre-recipe-tab: apply fixed defaults for all properties except color and pattern,
+            // then apply colorOverride / patternOverride as usual.
+            components = this.game.currentRecipeComponents.map(c => ({
+                ...PRE_RECIPE_COMPONENT_DEFAULTS,
+                color: c.color,
+                pattern: c.pattern,
+            }));
             if (this.patternOverride) {
                 components = components.map(c => ({ ...c, pattern: this.patternOverride }));
             }
@@ -89,7 +94,11 @@ class AutoLauncher extends Building {
         let components;
 
         if (!this.game.unlockStates.recipesTab) {
-            components = this.game.currentRecipeComponents;
+            components = this.game.currentRecipeComponents.map(c => ({
+                ...PRE_RECIPE_COMPONENT_DEFAULTS,
+                color: c.color,
+                pattern: c.pattern,
+            }));
         } else {
             const recipe = this.game.recipes[this.assignedRecipeIndex];
             if (recipe) {
