@@ -243,6 +243,8 @@ class Crowd {
             coinAnimPrevAnim: null,
             // Particle catching (used when state === 'falling' and catching is enabled)
             collected: 0,
+            // Ground-bounce counter — reset each time the person enters 'falling'
+            bounceCount: 0,
         };
 
         // Compute initial absolute frame index
@@ -485,29 +487,37 @@ class Crowd {
 
                     // Hit the ground?
                     if (person.y <= person.spawnY) {
-                        person.y  = person.spawnY;
-                        person.vy = 0;
-                        person.vx = 0;
-                        person.collected = 0;  
+                        person.y = person.spawnY;
 
-                        const distToSpawn = Math.abs(person.x - person.spawnX);
-                        if (distToSpawn < CROWD_CONFIG.landingSnapDistance) {
-                            // Close enough — resume cheering
-                            person.x     = person.spawnX;
-                            person.state = 'cheering';
-                            this.setAnimation(i, 'cheer');
-                            this.sheets[person.sheetIndex].instancedGroup
-                                .updateInstanceScale(person.instanceIndex,
-                                    person.scale, person.scale);
+                        if (person.bounceCount < CROWD_CONFIG.groundBounceCount) {
+                            // Still bouncing — reflect and dampen vertical velocity
+                            person.vy = Math.abs(person.vy) * CROWD_CONFIG.groundBounceDamping;
+                            person.bounceCount++;
                         } else {
-                            // Walk back to spawn spot
-                            person.state = 'walking';
-                            this.setAnimation(i, 'walking_right');
-                            const walkingLeft = person.spawnX < person.x;
-                            const sx = walkingLeft ? -person.scale : person.scale;
-                            this.sheets[person.sheetIndex].instancedGroup
-                                .updateInstanceScale(person.instanceIndex,
-                                    sx, person.scale);
+                            // Final landing contact
+                            person.vy = 0;
+                            person.vx = 0;
+                            person.collected = 0;
+
+                            const distToSpawn = Math.abs(person.x - person.spawnX);
+                            if (distToSpawn < CROWD_CONFIG.landingSnapDistance) {
+                                // Close enough — resume cheering
+                                person.x     = person.spawnX;
+                                person.state = 'cheering';
+                                this.setAnimation(i, 'cheer');
+                                this.sheets[person.sheetIndex].instancedGroup
+                                    .updateInstanceScale(person.instanceIndex,
+                                        person.scale, person.scale);
+                            } else {
+                                // Walk back to spawn spot
+                                person.state = 'walking';
+                                this.setAnimation(i, 'walking_right');
+                                const walkingLeft = person.spawnX < person.x;
+                                const sx = walkingLeft ? -person.scale : person.scale;
+                                this.sheets[person.sheetIndex].instancedGroup
+                                    .updateInstanceScale(person.instanceIndex,
+                                        sx, person.scale);
+                            }
                         }
                     }
 
@@ -753,6 +763,7 @@ class Crowd {
 
         person.vx = vx;
         person.vy = vy;
+        person.bounceCount = 0;     // reset bounce counter for fresh throw
         person.state = 'falling';   // animation is already 'falling' from grab
 
         this.grabbedPersonIndex = -1;

@@ -333,6 +333,10 @@ const CROWD_CONFIG = {
     maxThrowSpeedY: 1800,            // world-units / s
     wallBounce: 0.5,                // velocity retention when bouncing off world edges
     wallBounceBuffer: 500,          // world-units — invisible buffer beyond scroll bounds for wall bounces
+
+    // Ground bouncing
+    groundBounceCount: 3,           // number of bounces before the person lands on the next ground contact
+    groundBounceDamping: 0.45,      // fraction of vertical speed retained on each ground bounce
 };
 
 const CROWD_CATCHER_CONFIG = {
