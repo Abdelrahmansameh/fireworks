@@ -165,7 +165,7 @@ const GAME_BOUNDS = {
     SCROLL_MAX_X: 4200,
     CROWD_RIGHT_X: -900,
     CROWD_LEFT_X: -100,
-    CROWD_Y: -515,
+    CROWD_Y: -200,
     WORLD_GROUND_Y: -540,
     WORLD_MIN_EXPLOSION_Y: -105,
     WORLD_MAX_EXPLOSION_Y: 324,
@@ -381,7 +381,7 @@ const CROWD_CONFIG = {
     // Spawn / positioning
     minOverlapDistance: 10,          // world-units — min spacing between people
     maxPlacementAttempts: 20,
-    ySpread: 70,                    // random Y offset below CROWD_Y
+    ySpread: 100,                    // random Y offset below CROWD_Y
     baseScale: 2,
     scaleVariance: 0.4,             // scale = baseScale + random * scaleVariance
 
