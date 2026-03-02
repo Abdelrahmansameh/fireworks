@@ -34,7 +34,7 @@ class Crowd {
         this.onCatchSparkles = null;       // set by FireworkGame
         this._scanFrameCounter = 0;
 
-        this.goldPerSecondPerPerson = 0.1; 
+        this.goldPerSecondPerPerson = 0.1;
         /** @type {((amount: number, source: string) => void) | null} */
         this.onCoinDrop = null;             // set by FireworkGame
 
@@ -240,7 +240,6 @@ class Crowd {
             goldAccumulator: Math.random(),  // stagger so coins don't all drop at once
             // Coin-toss animation: countdown timer; when > 0 the toss_coin anim plays
             coinAnimTimer: 0,
-            coinAnimPrevAnim: null,
             // Particle catching (used when state === 'falling' and catching is enabled)
             collected: 0,
             // Ground-bounce counter — reset each time the person enters 'falling'
@@ -433,7 +432,7 @@ class Crowd {
         const person = this.people[personIndex];
         person.state = newState;
         person.bounceCount = 0;
-        this.setAnimation(personIndex, this._getAnimForState(newState));   
+        this.setAnimation(personIndex, this._getAnimForState(newState));
     }
 
     _getAnimForState(state) {
@@ -477,15 +476,15 @@ class Crowd {
                 const decay = Math.exp(-friction * deltaTime);
                 person.vx *= decay;
                 person.vy -= gravity * deltaTime;
-                person.x  += person.vx * deltaTime;
-                person.y  += person.vy * deltaTime;
+                person.x += person.vx * deltaTime;
+                person.y += person.vy * deltaTime;
 
                 // Bounce off left / right world boundaries
                 if (person.x < GAME_BOUNDS.SCROLL_MIN_X - CROWD_CONFIG.wallBounceBuffer) {
-                    person.x  = GAME_BOUNDS.SCROLL_MIN_X - CROWD_CONFIG.wallBounceBuffer;
+                    person.x = GAME_BOUNDS.SCROLL_MIN_X - CROWD_CONFIG.wallBounceBuffer;
                     person.vx = Math.abs(person.vx) * CROWD_CONFIG.wallBounce;
                 } else if (person.x > GAME_BOUNDS.SCROLL_MAX_X + CROWD_CONFIG.wallBounceBuffer) {
-                    person.x  = GAME_BOUNDS.SCROLL_MAX_X + CROWD_CONFIG.wallBounceBuffer;
+                    person.x = GAME_BOUNDS.SCROLL_MAX_X + CROWD_CONFIG.wallBounceBuffer;
                     person.vx = -Math.abs(person.vx) * CROWD_CONFIG.wallBounce;
                 }
 
@@ -506,7 +505,7 @@ class Crowd {
                         const distToSpawn = Math.abs(person.x - person.spawnX);
                         if (distToSpawn < CROWD_CONFIG.landingSnapDistance) {
                             // Close enough — resume cheering
-                            person.x     = person.spawnX;
+                            person.x = person.spawnX;
                             this._switchToState(personIndex, 'cheering');
                             this.sheets[person.sheetIndex].instancedGroup
                                 .updateInstanceScale(person.instanceIndex,
@@ -529,12 +528,12 @@ class Crowd {
             }
 
             case 'walking': {
-                const dx  = person.spawnX - person.x;
+                const dx = person.spawnX - person.x;
                 const dir = Math.sign(dx);
                 person.x += dir * walkSpeed * deltaTime;
 
                 if (Math.abs(person.x - person.spawnX) < CROWD_CONFIG.walkArrivalDistance) {
-                    person.x     = person.spawnX;
+                    person.x = person.spawnX;
                     person.state = 'cheering';
                     this.setAnimation(personIndex, 'cheer');
                     // Restore un-flipped scale
@@ -549,7 +548,7 @@ class Crowd {
             }
         }
 
-        
+
         person.goldAccumulator += goldRate * deltaTime;
         if (person.goldAccumulator >= 1.0) {
             const coins = Math.floor(person.goldAccumulator);
@@ -559,7 +558,6 @@ class Crowd {
             }
             // Play toss_coin animation for one full cycle
             if (tossCoinDef) {
-                person.coinAnimPrevAnim = person.animName;
                 person.coinAnimTimer = tossCoinDuration;
                 this.setAnimation(personIndex, 'toss_coin');
             }
@@ -570,10 +568,7 @@ class Crowd {
             person.coinAnimTimer -= deltaTime;
             if (person.coinAnimTimer <= 0) {
                 person.coinAnimTimer = 0;
-                if (person.coinAnimPrevAnim) {
-                    this.setAnimation(personIndex, person.coinAnimPrevAnim);
-                    person.coinAnimPrevAnim = null;
-                }
+                this.setAnimation(personIndex, this._getAnimForState(person.state));
             }
         }
 
@@ -705,7 +700,7 @@ class Crowd {
 
         const PICK_RADIUS = CROWD_CONFIG.pickRadius;
         let bestDist = PICK_RADIUS;
-        let bestIdx  = -1;
+        let bestIdx = -1;
 
         for (let i = 0; i < this.people.length; i++) {
             const p = this.people[i];
@@ -715,7 +710,7 @@ class Crowd {
             const dist = Math.sqrt(dx * dx + dy * dy);
             if (dist < bestDist) {
                 bestDist = dist;
-                bestIdx  = i;
+                bestIdx = i;
             }
         }
 
@@ -774,8 +769,8 @@ class Crowd {
         let vx = 0, vy = 0;
         if (this._cursorHistory.length >= 2) {
             const first = this._cursorHistory[0];
-            const last  = this._cursorHistory[this._cursorHistory.length - 1];
-            const dt    = last.t - first.t;
+            const last = this._cursorHistory[this._cursorHistory.length - 1];
+            const dt = last.t - first.t;
             if (dt > CROWD_CONFIG.minDtForVelocity) {
                 vx = (last.x - first.x) / dt;
                 vy = (last.y - first.y) / dt;
