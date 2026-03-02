@@ -413,169 +413,196 @@ class Crowd {
             : 0;
 
         for (let i = 0; i < this.people.length; i++) {
-            const person = this.people[i];
-            person.goldAccumulator += goldRate * deltaTime;
-            if (person.goldAccumulator >= 1.0) {
-                const coins = Math.floor(person.goldAccumulator);
-                person.goldAccumulator -= coins;
-                if (this.onCoinDrop) {
-                    this.onCoinDrop(coins, 'crowd');
-                }
-                // Play toss_coin animation for one full cycle
-                if (tossCoinDef && person.coinAnimTimer <= 0) {
-                    person.coinAnimPrevAnim = person.animName;
-                    person.coinAnimTimer = tossCoinDuration;
-                    this.setAnimation(i, 'toss_coin');
-                }
-            }
-
-            // Count down the coin-toss animation and restore previous anim
-            if (person.coinAnimTimer > 0) {
-                person.coinAnimTimer -= deltaTime;
-                if (person.coinAnimTimer <= 0) {
-                    person.coinAnimTimer = 0;
-                    if (person.coinAnimPrevAnim) {
-                        this.setAnimation(i, person.coinAnimPrevAnim);
-                        person.coinAnimPrevAnim = null;
-                    }
-                }
-            }
-        }
-
-        for (let i = 0; i < this.people.length; i++) {
-            const person = this.people[i];
-
-            // ── state machine ──────────────────────────────────────
-            switch (person.state) {
-                case 'cheering': {
-                    // Gentle fixed-phase bob (original behaviour)
-                    const bobY = person.y + Math.sin(person.bobOffset) * 2;
-                    this.sheets[person.sheetIndex].instancedGroup
-                        .updateInstancePosition(person.instanceIndex, person.x, bobY);
-                    break;
-                }
-
-                case 'grabbed': {
-                    // Position is driven by _onPointerMove — just push to GPU
-                    this.sheets[person.sheetIndex].instancedGroup
-                        .updateInstancePosition(person.instanceIndex, person.x, person.y);
-                    break;
-                }
-
-                case 'falling': {
-                    if (this.catchingEnabled
-                        && this.particleSystem
-                        && (this._scanFrameCounter % CROWD_CATCHER_CONFIG.scanInterval) === 0) {
-                        this._scanParticlesForPerson(person);
-                    }
-
-                    // Projectile kinematics with air friction
-                    const decay = Math.exp(-FRICTION * deltaTime);
-                    person.vx *= decay;
-                    person.vy -= GRAVITY * deltaTime;
-                    person.x  += person.vx * deltaTime;
-                    person.y  += person.vy * deltaTime;
-
-                    // Bounce off left / right world boundaries
-                    if (person.x < GAME_BOUNDS.SCROLL_MIN_X - CROWD_CONFIG.wallBounceBuffer) {
-                        person.x  = GAME_BOUNDS.SCROLL_MIN_X - CROWD_CONFIG.wallBounceBuffer;
-                        person.vx = Math.abs(person.vx) * CROWD_CONFIG.wallBounce;
-                    } else if (person.x > GAME_BOUNDS.SCROLL_MAX_X + CROWD_CONFIG.wallBounceBuffer) {
-                        person.x  = GAME_BOUNDS.SCROLL_MAX_X + CROWD_CONFIG.wallBounceBuffer;
-                        person.vx = -Math.abs(person.vx) * CROWD_CONFIG.wallBounce;
-                    }
-
-                    // Hit the ground?
-                    if (person.y <= person.spawnY) {
-                        person.y = person.spawnY;
-
-                        if (person.bounceCount < CROWD_CONFIG.groundBounceCount) {
-                            // Still bouncing — reflect and dampen vertical velocity
-                            person.vy = Math.abs(person.vy) * CROWD_CONFIG.groundBounceDamping;
-                            person.bounceCount++;
-                        } else {
-                            // Final landing contact
-                            person.vy = 0;
-                            person.vx = 0;
-                            person.collected = 0;
-
-                            const distToSpawn = Math.abs(person.x - person.spawnX);
-                            if (distToSpawn < CROWD_CONFIG.landingSnapDistance) {
-                                // Close enough — resume cheering
-                                person.x     = person.spawnX;
-                                person.state = 'cheering';
-                                this.setAnimation(i, 'cheer');
-                                this.sheets[person.sheetIndex].instancedGroup
-                                    .updateInstanceScale(person.instanceIndex,
-                                        person.scale, person.scale);
-                            } else {
-                                // Walk back to spawn spot
-                                person.state = 'walking';
-                                this.setAnimation(i, 'walking_right');
-                                const walkingLeft = person.spawnX < person.x;
-                                const sx = walkingLeft ? -person.scale : person.scale;
-                                this.sheets[person.sheetIndex].instancedGroup
-                                    .updateInstanceScale(person.instanceIndex,
-                                        sx, person.scale);
-                            }
-                        }
-                    }
-
-                    this.sheets[person.sheetIndex].instancedGroup
-                        .updateInstancePosition(person.instanceIndex, person.x, person.y);
-                    break;
-                }
-
-                case 'walking': {
-                    const dx  = person.spawnX - person.x;
-                    const dir = Math.sign(dx);
-                    person.x += dir * WALK_SPEED * deltaTime;
-
-                    if (Math.abs(person.x - person.spawnX) < CROWD_CONFIG.walkArrivalDistance) {
-                        person.x     = person.spawnX;
-                        person.state = 'cheering';
-                        this.setAnimation(i, 'cheer');
-                        // Restore un-flipped scale
-                        this.sheets[person.sheetIndex].instancedGroup
-                            .updateInstanceScale(person.instanceIndex,
-                                person.scale, person.scale);
-                    }
-
-                    this.sheets[person.sheetIndex].instancedGroup
-                        .updateInstancePosition(person.instanceIndex, person.x, person.y);
-                    break;
-                }
-            }
-
-            // ── sprite-sheet animation tick (every state) ──────────
-            const spriteConfig = this.sheets[person.sheetIndex].config;
-            if (this.useSpriteSheet && spriteConfig) {
-                person.animTimer += deltaTime;
-                const totalDuration = person.animFrameDuration * person.animFrameCount;
-
-                if (person.animTimer >= totalDuration) {
-                    if (person.animLoop) {
-                        person.animTimer %= totalDuration;
-                    } else {
-                        person.animTimer = totalDuration - 0.001;
-                    }
-                }
-
-                const newFrame = Math.min(
-                    Math.floor(person.animTimer / person.animFrameDuration),
-                    person.animFrameCount - 1
-                );
-
-                if (newFrame !== person.animFrame) {
-                    person.animFrame = newFrame;
-                    const absoluteFrame = person.animRow * spriteConfig.columns + person.animFrame;
-                    this.sheets[person.sheetIndex].instancedGroup
-                        .updateInstanceFrame(person.instanceIndex, absoluteFrame);
-                }
-            }
+            this._updatePerson(
+                i,
+                deltaTime,
+                GRAVITY,
+                FRICTION,
+                WALK_SPEED,
+                goldRate,
+                tossCoinDef,
+                tossCoinDuration
+            );
         }
 
         this._scanFrameCounter++;
+    }
+
+
+    _switchToState(personIndex, newState) {
+        const person = this.people[personIndex];
+        person.state = newState;
+        person.bounceCount = 0;
+        this.setAnimation(personIndex, this._getAnimForState(newState));   
+    }
+
+    _getAnimForState(state) {
+        switch (state) {
+            case 'cheering': return 'cheer';
+            case 'walking': return 'walking_right';
+            case 'falling': return 'falling';
+            case 'grabbed': return 'falling';
+            default: return null;
+        }
+    }
+
+    _updatePerson(personIndex, deltaTime, gravity, friction, walkSpeed, goldRate, tossCoinDef, tossCoinDuration) {
+        const person = this.people[personIndex];
+
+        // ── state machine ──────────────────────────────────────
+        switch (person.state) {
+            case 'cheering': {
+                // Gentle fixed-phase bob (original behaviour)
+                const bobY = person.y + Math.sin(person.bobOffset) * 2;
+                this.sheets[person.sheetIndex].instancedGroup
+                    .updateInstancePosition(person.instanceIndex, person.x, bobY);
+                break;
+            }
+
+            case 'grabbed': {
+                // Position is driven by _onPointerMove — just push to GPU
+                this.sheets[person.sheetIndex].instancedGroup
+                    .updateInstancePosition(person.instanceIndex, person.x, person.y);
+                break;
+            }
+
+            case 'falling': {
+                if (this.catchingEnabled
+                    && this.particleSystem
+                    && (this._scanFrameCounter % CROWD_CATCHER_CONFIG.scanInterval) === 0) {
+                    this._scanParticlesForPerson(person);
+                }
+
+                // Projectile kinematics with air friction
+                const decay = Math.exp(-friction * deltaTime);
+                person.vx *= decay;
+                person.vy -= gravity * deltaTime;
+                person.x  += person.vx * deltaTime;
+                person.y  += person.vy * deltaTime;
+
+                // Bounce off left / right world boundaries
+                if (person.x < GAME_BOUNDS.SCROLL_MIN_X - CROWD_CONFIG.wallBounceBuffer) {
+                    person.x  = GAME_BOUNDS.SCROLL_MIN_X - CROWD_CONFIG.wallBounceBuffer;
+                    person.vx = Math.abs(person.vx) * CROWD_CONFIG.wallBounce;
+                } else if (person.x > GAME_BOUNDS.SCROLL_MAX_X + CROWD_CONFIG.wallBounceBuffer) {
+                    person.x  = GAME_BOUNDS.SCROLL_MAX_X + CROWD_CONFIG.wallBounceBuffer;
+                    person.vx = -Math.abs(person.vx) * CROWD_CONFIG.wallBounce;
+                }
+
+                // Hit the ground?
+                if (person.y <= person.spawnY) {
+                    person.y = person.spawnY;
+
+                    if (person.bounceCount < CROWD_CONFIG.groundBounceCount) {
+                        // Still bouncing — reflect and dampen vertical velocity
+                        person.vy = Math.abs(person.vy) * CROWD_CONFIG.groundBounceDamping;
+                        person.bounceCount++;
+                    } else {
+                        // Final landing contact
+                        person.vy = 0;
+                        person.vx = 0;
+                        person.collected = 0;
+
+                        const distToSpawn = Math.abs(person.x - person.spawnX);
+                        if (distToSpawn < CROWD_CONFIG.landingSnapDistance) {
+                            // Close enough — resume cheering
+                            person.x     = person.spawnX;
+                            this._switchToState(personIndex, 'cheering');
+                            this.sheets[person.sheetIndex].instancedGroup
+                                .updateInstanceScale(person.instanceIndex,
+                                    person.scale, person.scale);
+                        } else {
+                            // Walk back to spawn spot
+                            this._switchToState(personIndex, 'walking');
+                            const walkingLeft = person.spawnX < person.x;
+                            const sx = walkingLeft ? -person.scale : person.scale;
+                            this.sheets[person.sheetIndex].instancedGroup
+                                .updateInstanceScale(person.instanceIndex,
+                                    sx, person.scale);
+                        }
+                    }
+                }
+
+                this.sheets[person.sheetIndex].instancedGroup
+                    .updateInstancePosition(person.instanceIndex, person.x, person.y);
+                break;
+            }
+
+            case 'walking': {
+                const dx  = person.spawnX - person.x;
+                const dir = Math.sign(dx);
+                person.x += dir * walkSpeed * deltaTime;
+
+                if (Math.abs(person.x - person.spawnX) < CROWD_CONFIG.walkArrivalDistance) {
+                    person.x     = person.spawnX;
+                    person.state = 'cheering';
+                    this.setAnimation(personIndex, 'cheer');
+                    // Restore un-flipped scale
+                    this.sheets[person.sheetIndex].instancedGroup
+                        .updateInstanceScale(person.instanceIndex,
+                            person.scale, person.scale);
+                }
+
+                this.sheets[person.sheetIndex].instancedGroup
+                    .updateInstancePosition(person.instanceIndex, person.x, person.y);
+                break;
+            }
+        }
+
+        
+        person.goldAccumulator += goldRate * deltaTime;
+        if (person.goldAccumulator >= 1.0) {
+            const coins = Math.floor(person.goldAccumulator);
+            person.goldAccumulator -= coins;
+            if (this.onCoinDrop) {
+                this.onCoinDrop(coins, 'crowd');
+            }
+            // Play toss_coin animation for one full cycle
+            if (tossCoinDef) {
+                person.coinAnimPrevAnim = person.animName;
+                person.coinAnimTimer = tossCoinDuration;
+                this.setAnimation(personIndex, 'toss_coin');
+            }
+        }
+
+        // Count down the coin-toss animation and restore previous anim
+        if (person.coinAnimTimer > 0) {
+            person.coinAnimTimer -= deltaTime;
+            if (person.coinAnimTimer <= 0) {
+                person.coinAnimTimer = 0;
+                if (person.coinAnimPrevAnim) {
+                    this.setAnimation(personIndex, person.coinAnimPrevAnim);
+                    person.coinAnimPrevAnim = null;
+                }
+            }
+        }
+
+        // ── sprite-sheet animation tick (every state) ──────────
+        const spriteConfig = this.sheets[person.sheetIndex].config;
+        if (this.useSpriteSheet && spriteConfig) {
+            person.animTimer += deltaTime;
+            const totalDuration = person.animFrameDuration * person.animFrameCount;
+
+            if (person.animTimer >= totalDuration) {
+                if (person.animLoop) {
+                    person.animTimer %= totalDuration;
+                } else {
+                    person.animTimer = totalDuration - 0.001;
+                }
+            }
+
+            const newFrame = Math.min(
+                Math.floor(person.animTimer / person.animFrameDuration),
+                person.animFrameCount - 1
+            );
+
+            if (newFrame !== person.animFrame) {
+                person.animFrame = newFrame;
+                const absoluteFrame = person.animRow * spriteConfig.columns + person.animFrame;
+                this.sheets[person.sheetIndex].instancedGroup
+                    .updateInstanceFrame(person.instanceIndex, absoluteFrame);
+            }
+        }
     }
 
     /**
