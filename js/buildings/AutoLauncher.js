@@ -13,9 +13,10 @@ class AutoLauncher extends Building {
         this.patternOverride = data.patternOverride || null;
     }
 
-    update(deltaTime, boostMultiplier = 1.0) {
+    update(deltaTime) {
         super.update(deltaTime);
-        this.accumulator += deltaTime * boostMultiplier;
+        const effectiveMultiplier = this.multiplier || 1.0;
+        this.accumulator += deltaTime * effectiveMultiplier;
 
         if (this.accumulator >= this.spawnInterval) {
             this.spawnFirework();

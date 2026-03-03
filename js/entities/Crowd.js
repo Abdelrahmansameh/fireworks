@@ -1,6 +1,7 @@
 import { GAME_BOUNDS, CROWD_CONFIG, CROWD_CATCHER_CONFIG, PARTICLE_TYPES } from '../config/config.js';
 import { SPRITE_ANIMATIONS } from '../config/spriteAnimations.js';
 import * as Renderer2D from '../rendering/Renderer.js';
+import { createRng } from '../utils/random.js';
 
 class Crowd {
     constructor(renderer2D) {
@@ -151,24 +152,31 @@ class Crowd {
             return;
         }
 
-        // Cancel any active grab
-        this.grabbedPersonIndex = -1;
+        if (count < this.people.length) {
+            // Cancel any active grab if the grabbed person is among the ones to be removed
+            if (this.grabbedPersonIndex >= count) {
+                this.grabbedPersonIndex = -1;
+            }
 
-        this.people = [];
-        for (const sheet of this.sheets) {
-            sheet.instancedGroup.instanceCount = 0;
-        }
-
-        for (let i = 0; i < count; i++) {
-            this._addPerson();
+            // Remove from the end
+            while (this.people.length > count) {
+                const person = this.people.pop();
+                const sheet = this.sheets[person.sheetIndex];
+                sheet.instancedGroup.instanceCount--;
+            }
+        } else {
+            const added = count - this.people.length;
+            for (let i = 0; i < added; i++) {
+                this._addPerson();
+            }
         }
     }
 
     /**
      * Pick a random sheet index (uniform distribution across all sheets).
      */
-    _pickSheetIndex() {
-        return Math.floor(Math.random() * this.sheets.length);
+    _pickSheetIndex(rng = Math.random) {
+        return Math.floor(rng() * this.sheets.length);
     }
 
     _addPerson() {
@@ -177,8 +185,12 @@ class Crowd {
             return;
         }
 
+        const personIndex = this.people.length;
+        const seedConfig = CROWD_CONFIG.scaling ? CROWD_CONFIG.scaling.seed : 12345;
+        const rng = createRng(seedConfig + personIndex);
+
         // Pick a random sprite sheet for this person
-        const sheetIdx = this._pickSheetIndex();
+        const sheetIdx = this._pickSheetIndex(rng);
         const sheet = this.sheets[sheetIdx];
         const spriteConfig = sheet.config;
         const group = sheet.instancedGroup;
@@ -189,7 +201,7 @@ class Crowd {
         const maxAttempts = CROWD_CONFIG.maxPlacementAttempts;
 
         while (!positionFound && attempts < maxAttempts) {
-            x = Math.random() * (GAME_BOUNDS.CROWD_RIGHT_X - GAME_BOUNDS.CROWD_LEFT_X) + GAME_BOUNDS.CROWD_LEFT_X;
+            x = rng() * (GAME_BOUNDS.CROWD_RIGHT_X - GAME_BOUNDS.CROWD_LEFT_X) + GAME_BOUNDS.CROWD_LEFT_X;
             let overlapping = false;
             for (let i = 0; i < this.people.length; i++) {
                 if (Math.abs(this.people[i].x - x) < CROWD_CONFIG.minOverlapDistance) {
@@ -203,8 +215,8 @@ class Crowd {
             attempts++;
         }
 
-        const y = GAME_BOUNDS.CROWD_Y + Math.random() * CROWD_CONFIG.ySpread;
-        const scale = CROWD_CONFIG.baseScale + Math.random() * CROWD_CONFIG.scaleVariance;
+        const y = GAME_BOUNDS.CROWD_Y + rng() * CROWD_CONFIG.ySpread;
+        const scale = CROWD_CONFIG.baseScale + rng() * CROWD_CONFIG.scaleVariance;
 
         // Animation state — pick the default animation for this sheet
         const defaultAnim = (this.useSpriteSheet && spriteConfig)
@@ -217,8 +229,8 @@ class Crowd {
             y: y,
             scale: scale,
             color: new Renderer2D.Color(1, 1, 1, 1),
-            bobOffset: Math.random() * Math.PI * 2,
-            bobSpeed: 2 + Math.random() * 2,
+            bobOffset: rng() * Math.PI * 2,
+            bobSpeed: 2 + rng() * 2,
             // State machine: 'cheering' | 'grabbed' | 'falling' | 'walking'
             state: 'cheering',
             spawnX: x,
@@ -234,10 +246,10 @@ class Crowd {
             animFrameCount: animDef ? animDef.frameCount : 1,
             animFrameDuration: animDef ? animDef.frameDuration : 1,
             animLoop: animDef ? animDef.loop : true,
-            animTimer: Math.random() * (animDef ? animDef.frameDuration * animDef.frameCount : 1),
+            animTimer: rng() * (animDef ? animDef.frameDuration * animDef.frameCount : 1),
             animFrame: 0,
             // Gold accumulation — fills up to 1.0 then drops a coin
-            goldAccumulator: Math.random(),  // stagger so coins don't all drop at once
+            goldAccumulator: rng(),  // stagger so coins don't all drop at once
             // Coin-toss animation: countdown timer; when > 0 the toss_coin anim plays
             coinAnimTimer: 0,
             // Particle catching (used when state === 'falling' and catching is enabled)
@@ -530,9 +542,9 @@ class Crowd {
             case 'walking': {
                 const dx = person.spawnX - person.x;
                 const dir = Math.sign(dx);
-                person.x += dir * walkSpeed * deltaTime;
+                const deltaMove = dir * walkSpeed * deltaTime;
 
-                if (Math.abs(person.x - person.spawnX) < CROWD_CONFIG.walkArrivalDistance) {
+                if (dx < 0 && dx >= deltaMove || dx > 0 && dx <= deltaMove) {
                     person.x = person.spawnX;
                     person.state = 'cheering';
                     this.setAnimation(personIndex, 'cheer');
@@ -541,6 +553,8 @@ class Crowd {
                         .updateInstanceScale(person.instanceIndex,
                             person.scale, person.scale);
                 }
+
+                person.x += deltaMove;
 
                 this.sheets[person.sheetIndex].instancedGroup
                     .updateInstancePosition(person.instanceIndex, person.x, person.y);

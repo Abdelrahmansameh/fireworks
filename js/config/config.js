@@ -224,16 +224,17 @@ const PROCEDURAL_BACKGROUND_CONFIG = {
         layers: [
             {
                 treeCount: 200,
-                distributionJitter: 0.75,
-                baseYJitter: 50,
+                baseY: GAME_BOUNDS.WORLD_GROUND_Y + 100,
+                distributionJitter: 30,
+                baseYJitter: 0,
                 widthMin: 50,
                 widthMax: 80,
                 heightMin: 78,
                 heightMax: 136,
                 tierCountMin: 4,
                 tierCountMax: 6,
-                trunkHeightRatioMin: 0.08,
-                trunkHeightRatioMax: 0.14,
+                trunkHeightRatioMin: 0.1,
+                trunkHeightRatioMax: 0.2,
                 trunkWidthRatioMin: 0.12,
                 trunkWidthRatioMax: 0.2,
                 tierInnerRatioMin: 0.8,
@@ -368,6 +369,13 @@ const BUILDING_TYPES = {
 };
 
 const CROWD_CONFIG = {
+    // Scaling
+    scaling: {
+        formulaA: 2.0,
+        formulaB: 0.0,
+        seed: 12345
+    },
+
     // Sprite geometry
     spriteWidth: 30,
     spriteHeight: 30,

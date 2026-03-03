@@ -1,5 +1,6 @@
 import { PROCEDURAL_BACKGROUND_CONFIG } from '../config/config.js';
 import * as Renderer2D from '../rendering/Renderer.js';
+import { createRng } from '../utils/random.js';
 
 class ProcduralBackground {
     constructor(renderer, config = PROCEDURAL_BACKGROUND_CONFIG) {
@@ -90,7 +91,7 @@ class ProcduralBackground {
 
     _buildStars() {
         const { world, stars, zIndex } = this.config;
-        const rng = this._createRng(this.config.seed ^ 0xA1B2C3D4);
+        const rng = createRng(this.config.seed ^ 0xA1B2C3D4);
         const distributionJitter = stars.distributionJitter ?? 0.9;
         const twinkleMinSpeed = stars.twinkleMinSpeed ?? 0.35;
         const twinkleMaxSpeed = stars.twinkleMaxSpeed ?? 1.6;
@@ -199,7 +200,7 @@ class ProcduralBackground {
 
         for (let layerIndex = 0; layerIndex < trees.layers.length; layerIndex++) {
             const layer = trees.layers[layerIndex];
-            const rng = this._createRng(baseSeed + layerIndex * 1013);
+            const rng = createRng(baseSeed + layerIndex * 1013);
             const treeList = [];
             const distributionJitter = layer.distributionJitter ?? 0.75;
             const xPositions = this._generateJitteredPositions(
@@ -213,7 +214,7 @@ class ProcduralBackground {
 
             for (let i = 0; i < layer.treeCount; i++) {
                 const x = xPositions[i];
-                const baseY = world.horizonY + this._randRange(rng, -layer.baseYJitter, layer.baseYJitter);
+                const baseY = layer.baseY + this._randRange(rng, -layer.baseYJitter, layer.baseYJitter);
                 const width = this._randRange(rng, layer.widthMin, layer.widthMax);
                 const height = this._randRange(rng, layer.heightMin, layer.heightMax);
                 const tierCount = Math.floor(this._randRange(rng, layer.tierCountMin, layer.tierCountMax + 1));
@@ -487,17 +488,6 @@ class ProcduralBackground {
             values[i] = values[j];
             values[j] = tmp;
         }
-    }
-
-    _createRng(seed) {
-        let state = seed >>> 0;
-        return () => {
-            state = (state + 0x6D2B79F5) >>> 0;
-            let t = state;
-            t = Math.imul(t ^ (t >>> 15), t | 1);
-            t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
-            return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-        };
     }
 }
 

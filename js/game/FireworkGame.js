@@ -1,4 +1,4 @@
-import { FIREWORK_CONFIG, GAME_BOUNDS, PROCEDURAL_BACKGROUND_CONFIG, DEFAULT_RECIPE_COMPONENTS, PRE_RECIPE_COMPONENT_DEFAULTS, GENERIC_RECIPE_NAMES, AUTO_LAUNCHER_COST_BASE, AUTO_LAUNCHER_COST_RATIO, AUTO_UPGRADE_COST_RATIO, AUTO_SPAWN_INTERVAL_RATIO, COMPONENT_PROPERTY_RANGES, BUILDING_TYPES, DRONE_CONFIG, CROWD_CATCHER_CONFIG, PATTERN_UNLOCK_ORDER } from '../config/config.js';
+import { FIREWORK_CONFIG, GAME_BOUNDS, PROCEDURAL_BACKGROUND_CONFIG, DEFAULT_RECIPE_COMPONENTS, PRE_RECIPE_COMPONENT_DEFAULTS, GENERIC_RECIPE_NAMES, AUTO_LAUNCHER_COST_BASE, AUTO_LAUNCHER_COST_RATIO, AUTO_UPGRADE_COST_RATIO, AUTO_SPAWN_INTERVAL_RATIO, COMPONENT_PROPERTY_RANGES, BUILDING_TYPES, DRONE_CONFIG, CROWD_CATCHER_CONFIG, PATTERN_UNLOCK_ORDER, CROWD_CONFIG } from '../config/config.js';
 import { UPGRADE_DEFINITIONS } from '../upgrades/upgrades.js';
 import InstancedParticleSystem from '../particles/InstancedParticleSystem.js';
 import InstancedDroneSystem from '../entities/InstancedDroneSystem.js';
@@ -27,7 +27,6 @@ class FireworkGame extends Engine {
         this.fireworkCount = 0;
         this.autoLauncherCost = AUTO_LAUNCHER_COST_BASE;
         this.selectedLauncherIndex = null;
-        this.crowdThresholds = [1, 2, 3, 4, 5, 10, 15];
 
         this.unlockStates = {
             sparkleCounter: false,
@@ -179,8 +178,7 @@ class FireworkGame extends Engine {
             this.statsTracker.recordCrowdCatchParticle();
         };
 
-        const initialSps = this.calculateTotalSparklesPerSecond();
-        const initialCrowd = this._calculateTargetCrowdCount(initialSps);
+        const initialCrowd = this._calculateTargetCrowdCount(this.buildingManager.getTheoreticalAutoLauncherFPS());
         this.crowd.setCount(initialCrowd);
         this.updateCrowdDisplay();
 
@@ -410,6 +408,8 @@ class FireworkGame extends Engine {
             launcherCount,
             this.calculateAutoLauncherCost(launcherCount)
         );
+
+        this.updateCrowdDisplay();
     }
 
     updateGame(deltaTime) {
@@ -431,8 +431,7 @@ class FireworkGame extends Engine {
         this.profiler.endFunction('buildingsUpdate');
 
 
-        const currentSps = this.calculateTotalSparklesPerSecond();
-        const targetCrowdSize = this._calculateTargetCrowdCount(currentSps);
+        const targetCrowdSize = this._calculateTargetCrowdCount(this.buildingManager.getTheoreticalAutoLauncherFPS());
         this.crowd.setCount(targetCrowdSize);
 
         this.resourceManager.update();
@@ -454,14 +453,12 @@ class FireworkGame extends Engine {
         this.profiler.endFrame();
     }
 
-    _calculateTargetCrowdCount(sps) {
-        let count = 0;
-        for (const threshold of this.crowdThresholds) {
-            if (sps >= threshold) {
-                count++;
-            }
-        }
-        return count;
+    _calculateTargetCrowdCount(fps) {
+        if (fps <= 0) return 0;
+        const config = CROWD_CONFIG.scaling;
+        const maxCap = CROWD_CONFIG.maxInstances || 1000;
+        const target = Math.floor(config.formulaA * Math.sqrt(fps) + config.formulaB);
+        return Math.min(target, maxCap);
     }
 
     initBackgroundColor() {
@@ -1096,26 +1093,34 @@ class FireworkGame extends Engine {
         const nextThresholdElement = document.getElementById('next-threshold');
         const progressBar = document.getElementById('threshold-progress');
 
+        const currentCrowd = this.crowd ? this.crowd.people.length : 0;
         if (crowdCountElement) {
-            crowdCountElement.textContent = this.crowd ? this.crowd.people.length : 0;
+            crowdCountElement.textContent = currentCrowd;
         }
 
-        const currentSps = this.calculateTotalSparklesPerSecond();
+        const currentFps = this.buildingManager.getTheoreticalAutoLauncherFPS();
         if (currentSpsElement) {
-            currentSpsElement.textContent = currentSps.toFixed(2);
+            currentSpsElement.textContent = currentFps.toFixed(2); // Using FPS instead of SPS
         }
 
-        const nextThreshold = this.crowdThresholds.find(t => t > currentSps) || 'Max';
+        // new formula: N = floor(A * sqrt(fps) + B)
+        // reversing to find fps needed for N+1: fps = ((N + 1 - B) / A)^2
+        const config = CROWD_CONFIG.scaling;
+        const nextCrowdTarget = currentCrowd + 1;
+        const nextThresholdFps = Math.pow((nextCrowdTarget - config.formulaB) / config.formulaA, 2);
+
         if (nextThresholdElement) {
-            nextThresholdElement.textContent = nextThreshold;
+            nextThresholdElement.textContent = Math.ceil(nextThresholdFps).toString();
         }
 
-        if (progressBar && nextThreshold !== 'Max') {
-            const prevThreshold = this.crowdThresholds[this.crowdThresholds.indexOf(nextThreshold) - 1] || 0;
-            const progress = ((currentSps - prevThreshold) / (nextThreshold - prevThreshold)) * 100;
+        if (progressBar) {
+            const currentThresholdFps = Math.pow((currentCrowd - config.formulaB) / config.formulaA, 2);
+            
+            // if currentCrowd == 0, base FPS might be negative or 0 depending on formulaB
+            const baseFps = Math.max(0, currentThresholdFps);
+            const progress = ((currentFps - baseFps) / (nextThresholdFps - baseFps)) * 100;
+            
             progressBar.style.width = `${Math.min(100, Math.max(0, progress))}%`;
-        } else if (progressBar) {
-            progressBar.style.width = '100%';
         }
     }
 

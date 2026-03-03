@@ -108,6 +108,18 @@ class BuildingManager {
         return multipliers;
     }
 
+    getTheoreticalAutoLauncherFPS() {
+        const launchers = this.getBuildingsByType('AUTO_LAUNCHER');
+        const boosterMultipliers = this.calculateBoosterMultipliers();
+        
+        let totalFPS = 0;
+        for (const launcher of launchers) {
+            const currentMultiplier = boosterMultipliers.get(launcher.id) || 1.0;
+            totalFPS += currentMultiplier / launcher.spawnInterval;
+        }
+        return totalFPS;
+    }
+
     getBuildingAt(x, y) {
         for (const building of this.buildings) {
             if (building.isPointInside(x, y)) {
