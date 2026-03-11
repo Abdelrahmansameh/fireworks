@@ -70,6 +70,7 @@ const FIREWORK_CONFIG = {
         default: 110,        
         helix: 80,
         willow: 60,
+        dragonsBreath: 70,
     },
     patternFriction: {
         spherical: 1.0,
@@ -85,6 +86,7 @@ const FIREWORK_CONFIG = {
         brokenHeart: 2.0,
         spinner: 0.0,
         helix: 0,
+        dragonsBreath: 2.8,
         default: 0.0
     },
     patternParticleCounts: {
@@ -92,6 +94,7 @@ const FIREWORK_CONFIG = {
         helix: 200,
         ring: 30,
         heart: 40,
+        dragonsBreath: 140,
         default: 100
     },
     supportedShapes: ['sphere', 'star', 'ring', 'crystalDroplet', 'sliceBurst', 'triangle'],
@@ -203,7 +206,7 @@ const PROCEDURAL_BACKGROUND_CONFIG = {
         midStop: 0.58,
     },
     stars: {
-        count: 200,
+        count: 400,
         distributionJitter: 10,
         minSize: 3,
         maxSize: 5,
@@ -212,12 +215,12 @@ const PROCEDURAL_BACKGROUND_CONFIG = {
         minBrightness: .8,
         maxBrightness: 1,
         minYFromHorizon: 300,
-        maxYFromSkyTop: 24,
+        maxYFromSkyTop: 50,
         twinkleEnabled: true,
         twinkleMinSpeed: 0.35,
         twinkleMaxSpeed: 3.6,
         twinkleMinAmount: 0,
-        twinkleMaxAmount: 1,
+        twinkleMaxAmount: 2,
         twinkleAlphaInfluence: 1,
     },
     trees: {

@@ -118,6 +118,14 @@ class ProcduralBackground {
             distributionJitter
         );
 
+        const yRange = maxY - minY;
+        if (yRange > 0) {
+            for (let i = 0; i < yPositions.length; i++) {
+                const t = (yPositions[i] - minY) / yRange;
+                yPositions[i] = minY + Math.sqrt(t) * yRange;
+            }
+        }
+
         this._shuffleInPlace(rng, xPositions);
         this._shuffleInPlace(rng, yPositions);
 
