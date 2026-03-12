@@ -11,7 +11,7 @@ class AudioManager {
         this._currentVolume = 0.15;
 
         this._whistleVol = 0.05;
-        this._explosionVol = 0.1;
+        this._explosionVol = 0.05;
         this._fmax = 3200;
         this._fmin = 3000;
         this._decayRate = 20;
@@ -120,6 +120,62 @@ class AudioManager {
     }
 
 
+    _preRenderBuffers(ac) {
+        if (this._whisBuffer && this._explBuffer) return;
+
+        const sampleRate = ac.sampleRate;
+
+        // whistle
+        const whisDuration = 6.0; 
+        const whisSamples = Math.ceil(whisDuration * sampleRate);
+        const whisBuf = ac.createBuffer(2, whisSamples, sampleRate);
+        const wL = whisBuf.getChannelData(0);
+        const wR = whisBuf.getChannelData(1);
+
+        const fmaxActual = this._fmax + 100; 
+        const fmin = this._fmin;
+        const wVol = this._whistleVol;
+
+        for (let i = 0; i < whisSamples; i++) {
+            const t = i / sampleRate;
+            const whist = Math.sin(2 * Math.PI * (t * fmaxActual - t * t / 2 * (fmaxActual - fmin)));
+            const wEnv = this._smoothstep(0, 0.3, t); 
+            const inten = (0.5 + 0.49 * Math.sin(2.62 * t)) * (0.5 - 0.49 * Math.cos(t)) * (0.5 + 0.3 * Math.sin(13 * t));
+            const wSig = whist * wEnv * inten;
+            const th = 0.3 * Math.cos(3 * t);
+
+            wL[i] = wVol * wSig * (1 - th);
+            wR[i] = wVol * wSig * (1 + th);
+        }
+        this._whisBuffer = whisBuf;
+
+        // explosion
+        const explDuration = 2.5;
+        const explSamples = Math.ceil(explDuration * sampleRate);
+        const explBuf = ac.createBuffer(2, explSamples, sampleRate);
+        const eL = explBuf.getChannelData(0);
+        const eR = explBuf.getChannelData(1);
+        const eVol = this._explosionVol;
+        const decayRate = this._decayRate;
+
+        for (let i = 0; i < explSamples; i++) {
+            const tExp = i / sampleRate;
+            const v = this._coloredNoise(tExp, 500, 800) + 0.1 * this._noise(8000 * tExp) + 0.05 * this._noise(15000 * tExp);
+            const v2 = this._coloredNoise(tExp + 1, 500, 800) + 0.1 * this._noise(8000 * (tExp + 1)) + 0.05 * this._noise(15000 * (tExp + 1));
+            let env = 2 * Math.exp(-tExp * decayRate) + 0.5 * Math.exp(-tExp * 10);
+
+            let ex = v * env;
+            let ey = v2 * env;
+            const denom = 1 + Math.abs(ex) + Math.abs(ey);
+            ex /= denom;
+            ey /= denom;
+
+            eL[i] = eVol * ex;
+            eR[i] = eVol * ey;
+        }
+        this._explBuffer = explBuf;
+    }
+
     playFireworkSound(ascentDuration) {
         const now = Date.now();
 
@@ -135,68 +191,44 @@ class AudioManager {
 
         const ac = this._getAudioCtx();
 
+        this._preRenderBuffers(ac);
+
         if (!this.masterGain) {
             this.masterGain = ac.createGain();
             this.masterGain.gain.value = this._currentVolume * (0.8 / 0.15);
             this.masterGain.connect(ac.destination);
         }
 
-        const sampleRate = ac.sampleRate;
-        const tailDuration = 2.5; 
-        const totalDuration = ascentDuration + tailDuration;
-        const numSamples = Math.ceil(totalDuration * sampleRate);
+        const fireworkGain = ac.createGain();
+        fireworkGain.gain.value = volScale;
+        fireworkGain.connect(this.masterGain);
 
         const myNum = this._explNum++;
-        const fmaxActual = this._fmax + this._rand(myNum) * 200;
-        const fmin = this._fmin;
 
-        const wVol = this._whistleVol;
-        const eVol = this._explosionVol;
-        const decayRate = this._decayRate;
+        //whistle
+        const wSrc = ac.createBufferSource();
+        wSrc.buffer = this._whisBuffer;
+        wSrc.playbackRate.value = 1.0 + (this._rand(myNum) * 0.1 - 0.05);
+        
+        const whisGain = ac.createGain();
+        whisGain.gain.setValueAtTime(1, ac.currentTime);
+        const fadeStart = ac.currentTime + Math.max(0, ascentDuration - 0.15);
+        const fadeEnd = ac.currentTime + ascentDuration;
+        whisGain.gain.setValueAtTime(1, fadeStart);
+        whisGain.gain.linearRampToValueAtTime(0, fadeEnd);
 
-        const buf = ac.createBuffer(2, numSamples, sampleRate);
-        const L = buf.getChannelData(0);
-        const R = buf.getChannelData(1);
+        wSrc.connect(whisGain);
+        whisGain.connect(fireworkGain);
+        wSrc.start(ac.currentTime);
+        wSrc.stop(fadeEnd);
 
-        for (let i = 0; i < numSamples; i++) {
-            const t = i / sampleRate;
-            const tExp = t - ascentDuration; 
-
-            const whist = Math.sin(2 * Math.PI * (t * fmaxActual - t * t / 2 * (fmaxActual - fmin)));
-            const wEnv = this._smoothstep(0, 0.3, t) * this._smoothstep(0, 0.15, ascentDuration - t);
-            const inten = (0.5 + 0.49 * Math.sin(2.62 * t))
-                        * (0.5 - 0.49 * Math.cos(t + myNum))
-                        * (0.5 + 0.3  * Math.sin(13 * t));
-            const wSig = whist * wEnv * inten;
-            const th = 0.3 * Math.cos(3 * t); 
-
-            let ex = 0, ey = 0;
-            if (tExp >= 0) {
-                const v  = this._coloredNoise(tExp,     500, 800)
-                         + 0.1  * this._noise(8000  * tExp)
-                         + 0.05 * this._noise(15000 * tExp);
-                const v2 = this._coloredNoise(tExp + 1, 500, 800)
-                         + 0.1  * this._noise(8000  * (tExp + 1))
-                         + 0.05 * this._noise(15000 * (tExp + 1));
-
-                let env = 2   * Math.exp(-tExp * decayRate)
-                        + 0.5 * Math.exp(-tExp * 10);
-
-                ex = v  * env;
-                ey = v2 * env;
-                const denom = 1 + Math.abs(ex) + Math.abs(ey);
-                ex /= denom;
-                ey /= denom;
-            }
-
-            L[i] = (wVol * wSig * (1 - th) + eVol * ex) * volScale;
-            R[i] = (wVol * wSig * (1 + th) + eVol * ey) * volScale;
-        }
-
-        const src = ac.createBufferSource();
-        src.buffer = buf;
-        src.connect(this.masterGain);
-        src.start(ac.currentTime);
+        // explosion
+        const eSrc = ac.createBufferSource();
+        eSrc.buffer = this._explBuffer;
+        eSrc.playbackRate.value = 1.0 + (this._rand(myNum + 100) * 0.2 - 0.1);
+        
+        eSrc.connect(fireworkGain);
+        eSrc.start(ac.currentTime + ascentDuration);
     }
 
     dispose() {
