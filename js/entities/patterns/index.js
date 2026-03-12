@@ -7,6 +7,7 @@ import willow from './willow.js';
 import christmasTree from './christmasTree.js';
 import heart from './heart.js';
 import brokenHeart from './brokenHeart.js';
+import snowflake from './snowflake.js';
 import spinner from './spinner.js';
 import helix from './helix.js';
 import dragonsBreath from './dragonsBreath.js';
@@ -23,6 +24,7 @@ export const recipeMap = {
     christmasTree,
     heart,
     brokenHeart,
+    snowflake,
     spinner,
     helix,
     dragonsBreath

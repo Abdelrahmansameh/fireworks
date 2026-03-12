@@ -965,6 +965,7 @@ class UIManager {
                                 <option value="star">Star</option>
                                 <option value="brocade">Brocade</option>
                                 <option value="brokenHeart">Broken Heart</option>
+                                <option value="snowflake">Snowflake</option>
                                 <option value="christmasTree">Christmas Tree</option>
                                 <option value="dragonsBreath">Dragon's Breath</option>
                             </select>
@@ -1054,7 +1055,7 @@ class UIManager {
             const blurStrengthSelect = componentDiv.querySelector('.blur-strength-select');
 
             const updateSecondaryColorVisibility = () => {
-                if (patternSelect.value === 'helix' || patternSelect.value === 'christmasTree') {
+                if (patternSelect.value === 'helix' || patternSelect.value === 'christmasTree' || patternSelect.value === 'snowflake') {
                     secondaryColorContainer.style.display = 'block';
                 } else {
                     secondaryColorContainer.style.display = 'none';
