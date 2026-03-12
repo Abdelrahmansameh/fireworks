@@ -24,12 +24,9 @@ class Firework {
 
         this.targetY = targetY || minY + Math.random() * (maxY - minY);
 
-        // im so glad god is not real so he doesnt see this
         const timeToExplode = (this.targetY - y) / FIREWORK_CONFIG.ascentSpeed;
-        const explosionSoundStartTime = 1.768;
-         const soundStartTime = Math.max(0, explosionSoundStartTime - timeToExplode);
         if (this.audioManager) {
-            this.audioManager.playFireworkSound(soundStartTime);
+            this.audioManager.playFireworkSound(timeToExplode);
         }
 
         this.rocketTrailTimer = 0;
