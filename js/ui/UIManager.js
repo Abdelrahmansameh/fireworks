@@ -12,7 +12,7 @@ class UIManager {
         this.hasScrolledDuringDrag = false;
         this.scrollDragHoldTimeout = null;
         this.scrollDragStartX = 0;
-        this.minCameraDragHoldMs = 180;
+        this.minCameraDragHoldMs = 150;
         this.draggingLauncher = null;
         this.lastPointerX = 0;
         this.grabCursorWorldX = 0;
@@ -410,6 +410,8 @@ class UIManager {
             this.hasScrolledDuringDrag = false;
             this.game.cameraTargetX = null;
             this.lastPointerX = event.clientX;
+            this.currentPointerX = event.clientX;
+            this.currentPointerY = event.clientY;
             this.scrollDragStartX = event.clientX;
 
             if (this.scrollDragHoldTimeout) {
@@ -417,11 +419,35 @@ class UIManager {
             }
             this.scrollDragHoldTimeout = setTimeout(() => {
                 this.isScrollDragReady = true;
-                this.emitGrabModeBurst(worldPos.x, worldPos.y);
+
+                const deltaX = this.currentPointerX - this.lastPointerX;
+                if (Math.abs(deltaX) > 0) {
+                    this.hasScrolledDuringDrag = true;
+                    this.game.renderer2D.cameraX -= deltaX;
+
+                    const viewHalfWidth = (this.game.renderer2D.canvas.width / this.game.renderer2D.cameraZoom) / 2;
+                    const minCameraX = GAME_BOUNDS.SCROLL_MIN_X;
+                    const maxCameraX = GAME_BOUNDS.SCROLL_MAX_X - viewHalfWidth;
+
+                    if (minCameraX > maxCameraX) {
+                        this.game.renderer2D.cameraX = (GAME_BOUNDS.SCROLL_MIN_X + GAME_BOUNDS.SCROLL_MAX_X) / 2;
+                    } else {
+                        this.game.renderer2D.cameraX = Math.max(minCameraX, Math.min(maxCameraX, this.game.renderer2D.cameraX));
+                    }
+
+                    this.game.renderer2D.setCamera({
+                        x: this.game.renderer2D.cameraX,
+                        y: this.game.renderer2D.cameraY,
+                        zoom: this.game.renderer2D.cameraZoom
+                    });
+
+                    this.lastPointerX = this.currentPointerX;
+                }
+
+                const currentWorldPos = this.game.screenToWorld(this.currentPointerX, this.currentPointerY);
+                this.emitGrabModeBurst(currentWorldPos.x, currentWorldPos.y);
                 document.body.style.cursor = 'none';
             }, this.minCameraDragHoldMs);
-
-
 
             document.addEventListener('pointermove', this.pointerMoveHandler, { passive: false });
             document.addEventListener('pointerup', this.pointerUpHandler);
@@ -513,17 +539,19 @@ class UIManager {
             this.draggingLauncher.setPosition(clampedX, this.draggingLauncher.y);
             this.game.saveProgress();
         } else if (this.isScrollDragging) {
+            this.currentPointerX = e.clientX;
+            this.currentPointerY = e.clientY;
+
             const worldPos = this.game.screenToWorld(e.clientX, e.clientY);
             this.grabCursorWorldX = worldPos.x;
             this.grabCursorWorldY = worldPos.y;
 
             if (!this.isScrollDragReady) {
-                this.lastPointerX = e.clientX;
                 return;
             }
 
             const deltaX = e.clientX - this.lastPointerX;
-            const dragScrollSpeed = 1;
+            const dragScrollSpeed = 3;
 
             if (Math.abs(deltaX) > 0) {
                 this.hasScrolledDuringDrag = true;
