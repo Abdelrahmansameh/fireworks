@@ -1,20 +1,31 @@
 import ParticleRecipe from './ParticleRecipe.js';
 import * as Renderer2D from '../../rendering/Renderer.js';
 
+const TRUNK_PART = 0.2;
+const BASE_WIDTH_MULT = 2;
+const BASE_HEIGHT_MULT = 3;
+const TRUNK_WIDTH_MULT = 0.2;
+const TRUNK_HEIGHT_MULT = 0.2;
+const TRIANGLE_SCALES = [1, 0.7, 0.4];
+const TRIANGLE_HEIGHTS = [0.4, 0.3, 0.2];
+const HORIZONTAL_LINES_COUNT = 3;
+
 const christmasTreeRecipe = new ParticleRecipe({
     name: 'christmasTree',
     count: ctx => ctx.particleCount,
     calcInitialState: (i, ctx) => {
-        const trunkPart = 0.2;
-        const trunkCount = Math.floor(ctx.particleCount * trunkPart);
+        const trunkCount = Math.floor(ctx.particleCount * TRUNK_PART);
         const inTrunk = i < trunkCount;
 
-        const baseWidth = ctx.spread * 2;
-        const baseHeight = ctx.spread * 3;
-        const trunkWidth = baseWidth * 0.2;
-        const trunkHeight = baseHeight * 0.2;
-        const triangleScales = [1, 0.7, 0.4];
-        const triangleHeights = [baseHeight * 0.4, baseHeight * 0.3, baseHeight * 0.2];
+        const baseWidth = ctx.spread * BASE_WIDTH_MULT;
+        const baseHeight = ctx.spread * BASE_HEIGHT_MULT;
+        const trunkWidth = baseWidth * TRUNK_WIDTH_MULT;
+        const trunkHeight = baseHeight * TRUNK_HEIGHT_MULT;
+        const triangleHeights = [
+            baseHeight * TRIANGLE_HEIGHTS[0],
+            baseHeight * TRIANGLE_HEIGHTS[1],
+            baseHeight * TRIANGLE_HEIGHTS[2]
+        ];
 
         let pos = ctx.rocketPos.clone();
         let vel = new Renderer2D.Vector2();
@@ -29,12 +40,12 @@ const christmasTreeRecipe = new ParticleRecipe({
             const y = (row / rowCount) * trunkHeight;
             pos = pos.add(new Renderer2D.Vector2(x, y));
             vel.set(x * ctx.speed, y * ctx.speed);
-            color = ctx.secondaryColor; 
+            color = ctx.secondaryColor;
         } else {
             const idx = i - trunkCount;
-            const triangleParticles = Math.floor((ctx.particleCount - trunkCount) / triangleScales.length);
-            const triangleIndex = Math.min(triangleScales.length - 1, Math.floor(idx / triangleParticles));
-            const scale = triangleScales[triangleIndex];
+            const triangleParticles = Math.floor((ctx.particleCount - trunkCount) / TRIANGLE_SCALES.length);
+            const triangleIndex = Math.min(TRIANGLE_SCALES.length - 1, Math.floor(idx / triangleParticles));
+            const scale = TRIANGLE_SCALES[triangleIndex];
             const triWidth = baseWidth * scale;
             const triHeight = triangleHeights[triangleIndex];
             const baseY = trunkHeight + triangleHeights.slice(0, triangleIndex).reduce((a, b) => a + b, 0);
@@ -42,7 +53,6 @@ const christmasTreeRecipe = new ParticleRecipe({
             // indices within this triangle
             const localIdx = idx % triangleParticles;
             const edgeParticles = Math.floor(Math.sqrt(triangleParticles) * 2);
-            const horizontalLinesCount = 3;
 
             if (localIdx < edgeParticles) {
                 // left edge
@@ -63,8 +73,8 @@ const christmasTreeRecipe = new ParticleRecipe({
                 // horizontal lines
                 let remaining = localIdx - edgeParticles * 2;
                 let chosen = false;
-                for (let line = 0; line <= horizontalLinesCount; line++) {
-                    const lineProgress = line / horizontalLinesCount;
+                for (let line = 0; line <= HORIZONTAL_LINES_COUNT; line++) {
+                    const lineProgress = line / HORIZONTAL_LINES_COUNT;
                     const currentWidth = triWidth * (1 - lineProgress);
                     const lineParticles = Math.floor(edgeParticles * 0.5 * (1 - lineProgress) + 3);
                     if (remaining < lineParticles) {

@@ -7,6 +7,24 @@ const OUTLINE_RATIO = 0.82;
 const MID_BRANCH_ANGLE = Math.PI / 3.35;
 const OUTER_BRANCH_ANGLE = Math.PI / 3.6;
 
+const ARM_LENGTH_MULT = 11;
+const CORE_RADIUS_MULT = 0.08;
+const VELOCITY_SCALE_MULT = 0.09;
+const T_SEG_1_END = 0.46;
+const T_SEG_2_LEN = 0.16;
+const T_SEG_3_LEN = 0.16;
+const T_SEG_4_LEN = 0.11;
+const T_SEG_5_LEN = 0.11;
+const MID_BRANCH_LENGTH_MULT = 0.24;
+const MID_BRANCH_ANCHOR_MULT = 0.38;
+const OUTER_BRANCH_LENGTH_MULT = 0.17;
+const OUTER_BRANCH_ANCHOR_MULT = 0.68;
+const ACCENT_T_1 = 0.95;
+const ACCENT_T_2 = 0.84;
+const ACCENT_T_3 = 0.76;
+const INNER_BAND_OFFSET = 0.12;
+const INNER_BAND_SCALE = 0.16;
+
 const snowflakeRecipe = new ParticleRecipe({
     name: 'snowflake',
     count: ctx => ctx.particleCount,
@@ -15,9 +33,9 @@ const snowflakeRecipe = new ParticleRecipe({
         const outlineCount = Math.min(total, Math.max(ARM_COUNT, Math.floor(total * OUTLINE_RATIO)));
         const interiorCount = Math.max(0, total - outlineCount);
         const isOutline = i < outlineCount;
-        const armLength = 11 * ctx.spread;
-        const coreRadius = armLength * 0.08;
-        const velocityScale = ctx.speed * 0.09;
+        const armLength = ARM_LENGTH_MULT * ctx.spread;
+        const coreRadius = armLength * CORE_RADIUS_MULT;
+        const velocityScale = ctx.speed * VELOCITY_SCALE_MULT;
 
         let armIndex;
         let armAngle;
@@ -35,39 +53,39 @@ const snowflakeRecipe = new ParticleRecipe({
 
             armAngle = -Math.PI / 2 + (armIndex / ARM_COUNT) * TAU;
 
-            if (localT < 0.46) {
-                const segmentT = localT / 0.46;
+            if (localT < T_SEG_1_END) {
+                const segmentT = localT / T_SEG_1_END;
                 localX = coreRadius + (armLength - coreRadius) * segmentT;
                 localY = 0;
-                accentParticle = segmentT > 0.95;
-            } else if (localT < 0.62) {
-                const segmentT = (localT - 0.46) / 0.16;
-                const branchLength = armLength * 0.24;
-                const branchAnchor = armLength * 0.38;
+                accentParticle = segmentT > ACCENT_T_1;
+            } else if (localT < T_SEG_1_END + T_SEG_2_LEN) {
+                const segmentT = (localT - T_SEG_1_END) / T_SEG_2_LEN;
+                const branchLength = armLength * MID_BRANCH_LENGTH_MULT;
+                const branchAnchor = armLength * MID_BRANCH_ANCHOR_MULT;
                 localX = branchAnchor + Math.cos(MID_BRANCH_ANGLE) * branchLength * segmentT;
                 localY = Math.sin(MID_BRANCH_ANGLE) * branchLength * segmentT;
-                accentParticle = segmentT > 0.84;
-            } else if (localT < 0.78) {
-                const segmentT = (localT - 0.62) / 0.16;
-                const branchLength = armLength * 0.24;
-                const branchAnchor = armLength * 0.38;
+                accentParticle = segmentT > ACCENT_T_2;
+            } else if (localT < T_SEG_1_END + T_SEG_2_LEN + T_SEG_3_LEN) {
+                const segmentT = (localT - (T_SEG_1_END + T_SEG_2_LEN)) / T_SEG_3_LEN;
+                const branchLength = armLength * MID_BRANCH_LENGTH_MULT;
+                const branchAnchor = armLength * MID_BRANCH_ANCHOR_MULT;
                 localX = branchAnchor + Math.cos(MID_BRANCH_ANGLE) * branchLength * segmentT;
                 localY = -Math.sin(MID_BRANCH_ANGLE) * branchLength * segmentT;
-                accentParticle = segmentT > 0.84;
-            } else if (localT < 0.89) {
-                const segmentT = (localT - 0.78) / 0.11;
-                const branchLength = armLength * 0.17;
-                const branchAnchor = armLength * 0.68;
+                accentParticle = segmentT > ACCENT_T_2;
+            } else if (localT < T_SEG_1_END + T_SEG_2_LEN + T_SEG_3_LEN + T_SEG_4_LEN) {
+                const segmentT = (localT - (T_SEG_1_END + T_SEG_2_LEN + T_SEG_3_LEN)) / T_SEG_4_LEN;
+                const branchLength = armLength * OUTER_BRANCH_LENGTH_MULT;
+                const branchAnchor = armLength * OUTER_BRANCH_ANCHOR_MULT;
                 localX = branchAnchor + Math.cos(OUTER_BRANCH_ANGLE) * branchLength * segmentT;
                 localY = Math.sin(OUTER_BRANCH_ANGLE) * branchLength * segmentT;
-                accentParticle = segmentT > 0.76;
+                accentParticle = segmentT > ACCENT_T_3;
             } else {
-                const segmentT = (localT - 0.89) / 0.11;
-                const branchLength = armLength * 0.17;
-                const branchAnchor = armLength * 0.68;
+                const segmentT = (localT - (T_SEG_1_END + T_SEG_2_LEN + T_SEG_3_LEN + T_SEG_4_LEN)) / T_SEG_5_LEN;
+                const branchLength = armLength * OUTER_BRANCH_LENGTH_MULT;
+                const branchAnchor = armLength * OUTER_BRANCH_ANCHOR_MULT;
                 localX = branchAnchor + Math.cos(OUTER_BRANCH_ANGLE) * branchLength * segmentT;
                 localY = -Math.sin(OUTER_BRANCH_ANGLE) * branchLength * segmentT;
-                accentParticle = segmentT > 0.76;
+                accentParticle = segmentT > ACCENT_T_3;
             }
         } else {
             const interiorIndex = i - outlineCount;
@@ -78,7 +96,7 @@ const snowflakeRecipe = new ParticleRecipe({
             const offsetAngle = bandIndex % 2 === 0 ? 0 : Math.PI / ARM_COUNT;
 
             armAngle = -Math.PI / 2 + (armIndex / ARM_COUNT) * TAU + offsetAngle;
-            localX = armLength * (0.12 + bandT * 0.16);
+            localX = armLength * (INNER_BAND_OFFSET + bandT * INNER_BAND_SCALE);
             localY = 0;
         }
 

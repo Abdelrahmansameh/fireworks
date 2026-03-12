@@ -1,18 +1,24 @@
 import ParticleRecipe from './ParticleRecipe.js';
 import * as Renderer2D from '../../rendering/Renderer.js';
 
+const TAU = Math.PI * 2;
+const NUM_ARMS = 20;
+const ARM_ANGLE_SPREAD = 0.2;
+const MAGNITUDE_RANDOM_ADD = 100;
+const SPIN_ACCEL = 1000;
+const R_THRESHOLD = 1;
 
 const spinnerRecipe = new ParticleRecipe({
     name: 'spinner',
     count: ctx => ctx.particleCount,
     calcInitialState: (i, ctx) => {
         const explosionCenter = ctx.rocketPos.clone();
-        const numArms = 20;
+        const numArms = NUM_ARMS;
         const particlesPerArm = Math.floor(ctx.particleCount / numArms);
         const armIndex = Math.floor(i / particlesPerArm);
-        const armAngle = (armIndex / numArms) * Math.PI * 2 + (Math.random() - 0.5) * 0.2;
-        const magnitude = ctx.speed * ctx.spread  + Math.random() * 100;
-        const spinAccel = 1000;
+        const armAngle = (armIndex / numArms) * TAU + (Math.random() - 0.5) * ARM_ANGLE_SPREAD;
+        const magnitude = ctx.speed * ctx.spread + Math.random() * MAGNITUDE_RANDOM_ADD;
+        const spinAccel = SPIN_ACCEL;
 
         const updateFn = (pState, delta) => {
             const dx = pState.position.x - explosionCenter.x;
@@ -20,7 +26,7 @@ const spinnerRecipe = new ParticleRecipe({
             const r = Math.sqrt(dx * dx + dy * dy);
 
             pState.acceleration.set(0, 0);
-            if (r > 1) {
+            if (r > R_THRESHOLD) {
                 const radialX = dx / r;
                 const radialY = dy / r;
                 const tangentX = -radialY;
