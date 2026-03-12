@@ -5,12 +5,12 @@ class AudioManager {
         this.masterGain = null;
         this.initialized = false;
         this.wasPlayingBeforeHidden = false;
-        this.maxSoundsPerSecond = 5;
+        this.maxSoundsPerSecond = 10;
         this.recentSoundTimestamps = [];
         this._explNum = 0;
         this._currentVolume = 0.15;
 
-        this._whistleVol = 0.05;
+        this._whistleVol = 0.03;
         this._explosionVol = 0.05;
         this._fmax = 3200;
         this._fmin = 3000;
