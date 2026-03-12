@@ -168,7 +168,7 @@ class Firework {
             const pattern = component.pattern;
             const particleCount = Math.floor(FIREWORK_CONFIG.patternParticleCounts[pattern] || FIREWORK_CONFIG.patternParticleCounts.default);
             const gravity = FIREWORK_CONFIG.gravityMultiplier * FIREWORK_CONFIG.patternGravities[pattern] || FIREWORK_CONFIG.patternGravities.default;
-            const friction = FIREWORK_CONFIG.patternFriction[pattern] + FIREWORK_CONFIG.baseFriction;
+            const friction = (FIREWORK_CONFIG.patternFriction[pattern] !== undefined ? FIREWORK_CONFIG.patternFriction[pattern] : FIREWORK_CONFIG.patternFriction.default) + FIREWORK_CONFIG.baseFriction;
             const speed = FIREWORK_CONFIG.baseSpeed;
 
             const primaryHex = component.color || '#FFFFFF';

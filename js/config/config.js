@@ -75,20 +75,14 @@ const FIREWORK_CONFIG = {
     patternFriction: {
         spherical: 1.0,
         solidsphere: 1.5,
-        ring: 2.0,
-        heart: 2.0,
-        star: 2.0,
-        brocade: 2.0,
         burst: 1.0,
         palm: 5.0,
-        willow: 2,
         christmasTree: 1.5,
-        brokenHeart: 2.0,
         snowflake: 1.6,
-        spinner: 0.0,
+        spinner: 1.0,
         helix: 0,
         dragonsBreath: 2.8,
-        default: 0.0
+        default: 2.0
     },
     patternParticleCounts: {
         willow: 50,
