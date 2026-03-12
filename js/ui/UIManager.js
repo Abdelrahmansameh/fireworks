@@ -1,4 +1,5 @@
-import { GAME_BOUNDS, DEFAULT_RECIPE_COMPONENTS, COMPONENT_PROPERTY_RANGES, PARTICLE_TYPES, STATS_CONFIG, LAUNCHER_WORLD_HIGHLIGHT_DURATION, PATTERN_DISPLAY_NAMES } from '../config/config.js';
+import { GAME_BOUNDS, DEFAULT_RECIPE_COMPONENTS, COMPONENT_PROPERTY_RANGES, PARTICLE_TYPES, STATS_CONFIG, LAUNCHER_WORLD_HIGHLIGHT_DURATION } from '../config/config.js';
+import { patternDefinitions, patternDisplayNames } from '../entities/patterns/index.js';
 import * as Renderer2D from '../rendering/Renderer.js';
 import GameMetrics from '../metrics/GameMetrics.js';
 
@@ -916,6 +917,9 @@ class UIManager {
 
     updateComponentsList(components, onUpdate, containerId = 'components-list') {
         const componentsList = document.getElementById(containerId);
+        const patternOptions = patternDefinitions.map(({ key, displayName }) => (
+            `<option value="${key}">${displayName}</option>`
+        )).join('');
         componentsList.innerHTML = '';
 
         components.forEach((component, index) => {
@@ -953,21 +957,7 @@ class UIManager {
                         <div class="flex-item">
                             <label>Pattern:</label>
                             <select class="pattern-select" data-index="${index}">
-                                <option value="spherical">Spherical</option>
-                                <option value="solidsphere">Solid Sphere</option>
-                                <option value="ring">Ring</option>
-                                <option value="heart">Heart</option>
-                                <option value="burst">Burst</option>
-                                <option value="palm">Palm</option>
-                                <option value="willow">Willow</option>
-                                <option value="helix">Helix</option>
-                                <option value="spinner">Spinner</option>
-                                <option value="star">Star</option>
-                                <option value="brocade">Brocade</option>
-                                <option value="brokenHeart">Broken Heart</option>
-                                <option value="snowflake">Snowflake</option>
-                                <option value="christmasTree">Christmas Tree</option>
-                                <option value="dragonsBreath">Dragon's Breath</option>
+                                ${patternOptions}
                             </select>
                         </div>
                         <div class="flex-item">
@@ -1236,7 +1226,7 @@ class UIManager {
                     <label>Pattern:</label>
                     <select class="launcher-pattern-select" data-building-id="${launcher.id}">
                         ${(this.game.unlockedPatternKeys || []).map(key => `
-                            <option value="${key}" ${launcher.patternOverride === key ? 'selected' : ''}>${PATTERN_DISPLAY_NAMES[key] || key}</option>
+                            <option value="${key}" ${launcher.patternOverride === key ? 'selected' : ''}>${patternDisplayNames[key] || key}</option>
                         `).join('')}
                     </select>
                 </div>

@@ -1,9 +1,10 @@
-import { FIREWORK_CONFIG, GAME_BOUNDS, PROCEDURAL_BACKGROUND_CONFIG, DEFAULT_RECIPE_COMPONENTS, PRE_RECIPE_COMPONENT_DEFAULTS, GENERIC_RECIPE_NAMES, AUTO_LAUNCHER_COST_BASE, AUTO_LAUNCHER_COST_RATIO, AUTO_UPGRADE_COST_RATIO, AUTO_SPAWN_INTERVAL_RATIO, COMPONENT_PROPERTY_RANGES, BUILDING_TYPES, DRONE_CONFIG, CROWD_CATCHER_CONFIG, PATTERN_UNLOCK_ORDER, CROWD_CONFIG } from '../config/config.js';
+import { FIREWORK_CONFIG, GAME_BOUNDS, PROCEDURAL_BACKGROUND_CONFIG, DEFAULT_RECIPE_COMPONENTS, PRE_RECIPE_COMPONENT_DEFAULTS, GENERIC_RECIPE_NAMES, AUTO_LAUNCHER_COST_BASE, AUTO_LAUNCHER_COST_RATIO, AUTO_UPGRADE_COST_RATIO, AUTO_SPAWN_INTERVAL_RATIO, COMPONENT_PROPERTY_RANGES, BUILDING_TYPES, DRONE_CONFIG, CROWD_CATCHER_CONFIG, CROWD_CONFIG } from '../config/config.js';
 import { UPGRADE_DEFINITIONS } from '../upgrades/upgrades.js';
 import InstancedParticleSystem from '../particles/InstancedParticleSystem.js';
 import InstancedDroneSystem from '../entities/InstancedDroneSystem.js';
 import Crowd from '../entities/Crowd.js';
 import Firework from '../entities/Firework.js';
+import { patternKeys } from '../entities/patterns/index.js';
 import UIManager from '../ui/UIManager.js';
 import ResourceManager from '../resources/ResourceManager.js';
 import GameProfiler from '../profiling/GameProfiler.js';
@@ -41,7 +42,7 @@ class FireworkGame extends Engine {
         };
 
         // Patterns unlocked progressively via AutoLauncher purchases
-        this.unlockedPatternKeys = [PATTERN_UNLOCK_ORDER[0]];
+        this.unlockedPatternKeys = [patternKeys[0]];
 
         this.firstClickStates = {
             tabMenu: false,
@@ -221,7 +222,6 @@ class FireworkGame extends Engine {
             const numComponents = 1; //Math.floor(Math.random() * 3) + 1; // 1 to 3 components
 
             for (let j = 0; j < numComponents; j++) {
-                const possiblePatterns = ['spherical', 'ring', 'heart', 'burst', 'palm', 'willow', 'helix', 'spinner', 'star', 'snowflake', 'brokenHeart', 'christmasTree', 'dragonsBreath'];
                 const possibleShapes = ['sphere', 'star'];
                 const randomHex = `#${Math.floor(Math.random() * 0xFFFFFF).toString(16).padStart(6, '0')}`;
                 const randomSecondaryHex = `#${Math.floor(Math.random() * 0xFFFFFF).toString(16).padStart(6, '0')}`;
@@ -235,7 +235,7 @@ class FireworkGame extends Engine {
                 };
 
                 recipeComponents.push({
-                    pattern: possiblePatterns[Math.floor(Math.random() * possiblePatterns.length)],
+                    pattern: patternKeys[Math.floor(Math.random() * patternKeys.length)],
                     color: randomHex,
                     secondaryColor: randomSecondaryHex,
                     size: randomValue('size'),
@@ -589,12 +589,12 @@ class FireworkGame extends Engine {
                 // Unlock the next pattern in sequence (if any remain)
                 const nextIndex = this.unlockedPatternKeys.length;
                 let assignedPattern;
-                if (nextIndex < PATTERN_UNLOCK_ORDER.length) {
-                    assignedPattern = PATTERN_UNLOCK_ORDER[nextIndex];
+                if (nextIndex < patternKeys.length) {
+                    assignedPattern = patternKeys[nextIndex];
                     this.unlockedPatternKeys.push(assignedPattern);
                 } else {
                     // All patterns already unlocked – assign a random one
-                    assignedPattern = PATTERN_UNLOCK_ORDER[Math.floor(Math.random() * PATTERN_UNLOCK_ORDER.length)];
+                    assignedPattern = patternKeys[Math.floor(Math.random() * patternKeys.length)];
                 }
                 building.patternOverride = assignedPattern;
                 this.saveProgress();
@@ -666,7 +666,7 @@ class FireworkGame extends Engine {
             recipesTab: false
         };
 
-        this.unlockedPatternKeys = [PATTERN_UNLOCK_ORDER[0]];
+        this.unlockedPatternKeys = [patternKeys[0]];
 
         this.firstClickStates = {
             tabMenu: false,
@@ -815,7 +815,6 @@ class FireworkGame extends Engine {
 
     randomizeRecipe() {
         for (let i = 0; i < this.currentRecipeComponents.length; i++) {
-            const possiblePatterns = ['spherical', 'ring', 'heart', 'burst', 'palm', 'willow', 'helix', 'spinner', 'star', 'snowflake', 'brokenHeart', 'christmasTree', 'dragonsBreath'];
             const possibleShapes = ['sphere', 'star'];
             const randomHex = `#${Math.floor(Math.random() * 0xFFFFFF)
                 .toString(16)
@@ -841,7 +840,7 @@ class FireworkGame extends Engine {
             }
 
             this.currentRecipeComponents[i] = {
-                pattern: possiblePatterns[Math.floor(Math.random() * possiblePatterns.length)],
+                pattern: patternKeys[Math.floor(Math.random() * patternKeys.length)],
                 color: randomHex,
                 secondaryColor: randomSecondaryHex,
                 size: randomValue('size'),
