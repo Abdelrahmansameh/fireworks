@@ -26,7 +26,10 @@ class Firework {
 
         const timeToExplode = (this.targetY - y) / FIREWORK_CONFIG.ascentSpeed;
         if (this.audioManager) {
-            this.audioManager.playFireworkSound(timeToExplode);
+            const bounds = this.renderer.getVisibleWorldBounds();
+            if (x >= bounds.left && x <= bounds.right && y >= bounds.bottom && y <= bounds.top) {
+                this.audioManager.playFireworkSound(timeToExplode);
+            }
         }
 
         this.rocketTrailTimer = 0;

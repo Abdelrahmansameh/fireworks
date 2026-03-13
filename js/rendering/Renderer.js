@@ -1209,6 +1209,21 @@ class Renderer2D {
         this._updateProjectionMatrix();
     }
 
+    getVisibleWorldBounds() {
+        const dpr = window.devicePixelRatio || 1;
+        const physicalWidth = this.canvas.clientWidth * dpr;
+        const physicalHeight = this.canvas.clientHeight * dpr;
+        const scaleFactor = physicalHeight / this.virtualHeight;
+        const viewWidth = physicalWidth / scaleFactor;
+        const viewHeight = physicalHeight / scaleFactor;
+        return {
+            left:   this.cameraX - viewWidth  / 2 / this.cameraZoom,
+            right:  this.cameraX + viewWidth  / 2 / this.cameraZoom,
+            bottom: this.cameraY - viewHeight / 2 / this.cameraZoom,
+            top:    this.cameraY + viewHeight / 2 / this.cameraZoom,
+        };
+    }
+
     _updateProjectionMatrix() {
         const dpr = window.devicePixelRatio || 1;
         const physicalWidth = this.canvas.clientWidth * dpr;
