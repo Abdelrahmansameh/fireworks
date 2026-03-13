@@ -17,30 +17,6 @@ export const CROWD_CONFIG = {
     maxInstances: 15000,
     zIndex: -10,
 
-    // Procedural geometry shape sizes (relative to base person scale of 1.0)
-    procedural: {
-        bodyWidth: 10,
-        bodyHeight: 10,
-        armWidth: 2.5,
-        armHeight: 6,
-        legWidth: 3,
-        legHeight: 6,
-        footWidth: 4,
-        footHeight: 2,
-        eyeSize: 2.5,
-        pupilSize: 1.0,
-        
-        // offsets from center (0,0 is center of the body)
-        armOffsetY: 2.5,     // upper part of body
-        armOffsetX: 5,       // right at the edge of the 10-wide body
-        legOffsetY: -5,      // exactly at the bottom edge of the 10-tall body
-        legOffsetX: 2,
-        footOffsetY: -1,     // center of foot is bottom of leg (-footHeight / 2)
-        footOffsetX: 0.5,
-        eyeOffsetY: 1.5,     // upper half of the body
-        eyeOffsetX: 2.5,     // spread horizontally
-    },
-
     // Spawn / positioning
     minOverlapDistance: 10,          // world-units — min spacing between people
     maxPlacementAttempts: 20,

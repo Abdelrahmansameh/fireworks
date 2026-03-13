@@ -16,6 +16,10 @@ class Crowd {
         this._grabOffsetY = 0;
         this._cursorHistory = [];
 
+        // Mesh Data
+        this.meshData = null;
+        this.baseInstancesPerPerson = 0;
+
         // Particle-catching
         this.particleSystem = null;
         this.catchingEnabled = false;
@@ -31,6 +35,11 @@ class Crowd {
 
     async _initializeCrowd() {
         try {
+            // Load JSON Mesh
+            const response = await fetch('assets/crowd_mesh.json');
+            this.meshData = await response.json();
+            this.baseInstancesPerPerson = this.meshData.parts.length;
+            
             // Procedural rendering geometric setup: just a uniform textured square
             const geometry = Renderer2D.buildTexturedSquare(1, 1);
             
@@ -49,9 +58,9 @@ class Crowd {
             for (let i = 0; i < this.missingCrowdsToInit; i++) {
                 this._addPerson();
             }
-            console.log(`Crowd initialized procedurally with max ${CROWD_CONFIG.maxInstances} component shapes.`);
+            console.log(`Crowd initialized with ${this.baseInstancesPerPerson} parts per person.`);
         } catch (error) {
-            console.error('Failed to init procedural crowd:', error);
+            console.error('Failed to init procedural crowd mesh:', error);
         }
     }
 
@@ -70,8 +79,7 @@ class Crowd {
 
             while (this.people.length > count) {
                 this.people.pop();
-                // We spawned 11 instances per person; assuming end removal, just reduce count
-                this.instancedGroup.instanceCount -= 11;
+                this.instancedGroup.instanceCount -= this.baseInstancesPerPerson;
             }
         } else {
             const added = count - this.people.length;
@@ -136,8 +144,8 @@ class Crowd {
 
         this.people.push(person);
 
-        // Add 11 empty instances for the person
-        for (let i = 0; i < 11; i++) {
+        // Add correct number of empty instances for the person
+        for (let i = 0; i < this.baseInstancesPerPerson; i++) {
             group.addInstanceRaw(person.x, person.y, 0, 1, 1, 0, 0, 0, 1, 0, 0, 0);
         }
 
@@ -149,11 +157,14 @@ class Crowd {
         if (personIndex < 0 || personIndex >= this.people.length) return;
         
         const person = this.people[personIndex];
-        // Translate animation requested by name into a state for procedural reasoning
-        // In the procedural model, animName doesn't directly dictate frames, but we map it loosely.
-        // It's mainly used for tosses
+        
+        // Translate animation requested by name into a state for the JSON hierarchy
+        // The procedural system mapped these to state string which influenced the sine wave output.
+        // We will keep the state string, and map it to the animation key `person.currentAnimation`
+        
         if (animName === 'toss_coin') {
-            person.coinAnimTimer = 0.8; // Set manual length for coin toss procedural animation
+            person.coinAnimTimer = 0.8; 
+            person.state = 'toss_coin';
         } else if (animName === 'falling') {
             person.state = 'falling';
         } else if (animName === 'walking_right' || animName === 'walking_down') {
@@ -296,166 +307,139 @@ class Crowd {
         };
     }
 
+    _getParentTransform(part, time, personState, flipX, baseScale, px, py, parentObjTf = null) {
+        let parentTransform = { x: px, y: py, rotation: 0 };
+        if (part.parentId && !parentObjTf) {
+            const pObj = this.meshData.parts.find(p => p.id === part.parentId);
+            if (pObj) {
+                parentTransform = this._getParentTransform(pObj, time, personState, flipX, baseScale, px, py);
+            }
+        } else if (parentObjTf) {
+            parentTransform = parentObjTf;
+        }
+
+        let localRot = 0;
+        let localOffX = 0;
+        let localOffY = 0;
+
+        // Fetch Track
+        const anim = this.meshData.animations[personState];
+        if (anim && anim.tracks[part.id] && anim.tracks[part.id].length > 0) {
+            const track = anim.tracks[part.id];
+            
+            // Loop time based on anim duration
+            let evalTime = time;
+            if (anim.loop && anim.duration > 0) evalTime = evalTime % anim.duration;
+            else if (evalTime > anim.duration) evalTime = anim.duration;
+            
+            if (evalTime <= track[0].time) {
+                localRot = track[0].rotation || 0;
+                localOffX = track[0].offsetX || 0;
+                localOffY = track[0].offsetY || 0;
+            } else if (evalTime >= track[track.length - 1].time) {
+                localRot = track[track.length-1].rotation || 0;
+                localOffX = track[track.length-1].offsetX || 0;
+                localOffY = track[track.length-1].offsetY || 0;
+            } else {
+                for (let i = 0; i < track.length - 1; i++) {
+                    if (evalTime >= track[i].time && evalTime <= track[i+1].time) {
+                        const t0 = track[i];
+                        const t1 = track[i+1];
+                        const ratio = (evalTime - t0.time) / ((t1.time - t0.time) || 0.001);
+                        localRot = (t0.rotation||0) + ((t1.rotation||0) - (t0.rotation||0)) * ratio;
+                        localOffX = (t0.offsetX||0) + ((t1.offsetX||0) - (t0.offsetX||0)) * ratio;
+                        localOffY = (t0.offsetY||0) + ((t1.offsetY||0) - (t0.offsetY||0)) * ratio;
+                        break;
+                    }
+                }
+            }
+        }
+
+        let parentW = 0, parentH = 0;
+        if (part.parentId) {
+            const pObj = this.meshData.parts.find(p => p.id === part.parentId);
+            if (pObj) { parentW = pObj.width; parentH = pObj.height; }
+        }
+
+        let pivotLocalX = part.relX * parentW * baseScale * flipX;
+        let pivotLocalY = part.relY * parentH * baseScale;
+
+        const cosP = Math.cos(parentTransform.rotation);
+        const sinP = Math.sin(parentTransform.rotation);
+        let pivotWorldX = parentTransform.x + (pivotLocalX * cosP - pivotLocalY * sinP);
+        let pivotWorldY = parentTransform.y + (pivotLocalX * sinP + pivotLocalY * cosP);
+
+        // Apply flip direction
+        pivotWorldX += (localOffX * baseScale * flipX * cosP - localOffY * baseScale * sinP);
+        pivotWorldY += (localOffX * baseScale * flipX * sinP + localOffY * baseScale * cosP);
+
+        const worldRot = parentTransform.rotation + (localRot * flipX);
+
+        return { x: pivotWorldX, y: pivotWorldY, rotation: worldRot };
+    }
+
+    _hexToRgb(hex) {
+        if (!hex) return { r: 1, g: 1, b: 1 };
+        let result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+        if(result) {
+            return {
+                r: parseInt(result[1], 16) / 255,
+                g: parseInt(result[2], 16) / 255,
+                b: parseInt(result[3], 16) / 255
+            };
+        }
+        return {r:1, g:1, b:1};
+    }
+
     _updateProceduralAnimation(person, deltaTime) {
+        if (!this.meshData) return;
+        
         person.animTimer += deltaTime * person.bobSpeed;
         
-        const pcfg = CROWD_CONFIG.procedural;
         const scale = person.scale;
         const px = person.x;
         const py = person.y;
         
-        const isGrabbed = person.state === 'grabbed';
-        const isFalling = person.state === 'falling';
-        const isWalking = person.state === 'walking';
-        const isCoinToss = person.coinAnimTimer > 0;
-        
-        let bodyY = py;
-        let walkCycle = 0;
-        let armAngleL = 0;
-        let armAngleR = 0;
-        let legAngleL = 0;
-        let legAngleR = 0;
-        
         let flipX = person.flipX; 
-        if (isWalking) {
+        if (person.state === 'walking') {
             flipX = (person.spawnX < person.x) ? -1 : 1;
-        }
-        
-        if (person.state === 'cheering') {
-            bodyY = py + Math.sin(person.bobOffset + person.animTimer) * 2;
-            armAngleL = Math.PI - 0.2 + Math.sin(person.animTimer * 2) * 0.2;
-            armAngleR = Math.PI + 0.2 - Math.sin(person.animTimer * 2.1) * 0.2;
-            legAngleL = 0;
-            legAngleR = 0;
-        } else if (isWalking) {
-            walkCycle = person.animTimer * 3;
-            bodyY = py + Math.abs(Math.sin(walkCycle)) * 2;
-            armAngleL = Math.sin(walkCycle) * 0.5;
-            armAngleR = -Math.sin(walkCycle) * 0.5;
-            legAngleL = -Math.sin(walkCycle) * 0.5;
-            legAngleR = Math.sin(walkCycle) * 0.5;
-        } else if (isFalling || isGrabbed) {
-            bodyY = py;
-            armAngleL = Math.PI - 0.5;
-            armAngleR = -Math.PI + 0.5;
-            legAngleL = 0.5;
-            legAngleR = -0.5;
-            
-            // Flail slightly
-            armAngleL += Math.sin(person.animTimer * 6) * 0.4;
-            armAngleR += Math.sin(person.animTimer * 6.2) * 0.4;
-            legAngleL += Math.sin(person.animTimer * 5) * 0.3;
-            legAngleR += Math.sin(person.animTimer * 5.2) * 0.3;
-        }
-        
-        if (isCoinToss) {
-            // Tossing upward right arm
-            const tossProgress = 1.0 - (person.coinAnimTimer / 0.8);
-            armAngleR = Math.PI - Math.sin(tossProgress * Math.PI) * 1.5; 
         }
 
         const baseIdx = person.instanceBaseIndex;
         const g = this.instancedGroup;
 
-        let ox, oy, tX, tY;
+        // Memoize transforms for parents to avoid O(n^2) recursion
+        const tfCache = {};
 
-        // 0: Body
-        tX = px;
-        tY = bodyY;
-        g.updateInstancePosition(baseIdx + 0, tX, tY);
-        g.updateInstanceScale(baseIdx + 0, pcfg.bodyWidth * scale, pcfg.bodyHeight * scale);
-        g.updateInstanceColor(baseIdx + 0, 0, 0, 0, 1);
-        
-        // 1: Left arm
-        ox = px - pcfg.armOffsetX * scale * flipX;
-        oy = bodyY + pcfg.armOffsetY * scale;
-        let armL_center = this._getPivotedTransform(ox, oy, 0, pcfg.armHeight * 0.5 * scale, armAngleL * flipX);
-        g.updateInstancePosition(baseIdx + 1, armL_center.x, armL_center.y);
-        g.updateInstanceScale(baseIdx + 1, pcfg.armWidth * scale, pcfg.armHeight * scale);
-        g.updateInstanceRotation(baseIdx + 1, armAngleL * flipX);
-        g.updateInstanceColor(baseIdx + 1, 0, 0, 0, 1);
-        
-        // 2: Right arm
-        ox = px + pcfg.armOffsetX * scale * flipX;
-        oy = bodyY + pcfg.armOffsetY * scale;
-        let armR_center = this._getPivotedTransform(ox, oy, 0, pcfg.armHeight * 0.5 * scale, armAngleR * flipX);
-        g.updateInstancePosition(baseIdx + 2, armR_center.x, armR_center.y);
-        g.updateInstanceScale(baseIdx + 2, pcfg.armWidth * scale, pcfg.armHeight * scale);
-        g.updateInstanceRotation(baseIdx + 2, armAngleR * flipX);
-        g.updateInstanceColor(baseIdx + 2, 0, 0, 0, 1);
-        
-        // 3: Left leg
-        ox = px - pcfg.legOffsetX * scale * flipX; // Add flip to leg pos too!
-        oy = bodyY + pcfg.legOffsetY * scale;
-        let legL_center = this._getPivotedTransform(ox, oy, 0, pcfg.legHeight * 0.5 * scale, legAngleL * flipX);
-        g.updateInstancePosition(baseIdx + 3, legL_center.x, legL_center.y);
-        g.updateInstanceScale(baseIdx + 3, pcfg.legWidth * scale, pcfg.legHeight * scale);
-        g.updateInstanceRotation(baseIdx + 3, legAngleL * flipX);
-        g.updateInstanceColor(baseIdx + 3, 0, 0, 0, 1);
-        
-        // 4: Right leg
-        ox = px + pcfg.legOffsetX * scale * flipX;
-        oy = bodyY + pcfg.legOffsetY * scale;
-        let legR_center = this._getPivotedTransform(ox, oy, 0, pcfg.legHeight * 0.5 * scale, legAngleR * flipX);
-        g.updateInstancePosition(baseIdx + 4, legR_center.x, legR_center.y);
-        g.updateInstanceScale(baseIdx + 4, pcfg.legWidth * scale, pcfg.legHeight * scale);
-        g.updateInstanceRotation(baseIdx + 4, legAngleR * flipX);
-        g.updateInstanceColor(baseIdx + 4, 0, 0, 0, 1);
-        
-        let legBottomOffY = pcfg.legHeight * 0.5 * scale;
-        // 5: Left foot
-        let legL_bottom = this._getPivotedTransform(legL_center.x, legL_center.y, 0, legBottomOffY, legAngleL * flipX);
-        g.updateInstancePosition(baseIdx + 5, legL_bottom.x + pcfg.footOffsetX * scale * flipX, legL_bottom.y + pcfg.footOffsetY * scale);
-        g.updateInstanceScale(baseIdx + 5, pcfg.footWidth * scale, pcfg.footHeight * scale);
-        g.updateInstanceColor(baseIdx + 5, 0, 0, 0, 1);
-        
-        // 6: Right foot
-        let legR_bottom = this._getPivotedTransform(legR_center.x, legR_center.y, 0, legBottomOffY, legAngleR * flipX);
-        g.updateInstancePosition(baseIdx + 6, legR_bottom.x + pcfg.footOffsetX * scale * flipX, legR_bottom.y + pcfg.footOffsetY * scale);
-        g.updateInstanceScale(baseIdx + 6, pcfg.footWidth * scale, pcfg.footHeight * scale);
-        g.updateInstanceColor(baseIdx + 6, 0, 0, 0, 1);
-        
-        // 7: Left eye
-        ox = px - pcfg.eyeOffsetX * scale * flipX;
-        oy = bodyY + pcfg.eyeOffsetY * scale;
-        g.updateInstancePosition(baseIdx + 7, ox, oy);
-        g.updateInstanceScale(baseIdx + 7, pcfg.eyeSize * scale, pcfg.eyeSize * scale);
-        g.updateInstanceColor(baseIdx + 7, 1, 1, 1, 1);
-        
-        // 8: Right eye
-        ox = px + pcfg.eyeOffsetX * scale * flipX;
-        oy = bodyY + pcfg.eyeOffsetY * scale;
-        g.updateInstancePosition(baseIdx + 8, ox, oy);
-        g.updateInstanceScale(baseIdx + 8, pcfg.eyeSize * scale, pcfg.eyeSize * scale);
-        g.updateInstanceColor(baseIdx + 8, 1, 1, 1, 1);
-        
-        // Pupils
-        let lookX = 0;
-        let lookY = 0;
-        if (isFalling || isGrabbed) {
-            lookY = -1; // Look down in fear
-            lookX = 0;
-        } else if (isCoinToss) {
-            lookY = 1; // Look up at coin
-            lookX = 1 * flipX;
-        } else {
-            // normal look
-            lookX = Math.sin(person.animTimer * 0.5) * 0.5;
+        // Important: this assumes meshData.parts is topologically sorted (parents before children)
+        // Which the manual initialization ensures!
+        for (let i = 0; i < this.meshData.parts.length; i++) {
+            const part = this.meshData.parts[i];
+            
+            let pTf = null;
+            if (part.parentId && tfCache[part.parentId]) {
+                pTf = tfCache[part.parentId];
+            }
+            
+            const tf = this._getParentTransform(part, person.animTimer, person.state, flipX, scale, px, py, pTf);
+            tfCache[part.id] = tf;
+
+            const anchorOffX = part.anchorX * part.width * scale * flipX;
+            const anchorOffY = part.anchorY * part.height * scale;
+            
+            const cosR = Math.cos(tf.rotation);
+            const sinR = Math.sin(tf.rotation);
+            
+            const drawX = tf.x - (anchorOffX * cosR - anchorOffY * sinR);
+            const drawY = tf.y - (anchorOffX * sinR + anchorOffY * cosR);
+
+            const color = this._hexToRgb(part.color);
+
+            g.updateInstancePosition(baseIdx + i, drawX, drawY);
+            g.updateInstanceScale(baseIdx + i, part.width * scale, part.height * scale);
+            g.updateInstanceRotation(baseIdx + i, tf.rotation);
+            g.updateInstanceColor(baseIdx + i, color.r, color.g, color.b, 1);
         }
-        
-        // 9: Left pupil
-        ox = px - pcfg.eyeOffsetX * scale * flipX + lookX * scale;
-        oy = bodyY + pcfg.eyeOffsetY * scale + lookY * scale * 0.5;
-        g.updateInstancePosition(baseIdx + 9, ox, oy);
-        g.updateInstanceScale(baseIdx + 9, pcfg.pupilSize * scale, pcfg.pupilSize * scale);
-        g.updateInstanceColor(baseIdx + 9, 0, 0, 0, 1);
-        
-        // 10: Right pupil
-        ox = px + pcfg.eyeOffsetX * scale * flipX + lookX * scale;
-        oy = bodyY + pcfg.eyeOffsetY * scale + lookY * scale * 0.5;
-        g.updateInstancePosition(baseIdx + 10, ox, oy);
-        g.updateInstanceScale(baseIdx + 10, pcfg.pupilSize * scale, pcfg.pupilSize * scale);
-        g.updateInstanceColor(baseIdx + 10, 0, 0, 0, 1);
     }
 
     _scanParticlesForPerson(person) {

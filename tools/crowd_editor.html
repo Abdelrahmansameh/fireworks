@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crowd Mesh & Animation Editor</title>
+    <link rel="stylesheet" href="crowd_editor.css">
+</head>
+<body>
+    <div class="editor-container">
+        <!-- Hierarchy & Parts Panel -->
+        <div class="panel left-panel">
+            <div class="panel-header">Hierarchy</div>
+            <div class="panel-content">
+                <ul id="hierarchy-list" class="tree-view">
+                    <!-- JS populated -->
+                </ul>
+            </div>
+            
+            <div class="panel-header">Add Part</div>
+            <div class="panel-content add-part-form">
+                <input type="text" id="new-part-id" placeholder="Part ID (e.g. arm_l)" />
+                <select id="new-part-parent">
+                    <option value="">(No Parent)</option>
+                </select>
+                <button id="btn-add-part">Add</button>
+            </div>
+            
+             <div class="panel-header">Animations</div>
+            <div class="panel-content">
+                <select id="anim-list"></select>
+                <div style="display:flex; gap:5px; margin-top:5px;">
+                    <input type="text" id="new-anim-id" placeholder="New Anim Name" style="flex:1" />
+                    <button id="btn-add-anim">+</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Canvas -->
+        <div class="center-panel">
+            <div class="toolbar">
+                <button id="btn-tool-select" class="tool-btn active">Select [V]</button>
+                <button id="btn-tool-move" class="tool-btn">Move [W]</button>
+                <button id="btn-tool-attach" class="tool-btn">Attach Point [A]</button>
+                <button id="btn-tool-rotate" class="tool-btn">Rotate [E]</button>
+                <button id="btn-tool-scale" class="tool-btn">Scale [R]</button>
+                <div class="spacer"></div>
+                <button id="btn-load">Load</button>
+                <button id="btn-save">Save JSON</button>
+            </div>
+            
+            <div class="viewport-wrapper">
+                <canvas id="view-canvas"></canvas>
+            </div>
+            
+            <!-- Timeline -->
+            <div class="timeline-panel">
+                <div class="timeline-header">
+                    <span>Timeline: <span id="current-anim-name">cheering</span></span>
+                    <button id="btn-play-pause">Play</button>
+                    <label>Duration: <input type="number" id="anim-duration" step="0.1" value="1.0" style="width:50px"></label>
+                    <label><input type="checkbox" id="anim-loop" checked> Loop</label>
+                </div>
+                <!-- Tracks UI roughly blocking it out -->
+                <div class="timeline-tracks" id="timeline-tracks">
+                    <!-- JS populated -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Properties Panel -->
+        <div class="panel right-panel">
+            <div class="panel-header">Properties</div>
+            <div class="panel-content" id="properties-content">
+                <div class="no-selection">No part selected.</div>
+                
+                <div id="part-props" style="display:none">
+                    <div class="prop-row">
+                        <label>ID</label>
+                        <input type="text" id="prop-id" disabled />
+                    </div>
+                    
+                    <div class="prop-section">Shape</div>
+                    <div class="prop-row">
+                        <label>W</label> <input type="number" id="prop-w" step="0.1" />
+                        <label>H</label> <input type="number" id="prop-h" step="0.1" />
+                    </div>
+                    <div class="prop-row">
+                        <label>Color</label> <input type="color" id="prop-color" />
+                    </div>
+                    
+                    <div class="prop-section">Local Pivot (anchor)</div>
+                    <div class="prop-row">
+                        <label>X</label> <input type="number" id="prop-ax" step="0.05" />
+                        <label>Y</label> <input type="number" id="prop-ay" step="0.05" />
+                    </div>
+                    
+                    <div class="prop-section">Attach to Parent (rel)</div>
+                    <div class="prop-row">
+                        <label>X</label> <input type="number" id="prop-rx" step="0.05" />
+                        <label>Y</label> <input type="number" id="prop-ry" step="0.05" />
+                    </div>
+                    
+                    <hr/>
+                    <div class="prop-section">Current Frame Transform</div>
+                    <div class="prop-row">
+                        <label>OffX</label> <input type="number" id="prop-offx" step="0.1" />
+                        <label>OffY</label> <input type="number" id="prop-offy" step="0.1" />
+                    </div>
+                    <div class="prop-row">
+                        <label>Rot (rad)</label> <input type="number" id="prop-rot" step="0.05" />
+                    </div>
+                    <button id="btn-keyframe" style="width:100%; margin-top:10px;">Set Keyframe</button>
+                    <button id="btn-remove-keyframe" style="width:100%; margin-top:10px; color:salmon; border-color:salmon;">Remove Keyframe</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script type="module" src="crowd_editor.js"></script>
+</body>
+</html>

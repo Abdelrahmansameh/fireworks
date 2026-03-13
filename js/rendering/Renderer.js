@@ -633,7 +633,7 @@ function buildTriangle(base = 1, height = 2) {
 
     coords.push(-base / 2, 0);
     coords.push(base / 2, 0);
-    coords.push(0, height); 
+    coords.push(0, height);
 
     const triIndices = earcut(coords, null, 2);
     return {
@@ -1018,7 +1018,7 @@ class InstancedGroup {
 }
 
 
-class Renderer2D {
+export default class Renderer2D {
     constructor(canvas, opts = {}) {
         this.canvas = canvas;
         this.gl = canvas.getContext('webgl2', { antialias: true });
@@ -1101,10 +1101,10 @@ class Renderer2D {
             this.postProcessingInitialized = false;
         }
 
-        this.FLOAT_FMT = gl.RGBA16F;           
+        this.FLOAT_FMT = gl.RGBA16F;
         const FLOAT_TYP = gl.HALF_FLOAT;
 
-        this._resizeDirty = true; 
+        this._resizeDirty = true;
         this._resizeObserver = new ResizeObserver(() => {
             this._resizeDirty = true;
         });
@@ -1177,11 +1177,11 @@ class Renderer2D {
         let r = 0, g = 0, b = 0, a = 1;
         let processedHex = hex.startsWith('#') ? hex.slice(1) : hex;
 
-        if (processedHex.length === 3) { 
+        if (processedHex.length === 3) {
             r = parseInt(processedHex[0] + processedHex[0], 16);
             g = parseInt(processedHex[1] + processedHex[1], 16);
             b = parseInt(processedHex[2] + processedHex[2], 16);
-        } else if (processedHex.length === 4) { 
+        } else if (processedHex.length === 4) {
             r = parseInt(processedHex[0] + processedHex[0], 16);
             g = parseInt(processedHex[1] + processedHex[1], 16);
             b = parseInt(processedHex[2] + processedHex[2], 16);
@@ -1217,10 +1217,10 @@ class Renderer2D {
         const viewWidth = physicalWidth / scaleFactor;
         const viewHeight = physicalHeight / scaleFactor;
         return {
-            left:   this.cameraX - viewWidth  / 2 / this.cameraZoom,
-            right:  this.cameraX + viewWidth  / 2 / this.cameraZoom,
+            left: this.cameraX - viewWidth / 2 / this.cameraZoom,
+            right: this.cameraX + viewWidth / 2 / this.cameraZoom,
             bottom: this.cameraY - viewHeight / 2 / this.cameraZoom,
-            top:    this.cameraY + viewHeight / 2 / this.cameraZoom,
+            top: this.cameraY + viewHeight / 2 / this.cameraZoom,
         };
     }
 
@@ -1332,7 +1332,7 @@ class Renderer2D {
 
         group._instanceBuffer = gl.createBuffer();
         gl.bindBuffer(gl.ARRAY_BUFFER, group._instanceBuffer);
-        const totalBytes = maxInstances * group.instanceStrideFloats * 4; 
+        const totalBytes = maxInstances * group.instanceStrideFloats * 4;
         gl.bufferData(gl.ARRAY_BUFFER, totalBytes, gl.DYNAMIC_DRAW);
 
         group._vao = gl.createVertexArray();
@@ -1489,7 +1489,7 @@ class Renderer2D {
 
         gl.bindFramebuffer(gl.FRAMEBUFFER, this.emissiveFBO);
         gl.viewport(0, 0, halfWidth, halfHeight);
-        gl.clearColor(0, 0, 0, 0); 
+        gl.clearColor(0, 0, 0, 0);
         gl.clear(gl.COLOR_BUFFER_BIT);
 
         let emissiveCount = 0;
@@ -1529,7 +1529,7 @@ class Renderer2D {
         gl.bindTexture(gl.TEXTURE_2D, this.blurTexture2);
         gl.uniform1i(this.u_bloomTexture_Composite, 1);
 
-        gl.uniform1f(this.u_globalBlurStrength_Composite, 1.0); 
+        gl.uniform1f(this.u_globalBlurStrength_Composite, 1.0);
 
         gl.bindVertexArray(this.fullScreenTriangleVAO);
         gl.drawArrays(gl.TRIANGLES, 0, 3);
@@ -2425,4 +2425,5 @@ export {
     buildTriangle,
     buildTexturedSquare,
     buildSliceBurst,
+    InstancedGroup,
 };
