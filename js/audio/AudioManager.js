@@ -10,8 +10,8 @@ class AudioManager {
         this._explNum = 0;
         this._currentVolume = 0.15;
 
-        this._whistleVol = 0.03;
-        this._explosionVol = 0.05;
+        this._whistleVol = 0.02;
+        this._explosionVol = 0.02;
         this._fmax = 3200;
         this._fmin = 3000;
         this._decayRate = 20;
