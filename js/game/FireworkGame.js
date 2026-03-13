@@ -285,17 +285,6 @@ class FireworkGame extends Engine {
         this.procduralBackground = new ProcduralBackground(this.renderer2D, PROCEDURAL_BACKGROUND_CONFIG);
         this.procduralBackground.generate();
 
-
-        this.autoLauncherTextureLoaded = false;
-        if (FIREWORK_CONFIG.autoLauncherTexture) {
-            this.renderer2D.loadTexture(FIREWORK_CONFIG.autoLauncherTexture, 'auto_launcher_texture')
-                .then(() => {
-                    this.autoLauncherTextureLoaded = true;
-                    this._applyAutoLauncherTexture();
-                })
-                .catch(err => console.warn('Failed to load auto-launcher texture. Falling back to default mesh.', err));
-        }
-
         this.cameraTargetX = 0;
         this.cameraTargetY = 0;
         this.cameraTargetZoom = 1.0;
