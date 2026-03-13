@@ -55,7 +55,12 @@ class Crowd {
             // Minimal single-part fallback so the game still runs
             this._meshData = {
                 parts: [{ id: 'body', parentId: null, width: 10, height: 10, anchorX: 0, anchorY: 0, relX: 0, relY: 0, color: '000000' }],
-                animations: { cheering: { duration: 1, loop: true, tracks: {} }, walking: { duration: 1, loop: true, tracks: {} }, falling: { duration: 1, loop: true, tracks: {} }, toss_coin: { duration: 0.8, loop: false, tracks: {} } }
+                animations: {
+                    cheering: { duration: 1, loop: true, tracks: {} },
+                    walking: { duration: 1, loop: true, tracks: {} },
+                    falling: { duration: 1, loop: true, tracks: {} },
+                    toss_coin: { duration: 0.8, loop: false, tracks: {} }
+                }
             };
         }
 
@@ -182,11 +187,9 @@ class Crowd {
         if (personIndex < 0 || personIndex >= this.people.length) return;
 
         const person = this.people[personIndex];
-        // Translate animation requested by name into a state for procedural reasoning
-        // In the procedural model, animName doesn't directly dictate frames, but we map it loosely.
-        // It's mainly used for tosses
+
         if (animName === 'toss_coin') {
-            person.coinAnimTimer = 0.8; // Set manual length for coin toss procedural animation
+            person.coinAnimTimer = 0.8; 
         } else if (animName === 'falling') {
             person.state = 'falling';
         } else if (animName === 'walking_right' || animName === 'walking_down') {
@@ -316,6 +319,20 @@ class Crowd {
         }
     }
 
+    _getAnimForState(person) {
+        const anims = this._meshData.animations;
+        if (person.coinAnimTimer > 0) {
+            const anim = anims['toss_coin'] ?? null;
+            return { anim, time: anim ? anim.duration - person.coinAnimTimer : 0 };
+        }
+        const name = person.state === 'grabbed' ? 'falling' : person.state;
+        const anim = anims[name] ?? null;
+        const time = anim
+            ? (anim.loop ? person.animTimer % anim.duration : Math.min(person.animTimer, anim.duration))
+            : 0;
+        return { anim, time };
+    }
+
     _evalTrack(track, time) {
         if (track.length === 0) return { rotation: 0, offsetX: 0, offsetY: 0 };
         if (time <= track[0].time) return track[0];
@@ -327,8 +344,8 @@ class Crowd {
                 const ratio = (time - t0.time) / (t1.time - t0.time);
                 return {
                     rotation: t0.rotation + (t1.rotation - t0.rotation) * ratio,
-                    offsetX:  t0.offsetX  + (t1.offsetX  - t0.offsetX)  * ratio,
-                    offsetY:  t0.offsetY  + (t1.offsetY  - t0.offsetY)  * ratio,
+                    offsetX: t0.offsetX + (t1.offsetX - t0.offsetX) * ratio,
+                    offsetY: t0.offsetY + (t1.offsetY - t0.offsetY) * ratio,
                 };
             }
         }
@@ -340,24 +357,11 @@ class Crowd {
 
         if (!this._meshData) return;
 
-        const parts   = this._meshData.parts;
-        const anims   = this._meshData.animations;
-        const scale   = person.scale;
-        const flipX   = (person.state === 'walking') ? (person.spawnX < person.x ? -1 : 1) : person.flipX;
+        const parts = this._meshData.parts;
+        const scale = person.scale;
+        const flipX = person.state === 'walking' ? (person.spawnX < person.x ? -1 : 1) : person.flipX;
 
-        // Determine which state animation to evaluate
-        const stateAnimName = (person.state === 'grabbed') ? 'falling' : person.state;
-        const stateAnim     = anims[stateAnimName] || null;
-        let   stateAnimTime = 0;
-        if (stateAnim) {
-            stateAnimTime = stateAnim.loop
-                ? person.animTimer % stateAnim.duration
-                : Math.min(person.animTimer, stateAnim.duration);
-        }
-
-        // Coin-toss overlay: time elapsed since toss started
-        const tossAnim     = (person.coinAnimTimer > 0) ? (anims['toss_coin'] || null) : null;
-        const tossAnimTime = tossAnim ? (tossAnim.duration - person.coinAnimTimer) : 0;
+        const { anim, time } = this._getAnimForState(person);
 
         // Build pivot map: partId -> { x, y, rotation } in mesh-local space
         const pivotMap = new Map();
@@ -367,22 +371,18 @@ class Crowd {
             let parentW = 10, parentH = 10;
 
             if (part.parentId) {
-                const pTf   = pivotMap.get(part.parentId);
-                parentX     = pTf.x;
-                parentY     = pTf.y;
-                parentRot   = pTf.rotation;
+                const pTf = pivotMap.get(part.parentId);
+                parentX = pTf.x;
+                parentY = pTf.y;
+                parentRot = pTf.rotation;
                 const pPart = this._partLookup.get(part.parentId);
-                parentW     = pPart.width;
-                parentH     = pPart.height;
+                parentW = pPart.width;
+                parentH = pPart.height;
             }
 
-            // Toss-coin animation overrides specific parts; fall back to state anim
             let localRot = 0, localOffX = 0, localOffY = 0;
-            if (tossAnim && tossAnim.tracks[part.id]) {
-                const kf = this._evalTrack(tossAnim.tracks[part.id], tossAnimTime);
-                localRot = kf.rotation; localOffX = kf.offsetX; localOffY = kf.offsetY;
-            } else if (stateAnim && stateAnim.tracks[part.id]) {
-                const kf = this._evalTrack(stateAnim.tracks[part.id], stateAnimTime);
+            if (anim && anim.tracks[part.id]) {
+                const kf = this._evalTrack(anim.tracks[part.id], time);
                 localRot = kf.rotation; localOffX = kf.offsetX; localOffY = kf.offsetY;
             }
 
@@ -400,11 +400,11 @@ class Crowd {
         }
 
         const baseIdx = person.instanceBaseIndex;
-        const g       = this.instancedGroup;
+        const g = this.instancedGroup;
 
         for (let i = 0; i < parts.length; i++) {
             const part = parts[i];
-            const tf   = pivotMap.get(part.id);
+            const tf = pivotMap.get(part.id);
 
             const anchorOffX = part.anchorX * part.width;
             const anchorOffY = part.anchorY * part.height;

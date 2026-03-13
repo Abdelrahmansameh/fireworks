@@ -137,7 +137,7 @@ function getParentTransform(partId, time) {
     pivotWorldY += (localOffX * sinP + localOffY * cosP);
 
     // 3. Current World Rotation
-    const worldRot = parentTransform.rotation + localRot;
+    const worldRot = parentTransform.rotation + (part.baseRotation || 0) + localRot;
 
     // Return the pivot point as the "origin" of this shape
     return {
@@ -320,6 +320,7 @@ function selectPart(id) {
     document.getElementById('prop-ay').value = part.anchorY;
     document.getElementById('prop-rx').value = part.relX;
     document.getElementById('prop-ry').value = part.relY;
+    document.getElementById('prop-base-rot').value = (part.baseRotation || 0).toFixed(2);
 
     updateAnimPropsUI();
 }
@@ -408,6 +409,7 @@ function setupUI() {
         if (e.target.id === 'prop-ay') part.anchorY = parseFloat(e.target.value);
         if (e.target.id === 'prop-rx') part.relX = parseFloat(e.target.value);
         if (e.target.id === 'prop-ry') part.relY = parseFloat(e.target.value);
+        if (e.target.id === 'prop-base-rot') part.baseRotation = parseFloat(e.target.value);
     });
 
     // Keyframing
@@ -522,8 +524,11 @@ function setupUI() {
                 initialProp1 = part.relX;
                 initialProp2 = part.relY;
             } else if (currentTool === 'rotate') {
-                // Get current rot from UI (dirty)
-                initialProp1 = parseFloat(document.getElementById('prop-rot').value) || 0;
+                if (editorMode === 'skeleton') {
+                    initialProp1 = part.baseRotation || 0;
+                } else {
+                    initialProp1 = parseFloat(document.getElementById('prop-rot').value) || 0;
+                }
             } else if (currentTool === 'move') {
                 if (editorMode === 'skeleton') {
                     initialProp1 = part.relX;
@@ -571,8 +576,13 @@ function setupUI() {
             document.getElementById('prop-ry').value = part.relY.toFixed(2);
         }
         else if (currentTool === 'rotate') {
-            document.getElementById('prop-rot').value = (initialProp1 + dy * -0.5).toFixed(2);
-            // auto-keyframe might be nice, but forcing explicit click for now.
+            if (editorMode === 'skeleton') {
+                part.baseRotation = initialProp1 + dy * -0.5;
+                document.getElementById('prop-base-rot').value = part.baseRotation.toFixed(2);
+            } else {
+                document.getElementById('prop-rot').value = (initialProp1 + dy * -0.5).toFixed(2);
+                // auto-keyframe might be nice, but forcing explicit click for now.
+            }
         }
         else if (currentTool === 'move') {
             if (editorMode === 'skeleton') {
@@ -638,6 +648,9 @@ function setupUI() {
             }
         }
     });
+
+    // Mirror skeleton R → L
+    document.getElementById('btn-mirror-skeleton').onclick = () => mirrorSkeletonRtoL();
 
     // Save
     document.getElementById('btn-save').onclick = () => {
@@ -773,14 +786,13 @@ function setEditorMode(mode) {
     if (skeletonProps) skeletonProps.style.display = isSkeleton ? '' : 'none';
     if (animFrameProps) animFrameProps.style.display = isSkeleton ? 'none' : '';
 
-    // Tool visibility: skeleton shows scale, hides rotate; animation is inverse
-    document.getElementById('btn-tool-rotate').style.display = isSkeleton ? 'none' : '';
+    // Tool visibility: scale + mirror only in skeleton, rotate in both modes
+    document.getElementById('btn-tool-rotate').style.display = '';
     document.getElementById('btn-tool-scale').style.display = isSkeleton ? '' : 'none';
+    document.getElementById('btn-mirror-skeleton').style.display = isSkeleton ? '' : 'none';
 
     // If active tool is no longer valid, revert to select
-    if (isSkeleton && currentTool === 'rotate') {
-        document.getElementById('btn-tool-select').click();
-    } else if (!isSkeleton && currentTool === 'scale') {
+    if (!isSkeleton && currentTool === 'scale') {
         document.getElementById('btn-tool-select').click();
     }
 
@@ -790,6 +802,47 @@ function setEditorMode(mode) {
         document.getElementById('btn-play-pause').textContent = 'Play';
     }
 
+    if (selectedPartId) selectPart(selectedPartId);
+}
+
+function mirrorSkeletonRtoL() {
+    const rParts = meshData.parts.filter(p => p.id.endsWith('_r'));
+    if (rParts.length === 0) {
+        alert('No parts with _r suffix found.');
+        return;
+    }
+
+    for (const rPart of rParts) {
+        const lId = rPart.id.slice(0, -2) + '_l';
+
+        // If the _r part's parent is also a _r part, point to the _l counterpart
+        let lParentId = rPart.parentId || null;
+        if (lParentId && lParentId.endsWith('_r')) {
+            lParentId = lParentId.slice(0, -2) + '_l';
+        }
+
+        // Find existing _l part or create it
+        let lPart = meshData.parts.find(p => p.id === lId);
+        if (!lPart) {
+            lPart = { id: lId };
+            // Insert right after the _r counterpart so hierarchy stays tidy
+            const rIdx = meshData.parts.indexOf(rPart);
+            meshData.parts.splice(rIdx + 1, 0, lPart);
+        }
+
+        // Copy and mirror properties
+        lPart.parentId     = lParentId;
+        lPart.width        = rPart.width;
+        lPart.height       = rPart.height;
+        lPart.color        = rPart.color;
+        lPart.anchorX      = -rPart.anchorX;
+        lPart.anchorY      = rPart.anchorY;
+        lPart.relX         = -rPart.relX;
+        lPart.relY         = rPart.relY;
+        lPart.baseRotation = -(rPart.baseRotation || 0);
+    }
+
+    updateHierarchyUI();
     if (selectedPartId) selectPart(selectedPartId);
 }
 
