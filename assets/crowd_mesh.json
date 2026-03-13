@@ -3,8 +3,8 @@
     {
       "id": "body",
       "parentId": null,
-      "width": 6,
-      "height": 6,
+      "width": 4,
+      "height": 4,
       "anchorX": 0,
       "anchorY": 0,
       "relX": 0,
@@ -12,34 +12,34 @@
       "color": "000000"
     },
     {
-      "id": "arm_l",
+      "id": "arm_1_r",
       "parentId": "body",
-      "width": 1.415186074429772,
-      "height": 2.6935822328931573,
-      "anchorX": 0,
-      "anchorY": 0.5,
-      "relX": -0.5,
-      "relY": 0.25,
-      "color": "000000",
-      "baseRotation": 0
-    },
-    {
-      "id": "arm_r",
-      "parentId": "body",
-      "width": 1.415186074429772,
-      "height": 2.6935822328931573,
+      "width": 0.6934921435561018,
+      "height": 1,
       "anchorX": 0,
       "anchorY": 0.5,
       "relX": 0.5,
       "relY": 0.25,
       "color": "000000",
-      "baseRotation": 0
+      "baseRotation": 1.5606242496998803
+    },
+    {
+      "id": "arm_1_l",
+      "parentId": "body",
+      "width": 0.6934921435561018,
+      "height": 1,
+      "color": "000000",
+      "anchorX": 0,
+      "anchorY": 0.5,
+      "relX": -0.5,
+      "relY": 0.25,
+      "baseRotation": -1.5606242496998803
     },
     {
       "id": "leg_l",
       "parentId": "body",
-      "width": 1.0973949579831932,
-      "height": 3.12404081632653,
+      "width": -0.7,
+      "height": 1.9,
       "anchorX": 0,
       "anchorY": 0.5,
       "relX": -0.2,
@@ -50,8 +50,8 @@
     {
       "id": "leg_r",
       "parentId": "body",
-      "width": 1.0973949579831932,
-      "height": 3.12404081632653,
+      "width": -0.7,
+      "height": 1.9,
       "anchorX": 0,
       "anchorY": 0.5,
       "relX": 0.2,
@@ -61,31 +61,31 @@
     {
       "id": "foot_l",
       "parentId": "leg_l",
-      "width": 2.2896518607442977,
-      "height": 0.8973805522208883,
+      "width": 1.3232701080432174,
+      "height": 0.7118535414165666,
       "anchorX": 0,
       "anchorY": 0,
-      "relX": -0.5514534580955668,
-      "relY": -1.0271595179578272,
+      "relX": 0.408930695565899,
+      "relY": -1.1029793195626796,
       "color": "000000",
       "baseRotation": 0
     },
     {
       "id": "foot_r",
       "parentId": "leg_r",
-      "width": 2.2896518607442977,
-      "height": 0.8973805522208883,
+      "width": 1.3232701080432174,
+      "height": 0.7118535414165666,
       "anchorX": 0,
       "anchorY": 0,
-      "relX": 0.5514534580955668,
-      "relY": -1.0271595179578272,
+      "relX": -0.408930695565899,
+      "relY": -1.1029793195626796,
       "color": "000000"
     },
     {
       "id": "eye_l",
       "parentId": "body",
-      "width": 2.5,
-      "height": 2.5,
+      "width": 1.5,
+      "height": 1.5,
       "anchorX": 0,
       "anchorY": 0,
       "relX": -0.25,
@@ -96,8 +96,8 @@
     {
       "id": "eye_r",
       "parentId": "body",
-      "width": 2.5,
-      "height": 2.5,
+      "width": 1.5,
+      "height": 1.5,
       "anchorX": 0,
       "anchorY": 0,
       "relX": 0.25,
@@ -107,8 +107,8 @@
     {
       "id": "pupil_l",
       "parentId": "eye_l",
-      "width": 1,
-      "height": 1,
+      "width": 0.5,
+      "height": 0.5,
       "anchorX": 0,
       "anchorY": 0,
       "relX": 0,
@@ -119,8 +119,8 @@
     {
       "id": "pupil_r",
       "parentId": "eye_r",
-      "width": 1,
-      "height": 1,
+      "width": 0.5,
+      "height": 0.5,
       "anchorX": 0,
       "anchorY": 0,
       "relX": 0,
@@ -128,27 +128,51 @@
       "color": "000000"
     },
     {
-      "id": "forearm_r",
-      "parentId": "arm_r",
-      "width": 1.2,
-      "height": 3,
+      "id": "arm_2_r",
+      "parentId": "arm_1_r",
+      "width": 0.6813349339735894,
+      "height": 1,
       "color": "000000",
       "anchorX": 0,
       "anchorY": 0.5,
       "relX": 0.0009666843083049881,
       "relY": -0.9469342932885187,
-      "baseRotation": 0
+      "baseRotation": 4.440892098500626e-16
     },
     {
-      "id": "forearm_l",
-      "parentId": "arm_l",
-      "width": 1.2,
-      "height": 3,
+      "id": "arm_2_l",
+      "parentId": "arm_1_l",
+      "width": 0.6813349339735894,
+      "height": 1,
       "color": "000000",
       "anchorX": 0,
       "anchorY": 0.5,
       "relX": -0.0009666843083049881,
       "relY": -0.9469342932885187,
+      "baseRotation": -4.440892098500626e-16
+    },
+    {
+      "id": "arm_3_r",
+      "parentId": "arm_2_r",
+      "width": 0.6813349339735894,
+      "height": 1,
+      "color": "000000",
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "relX": 0.5,
+      "relY": -1,
+      "baseRotation": 0
+    },
+    {
+      "id": "arm_3_l",
+      "parentId": "arm_2_l",
+      "width": 0.6813349339735894,
+      "height": 1,
+      "color": "000000",
+      "anchorX": -0.5,
+      "anchorY": 0.5,
+      "relX": -0.5,
+      "relY": -1,
       "baseRotation": 0
     }
   ],
@@ -185,46 +209,6 @@
           {
             "time": 1,
             "rotation": 0,
-            "offsetX": 0,
-            "offsetY": 0
-          }
-        ],
-        "arm_l": [
-          {
-            "time": 0,
-            "rotation": 2.94,
-            "offsetX": 0,
-            "offsetY": 0
-          },
-          {
-            "time": 0.5,
-            "rotation": 3.34,
-            "offsetX": 0,
-            "offsetY": 0
-          },
-          {
-            "time": 1,
-            "rotation": 2.94,
-            "offsetX": 0,
-            "offsetY": 0
-          }
-        ],
-        "arm_r": [
-          {
-            "time": 0,
-            "rotation": 3.34,
-            "offsetX": 0,
-            "offsetY": 0
-          },
-          {
-            "time": 0.5,
-            "rotation": 2.94,
-            "offsetX": 0,
-            "offsetY": 0
-          },
-          {
-            "time": 1,
-            "rotation": 3.34,
             "offsetX": 0,
             "offsetY": 0
           }
@@ -334,6 +318,26 @@
             "offsetX": 0,
             "offsetY": 0
           }
+        ],
+        "arm_1_r": [
+          {
+            "time": 0,
+            "rotation": 3.34,
+            "offsetX": 0,
+            "offsetY": 0
+          },
+          {
+            "time": 0.5,
+            "rotation": 2.94,
+            "offsetX": 0,
+            "offsetY": 0
+          },
+          {
+            "time": 1,
+            "rotation": 3.34,
+            "offsetX": 0,
+            "offsetY": 0
+          }
         ]
       }
     },
@@ -365,46 +369,6 @@
             "rotation": 0,
             "offsetX": 0,
             "offsetY": 2
-          },
-          {
-            "time": 1,
-            "rotation": 0,
-            "offsetX": 0,
-            "offsetY": 0
-          }
-        ],
-        "arm_l": [
-          {
-            "time": 0,
-            "rotation": 0,
-            "offsetX": 0,
-            "offsetY": 0
-          },
-          {
-            "time": 0.5,
-            "rotation": 0.5,
-            "offsetX": 0,
-            "offsetY": 0
-          },
-          {
-            "time": 1,
-            "rotation": 0,
-            "offsetX": 0,
-            "offsetY": 0
-          }
-        ],
-        "arm_r": [
-          {
-            "time": 0,
-            "rotation": 0,
-            "offsetX": 0,
-            "offsetY": 0
-          },
-          {
-            "time": 0.5,
-            "rotation": -0.5,
-            "offsetX": 0,
-            "offsetY": 0
           },
           {
             "time": 1,
@@ -452,6 +416,26 @@
             "offsetX": 0,
             "offsetY": 0
           }
+        ],
+        "arm_1_r": [
+          {
+            "time": 0,
+            "rotation": 0,
+            "offsetX": 0,
+            "offsetY": 0
+          },
+          {
+            "time": 0.5,
+            "rotation": -0.5,
+            "offsetX": 0,
+            "offsetY": 0
+          },
+          {
+            "time": 1,
+            "rotation": 0,
+            "offsetX": 0,
+            "offsetY": 0
+          }
         ]
       }
     },
@@ -463,46 +447,6 @@
           {
             "time": 0,
             "rotation": 0,
-            "offsetX": 0,
-            "offsetY": 0
-          }
-        ],
-        "arm_l": [
-          {
-            "time": 0,
-            "rotation": 2.64,
-            "offsetX": 0,
-            "offsetY": 0
-          },
-          {
-            "time": 0.5,
-            "rotation": 3.44,
-            "offsetX": 0,
-            "offsetY": 0
-          },
-          {
-            "time": 1,
-            "rotation": 2.64,
-            "offsetX": 0,
-            "offsetY": 0
-          }
-        ],
-        "arm_r": [
-          {
-            "time": 0,
-            "rotation": -2.64,
-            "offsetX": 0,
-            "offsetY": 0
-          },
-          {
-            "time": 0.5,
-            "rotation": -3.44,
-            "offsetX": 0,
-            "offsetY": 0
-          },
-          {
-            "time": 1,
-            "rotation": -2.64,
             "offsetX": 0,
             "offsetY": 0
           }
@@ -562,6 +506,26 @@
             "offsetX": 0,
             "offsetY": -0.5
           }
+        ],
+        "arm_1_r": [
+          {
+            "time": 0,
+            "rotation": -2.64,
+            "offsetX": 0,
+            "offsetY": 0
+          },
+          {
+            "time": 0.5,
+            "rotation": -3.44,
+            "offsetX": 0,
+            "offsetY": 0
+          },
+          {
+            "time": 1,
+            "rotation": -2.64,
+            "offsetX": 0,
+            "offsetY": 0
+          }
         ]
       }
     },
@@ -569,7 +533,23 @@
       "duration": 0.8,
       "loop": false,
       "tracks": {
-        "arm_r": [
+        "pupil_l": [
+          {
+            "time": 0,
+            "rotation": 0,
+            "offsetX": 1,
+            "offsetY": 1
+          }
+        ],
+        "pupil_r": [
+          {
+            "time": 0,
+            "rotation": 0,
+            "offsetX": 1,
+            "offsetY": 1
+          }
+        ],
+        "arm_1_r": [
           {
             "time": 0,
             "rotation": 3.14,
@@ -587,22 +567,6 @@
             "rotation": 3.14,
             "offsetX": 0,
             "offsetY": 0
-          }
-        ],
-        "pupil_l": [
-          {
-            "time": 0,
-            "rotation": 0,
-            "offsetX": 1,
-            "offsetY": 1
-          }
-        ],
-        "pupil_r": [
-          {
-            "time": 0,
-            "rotation": 0,
-            "offsetX": 1,
-            "offsetY": 1
           }
         ]
       }

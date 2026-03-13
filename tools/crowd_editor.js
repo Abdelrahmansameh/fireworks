@@ -13,6 +13,7 @@ let currentAnimId = 'cheering';
 let currentTool = 'select'; // select, move, attach, rotate, scale
 let editorMode = 'skeleton'; // 'skeleton' | 'animation'
 let isPlaying = false;
+let renamePending = false;
 let currentTime = 0;
 let lastTime = 0;
 window.selectedKeyframe = null;
@@ -291,6 +292,14 @@ function updateHierarchyUI() {
 }
 
 function selectPart(id) {
+    // Cancel any pending rename
+    if (renamePending) {
+        const propIdInput = document.getElementById('prop-id');
+        propIdInput.disabled = true;
+        document.getElementById('btn-rename-part').textContent = 'Rename';
+        renamePending = false;
+    }
+
     selectedPartId = id;
     updateHierarchyUI();
 
@@ -675,6 +684,52 @@ function setupUI() {
         selectPart(newId);
     };
 
+    // Delete Part
+    document.getElementById('btn-delete-part').onclick = () => {
+        if (!selectedPartId) return;
+        const children = meshData.parts.filter(p => p.parentId === selectedPartId);
+        let msg = `Delete "${selectedPartId}"?`;
+        if (children.length > 0) {
+            msg += `\n\n${children.length} child part(s) will be reparented to its parent.`;
+        }
+        msg += '\n\nAll animation tracks for this part will also be removed.';
+        if (!confirm(msg)) return;
+        deletePart(selectedPartId);
+    };
+
+    // Rename Part
+    document.getElementById('btn-rename-part').onclick = () => {
+        if (!selectedPartId) return;
+        const propIdInput = document.getElementById('prop-id');
+        if (!renamePending) {
+            propIdInput.disabled = false;
+            propIdInput.focus();
+            propIdInput.select();
+            document.getElementById('btn-rename-part').textContent = 'Apply';
+            renamePending = true;
+        } else {
+            const newId = propIdInput.value;
+            if (renamePart(selectedPartId, newId)) {
+                propIdInput.disabled = true;
+                document.getElementById('btn-rename-part').textContent = 'Rename';
+                renamePending = false;
+            }
+        }
+    };
+
+    document.getElementById('prop-id').addEventListener('keydown', (e) => {
+        if (!renamePending) return;
+        if (e.key === 'Escape') {
+            const propIdInput = document.getElementById('prop-id');
+            propIdInput.value = selectedPartId;
+            propIdInput.disabled = true;
+            document.getElementById('btn-rename-part').textContent = 'Rename';
+            renamePending = false;
+        } else if (e.key === 'Enter') {
+            document.getElementById('btn-rename-part').click();
+        }
+    });
+
     // Add Animation
     document.getElementById('btn-add-anim').onclick = () => {
         const input = document.getElementById('new-anim-id');
@@ -863,6 +918,70 @@ function setEditorMode(mode) {
     }
 
     if (selectedPartId) selectPart(selectedPartId);
+}
+
+function deletePart(id) {
+    const part = meshData.parts.find(p => p.id === id);
+    if (!part) return;
+
+    // Reparent any children to this part's parent (or null)
+    for (const p of meshData.parts) {
+        if (p.parentId === id) p.parentId = part.parentId || null;
+    }
+
+    // Remove the part itself
+    meshData.parts.splice(meshData.parts.indexOf(part), 1);
+
+    // Remove animation tracks for this part across all animations
+    for (const animKey of Object.keys(meshData.animations)) {
+        delete meshData.animations[animKey].tracks[id];
+    }
+
+    // Clear editor references
+    if (selectedPartId === id) selectedPartId = null;
+    if (window.selectedKeyframe && window.selectedKeyframe.partId === id) {
+        window.selectedKeyframe = null;
+    }
+
+    updateHierarchyUI();
+    updateTimelineUI();
+    selectPart(selectedPartId);
+}
+
+function renamePart(oldId, newId) {
+    newId = newId.trim();
+    if (!newId) { alert('Name cannot be empty.'); return false; }
+    if (newId === oldId) return true;
+    if (meshData.parts.find(p => p.id === newId)) { alert(`Part "${newId}" already exists.`); return false; }
+
+    // Update the part's own id
+    const part = meshData.parts.find(p => p.id === oldId);
+    part.id = newId;
+
+    // Update parentId on all parts that reference this part
+    for (const p of meshData.parts) {
+        if (p.parentId === oldId) p.parentId = newId;
+    }
+
+    // Rename animation tracks across all animations
+    for (const animKey of Object.keys(meshData.animations)) {
+        const anim = meshData.animations[animKey];
+        if (Object.prototype.hasOwnProperty.call(anim.tracks, oldId)) {
+            anim.tracks[newId] = anim.tracks[oldId];
+            delete anim.tracks[oldId];
+        }
+    }
+
+    // Update editor state
+    if (selectedPartId === oldId) selectedPartId = newId;
+    if (window.selectedKeyframe && window.selectedKeyframe.partId === oldId) {
+        window.selectedKeyframe.partId = newId;
+    }
+
+    updateHierarchyUI();
+    updateTimelineUI();
+    selectPart(newId);
+    return true;
 }
 
 function mirrorSkeletonRtoL() {
