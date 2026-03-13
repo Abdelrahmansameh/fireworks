@@ -142,7 +142,7 @@
           },
           {
             "time": 0.5,
-            "rotation": -0.32,
+            "rotation": 0,
             "offsetX": 0,
             "offsetY": 0
           },
@@ -239,8 +239,14 @@
           {
             "time": 0,
             "rotation": 0,
-            "offsetX": 0.45,
-            "offsetY": -3.61
+            "offsetX": 0.04,
+            "offsetY": -0.11
+          },
+          {
+            "time": 0.275,
+            "rotation": 0,
+            "offsetX": -0.01,
+            "offsetY": -0.06
           }
         ],
         "eye_l": [
