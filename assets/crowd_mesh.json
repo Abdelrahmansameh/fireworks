@@ -3,8 +3,8 @@
     {
       "id": "body",
       "parentId": null,
-      "width": 25,
-      "height": 15,
+      "width": 10,
+      "height": 10,
       "anchorX": 0,
       "anchorY": 0,
       "relX": 0,
@@ -15,7 +15,7 @@
       "id": "arm_l",
       "parentId": "body",
       "width": 2.5,
-      "height": 6,
+      "height": 6.005762304921968,
       "anchorX": 0,
       "anchorY": 0.5,
       "relX": -0.5,
@@ -62,8 +62,8 @@
       "height": 2,
       "anchorX": 0,
       "anchorY": 0,
-      "relX": 0,
-      "relY": -0.5,
+      "relX": -0.16006402561024413,
+      "relY": -1.124249699879952,
       "color": "000000"
     },
     {
@@ -73,8 +73,8 @@
       "height": 2,
       "anchorX": 0,
       "anchorY": 0,
-      "relX": 0,
-      "relY": -0.5,
+      "relX": 0.16006402561024405,
+      "relY": -1.1402561024409759,
       "color": "000000"
     },
     {
