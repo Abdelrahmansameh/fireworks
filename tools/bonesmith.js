@@ -783,8 +783,22 @@ function setupUI() {
         fileInput.click();
     };
 
-    // Mirror skeleton R → L
-    document.getElementById('btn-mirror-skeleton').onclick = () => mirrorSkeletonRtoL();
+    // Mirror skeleton / animation
+    document.getElementById('btn-mirror-skeleton').onclick = () => {
+        const dir = document.getElementById('mirror-direction').value;
+        const fromSuffix = dir === 'r-to-l' ? '_r' : '_l';
+        const toSuffix = dir === 'r-to-l' ? '_l' : '_r';
+
+        if (editorMode === 'skeleton') {
+            mirrorSkeleton(fromSuffix, toSuffix);
+        } else {
+            mirrorAnimation(fromSuffix, toSuffix);
+        }
+    };
+
+    document.getElementById('btn-flip-animation').onclick = () => {
+        flipAnimation();
+    };
 
     // Save
     document.getElementById('btn-save').onclick = () => {
@@ -920,7 +934,11 @@ function setEditorMode(mode) {
 
     document.getElementById('btn-tool-rotate').style.display = '';
     document.getElementById('btn-tool-scale').style.display = isSkeleton ? '' : 'none';
-    document.getElementById('btn-mirror-skeleton').style.display = isSkeleton ? '' : 'none';
+    
+    const mirrorDisplay = (isSkeleton || mode === 'animation') ? '' : 'none';
+    document.getElementById('btn-mirror-skeleton').style.display = mirrorDisplay;
+    document.getElementById('mirror-direction').style.display = mirrorDisplay;
+    document.getElementById('btn-flip-animation').style.display = isSkeleton ? 'none' : '';
 
     if (!isSkeleton && currentTool === 'scale') {
         document.getElementById('btn-tool-select').click();
@@ -990,41 +1008,117 @@ function renamePart(oldId, newId) {
     return true;
 }
 
-function mirrorSkeletonRtoL() {
-    const rParts = meshData.parts.filter(p => p.id.endsWith('_r'));
-    if (rParts.length === 0) {
-        alert('No parts with _r suffix found.');
+function mirrorSkeleton(fromSuffix, toSuffix) {
+    const fromParts = meshData.parts.filter(p => p.id.endsWith(fromSuffix));
+    if (fromParts.length === 0) {
+        alert(`No parts with ${fromSuffix} suffix found.`);
         return;
     }
 
-    for (const rPart of rParts) {
-        const lId = rPart.id.slice(0, -2) + '_l';
+    for (const fromPart of fromParts) {
+        const toId = fromPart.id.slice(0, -fromSuffix.length) + toSuffix;
 
-        let lParentId = rPart.parentId || null;
-        if (lParentId && lParentId.endsWith('_r')) {
-            lParentId = lParentId.slice(0, -2) + '_l';
+        let toParentId = fromPart.parentId || null;
+        if (toParentId && toParentId.endsWith(fromSuffix)) {
+            toParentId = toParentId.slice(0, -fromSuffix.length) + toSuffix;
         }
 
-        let lPart = meshData.parts.find(p => p.id === lId);
-        if (!lPart) {
-            lPart = { id: lId };
-            const rIdx = meshData.parts.indexOf(rPart);
-            meshData.parts.splice(rIdx + 1, 0, lPart);
+        let toPart = meshData.parts.find(p => p.id === toId);
+        if (!toPart) {
+            toPart = { id: toId };
+            const fromIdx = meshData.parts.indexOf(fromPart);
+            meshData.parts.splice(fromIdx + 1, 0, toPart);
         }
 
-        lPart.parentId     = lParentId;
-        lPart.width        = rPart.width;
-        lPart.height       = rPart.height;
-        lPart.color        = rPart.color;
-        lPart.anchorX      = -rPart.anchorX;
-        lPart.anchorY      = rPart.anchorY;
-        lPart.relX         = -rPart.relX;
-        lPart.relY         = rPart.relY;
-        lPart.baseRotation = -(rPart.baseRotation || 0);
+        toPart.parentId     = toParentId;
+        toPart.width        = fromPart.width;
+        toPart.height       = fromPart.height;
+        toPart.color        = fromPart.color;
+        toPart.anchorX      = -fromPart.anchorX;
+        toPart.anchorY      = fromPart.anchorY;
+        toPart.relX         = -fromPart.relX;
+        toPart.relY         = fromPart.relY;
+        toPart.baseRotation = -(fromPart.baseRotation || 0);
     }
 
     updateHierarchyUI();
     if (selectedPartId) selectPart(selectedPartId);
+}
+
+function mirrorAnimation(fromSuffix, toSuffix) {
+    const anim = meshData.animations[currentAnimId];
+    if (!anim) return;
+
+    const tracksToMirror = Object.keys(anim.tracks).filter(id => id.endsWith(fromSuffix));
+    if (tracksToMirror.length === 0) {
+        alert(`No animation tracks with ${fromSuffix} suffix found.`);
+        return;
+    }
+
+    for (const fromId of tracksToMirror) {
+        const toId = fromId.slice(0, -fromSuffix.length) + toSuffix;
+        if (!meshData.parts.find(p => p.id === toId)) continue;
+
+        const fromTrack = anim.tracks[fromId];
+        anim.tracks[toId] = fromTrack.map(kf => ({
+            time: kf.time,
+            offsetX: -kf.offsetX,
+            offsetY: kf.offsetY,
+            rotation: -kf.rotation
+        }));
+    }
+
+    updateTimelineUI();
+    updateAnimPropsUI();
+}
+
+function flipAnimation() {
+    const anim = meshData.animations[currentAnimId];
+    if (!anim) return;
+
+    const newTracks = {};
+    const processedParts = new Set();
+    const lSuffix = '_l';
+    const rSuffix = '_r';
+
+    const mirrorKeyframe = (kf) => ({
+        time: kf.time,
+        offsetX: -kf.offsetX,
+        offsetY: kf.offsetY,
+        rotation: -kf.rotation
+    });
+
+    for (const part of meshData.parts) {
+        if (processedParts.has(part.id)) continue;
+
+        let pairId = null;
+        if (part.id.endsWith(lSuffix)) {
+            pairId = part.id.slice(0, -lSuffix.length) + rSuffix;
+        } else if (part.id.endsWith(rSuffix)) {
+            pairId = part.id.slice(0, -rSuffix.length) + lSuffix;
+        }
+
+        if (pairId && meshData.parts.some(p => p.id === pairId)) {
+            const trackA = anim.tracks[part.id];
+            const trackB = anim.tracks[pairId];
+
+            if (trackA) newTracks[pairId] = trackA.map(mirrorKeyframe);
+            if (trackB) newTracks[part.id] = trackB.map(mirrorKeyframe);
+
+            processedParts.add(part.id);
+            processedParts.add(pairId);
+        } else {
+            const track = anim.tracks[part.id];
+            if (track) {
+                newTracks[part.id] = track.map(mirrorKeyframe);
+            }
+            processedParts.add(part.id);
+        }
+    }
+
+    anim.tracks = newTracks;
+    updateTimelineUI();
+    updateAnimPropsUI();
 }
 
 window.onload = init;
