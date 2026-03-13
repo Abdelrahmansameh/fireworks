@@ -13,7 +13,8 @@
     box-sizing: border-box;
 }
 
-body, html {
+body,
+html {
     margin: 0;
     padding: 0;
     width: 100%;
@@ -117,11 +118,11 @@ body, html {
 }
 
 .tool-btn:hover {
-    background: rgba(255,255,255,0.1);
+    background: rgba(255, 255, 255, 0.1);
 }
 
 .tool-btn.active {
-    background: rgba(255,255,255,0.2);
+    background: rgba(255, 255, 255, 0.2);
     border-color: var(--text-main);
 }
 
@@ -143,7 +144,8 @@ button:hover {
     border-color: var(--accent);
 }
 
-input, select {
+input,
+select {
     background: var(--input-bg);
     border: 1px solid var(--border);
     color: var(--text-main);
@@ -282,4 +284,39 @@ input[type="color"] {
     gap: 5px;
     flex: none;
     padding-bottom: 15px;
+}
+
+/* Mode switcher */
+.mode-switcher {
+    display: flex;
+    background-color: #111;
+    border-bottom: 2px solid var(--border);
+    flex-shrink: 0;
+}
+
+.mode-btn {
+    flex: 1;
+    padding: 9px 4px;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    border: none;
+    border-radius: 0;
+    background: transparent;
+    color: #555;
+    cursor: pointer;
+    transition: color 0.15s, background 0.15s;
+}
+
+.mode-btn:hover {
+    color: #aaa;
+    background: rgba(255,255,255,0.05);
+    border-color: transparent;
+}
+
+.mode-btn.active {
+    color: #fff;
+    background: var(--accent);
+    border-bottom: 2px solid var(--accent-hover);
 }

@@ -11,6 +11,7 @@ let meshData = {
 let selectedPartId = null;
 let currentAnimId = 'cheering';
 let currentTool = 'select'; // select, move, attach, rotate, scale
+let editorMode = 'skeleton'; // 'skeleton' | 'animation'
 let isPlaying = false;
 let currentTime = 0;
 let lastTime = 0;
@@ -81,11 +82,11 @@ function getParentTransform(partId, time) {
     let localOffX = 0;
     let localOffY = 0;
 
-    if (partId === selectedPartId && !isPlaying) {
+    if (editorMode === 'animation' && partId === selectedPartId && !isPlaying) {
         localRot = parseFloat(document.getElementById('prop-rot').value) || 0;
         localOffX = parseFloat(document.getElementById('prop-offx').value) || 0;
         localOffY = parseFloat(document.getElementById('prop-offy').value) || 0;
-    } else {
+    } else if (editorMode === 'animation') {
         const anim = meshData.animations[currentAnimId];
         if (anim && anim.tracks[partId] && anim.tracks[partId].length > 0) {
             const track = anim.tracks[partId];
@@ -378,6 +379,13 @@ function updateAnimPropsUI() {
 }
 
 function setupUI() {
+    // Mode switcher
+    document.getElementById('btn-mode-skeleton').onclick = () => setEditorMode('skeleton');
+    document.getElementById('btn-mode-animation').onclick = () => setEditorMode('animation');
+
+    // Attach tool is absorbed by move in skeleton mode — hide it always
+    document.getElementById('btn-tool-attach').style.display = 'none';
+
     // Tools
     const tools = ['select', 'move', 'attach', 'rotate', 'scale'];
     tools.forEach(t => {
@@ -517,8 +525,13 @@ function setupUI() {
                 // Get current rot from UI (dirty)
                 initialProp1 = parseFloat(document.getElementById('prop-rot').value) || 0;
             } else if (currentTool === 'move') {
-                initialProp1 = parseFloat(document.getElementById('prop-offx').value) || 0;
-                initialProp2 = parseFloat(document.getElementById('prop-offy').value) || 0;
+                if (editorMode === 'skeleton') {
+                    initialProp1 = part.relX;
+                    initialProp2 = part.relY;
+                } else {
+                    initialProp1 = parseFloat(document.getElementById('prop-offx').value) || 0;
+                    initialProp2 = parseFloat(document.getElementById('prop-offy').value) || 0;
+                }
             } else if (currentTool === 'scale') {
                 initialProp1 = parseFloat(document.getElementById('prop-w').value) || part.width;
                 initialProp2 = parseFloat(document.getElementById('prop-h').value) || part.height;
@@ -562,15 +575,32 @@ function setupUI() {
             // auto-keyframe might be nice, but forcing explicit click for now.
         }
         else if (currentTool === 'move') {
-            // Move animation offset
-            const pTf = getParentTransform(part.parentId, currentTime);
-            const cos = Math.cos(-pTf.rotation);
-            const sin = Math.sin(-pTf.rotation);
-            const localDx = dx * cos - dy * sin;
-            const localDy = dx * sin + dy * cos;
-
-            document.getElementById('prop-offx').value = (initialProp1 + localDx).toFixed(2);
-            document.getElementById('prop-offy').value = (initialProp2 + localDy).toFixed(2);
+            if (editorMode === 'skeleton') {
+                // Move attachment point (relX/relY) in skeleton mode
+                let pw = 10, ph = 10;
+                if (part.parentId) {
+                    const pObj = meshData.parts.find(a => a.id === part.parentId);
+                    if (pObj) { pw = pObj.width; ph = pObj.height; }
+                }
+                const pTf = getParentTransform(part.parentId, currentTime);
+                const cos = Math.cos(-pTf.rotation);
+                const sin = Math.sin(-pTf.rotation);
+                const localDx = dx * cos - dy * sin;
+                const localDy = dx * sin + dy * cos;
+                part.relX = initialProp1 + (localDx / pw);
+                part.relY = initialProp2 + (localDy / ph);
+                document.getElementById('prop-rx').value = part.relX.toFixed(2);
+                document.getElementById('prop-ry').value = part.relY.toFixed(2);
+            } else {
+                // Move animation offset
+                const pTf = getParentTransform(part.parentId, currentTime);
+                const cos = Math.cos(-pTf.rotation);
+                const sin = Math.sin(-pTf.rotation);
+                const localDx = dx * cos - dy * sin;
+                const localDy = dx * sin + dy * cos;
+                document.getElementById('prop-offx').value = (initialProp1 + localDx).toFixed(2);
+                document.getElementById('prop-offy').value = (initialProp2 + localDy).toFixed(2);
+            }
         }
         else if (currentTool === 'scale') {
             // Scale based on mouse drag distance relative to drag start
@@ -603,7 +633,8 @@ function setupUI() {
             else if (key === 'r') toolBtnId = 'btn-tool-scale';
             
             if (toolBtnId) {
-                document.getElementById(toolBtnId).click();
+                const btn = document.getElementById(toolBtnId);
+                if (btn && btn.style.display !== 'none') btn.click();
             }
         }
     });
@@ -623,6 +654,9 @@ function setupUI() {
         isPlaying = !isPlaying;
         e.target.textContent = isPlaying ? 'Pause' : 'Play';
     }
+
+    // Apply initial mode
+    setEditorMode('skeleton');
 }
 
 function updateTimelineUI() {
@@ -717,6 +751,46 @@ function populateAnimations() {
 
 function populateHierarchy() {
     updateHierarchyUI();
+}
+
+function setEditorMode(mode) {
+    editorMode = mode;
+    const isSkeleton = mode === 'skeleton';
+
+    document.getElementById('btn-mode-skeleton').classList.toggle('active', isSkeleton);
+    document.getElementById('btn-mode-animation').classList.toggle('active', !isSkeleton);
+
+    // Left panel sections
+    document.getElementById('section-add-part').style.display = isSkeleton ? '' : 'none';
+    document.getElementById('section-animations').style.display = isSkeleton ? 'none' : '';
+
+    // Timeline
+    document.getElementById('timeline-panel').style.display = isSkeleton ? 'none' : 'flex';
+
+    // Properties sections
+    const skeletonProps = document.getElementById('skeleton-props');
+    const animFrameProps = document.getElementById('anim-frame-props');
+    if (skeletonProps) skeletonProps.style.display = isSkeleton ? '' : 'none';
+    if (animFrameProps) animFrameProps.style.display = isSkeleton ? 'none' : '';
+
+    // Tool visibility: skeleton shows scale, hides rotate; animation is inverse
+    document.getElementById('btn-tool-rotate').style.display = isSkeleton ? 'none' : '';
+    document.getElementById('btn-tool-scale').style.display = isSkeleton ? '' : 'none';
+
+    // If active tool is no longer valid, revert to select
+    if (isSkeleton && currentTool === 'rotate') {
+        document.getElementById('btn-tool-select').click();
+    } else if (!isSkeleton && currentTool === 'scale') {
+        document.getElementById('btn-tool-select').click();
+    }
+
+    // Stop playback when entering skeleton mode
+    if (isSkeleton && isPlaying) {
+        isPlaying = false;
+        document.getElementById('btn-play-pause').textContent = 'Play';
+    }
+
+    if (selectedPartId) selectPart(selectedPartId);
 }
 
 window.onload = init;
