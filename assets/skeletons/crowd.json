@@ -178,7 +178,7 @@
   ],
   "animations": {
     "cheering": {
-      "duration": 1,
+      "duration": 0.4,
       "loop": true,
       "tracks": {
         "body": [
@@ -189,25 +189,25 @@
             "rotation": 0
           },
           {
-            "time": 0.25,
+            "time": 0.10000000000000005,
             "offsetX": 0,
             "offsetY": 2,
             "rotation": 0
           },
           {
-            "time": 0.5,
+            "time": 0.2000000000000001,
             "offsetX": 0,
             "offsetY": 0,
             "rotation": 0
           },
           {
-            "time": 0.75,
+            "time": 0.3000000000000002,
             "offsetX": 0,
             "offsetY": -2,
             "rotation": 0
           },
           {
-            "time": 1,
+            "time": 0.3999999999999999,
             "offsetX": 0,
             "offsetY": 0,
             "rotation": 0
@@ -221,13 +221,13 @@
             "rotation": 0.02
           },
           {
-            "time": 0.5,
+            "time": 0.2000000000000001,
             "offsetX": 0,
             "offsetY": 0,
             "rotation": -0.74
           },
           {
-            "time": 1,
+            "time": 0.3999999999999999,
             "offsetX": 0,
             "offsetY": 0,
             "rotation": 0.02
@@ -241,13 +241,13 @@
             "rotation": -0.02
           },
           {
-            "time": 0.5,
+            "time": 0.2000000000000001,
             "offsetX": 0,
             "offsetY": 0,
             "rotation": 0.74
           },
           {
-            "time": 1,
+            "time": 0.3999999999999999,
             "offsetX": 0,
             "offsetY": 0,
             "rotation": -0.02
@@ -261,7 +261,7 @@
             "rotation": 0
           },
           {
-            "time": 1,
+            "time": 0.3999999999999999,
             "offsetX": 0,
             "offsetY": 0,
             "rotation": 0
@@ -275,7 +275,7 @@
             "rotation": 0
           },
           {
-            "time": 1,
+            "time": 0.3999999999999999,
             "offsetX": 0,
             "offsetY": 0,
             "rotation": 0
@@ -289,13 +289,13 @@
             "rotation": 0
           },
           {
-            "time": 0.275,
+            "time": 0.11000000000000008,
             "offsetX": -0.01,
             "offsetY": -0.06,
             "rotation": 0
           },
           {
-            "time": 1,
+            "time": 0.3999999999999999,
             "offsetX": 0.04,
             "offsetY": -0.11,
             "rotation": 0
@@ -309,13 +309,13 @@
             "rotation": 0
           },
           {
-            "time": 0.275,
+            "time": 0.11000000000000008,
             "offsetX": 0.01,
             "offsetY": -0.06,
             "rotation": 0
           },
           {
-            "time": 1,
+            "time": 0.3999999999999999,
             "offsetX": -0.04,
             "offsetY": -0.11,
             "rotation": 0
@@ -329,7 +329,7 @@
             "rotation": 0
           },
           {
-            "time": 1,
+            "time": 0.3999999999999999,
             "offsetX": 0,
             "offsetY": 0,
             "rotation": 0
@@ -343,7 +343,7 @@
             "rotation": 0
           },
           {
-            "time": 1,
+            "time": 0.3999999999999999,
             "offsetX": 0,
             "offsetY": 0,
             "rotation": 0
@@ -357,13 +357,13 @@
             "rotation": 0
           },
           {
-            "time": 0.5,
+            "time": 0.2000000000000001,
             "offsetX": -0.39,
             "offsetY": 0.41,
             "rotation": 0
           },
           {
-            "time": 1,
+            "time": 0.3999999999999999,
             "offsetX": -0.41,
             "offsetY": -0.21,
             "rotation": 0
@@ -377,13 +377,13 @@
             "rotation": 0
           },
           {
-            "time": 0.5,
+            "time": 0.2000000000000001,
             "offsetX": -0.36,
             "offsetY": 0.41,
             "rotation": 0
           },
           {
-            "time": 1,
+            "time": 0.3999999999999999,
             "offsetX": -0.41,
             "offsetY": -0.27,
             "rotation": 0
@@ -397,7 +397,7 @@
             "rotation": 0
           },
           {
-            "time": 1,
+            "time": 0.3999999999999999,
             "offsetX": 0,
             "offsetY": 0,
             "rotation": 0
@@ -411,7 +411,7 @@
             "rotation": 0
           },
           {
-            "time": 1,
+            "time": 0.3999999999999999,
             "offsetX": 0,
             "offsetY": 0,
             "rotation": 0
@@ -425,7 +425,7 @@
             "rotation": 0
           },
           {
-            "time": 1,
+            "time": 0.3999999999999999,
             "offsetX": 0,
             "offsetY": 0,
             "rotation": 0
@@ -439,7 +439,7 @@
             "rotation": 0
           },
           {
-            "time": 1,
+            "time": 0.3999999999999999,
             "offsetX": 0,
             "offsetY": 0,
             "rotation": 0

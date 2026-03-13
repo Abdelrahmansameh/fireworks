@@ -568,8 +568,31 @@ function setupUI() {
     document.getElementById('anim-duration').addEventListener('change', (e) => {
         const anim = meshData.animations[currentAnimId];
         if (anim) {
-            anim.duration = Math.max(0.1, parseFloat(e.target.value) || 1.0);
+            const oldDuration = Math.max(0.0001, anim.duration || 1.0);
+            const newDuration = Math.max(0.1, parseFloat(e.target.value) || 1.0);
+            const ratio = newDuration / oldDuration;
+
+            // Scale all keyframe times so their relative positions are conserved
+            if (anim.tracks) {
+                for (const pid in anim.tracks) {
+                    const track = anim.tracks[pid];
+                    if (!Array.isArray(track)) continue;
+                    for (const kf of track) {
+                        kf.time = Math.min(kf.time * ratio, newDuration);
+                    }
+                    track.sort((a, b) => a.time - b.time);
+                }
+            }
+
+            // Scale currentTime and selected keyframe time to preserve position ratio
+            currentTime = Math.min(currentTime * ratio, newDuration);
+            if (window.selectedKeyframe) {
+                window.selectedKeyframe.time = Math.min((window.selectedKeyframe.time || 0) * ratio, newDuration);
+            }
+
+            anim.duration = newDuration;
             updateTimelineUI();
+            updateAnimPropsUI();
         }
     });
 
