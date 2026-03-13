@@ -649,6 +649,66 @@ function setupUI() {
         }
     });
 
+    // Add Part
+    document.getElementById('btn-add-part').onclick = () => {
+        const idInput = document.getElementById('new-part-id');
+        const parentSelect = document.getElementById('new-part-parent');
+        const newId = idInput.value.trim();
+        if (!newId) { alert('Please enter a Part ID.'); return; }
+        if (meshData.parts.find(p => p.id === newId)) { alert(`Part "${newId}" already exists.`); return; }
+
+        const newPart = {
+            id: newId,
+            parentId: parentSelect.value || null,
+            width: 1,
+            height: 1,
+            color: 'aaaaaa',
+            anchorX: 0.5,
+            anchorY: 0.5,
+            relX: 0,
+            relY: 0,
+            baseRotation: 0
+        };
+        meshData.parts.push(newPart);
+        idInput.value = '';
+        updateHierarchyUI();
+        selectPart(newId);
+    };
+
+    // Add Animation
+    document.getElementById('btn-add-anim').onclick = () => {
+        const input = document.getElementById('new-anim-id');
+        const name = input.value.trim();
+        if (!name) return;
+        if (meshData.animations[name]) { alert(`Animation "${name}" already exists.`); return; }
+        meshData.animations[name] = { duration: 1.0, loop: true, tracks: {} };
+        currentAnimId = name;
+        input.value = '';
+        populateAnimations();
+        updateTimelineUI();
+    };
+
+    // Load
+    document.getElementById('btn-load').onclick = () => {
+        const fileInput = document.createElement('input');
+        fileInput.type = 'file';
+        fileInput.accept = '.json';
+        fileInput.onchange = async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            try {
+                const text = await file.text();
+                meshData = JSON.parse(text);
+                populateHierarchy();
+                populateAnimations();
+                selectPart(meshData.parts[0]?.id || null);
+            } catch (err) {
+                alert('Failed to load JSON: ' + err.message);
+            }
+        };
+        fileInput.click();
+    };
+
     // Mirror skeleton R → L
     document.getElementById('btn-mirror-skeleton').onclick = () => mirrorSkeletonRtoL();
 

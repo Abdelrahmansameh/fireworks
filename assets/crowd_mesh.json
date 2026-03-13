@@ -3,8 +3,8 @@
     {
       "id": "body",
       "parentId": null,
-      "width": 10,
-      "height": 10,
+      "width": 6,
+      "height": 6,
       "anchorX": 0,
       "anchorY": 0,
       "relX": 0,
@@ -14,8 +14,8 @@
     {
       "id": "arm_l",
       "parentId": "body",
-      "width": 1.4123649459783914,
-      "height": 6.13829531812725,
+      "width": 1.415186074429772,
+      "height": 2.6935822328931573,
       "anchorX": 0,
       "anchorY": 0.5,
       "relX": -0.5,
@@ -26,13 +26,14 @@
     {
       "id": "arm_r",
       "parentId": "body",
-      "width": 1.4123649459783914,
-      "height": 6.13829531812725,
+      "width": 1.415186074429772,
+      "height": 2.6935822328931573,
       "anchorX": 0,
       "anchorY": 0.5,
       "relX": 0.5,
       "relY": 0.25,
-      "color": "000000"
+      "color": "000000",
+      "baseRotation": 0
     },
     {
       "id": "leg_l",
@@ -125,6 +126,30 @@
       "relX": 0,
       "relY": 0,
       "color": "000000"
+    },
+    {
+      "id": "forearm_r",
+      "parentId": "arm_r",
+      "width": 1.2,
+      "height": 3,
+      "color": "000000",
+      "anchorX": 0,
+      "anchorY": 0.5,
+      "relX": 0.0009666843083049881,
+      "relY": -0.9469342932885187,
+      "baseRotation": 0
+    },
+    {
+      "id": "forearm_l",
+      "parentId": "arm_l",
+      "width": 1.2,
+      "height": 3,
+      "color": "000000",
+      "anchorX": 0,
+      "anchorY": 0.5,
+      "relX": -0.0009666843083049881,
+      "relY": -0.9469342932885187,
+      "baseRotation": 0
     }
   ],
   "animations": {
