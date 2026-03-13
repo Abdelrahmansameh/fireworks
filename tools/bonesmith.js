@@ -411,6 +411,74 @@ function updateAnimPropsUI() {
     document.getElementById('prop-rot').value = localRot.toFixed(2);
 }
 
+// Sample a track for a part at a specific time (local animation values)
+function sampleAnimValuesAt(partId, time, anim) {
+    if (!anim || !anim.tracks) return { rotation: 0, offsetX: 0, offsetY: 0 };
+    const track = anim.tracks[partId];
+    if (!track || track.length === 0) return { rotation: 0, offsetX: 0, offsetY: 0 };
+    if (time <= track[0].time) return { rotation: track[0].rotation, offsetX: track[0].offsetX, offsetY: track[0].offsetY };
+    if (time >= track[track.length - 1].time) return { rotation: track[track.length - 1].rotation, offsetX: track[track.length - 1].offsetX, offsetY: track[track.length - 1].offsetY };
+    for (let i = 0; i < track.length - 1; i++) {
+        const a = track[i], b = track[i + 1];
+        if (time >= a.time && time <= b.time) {
+            const ratio = (time - a.time) / (b.time - a.time);
+            return {
+                rotation: a.rotation + (b.rotation - a.rotation) * ratio,
+                offsetX: a.offsetX + (b.offsetX - a.offsetX) * ratio,
+                offsetY: a.offsetY + (b.offsetY - a.offsetY) * ratio
+            };
+        }
+    }
+    return { rotation: 0, offsetX: 0, offsetY: 0 };
+}
+
+// Make the current animation loop by copying start frame values to the end time
+function makeAnimationLoop() {
+    const anim = meshData.animations[currentAnimId];
+    if (!anim) {
+        alert('No animation selected.');
+        return;
+    }
+
+    const duration = Math.max(0.0001, anim.duration || 0);
+    if (!anim.tracks) anim.tracks = {};
+
+    for (const part of meshData.parts) {
+        const pid = part.id;
+        let track = anim.tracks[pid];
+
+        // sample start values at t=0 (will fall back to defaults if no track)
+        const start = sampleAnimValuesAt(pid, 0, anim);
+
+        // create a track / ensure there is a start keyframe at t=0 so loop is stable
+        if (!track || track.length === 0) {
+            track = [{ time: 0, rotation: start.rotation, offsetX: start.offsetX, offsetY: start.offsetY }];
+            anim.tracks[pid] = track;
+        } else {
+            const startIdx = track.findIndex(k => Math.abs(k.time - 0) < 0.01);
+            if (startIdx < 0) {
+                track.push({ time: 0, rotation: start.rotation, offsetX: start.offsetX, offsetY: start.offsetY });
+            }
+        }
+
+        // set/override the end keyframe at the animation duration
+        const endIdx = track.findIndex(k => Math.abs(k.time - duration) < 0.01);
+        const endKf = { time: duration, rotation: start.rotation, offsetX: start.offsetX, offsetY: start.offsetY };
+        if (endIdx >= 0) track[endIdx] = endKf; else track.push(endKf);
+
+        track.sort((a, b) => a.time - b.time);
+    }
+
+    // ensure the animation's loop flag is enabled and update UI
+    anim.loop = true;
+    const loopEl = document.getElementById('anim-loop');
+    if (loopEl) loopEl.checked = true;
+
+    updateTimelineUI();
+    updateAnimPropsUI();
+    alert('End keyframes updated to match start frames for loop.');
+}
+
 function setupUI() {
     // Skeleton picker
     document.getElementById('skeleton-picker').addEventListener('change', async (e) => {
@@ -800,22 +868,52 @@ function setupUI() {
         flipAnimation();
     };
 
-    // Save
-    document.getElementById('btn-save').onclick = () => {
+    // Save (attempt server save, fall back to download)
+    document.getElementById('btn-save').onclick = async () => {
         const name = document.getElementById('skeleton-name').value.trim() || currentSkeletonName || 'skeleton';
-        const filename = name.toLowerCase().replace(/[^a-z0-9_]/g, '_') + '.json';
-        const str = JSON.stringify(meshData, null, 2);
-        const blob = new Blob([str], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = filename;
-        a.click();
+        const id = currentSkeletonId || '';
+        const payload = { name, id, meshData };
+
+        try {
+            const res = await fetch('/api/save_skeleton', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            if (!res.ok) throw new Error('HTTP ' + res.status);
+            const data = await res.json();
+            if (data && data.ok) {
+                manifest = data.manifest || manifest;
+                currentSkeletonId = data.id || currentSkeletonId;
+                currentSkeletonName = name;
+                document.getElementById('skeleton-name').value = name;
+                populateSkeletonPicker();
+                document.getElementById('skeleton-picker').value = currentSkeletonId || '';
+                alert('Saved: ' + (data.file || 'unknown'));
+                return;
+            } else {
+                throw new Error((data && data.error) || 'Save failed');
+            }
+        } catch (err) {
+            console.warn('Server save failed, falling back to download:', err);
+            const filename = name.toLowerCase().replace(/[^a-z0-9_]/g, '_') + '.json';
+            const str = JSON.stringify(meshData, null, 2);
+            const blob = new Blob([str], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            a.click();
+        }
     };
 
     document.getElementById('btn-play-pause').onclick = (e) => {
         isPlaying = !isPlaying;
         e.target.textContent = isPlaying ? 'Pause' : 'Play';
+    }
+
+    document.getElementById('btn-make-loop').onclick = () => {
+        makeAnimationLoop();
     }
 
     // Apply initial mode

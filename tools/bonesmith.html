@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Bonesmith — Skeleton & Animation Editor</title>
+    <base href="/tools/">
     <link rel="stylesheet" href="bonesmith.css">
 </head>
 <body>
@@ -82,7 +83,8 @@
             <div class="timeline-panel" id="timeline-panel">
                 <div class="timeline-header">
                     <span>Timeline: <span id="current-anim-name">cheering</span></span>
-                    <button id="btn-play-pause">Play</button>
+                        <button id="btn-play-pause">Play</button>
+                        <button id="btn-make-loop" title="Create/override end keyframes to match start">Make Loop</button>
                     <label>Duration: <input type="number" id="anim-duration" step="0.1" value="1.0" style="width:50px"></label>
                     <label><input type="checkbox" id="anim-loop" checked> Loop</label>
                 </div>
