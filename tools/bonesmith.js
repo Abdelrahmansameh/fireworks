@@ -1,17 +1,17 @@
 import * as Renderer2D from '../js/rendering/Renderer.js';
 const { Vector2, Color } = Renderer2D;
 
-// Default initial state
-let meshData = {
-    parts: [],
-    animations: {}
-};
+// ─── State ───────────────────────────────────────────────────────────────────
 
-// Editor State
+let meshData = { parts: [], animations: {} };
+let currentSkeletonId = '';    // id from manifest (empty = unsaved/new)
+let currentSkeletonName = '';  // display name
+let manifest = { skeletons: [] };
+
 let selectedPartId = null;
-let currentAnimId = 'cheering';
-let currentTool = 'select'; // select, move, attach, rotate, scale
-let editorMode = 'skeleton'; // 'skeleton' | 'animation'
+let currentAnimId = '';
+let currentTool = 'select';
+let editorMode = 'skeleton';
 let isPlaying = false;
 let renamePending = false;
 let currentTime = 0;
@@ -19,24 +19,21 @@ let lastTime = 0;
 window.selectedKeyframe = null;
 const timelinePixelsPerSecond = 200;
 
-// Rendering State
 let renderer;
 let instancedGroup;
 let canvas;
 
-// Interaction
 let isDragging = false;
 let dragStartX = 0;
 let dragStartY = 0;
 let initialProp1 = 0;
 let initialProp2 = 0;
 
-// Init
+// ─── Init ────────────────────────────────────────────────────────────────────
+
 async function init() {
     canvas = document.getElementById('view-canvas');
     renderer = new Renderer2D.default(canvas, { virtualWidth: 800, virtualHeight: 600 });
-
-    // Zoom in a bit so we can see the person easily
     renderer.setCamera({ x: 0, y: 0, zoom: 15.0 });
 
     const geometry = Renderer2D.buildTexturedSquare(1, 1);
@@ -51,24 +48,88 @@ async function init() {
 
     setupUI();
 
-    // Try to load initial JSON
+    // Load manifest and populate skeleton picker
     try {
-        const res = await fetch('../assets/crowd_mesh.json');
+        const res = await fetch('../assets/skeletons/manifest.json');
         if (res.ok) {
-            meshData = await res.json();
-            populateHierarchy();
-            populateAnimations();
-            selectPart(meshData.parts[0]?.id || null);
+            manifest = await res.json();
+            populateSkeletonPicker();
+
+            // Auto-load first skeleton if available
+            if (manifest.skeletons.length > 0) {
+                await loadSkeletonById(manifest.skeletons[0].id);
+            }
         }
     } catch (e) {
-        console.warn("Could not load initial mesh JSON", e);
+        console.warn('Could not load manifest:', e);
     }
 
     lastTime = performance.now();
     requestAnimationFrame(loop);
 }
 
-// Transform Math
+// ─── Skeleton Manifest ───────────────────────────────────────────────────────
+
+function populateSkeletonPicker() {
+    const picker = document.getElementById('skeleton-picker');
+    // Keep the first "(New Skeleton)" option
+    picker.innerHTML = '<option value="">(New Skeleton)</option>';
+    for (const entry of manifest.skeletons) {
+        const opt = document.createElement('option');
+        opt.value = entry.id;
+        opt.textContent = entry.name;
+        picker.appendChild(opt);
+    }
+    picker.value = currentSkeletonId;
+}
+
+async function loadSkeletonById(id) {
+    const entry = manifest.skeletons.find(s => s.id === id);
+    if (!entry) return;
+
+    try {
+        const res = await fetch(`../assets/skeletons/${entry.file}`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        meshData = await res.json();
+        currentSkeletonId = entry.id;
+        currentSkeletonName = entry.name;
+        document.getElementById('skeleton-name').value = entry.name;
+        document.getElementById('skeleton-picker').value = id;
+
+        populateHierarchy();
+        populateAnimations();
+        selectPart(meshData.parts[0]?.id || null);
+
+        // Auto-select first animation if available
+        const animKeys = Object.keys(meshData.animations);
+        if (animKeys.length > 0) {
+            currentAnimId = animKeys[0];
+        }
+    } catch (e) {
+        console.warn(`Could not load skeleton "${id}":`, e);
+    }
+}
+
+function newSkeleton() {
+    const nameInput = document.getElementById('skeleton-name');
+    const name = nameInput.value.trim() || 'Untitled';
+    meshData = { parts: [], animations: {} };
+    currentSkeletonId = '';
+    currentSkeletonName = name;
+    currentAnimId = '';
+    selectedPartId = null;
+    window.selectedKeyframe = null;
+    currentTime = 0;
+
+    document.getElementById('skeleton-picker').value = '';
+    populateHierarchy();
+    populateAnimations();
+    selectPart(null);
+    updateTimelineUI();
+}
+
+// ─── Transform Math ──────────────────────────────────────────────────────────
+
 function getParentTransform(partId, time) {
     const part = meshData.parts.find(p => p.id === partId);
     if (!part) return { x: 0, y: 0, rotation: 0, scaleX: 1, scaleY: 1 };
@@ -78,7 +139,6 @@ function getParentTransform(partId, time) {
         parentTransform = getParentTransform(part.parentId, time);
     }
 
-    // Evaluate keyframes for this part
     let localRot = 0;
     let localOffX = 0;
     let localOffY = 0;
@@ -91,7 +151,6 @@ function getParentTransform(partId, time) {
         const anim = meshData.animations[currentAnimId];
         if (anim && anim.tracks[partId] && anim.tracks[partId].length > 0) {
             const track = anim.tracks[partId];
-            // Linear interpolate
             if (time <= track[0].time) {
                 localRot = track[0].rotation;
                 localOffX = track[0].offsetX;
@@ -116,36 +175,30 @@ function getParentTransform(partId, time) {
         }
     }
 
-    // Determine parent attachment point in world space
-    let parentW = 10, parentH = 10; // defaults if no parent
+    let parentW = 10, parentH = 10;
     if (part.parentId) {
         const pObj = meshData.parts.find(p => p.id === part.parentId);
         if (pObj) { parentW = pObj.width; parentH = pObj.height; }
     }
 
-    // 1. Pivot point relative to parent center (unrotated)
     let pivotLocalX = part.relX * parentW;
     let pivotLocalY = part.relY * parentH;
 
-    // Apply parent rotation to pivot offset
     const cosP = Math.cos(parentTransform.rotation);
     const sinP = Math.sin(parentTransform.rotation);
     let pivotWorldX = parentTransform.x + (pivotLocalX * cosP - pivotLocalY * sinP);
     let pivotWorldY = parentTransform.y + (pivotLocalX * sinP + pivotLocalY * cosP);
 
-    // 2. Add animation offset (also rotated by parent)
     pivotWorldX += (localOffX * cosP - localOffY * sinP);
     pivotWorldY += (localOffX * sinP + localOffY * cosP);
 
-    // 3. Current World Rotation
     const worldRot = parentTransform.rotation + (part.baseRotation || 0) + localRot;
 
-    // Return the pivot point as the "origin" of this shape
     return {
         x: pivotWorldX,
         y: pivotWorldY,
         rotation: worldRot,
-        scaleX: 1, // keeping scale global for now
+        scaleX: 1,
         scaleY: 1
     };
 }
@@ -162,11 +215,11 @@ function hexToRgb(hex) {
     return { r: 0, g: 0, b: 0 };
 }
 
-// Main render loop
+// ─── Main render loop ────────────────────────────────────────────────────────
+
 function loop(now) {
     requestAnimationFrame(loop);
 
-    // Handle playback
     const dt = (now - lastTime) / 1000.0;
     lastTime = now;
 
@@ -185,31 +238,20 @@ function loop(now) {
         updateTimelineUI();
     }
 
-    // Render shapes
     instancedGroup.clear();
     
-    // Grid / Origin / Background Marker
-    // Draw a big white rectangle as background
+    // Background
     instancedGroup.addInstanceRaw(0, 0, 0, 200, 200, 1, 1, 1, 1);
-    
-    // Draw an origin dot (Red) over the white background
+    // Origin dot
     instancedGroup.addInstanceRaw(0, 0, 0, 0.2, 0.2, 1, 0, 0, 1);
-
-    // Calculate ordered transforms
-    // Note: Parts array order serves as z-index 
-    // We should compute parent transforms top-down, but getParentTransform is recursive so it handles it.
 
     for (let i = 0; i < meshData.parts.length; i++) {
         const part = meshData.parts[i];
         const tf = getParentTransform(part.id, currentTime);
 
-        // tf is the world position of the pivot constraint. 
-        // We now need to offset the geometry so that the part's anchor point sits exactly on the pivot.
-
         const anchorOffX = part.anchorX * part.width;
         const anchorOffY = part.anchorY * part.height;
 
-        // Rotate anchor offset
         const cosR = Math.cos(tf.rotation);
         const sinR = Math.sin(tf.rotation);
 
@@ -218,15 +260,11 @@ function loop(now) {
 
         const c = hexToRgb(part.color || 'FFFFFF');
 
-        // Highlight logic
         let rf = 1, gf = 1, bf = 1;
         if (part.id === selectedPartId) {
-            // slightly tint selected
             if (c.r < 0.5 && c.g < 0.5 && c.b < 0.5) {
-                // if it's black, tint red
                 rf = 2.0; gf = 0.5; bf = 0.5;
             } else {
-                // tint grey
                 rf = 0.8; gf = 0.8; bf = 0.8;
             }
         }
@@ -238,13 +276,10 @@ function loop(now) {
             c.r * rf, c.g * gf, c.b * bf, 1.0
         );
 
-        // Draw gizmo points if selected
         if (part.id === selectedPartId) {
-            // Pivot point visually (Cyan)
             const pivotSize = 0.5;
             instancedGroup.addInstanceRaw(tf.x, tf.y, 0, pivotSize, pivotSize, 0, 1, 1, 1);
 
-            // Parent attachment point for visualizing relX/relY
             if (part.parentId) {
                 const pObj = meshData.parts.find(p => p.id === part.parentId);
                 const pTf = getParentTransform(part.parentId, currentTime);
@@ -252,17 +287,14 @@ function loop(now) {
                 const pOffY = pObj.anchorY * pObj.height;
                 const pDrawX = pTf.x - (pOffX * Math.cos(pTf.rotation) - pOffY * Math.sin(pTf.rotation));
                 const pDrawY = pTf.y - (pOffX * Math.sin(pTf.rotation) + pOffY * Math.cos(pTf.rotation));
-
-                // Draw line/marker if we need
             }
         }
     }
 
-
     renderer.drawFrame();
 }
 
-// ----- UI AND INTERACTION ----- 
+// ─── UI ──────────────────────────────────────────────────────────────────────
 
 function updateHierarchyUI() {
     const list = document.getElementById('hierarchy-list');
@@ -271,7 +303,6 @@ function updateHierarchyUI() {
     const parentSelect = document.getElementById('new-part-parent');
     parentSelect.innerHTML = '<option value="">(No Parent)</option>';
 
-    // Root level rendering
     function renderTree(parentId, depth) {
         meshData.parts.filter(p => p.parentId === parentId).forEach(part => {
             const li = document.createElement('li');
@@ -292,7 +323,6 @@ function updateHierarchyUI() {
 }
 
 function selectPart(id) {
-    // Cancel any pending rename
     if (renamePending) {
         const propIdInput = document.getElementById('prop-id');
         propIdInput.disabled = true;
@@ -320,7 +350,6 @@ function selectPart(id) {
     document.getElementById('prop-w').value = part.width;
     document.getElementById('prop-h').value = part.height;
 
-    // format color
     let c = part.color || "000000";
     if (c.length === 6) c = "#" + c;
     document.getElementById('prop-color').value = c;
@@ -339,11 +368,9 @@ function updateAnimPropsUI() {
     const anim = meshData.animations[currentAnimId];
     let localRot = 0, localOffX = 0, localOffY = 0;
 
-    // Determine bounds/interpolation for UI boxes
     if (anim && anim.tracks[selectedPartId]) {
         const track = anim.tracks[selectedPartId];
         let foundExact = false;
-        // check if exact keyframe
         for (const k of track) {
             if (Math.abs(k.time - currentTime) < 0.01) {
                 localRot = k.rotation;
@@ -354,10 +381,6 @@ function updateAnimPropsUI() {
             }
         }
         if (!foundExact && track.length > 0) {
-            // We'd interpolate, but for the UI property box let's show interpolated if locked, 
-            // but normally we edit exact keyframes, so if you are off-keyframe what do you see?
-            // Let's just evaluate it for now.
-            // (in real editors input boxes show the interpolated value and tint when editing)
             const time = currentTime;
             if (time <= track[0].time) {
                 localRot = track[0].rotation;
@@ -389,11 +412,22 @@ function updateAnimPropsUI() {
 }
 
 function setupUI() {
+    // Skeleton picker
+    document.getElementById('skeleton-picker').addEventListener('change', async (e) => {
+        const id = e.target.value;
+        if (!id) {
+            newSkeleton();
+        } else {
+            await loadSkeletonById(id);
+        }
+    });
+
+    document.getElementById('btn-new-skeleton').onclick = () => newSkeleton();
+
     // Mode switcher
     document.getElementById('btn-mode-skeleton').onclick = () => setEditorMode('skeleton');
     document.getElementById('btn-mode-animation').onclick = () => setEditorMode('animation');
 
-    // Attach tool is absorbed by move in skeleton mode — hide it always
     document.getElementById('btn-tool-attach').style.display = 'none';
 
     // Tools
@@ -435,7 +469,6 @@ function setupUI() {
         let ox = parseFloat(document.getElementById('prop-offx').value) || 0;
         let oy = parseFloat(document.getElementById('prop-offy').value) || 0;
 
-        // Find if keyframe exists at time
         const existingIdx = track.findIndex(k => Math.abs(k.time - currentTime) < 0.01);
         if (existingIdx >= 0) {
             track[existingIdx] = { time: currentTime, rotation: rot, offsetX: ox, offsetY: oy };
@@ -483,27 +516,21 @@ function setupUI() {
     canvas.addEventListener('mousedown', (e) => {
         const wPos = renderer.screenToCanvas(e.clientX, e.clientY);
         
-        // Find if we clicked on a part (rough AABB test for ease of use)
-        // We go backwards to pick the top-most rendered part
         let clickedPartId = null;
         for (let i = meshData.parts.length - 1; i >= 0; i--) {
             const part = meshData.parts[i];
             const tf = getParentTransform(part.id, currentTime);
-            // approximate bounds
             const hw = (part.width * tf.scaleX) / 2;
             const hh = (part.height * tf.scaleY) / 2;
             
-            // To do accurate OBB we inverse transform the click point
             const cos = Math.cos(-tf.rotation);
             const sin = Math.sin(-tf.rotation);
             const dx = wPos.x - tf.x;
             const dy = wPos.y - tf.y;
             
-            // local dx/dy relative to the pivot
             let localX = dx * cos - dy * sin;
             let localY = dx * sin + dy * cos;
             
-            // Shift by anchor to get center
             const anchorOffX = part.anchorX * part.width;
             const anchorOffY = part.anchorY * part.height;
             localX += anchorOffX;
@@ -511,14 +538,13 @@ function setupUI() {
 
             if (Math.abs(localX) <= hw && Math.abs(localY) <= hh) {
                 clickedPartId = part.id;
-                break; // Found top-most
+                break;
             }
         }
         
         if (clickedPartId && currentTool === 'select') {
              selectPart(clickedPartId);
         } else if (clickedPartId && !selectedPartId) {
-             // If we clicked something but nothing was selected, select it as a courtesy before dragging
              selectPart(clickedPartId);
         }
 
@@ -563,16 +589,12 @@ function setupUI() {
         const dy = wPos.y - dragStartY;
 
         if (currentTool === 'attach') {
-            // Modify relX, relY
-            // Approximated scaled drag 
             let pw = 10, ph = 10;
             if (part.parentId) {
                 const pObj = meshData.parts.find(a => a.id === part.parentId);
                 if (pObj) { pw = pObj.width; ph = pObj.height; }
             }
 
-            // To do this accurately, we need to inverse transform the drag vector 
-            // by the parent's world rotation.
             const pTf = getParentTransform(part.parentId, currentTime);
             const cos = Math.cos(-pTf.rotation);
             const sin = Math.sin(-pTf.rotation);
@@ -590,12 +612,10 @@ function setupUI() {
                 document.getElementById('prop-base-rot').value = part.baseRotation.toFixed(2);
             } else {
                 document.getElementById('prop-rot').value = (initialProp1 + dy * -0.5).toFixed(2);
-                // auto-keyframe might be nice, but forcing explicit click for now.
             }
         }
         else if (currentTool === 'move') {
             if (editorMode === 'skeleton') {
-                // Move attachment point (relX/relY) in skeleton mode
                 let pw = 10, ph = 10;
                 if (part.parentId) {
                     const pObj = meshData.parts.find(a => a.id === part.parentId);
@@ -611,7 +631,6 @@ function setupUI() {
                 document.getElementById('prop-rx').value = part.relX.toFixed(2);
                 document.getElementById('prop-ry').value = part.relY.toFixed(2);
             } else {
-                // Move animation offset
                 const pTf = getParentTransform(part.parentId, currentTime);
                 const cos = Math.cos(-pTf.rotation);
                 const sin = Math.sin(-pTf.rotation);
@@ -622,12 +641,9 @@ function setupUI() {
             }
         }
         else if (currentTool === 'scale') {
-            // Scale based on mouse drag distance relative to drag start
-            const scaleFactorX = 1 + (dx / 50); // Arbitrary scaling speed
-            const scaleFactorY = 1 + (dy / 50); // Arbitrary scaling speed
+            const scaleFactorX = 1 + (dx / 50);
+            const scaleFactorY = 1 + (dy / 50);
             
-            // Allow uniform scaling if Shift is held, but simpler for now: just scale both
-            // Math.max to prevent negative sizes
             part.width = Math.max(0.1, initialProp1 * scaleFactorX);
             part.height = Math.max(0.1, initialProp2 * scaleFactorY);
             
@@ -641,7 +657,6 @@ function setupUI() {
     });
 
     window.addEventListener('keydown', (e) => {
-        // Only trigger if not typing in an input field
         if (e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
             const key = e.key.toLowerCase();
             let toolBtnId = null;
@@ -743,7 +758,7 @@ function setupUI() {
         updateTimelineUI();
     };
 
-    // Load
+    // Load from file
     document.getElementById('btn-load').onclick = () => {
         const fileInput = document.createElement('input');
         fileInput.type = 'file';
@@ -754,6 +769,10 @@ function setupUI() {
             try {
                 const text = await file.text();
                 meshData = JSON.parse(text);
+                currentSkeletonId = '';
+                currentSkeletonName = file.name.replace('.json', '');
+                document.getElementById('skeleton-name').value = currentSkeletonName;
+                document.getElementById('skeleton-picker').value = '';
                 populateHierarchy();
                 populateAnimations();
                 selectPart(meshData.parts[0]?.id || null);
@@ -769,12 +788,14 @@ function setupUI() {
 
     // Save
     document.getElementById('btn-save').onclick = () => {
+        const name = document.getElementById('skeleton-name').value.trim() || currentSkeletonName || 'skeleton';
+        const filename = name.toLowerCase().replace(/[^a-z0-9_]/g, '_') + '.json';
         const str = JSON.stringify(meshData, null, 2);
         const blob = new Blob([str], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = 'crowd_mesh.json';
+        a.download = filename;
         a.click();
     };
 
@@ -801,7 +822,6 @@ function updateTimelineUI() {
     tracksInner.style.position = 'relative';
     tracksInner.style.minWidth = Math.max(800, anim.duration * timelinePixelsPerSecond + 200) + 'px';
     
-    // Playhead
     const playhead = document.createElement('div');
     playhead.className = 'playhead';
     playhead.style.left = (currentTime * timelinePixelsPerSecond + 120) + 'px';
@@ -888,30 +908,24 @@ function setEditorMode(mode) {
     document.getElementById('btn-mode-skeleton').classList.toggle('active', isSkeleton);
     document.getElementById('btn-mode-animation').classList.toggle('active', !isSkeleton);
 
-    // Left panel sections
     document.getElementById('section-add-part').style.display = isSkeleton ? '' : 'none';
     document.getElementById('section-animations').style.display = isSkeleton ? 'none' : '';
 
-    // Timeline
     document.getElementById('timeline-panel').style.display = isSkeleton ? 'none' : 'flex';
 
-    // Properties sections
     const skeletonProps = document.getElementById('skeleton-props');
     const animFrameProps = document.getElementById('anim-frame-props');
     if (skeletonProps) skeletonProps.style.display = isSkeleton ? '' : 'none';
     if (animFrameProps) animFrameProps.style.display = isSkeleton ? 'none' : '';
 
-    // Tool visibility: scale + mirror only in skeleton, rotate in both modes
     document.getElementById('btn-tool-rotate').style.display = '';
     document.getElementById('btn-tool-scale').style.display = isSkeleton ? '' : 'none';
     document.getElementById('btn-mirror-skeleton').style.display = isSkeleton ? '' : 'none';
 
-    // If active tool is no longer valid, revert to select
     if (!isSkeleton && currentTool === 'scale') {
         document.getElementById('btn-tool-select').click();
     }
 
-    // Stop playback when entering skeleton mode
     if (isSkeleton && isPlaying) {
         isPlaying = false;
         document.getElementById('btn-play-pause').textContent = 'Play';
@@ -924,20 +938,16 @@ function deletePart(id) {
     const part = meshData.parts.find(p => p.id === id);
     if (!part) return;
 
-    // Reparent any children to this part's parent (or null)
     for (const p of meshData.parts) {
         if (p.parentId === id) p.parentId = part.parentId || null;
     }
 
-    // Remove the part itself
     meshData.parts.splice(meshData.parts.indexOf(part), 1);
 
-    // Remove animation tracks for this part across all animations
     for (const animKey of Object.keys(meshData.animations)) {
         delete meshData.animations[animKey].tracks[id];
     }
 
-    // Clear editor references
     if (selectedPartId === id) selectedPartId = null;
     if (window.selectedKeyframe && window.selectedKeyframe.partId === id) {
         window.selectedKeyframe = null;
@@ -954,16 +964,13 @@ function renamePart(oldId, newId) {
     if (newId === oldId) return true;
     if (meshData.parts.find(p => p.id === newId)) { alert(`Part "${newId}" already exists.`); return false; }
 
-    // Update the part's own id
     const part = meshData.parts.find(p => p.id === oldId);
     part.id = newId;
 
-    // Update parentId on all parts that reference this part
     for (const p of meshData.parts) {
         if (p.parentId === oldId) p.parentId = newId;
     }
 
-    // Rename animation tracks across all animations
     for (const animKey of Object.keys(meshData.animations)) {
         const anim = meshData.animations[animKey];
         if (Object.prototype.hasOwnProperty.call(anim.tracks, oldId)) {
@@ -972,7 +979,6 @@ function renamePart(oldId, newId) {
         }
     }
 
-    // Update editor state
     if (selectedPartId === oldId) selectedPartId = newId;
     if (window.selectedKeyframe && window.selectedKeyframe.partId === oldId) {
         window.selectedKeyframe.partId = newId;
@@ -994,22 +1000,18 @@ function mirrorSkeletonRtoL() {
     for (const rPart of rParts) {
         const lId = rPart.id.slice(0, -2) + '_l';
 
-        // If the _r part's parent is also a _r part, point to the _l counterpart
         let lParentId = rPart.parentId || null;
         if (lParentId && lParentId.endsWith('_r')) {
             lParentId = lParentId.slice(0, -2) + '_l';
         }
 
-        // Find existing _l part or create it
         let lPart = meshData.parts.find(p => p.id === lId);
         if (!lPart) {
             lPart = { id: lId };
-            // Insert right after the _r counterpart so hierarchy stays tidy
             const rIdx = meshData.parts.indexOf(rPart);
             meshData.parts.splice(rIdx + 1, 0, lPart);
         }
 
-        // Copy and mirror properties
         lPart.parentId     = lParentId;
         lPart.width        = rPart.width;
         lPart.height       = rPart.height;

@@ -3,13 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Crowd Mesh & Animation Editor</title>
-    <link rel="stylesheet" href="crowd_editor.css">
+    <title>Bonesmith — Skeleton & Animation Editor</title>
+    <link rel="stylesheet" href="bonesmith.css">
 </head>
 <body>
     <div class="editor-container">
         <!-- Hierarchy & Parts Panel -->
         <div class="panel left-panel">
+            <div class="panel-header">Skeleton</div>
+            <div class="panel-content" style="flex:none; padding-bottom:0">
+                <select id="skeleton-picker" style="width:100%; margin-bottom:6px">
+                    <option value="">(New Skeleton)</option>
+                </select>
+                <div style="display:flex; gap:5px; margin-bottom:10px">
+                    <input type="text" id="skeleton-name" placeholder="Skeleton name" style="flex:1" />
+                    <button id="btn-new-skeleton" title="New blank skeleton">New</button>
+                </div>
+            </div>
+
             <div class="panel-header">Hierarchy</div>
             <div class="panel-content">
                 <ul id="hierarchy-list" class="tree-view">
@@ -136,6 +147,6 @@
             </div>
         </div>
     </div>
-    <script type="module" src="crowd_editor.js"></script>
+    <script type="module" src="bonesmith.js"></script>
 </body>
 </html>

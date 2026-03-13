@@ -1,15 +1,9 @@
 import { GAME_BOUNDS, CROWD_CONFIG, CROWD_CATCHER_CONFIG, PARTICLE_TYPES } from '../config/config.js';
 import * as Renderer2D from '../rendering/Renderer.js';
 import { createRng } from '../utils/random.js';
-
-function _parseHexColor(hex) {
-    const h = hex.replace('#', '');
-    return {
-        r: parseInt(h.slice(0, 2), 16) / 255,
-        g: parseInt(h.slice(2, 4), 16) / 255,
-        b: parseInt(h.slice(4, 6), 16) / 255,
-    };
-}
+import { SkeletonData } from '../animation/SkeletonData.js';
+import { AnimationData } from '../animation/AnimationData.js';
+import { computePose, applyPoseToInstances } from '../animation/SkeletonAnimator.js';
 
 class Crowd {
     constructor(renderer2D) {
@@ -19,11 +13,11 @@ class Crowd {
 
         this.instancedGroup = null;
 
-        // JSON-driven mesh data
-        this._meshData = null;
-        this._partCount = 0;
-        this._partLookup = new Map(); // partId -> part object
-        this._partColors = [];        // precomputed {r,g,b} per part index
+        // Generic animation system
+        /** @type {SkeletonData|null} */
+        this._skeleton = null;
+        /** @type {AnimationData|null} */
+        this._animData = null;
 
         // Interaction state for grab / drag / drop
         this.grabbedPersonIndex = -1;
@@ -46,31 +40,22 @@ class Crowd {
 
     async _initializeCrowd() {
         try {
-            // Load mesh definition from the editor-exported JSON
-            const res = await fetch('assets/crowd_mesh.json');
-            if (!res.ok) throw new Error(`HTTP ${res.status}`);
-            this._meshData = await res.json();
+            // Load skeleton + animations via the generic animation system
+            const { skeleton, rawAnimations } = await SkeletonData.load('assets/skeletons/crowd.json');
+            this._skeleton = skeleton;
+            this._animData = new AnimationData(rawAnimations);
         } catch (e) {
-            console.warn('crowd_mesh.json failed to load, using minimal fallback:', e);
+            console.warn('crowd skeleton failed to load, using minimal fallback:', e);
             // Minimal single-part fallback so the game still runs
-            this._meshData = {
-                parts: [{ id: 'body', parentId: null, width: 10, height: 10, anchorX: 0, anchorY: 0, relX: 0, relY: 0, color: '000000' }],
-                animations: {
-                    cheering: { duration: 1, loop: true, tracks: {} },
-                    walking: { duration: 1, loop: true, tracks: {} },
-                    falling: { duration: 1, loop: true, tracks: {} },
-                    toss_coin: { duration: 0.8, loop: false, tracks: {} }
-                }
-            };
-        }
-
-        const parts = this._meshData.parts;
-        this._partCount = parts.length;
-        this._partLookup.clear();
-        this._partColors = [];
-        for (const p of parts) {
-            this._partLookup.set(p.id, p);
-            this._partColors.push(_parseHexColor(p.color || '000000'));
+            this._skeleton = new SkeletonData([
+                { id: 'body', parentId: null, width: 10, height: 10, anchorX: 0, anchorY: 0, relX: 0, relY: 0, color: '000000' }
+            ]);
+            this._animData = new AnimationData({
+                cheering: { duration: 1, loop: true, tracks: {} },
+                walking: { duration: 1, loop: true, tracks: {} },
+                falling: { duration: 1, loop: true, tracks: {} },
+                toss_coin: { duration: 0.8, loop: false, tracks: {} }
+            });
         }
 
         try {
@@ -89,7 +74,7 @@ class Crowd {
                 this._addPerson();
             }
             this.missingCrowdsToInit = 0;
-            console.log(`Crowd initialized from crowd_mesh.json: ${this._partCount} parts, max ${CROWD_CONFIG.maxInstances} instances.`);
+            console.log(`Crowd initialized: ${this._skeleton.partCount} parts, max ${CROWD_CONFIG.maxInstances} instances.`);
         } catch (error) {
             console.error('Failed to create instanced group for crowd:', error);
         }
@@ -110,7 +95,7 @@ class Crowd {
 
             while (this.people.length > count) {
                 this.people.pop();
-                this.instancedGroup.instanceCount -= this._partCount;
+                this.instancedGroup.instanceCount -= this._skeleton.partCount;
             }
         } else {
             const added = count - this.people.length;
@@ -157,8 +142,8 @@ class Crowd {
             x: x,
             y: y,
             scale: scale,
-            animTimer: rng() * Math.PI * 2, // random start phase (will be modded by anim duration)
-            animSpeed: 0.85 + rng() * 0.3,  // playback speed variation (0.85–1.15x)
+            animTimer: rng() * Math.PI * 2,
+            animSpeed: 0.85 + rng() * 0.3,
             state: 'cheering',
             spawnX: x,
             spawnY: y,
@@ -175,7 +160,7 @@ class Crowd {
         this.people.push(person);
 
         // Add one instance per part
-        for (let i = 0; i < this._partCount; i++) {
+        for (let i = 0; i < this._skeleton.partCount; i++) {
             group.addInstanceRaw(person.x, person.y, 0, 1, 1, 0, 0, 0, 1, 0, 0, 0);
         }
 
@@ -227,7 +212,7 @@ class Crowd {
         person.state = newState;
         person.bounceCount = 0;
         if (newState !== 'grabbed') {
-            person.coinAnimTimer = 0; // stop toss on state change
+            person.coinAnimTimer = 0;
         }
     }
 
@@ -236,11 +221,9 @@ class Crowd {
 
         switch (person.state) {
             case 'cheering': {
-                // Bob is handled strictly in procedural now
                 break;
             }
             case 'grabbed': {
-                // Position handled by dragTo
                 break;
             }
             case 'falling': {
@@ -307,7 +290,6 @@ class Crowd {
             if (this.onCoinDrop) {
                 this.onCoinDrop(coins, 'crowd');
             }
-            // Coin toss anim trigger
             person.coinAnimTimer = 0.8;
         }
 
@@ -320,111 +302,38 @@ class Crowd {
     }
 
     _getAnimForState(person) {
-        const anims = this._meshData.animations;
         if (person.coinAnimTimer > 0) {
-            const anim = anims['toss_coin'] ?? null;
-            return { anim, time: anim ? anim.duration - person.coinAnimTimer : 0 };
+            const clip = this._animData.getClip('toss_coin');
+            return { clip, time: clip ? clip.duration - person.coinAnimTimer : 0 };
         }
         const name = person.state === 'grabbed' ? 'falling' : person.state;
-        const anim = anims[name] ?? null;
-        const time = anim
-            ? (anim.loop ? person.animTimer % anim.duration : Math.min(person.animTimer, anim.duration))
+        const clip = this._animData.getClip(name) ?? null;
+        const time = clip
+            ? (clip.loop ? person.animTimer % clip.duration : Math.min(person.animTimer, clip.duration))
             : 0;
-        return { anim, time };
-    }
-
-    _evalTrack(track, time) {
-        if (track.length === 0) return { rotation: 0, offsetX: 0, offsetY: 0 };
-        if (time <= track[0].time) return track[0];
-        const last = track[track.length - 1];
-        if (time >= last.time) return last;
-        for (let i = 0; i < track.length - 1; i++) {
-            if (time >= track[i].time && time <= track[i + 1].time) {
-                const t0 = track[i], t1 = track[i + 1];
-                const ratio = (time - t0.time) / (t1.time - t0.time);
-                return {
-                    rotation: t0.rotation + (t1.rotation - t0.rotation) * ratio,
-                    offsetX: t0.offsetX + (t1.offsetX - t0.offsetX) * ratio,
-                    offsetY: t0.offsetY + (t1.offsetY - t0.offsetY) * ratio,
-                };
-            }
-        }
-        return last;
+        return { clip, time };
     }
 
     _updateProceduralAnimation(person, deltaTime) {
         person.animTimer += deltaTime * person.animSpeed;
 
-        if (!this._meshData) return;
+        if (!this._skeleton) return;
 
-        const parts = this._meshData.parts;
         const scale = person.scale;
         const flipX = person.state === 'walking' ? (person.spawnX < person.x ? -1 : 1) : person.flipX;
 
-        const { anim, time } = this._getAnimForState(person);
+        const { clip, time } = this._getAnimForState(person);
 
-        // Build pivot map: partId -> { x, y, rotation } in mesh-local space
-        const pivotMap = new Map();
-        for (let i = 0; i < parts.length; i++) {
-            const part = parts[i];
-            let parentX = 0, parentY = 0, parentRot = 0;
-            let parentW = 10, parentH = 10;
+        // Use the generic pose solver
+        const pose = computePose(this._skeleton, clip, time);
 
-            if (part.parentId) {
-                const pTf = pivotMap.get(part.parentId);
-                parentX = pTf.x;
-                parentY = pTf.y;
-                parentRot = pTf.rotation;
-                const pPart = this._partLookup.get(part.parentId);
-                parentW = pPart.width;
-                parentH = pPart.height;
-            }
-
-            let localRot = 0, localOffX = 0, localOffY = 0;
-            if (anim && anim.tracks[part.id]) {
-                const kf = this._evalTrack(anim.tracks[part.id], time);
-                localRot = kf.rotation; localOffX = kf.offsetX; localOffY = kf.offsetY;
-            }
-
-            const cosP = Math.cos(parentRot);
-            const sinP = Math.sin(parentRot);
-            const pivotLocalX = part.relX * parentW;
-            const pivotLocalY = part.relY * parentH;
-
-            let pivotWorldX = parentX + (pivotLocalX * cosP - pivotLocalY * sinP);
-            let pivotWorldY = parentY + (pivotLocalX * sinP + pivotLocalY * cosP);
-            pivotWorldX += localOffX * cosP - localOffY * sinP;
-            pivotWorldY += localOffX * sinP + localOffY * cosP;
-
-            pivotMap.set(part.id, { x: pivotWorldX, y: pivotWorldY, rotation: parentRot + localRot });
-        }
-
-        const baseIdx = person.instanceBaseIndex;
-        const g = this.instancedGroup;
-
-        for (let i = 0; i < parts.length; i++) {
-            const part = parts[i];
-            const tf = pivotMap.get(part.id);
-
-            const anchorOffX = part.anchorX * part.width;
-            const anchorOffY = part.anchorY * part.height;
-            const cosR = Math.cos(tf.rotation);
-            const sinR = Math.sin(tf.rotation);
-
-            // Mesh-space draw center (center of rectangle for the renderer)
-            const meshDrawX = tf.x - (anchorOffX * cosR - anchorOffY * sinR);
-            const meshDrawY = tf.y - (anchorOffX * sinR + anchorOffY * cosR);
-
-            // Apply person transform: position, scale, flip
-            const worldX = person.x + meshDrawX * flipX * scale;
-            const worldY = person.y + meshDrawY * scale;
-
-            const c = this._partColors[i];
-            g.updateInstancePosition(baseIdx + i, worldX, worldY);
-            g.updateInstanceScale(baseIdx + i, part.width * scale, part.height * scale);
-            g.updateInstanceRotation(baseIdx + i, tf.rotation * flipX);
-            g.updateInstanceColor(baseIdx + i, c.r, c.g, c.b, 1);
-        }
+        // Apply to instanced group
+        applyPoseToInstances(
+            this._skeleton, pose, this.instancedGroup,
+            person.instanceBaseIndex,
+            person.x, person.y,
+            scale, flipX
+        );
     }
 
     _scanParticlesForPerson(person) {

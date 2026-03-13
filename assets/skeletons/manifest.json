@@ -1,0 +1,9 @@
+{
+  "skeletons": [
+    {
+      "id": "crowd",
+      "name": "Crowd Member",
+      "file": "crowd.json"
+    }
+  ]
+}
