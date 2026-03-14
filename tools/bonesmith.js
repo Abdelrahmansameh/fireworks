@@ -28,6 +28,13 @@ let dragStartX = 0;
 let dragStartY = 0;
 let initialProp1 = 0;
 let initialProp2 = 0;
+let isPanning = false;
+let panStartMouseX = 0;
+let panStartMouseY = 0;
+let panStartCameraX = 0;
+let panStartCameraY = 0;
+const CAMERA_MIN_ZOOM = 0.2;
+const CAMERA_MAX_ZOOM = 200;
 
 // ─── Init ────────────────────────────────────────────────────────────────────
 
@@ -260,33 +267,43 @@ function loop(now) {
 
         const c = hexToRgb(part.color || 'FFFFFF');
 
-        let rf = 1, gf = 1, bf = 1;
+        // subtle selection highlight: blend a small amount toward white
+        let finalR = c.r, finalG = c.g, finalB = c.b;
         if (part.id === selectedPartId) {
-            if (c.r < 0.5 && c.g < 0.5 && c.b < 0.5) {
-                rf = 2.0; gf = 0.5; bf = 0.5;
-            } else {
-                rf = 0.8; gf = 0.8; bf = 0.8;
-            }
+            const highlight = 0.12; // 12% toward white
+            finalR = c.r + (1 - c.r) * highlight;
+            finalG = c.g + (1 - c.g) * highlight;
+            finalB = c.b + (1 - c.b) * highlight;
         }
 
         instancedGroup.addInstanceRaw(
             drawX, drawY,
             tf.rotation,
             part.width * tf.scaleX, part.height * tf.scaleY,
-            c.r * rf, c.g * gf, c.b * bf, 1.0
+            finalR, finalG, finalB, 1.0
         );
 
         if (part.id === selectedPartId) {
             const pivotSize = 0.5;
-            instancedGroup.addInstanceRaw(tf.x, tf.y, 0, pivotSize, pivotSize, 0, 1, 1, 1);
 
-            if (part.parentId) {
-                const pObj = meshData.parts.find(p => p.id === part.parentId);
-                const pTf = getParentTransform(part.parentId, currentTime);
-                const pOffX = pObj.anchorX * pObj.width;
-                const pOffY = pObj.anchorY * pObj.height;
-                const pDrawX = pTf.x - (pOffX * Math.cos(pTf.rotation) - pOffY * Math.sin(pTf.rotation));
-                const pDrawY = pTf.y - (pOffX * Math.sin(pTf.rotation) + pOffY * Math.cos(pTf.rotation));
+            // Show attach preview only when the attach tool is active
+            if (currentTool === 'attach') {
+                // marker at this part's pivot
+                instancedGroup.addInstanceRaw(tf.x, tf.y, 0, pivotSize, pivotSize, 0, 1, 1, 1);
+
+                // if part has a parent, also mark the parent's anchor position
+                if (part.parentId) {
+                    const pObj = meshData.parts.find(p => p.id === part.parentId);
+                    if (pObj) {
+                        const pTf = getParentTransform(part.parentId, currentTime);
+                        const pOffX = pObj.anchorX * pObj.width;
+                        const pOffY = pObj.anchorY * pObj.height;
+                        const pDrawX = pTf.x - (pOffX * Math.cos(pTf.rotation) - pOffY * Math.sin(pTf.rotation));
+                        const pDrawY = pTf.y - (pOffX * Math.sin(pTf.rotation) + pOffY * Math.cos(pTf.rotation));
+                        // parent anchor marker (yellow)
+                        instancedGroup.addInstanceRaw(pDrawX, pDrawY, 0, pivotSize, pivotSize, 1, 1, 0, 1);
+                    }
+                }
             }
         }
     }
@@ -353,6 +370,8 @@ function selectPart(id) {
     let c = part.color || "000000";
     if (c.length === 6) c = "#" + c;
     document.getElementById('prop-color').value = c;
+    const colorTextEl = document.getElementById('prop-color-text');
+    if (colorTextEl) colorTextEl.value = c.toUpperCase();
 
     document.getElementById('prop-ax').value = part.anchorX;
     document.getElementById('prop-ay').value = part.anchorY;
@@ -490,13 +509,33 @@ function setupUI() {
         }
     });
 
+    // Wheel zoom — zoom to cursor position
+    canvas.addEventListener('wheel', (e) => {
+        e.preventDefault();
+        const rect = canvas.getBoundingClientRect();
+        const mouseCanvasX = e.clientX - rect.left;
+        const mouseCanvasY = e.clientY - rect.top;
+        const worldBefore = renderer.screenToCanvas(e.clientX, e.clientY);
+
+        const zoomFactor = Math.exp(-e.deltaY * 0.0015);
+        let newZoom = renderer.cameraZoom * zoomFactor;
+        newZoom = Math.max(CAMERA_MIN_ZOOM, Math.min(CAMERA_MAX_ZOOM, newZoom));
+
+        const cssToWorld = renderer.virtualHeight / renderer.canvas.clientHeight;
+        const newCameraX = worldBefore.x - (mouseCanvasX - renderer.canvas.clientWidth / 2) * cssToWorld / newZoom;
+        const newCameraY = worldBefore.y + (mouseCanvasY - renderer.canvas.clientHeight / 2) * cssToWorld / newZoom;
+
+        renderer.setCamera({ x: newCameraX, y: newCameraY, zoom: newZoom });
+    }, { passive: false });
+
     document.getElementById('btn-new-skeleton').onclick = () => newSkeleton();
 
     // Mode switcher
     document.getElementById('btn-mode-skeleton').onclick = () => setEditorMode('skeleton');
     document.getElementById('btn-mode-animation').onclick = () => setEditorMode('animation');
 
-    document.getElementById('btn-tool-attach').style.display = 'none';
+    // Attach tool is available in skeleton editing mode. Visibility toggled by setEditorMode.
+    document.getElementById('btn-tool-attach').style.display = '';
 
     // Tools
     const tools = ['select', 'move', 'attach', 'rotate', 'scale'];
@@ -516,12 +555,49 @@ function setupUI() {
         if (e.target.id === 'prop-w') part.width = parseFloat(e.target.value);
         if (e.target.id === 'prop-h') part.height = parseFloat(e.target.value);
         if (e.target.id === 'prop-color') part.color = e.target.value.replace('#', '');
+        if (e.target.id === 'prop-color-text') {
+            const raw = (e.target.value || '').trim().replace(/^#/, '');
+            if (/^[0-9a-fA-F]{6}$/.test(raw)) {
+                part.color = raw.toLowerCase();
+                const colorEl = document.getElementById('prop-color');
+                if (colorEl) colorEl.value = '#' + raw;
+            }
+        }
         if (e.target.id === 'prop-ax') part.anchorX = parseFloat(e.target.value);
         if (e.target.id === 'prop-ay') part.anchorY = parseFloat(e.target.value);
         if (e.target.id === 'prop-rx') part.relX = parseFloat(e.target.value);
         if (e.target.id === 'prop-ry') part.relY = parseFloat(e.target.value);
         if (e.target.id === 'prop-base-rot') part.baseRotation = parseFloat(e.target.value);
     });
+
+    // Color picker <-> text sync
+    (function() {
+        const propColor = document.getElementById('prop-color');
+        const propColorText = document.getElementById('prop-color-text');
+        if (propColor) {
+            propColor.addEventListener('input', (ev) => {
+                const v = ev.target.value || '#000000';
+                if (propColorText) propColorText.value = v.toUpperCase();
+                if (selectedPartId) {
+                    const p = meshData.parts.find(a => a.id === selectedPartId);
+                    if (p) p.color = v.replace('#', '');
+                }
+            });
+        }
+        if (propColorText && propColor) {
+            propColorText.addEventListener('input', (ev) => {
+                const val = (ev.target.value || '').trim().replace(/^#/, '');
+                if (/^[0-9a-fA-F]{6}$/.test(val)) {
+                    const newVal = '#' + val.toLowerCase();
+                    if (propColor.value !== newVal) propColor.value = newVal;
+                    if (selectedPartId) {
+                        const p = meshData.parts.find(a => a.id === selectedPartId);
+                        if (p) p.color = val.toLowerCase();
+                    }
+                }
+            });
+        }
+    })();
 
     // Keyframing
     document.getElementById('btn-keyframe').onclick = () => {
@@ -605,14 +681,17 @@ function setupUI() {
 
     // Viewport drag interactions
     canvas.addEventListener('mousedown', (e) => {
+        const rect = canvas.getBoundingClientRect();
+        const mouseCanvasX = e.clientX - rect.left;
+        const mouseCanvasY = e.clientY - rect.top;
         const wPos = renderer.screenToCanvas(e.clientX, e.clientY);
-        
+
         let clickedPartId = null;
         for (let i = meshData.parts.length - 1; i >= 0; i--) {
             const part = meshData.parts[i];
             const tf = getParentTransform(part.id, currentTime);
-            const hw = (part.width * tf.scaleX) / 2;
-            const hh = (part.height * tf.scaleY) / 2;
+            const hw = Math.abs(part.width * tf.scaleX) / 2;
+            const hh = Math.abs(part.height * tf.scaleY) / 2;
             
             const cos = Math.cos(-tf.rotation);
             const sin = Math.sin(-tf.rotation);
@@ -632,11 +711,20 @@ function setupUI() {
                 break;
             }
         }
-        
+
         if (clickedPartId && currentTool === 'select') {
              selectPart(clickedPartId);
         } else if (clickedPartId && !selectedPartId) {
              selectPart(clickedPartId);
+        }
+
+        // start panning when clicking empty space in select tool
+        if (!clickedPartId && currentTool === 'select') {
+            isPanning = true;
+            panStartMouseX = mouseCanvasX;
+            panStartMouseY = mouseCanvasY;
+            panStartCameraX = renderer.cameraX;
+            panStartCameraY = renderer.cameraY;
         }
 
         isDragging = true;
@@ -671,6 +759,19 @@ function setupUI() {
     });
 
     window.addEventListener('mousemove', (e) => {
+        if (isPanning) {
+            const rect = canvas.getBoundingClientRect();
+            const mouseCanvasX = e.clientX - rect.left;
+            const mouseCanvasY = e.clientY - rect.top;
+            const dx = mouseCanvasX - panStartMouseX;
+            const dy = mouseCanvasY - panStartMouseY;
+            const cssToWorld = renderer.virtualHeight / renderer.canvas.clientHeight;
+            const newCamX = panStartCameraX - dx * cssToWorld / renderer.cameraZoom;
+            const newCamY = panStartCameraY + dy * cssToWorld / renderer.cameraZoom;
+            renderer.setCamera({ x: newCamX, y: newCamY, zoom: renderer.cameraZoom });
+            return;
+        }
+
         if (!isDragging || !selectedPartId) return;
         const part = meshData.parts.find(p => p.id === selectedPartId);
         if (!part) return;
@@ -745,6 +846,7 @@ function setupUI() {
 
     window.addEventListener('mouseup', () => {
         isDragging = false;
+        isPanning = false;
     });
 
     window.addEventListener('keydown', (e) => {
@@ -1068,6 +1170,8 @@ function setEditorMode(mode) {
 
     document.getElementById('btn-tool-rotate').style.display = '';
     document.getElementById('btn-tool-scale').style.display = isSkeleton ? '' : 'none';
+    // show/hide attach tool only in skeleton editing mode
+    document.getElementById('btn-tool-attach').style.display = isSkeleton ? '' : 'none';
     
     const mirrorDisplay = (isSkeleton || mode === 'animation') ? '' : 'none';
     document.getElementById('btn-mirror-skeleton').style.display = mirrorDisplay;
