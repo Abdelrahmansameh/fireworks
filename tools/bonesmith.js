@@ -156,30 +156,10 @@ function getParentTransform(partId, time) {
         localOffY = parseFloat(document.getElementById('prop-offy').value) || 0;
     } else if (editorMode === 'animation') {
         const anim = meshData.animations[currentAnimId];
-        if (anim && anim.tracks[partId] && anim.tracks[partId].length > 0) {
-            const track = anim.tracks[partId];
-            if (time <= track[0].time) {
-                localRot = track[0].rotation;
-                localOffX = track[0].offsetX;
-                localOffY = track[0].offsetY;
-            } else if (time >= track[track.length - 1].time) {
-                localRot = track[track.length - 1].rotation;
-                localOffX = track[track.length - 1].offsetX;
-                localOffY = track[track.length - 1].offsetY;
-            } else {
-                for (let i = 0; i < track.length - 1; i++) {
-                    if (time >= track[i].time && time <= track[i + 1].time) {
-                        const t0 = track[i];
-                        const t1 = track[i + 1];
-                        const ratio = (time - t0.time) / (t1.time - t0.time);
-                        localRot = t0.rotation + (t1.rotation - t0.rotation) * ratio;
-                        localOffX = t0.offsetX + (t1.offsetX - t0.offsetX) * ratio;
-                        localOffY = t0.offsetY + (t1.offsetY - t0.offsetY) * ratio;
-                        break;
-                    }
-                }
-            }
-        }
+        const vals = sampleAnimValuesAt(partId, time, anim);
+        localRot = vals.rotation || 0;
+        localOffX = vals.offsetX || 0;
+        localOffY = vals.offsetY || 0;
     }
 
     let parentW = 10, parentH = 10;
@@ -386,43 +366,11 @@ function updateAnimPropsUI() {
     if (!selectedPartId) return;
     const anim = meshData.animations[currentAnimId];
     let localRot = 0, localOffX = 0, localOffY = 0;
-
-    if (anim && anim.tracks[selectedPartId]) {
-        const track = anim.tracks[selectedPartId];
-        let foundExact = false;
-        for (const k of track) {
-            if (Math.abs(k.time - currentTime) < 0.01) {
-                localRot = k.rotation;
-                localOffX = k.offsetX;
-                localOffY = k.offsetY;
-                foundExact = true;
-                break;
-            }
-        }
-        if (!foundExact && track.length > 0) {
-            const time = currentTime;
-            if (time <= track[0].time) {
-                localRot = track[0].rotation;
-                localOffX = track[0].offsetX;
-                localOffY = track[0].offsetY;
-            } else if (time >= track[track.length - 1].time) {
-                localRot = track[track.length - 1].rotation;
-                localOffX = track[track.length - 1].offsetX;
-                localOffY = track[track.length - 1].offsetY;
-            } else {
-                for (let i = 0; i < track.length - 1; i++) {
-                    if (time >= track[i].time && time <= track[i + 1].time) {
-                        const t0 = track[i];
-                        const t1 = track[i + 1];
-                        const ratio = (time - t0.time) / (t1.time - t0.time);
-                        localRot = t0.rotation + (t1.rotation - t0.rotation) * ratio;
-                        localOffX = t0.offsetX + (t1.offsetX - t0.offsetX) * ratio;
-                        localOffY = t0.offsetY + (t1.offsetY - t0.offsetY) * ratio;
-                        break;
-                    }
-                }
-            }
-        }
+    if (anim && anim.tracks && anim.tracks[selectedPartId]) {
+        const vals = sampleAnimValuesAt(selectedPartId, currentTime, anim);
+        localRot = vals.rotation || 0;
+        localOffX = vals.offsetX || 0;
+        localOffY = vals.offsetY || 0;
     }
 
     document.getElementById('prop-offx').value = localOffX.toFixed(2);
