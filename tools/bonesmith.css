@@ -197,14 +197,21 @@ input[type="color"] {
     background: #1e1e1e;
 }
 
+/* make the inner tracks container behave like a table so the first column
+   (labels) will share a single width based on the widest label */
+.timeline-tracks > div {
+    display: table;
+    width: 100%;
+    border-collapse: collapse;
+}
+
 .track-row {
-    display: flex;
+    display: table-row;
     height: 30px;
-    border-bottom: 1px solid #333;
 }
 
 .track-label {
-    width: 120px;
+    display: table-cell;
     padding: 5px;
     background: #2a2a2a;
     border-right: 1px solid #444;
@@ -215,13 +222,18 @@ input[type="color"] {
     position: sticky;
     left: 0;
     z-index: 10;
+    vertical-align: middle;
+    border-bottom: 1px solid #333;
 }
 
 .track-area {
-    flex: 1;
+    display: table-cell;
     position: relative;
     background: #1a1a1a;
     min-width: 800px;
+    vertical-align: middle;
+    border-bottom: 1px solid #333;
+    width: 100%;
 }
 
 .keyframe {

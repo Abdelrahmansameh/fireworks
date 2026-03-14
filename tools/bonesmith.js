@@ -956,14 +956,17 @@ function updateTimelineUI() {
     const tracksInner = document.createElement('div');
     tracksInner.style.position = 'relative';
     tracksInner.style.minWidth = Math.max(800, anim.duration * timelinePixelsPerSecond + 200) + 'px';
-    
+
+    // label column width (fallback) — we'll measure after inserting into DOM
+    let labelWidth = 120;
+
     const playhead = document.createElement('div');
     playhead.className = 'playhead';
-    playhead.style.left = (currentTime * timelinePixelsPerSecond + 120) + 'px';
-    
+
+    // click handler uses the current labelWidth (will be updated after layout)
     tracksInner.onclick = (e) => {
         const rect = tracksInner.getBoundingClientRect();
-        const clickX = e.clientX - rect.left - 120;
+        const clickX = e.clientX - rect.left - labelWidth;
         if (clickX >= 0) {
             currentTime = Math.max(0, clickX / timelinePixelsPerSecond);
             if (currentTime > anim.duration) currentTime = anim.duration;
@@ -1011,8 +1014,18 @@ function updateTimelineUI() {
         tracksInner.appendChild(row);
     });
 
-    tracksInner.appendChild(playhead);
+    // append to DOM first so table layout and widths can be measured
     tracksContainer.appendChild(tracksInner);
+
+    // measure label width from first label (table layout makes column widths uniform)
+    const firstLabel = tracksInner.querySelector('.track-label');
+    if (firstLabel) {
+        labelWidth = firstLabel.getBoundingClientRect().width;
+    }
+
+    // now position playhead relative to the measured label column
+    playhead.style.left = (currentTime * timelinePixelsPerSecond + labelWidth) + 'px';
+    tracksInner.appendChild(playhead);
 }
 
 function populateAnimations() {
