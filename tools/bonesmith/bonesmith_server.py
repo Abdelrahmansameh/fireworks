@@ -7,7 +7,7 @@ import re
 
 
 TOOLS_DIR = os.path.dirname(os.path.abspath(__file__))
-PROJECT_ROOT = os.path.abspath(os.path.join(TOOLS_DIR, '..'))
+PROJECT_ROOT = os.path.abspath(os.path.join(TOOLS_DIR, '..', '..'))
 SKELETON_DIR = os.path.join(PROJECT_ROOT, 'assets', 'skeletons')
 MANIFEST_PATH = os.path.join(SKELETON_DIR, 'manifest.json')
 
@@ -41,7 +41,7 @@ def write_manifest(manifest):
 
 @app.route('/bonesmith')
 def bonesmith_page():
-    return send_from_directory(os.path.join(PROJECT_ROOT, 'tools'), 'bonesmith.html')
+    return send_from_directory(os.path.join(PROJECT_ROOT, 'tools', 'bonesmith'), 'bonesmith.html')
 
 
 @app.route('/api/save_skeleton', methods=['POST'])

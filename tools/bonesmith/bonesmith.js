@@ -1,4 +1,4 @@
-import * as Renderer2D from '../js/rendering/Renderer.js';
+import * as Renderer2D from '../../js/rendering/Renderer.js';
 const { Vector2, Color } = Renderer2D;
 
 // ─── State ───────────────────────────────────────────────────────────────────
@@ -57,7 +57,7 @@ async function init() {
 
     // Load manifest and populate skeleton picker
     try {
-        const res = await fetch('../assets/skeletons/manifest.json');
+        const res = await fetch('../../assets/skeletons/manifest.json');
         if (res.ok) {
             manifest = await res.json();
             populateSkeletonPicker();
@@ -95,7 +95,7 @@ async function loadSkeletonById(id) {
     if (!entry) return;
 
     try {
-        const res = await fetch(`../assets/skeletons/${entry.file}`);
+        const res = await fetch(`../../assets/skeletons/${entry.file}`);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         meshData = await res.json();
         currentSkeletonId = entry.id;
