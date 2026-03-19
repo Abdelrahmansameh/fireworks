@@ -30,8 +30,8 @@ export const PROCEDURAL_BACKGROUND_CONFIG = {
     stars: {
         count: 400,
         distributionJitter: 10,
-        minSize: 3,
-        maxSize: 5,
+        minSize: 6,
+        maxSize: 9,
         minAlpha: 0.2,
         maxAlpha: 0.82,
         minBrightness: .8,

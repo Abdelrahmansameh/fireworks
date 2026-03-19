@@ -26,7 +26,7 @@ const bloomThresholdJitter = 0;
 const bloomRadiusBase = 0.3;
 const bloomRadiusJitter = 0;
 const bloomDirectionJitter = 0;
-const curlAmplitudeBase = 0.36;
+const curlAmplitudeBase = 0.2;
 const curlAmplitudeJitter = 0.1;
 const curlFrequencyBase = 4;
 const curlFrequencyJitter = 0;
@@ -53,11 +53,11 @@ const bloomOffsetWeightScale = 0.8;
 const headPushBase = 0.12;
 const headPushWeightScale = 0.2;
 const riseBase = 2;
-const riseProgressScale = 0.4;
+const riseProgressScale = 3;
 const motionMinDuration = 0.01;
 const motionCurlScale = 0.08;
 const motionBloomScale = 0.5;
-const motionUpdraftScale = 0.5;
+const motionUpdraftScale = 0.1;
 const nozzleLateralScale = 0.25;
 
 function clamp(value, min, max) {
@@ -69,7 +69,7 @@ const dragonsBreathRecipe = new ParticleRecipe({
 	count: ctx => ctx.particleCount,
 	calcInitialState: (index, ctx) => {
 		const origin = ctx.rocketPos.clone();
-		const direction = Math.PI / 8 + (Math.random() - 0.5) * TAU / 8; // generally upward, with some random variation
+		const direction = Math.PI / 2; // generally upward, with some random variation
 		const spreadStrength = clamp(ctx.spread, spreadMin, spreadMax);
 		const coneHalfAngle = coneHalfAngleBase + spreadStrength * coneHalfAngleSpread;
 

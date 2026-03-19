@@ -168,28 +168,6 @@ class Crowd {
         this._updateProceduralAnimation(person, 0);
     }
 
-    setAnimation(personIndex, animName) {
-        if (personIndex < 0 || personIndex >= this.people.length) return;
-
-        const person = this.people[personIndex];
-
-        if (animName === 'toss_coin') {
-            person.coinAnimTimer = 0.8; 
-        } else if (animName === 'falling') {
-            person.state = 'falling';
-        } else if (animName === 'walking_right' || animName === 'walking_down') {
-            person.state = 'walking';
-        } else if (animName === 'cheer') {
-            person.state = 'cheering';
-        }
-    }
-
-    setAllAnimation(animName) {
-        for (let i = 0; i < this.people.length; i++) {
-            this.setAnimation(i, animName);
-        }
-    }
-
     update(deltaTime) {
         if (!this.instancedGroup || this.people.length === 0) return;
 
@@ -211,8 +189,13 @@ class Crowd {
         const person = this.people[personIndex];
         person.state = newState;
         person.bounceCount = 0;
-        if (newState !== 'grabbed') {
-            person.coinAnimTimer = 0;
+        person.animTimer = 0;
+        person.coinAnimTimer = 0;
+        person.collected = 0;
+
+        if (newState !== 'falling') {
+            person.vx = 0;
+            person.vy = 0;
         }
     }
 
@@ -252,10 +235,6 @@ class Crowd {
                         person.vy = Math.abs(person.vy) * CROWD_CONFIG.groundBounceDamping;
                         person.bounceCount++;
                     } else {
-                        person.vy = 0;
-                        person.vx = 0;
-                        person.collected = 0;
-
                         const distToSpawn = Math.abs(person.x - person.spawnX);
                         if (distToSpawn < CROWD_CONFIG.landingSnapDistance) {
                             person.x = person.spawnX;
@@ -275,7 +254,7 @@ class Crowd {
 
                 if (dx < 0 && dx >= deltaMove || dx > 0 && dx <= deltaMove) {
                     person.x = person.spawnX;
-                    person.state = 'cheering';
+                    this._switchToState(personIndex, 'cheering');
                 } else {
                     person.x += deltaMove;
                 }
@@ -430,7 +409,7 @@ class Crowd {
 
         if (bestIdx >= 0) {
             const person = this.people[bestIdx];
-            person.state = 'grabbed';
+            this._switchToState(bestIdx, 'grabbed');
             this.grabbedPersonIndex = bestIdx;
 
             this._grabOffsetX = person.x - wx;
@@ -482,8 +461,7 @@ class Crowd {
 
         person.vx = vx;
         person.vy = vy;
-        person.bounceCount = 0;
-        person.state = 'falling';
+        this._switchToState(this.grabbedPersonIndex, 'falling');
 
         this.grabbedPersonIndex = -1;
         this._cursorHistory = [];
