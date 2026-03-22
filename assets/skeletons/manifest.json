@@ -4,6 +4,11 @@
       "id": "crowd",
       "name": "Crowd Member",
       "file": "crowd.json"
+    },
+    {
+      "id": "catapult",
+      "name": "Catapult",
+      "file": "catapult.json"
     }
   ]
 }
