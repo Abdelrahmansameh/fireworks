@@ -18,7 +18,6 @@ class Building {
         this.rotation = data.rotation || 0;
         this.scale = data.scale || 1;
         
-        this.level = data.level || 1;
         this.mesh = null;
                 
         this.createMesh();
@@ -95,32 +94,6 @@ class Building {
         }
     }
 
-    upgrade() {
-        const cost = this.getUpgradeCost();
-        const currency = this.config.currency;
-        
-        const resource = this.game.resourceManager.resources[currency];
-        if (!resource || resource.amount < cost) {
-            return false;
-        }
-
-        resource.subtract(cost);
-        this.level += 1;
-        this.onUpgrade();
-        
-        return true;
-    }
-
-    onUpgrade() {
-    }
-
-    getUpgradeCost() {
-        return Math.floor(
-            this.config.baseUpgradeCost * 
-            Math.pow(this.config.upgradeCostRatio, this.level - 1)
-        );
-    }
-
     static getPurchaseCost(buildingType, count) {
         const config = BUILDING_TYPES[buildingType];
         if (!config) return Infinity;
@@ -166,7 +139,6 @@ class Building {
             y: this.y,
             rotation: this.rotation,
             scale: this.scale,
-            level: this.level,
         };
     }
 

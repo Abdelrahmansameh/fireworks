@@ -6,11 +6,14 @@ class AutoLauncher extends Building {
     constructor(game, x, y, data = {}) {
         super(game, 'AUTO_LAUNCHER', x, y, data);
 
-        this.spawnInterval = data.spawnInterval || this.config.baseSpawnInterval;
         this.accumulator = data.accumulator || Math.random() * 5;
         this.assignedRecipeIndex = data.assignedRecipeIndex ?? null;
         this.colorOverride = data.colorOverride || AutoLauncher._randomColor();
         this.patternOverride = data.patternOverride || null;
+    }
+
+    get spawnInterval() {
+        return this.config.baseSpawnInterval * (this.game.launcherStats?.spawnIntervalMultiplier ?? 1);
     }
 
     update(deltaTime) {
@@ -82,10 +85,6 @@ class AutoLauncher extends Building {
         this.game.statsTracker.recordFirework('auto_launcher');
     }
 
-    onUpgrade() {
-        this.spawnInterval = this.spawnInterval * this.config.spawnIntervalRatio;
-    }
-
     getSpawnRate() {
         return 1 / this.spawnInterval;
     }
@@ -121,7 +120,6 @@ class AutoLauncher extends Building {
     serialize() {
         return {
             ...super.serialize(),
-            spawnInterval: this.spawnInterval,
             accumulator: this.accumulator,
             assignedRecipeIndex: this.assignedRecipeIndex,
             colorOverride: this.colorOverride,

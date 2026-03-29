@@ -1,4 +1,6 @@
-import { FIREWORK_CONFIG, GAME_BOUNDS, PROCEDURAL_BACKGROUND_CONFIG, DEFAULT_RECIPE_COMPONENTS, PRE_RECIPE_COMPONENT_DEFAULTS, GENERIC_RECIPE_NAMES, AUTO_LAUNCHER_COST_BASE, AUTO_LAUNCHER_COST_RATIO, AUTO_UPGRADE_COST_RATIO, AUTO_SPAWN_INTERVAL_RATIO, COMPONENT_PROPERTY_RANGES, BUILDING_TYPES, DRONE_CONFIG, CROWD_CATCHER_CONFIG, CROWD_CONFIG } from '../config/config.js';
+import { FIREWORK_CONFIG, GAME_BOUNDS, PROCEDURAL_BACKGROUND_CONFIG, DEFAULT_RECIPE_COMPONENTS, PRE_RECIPE_COMPONENT_DEFAULTS, GENERIC_RECIPE_NAMES, AUTO_LAUNCHER_COST_BASE, AUTO_LAUNCHER_COST_RATIO, COMPONENT_PROPERTY_RANGES, BUILDING_TYPES, DRONE_CONFIG, CROWD_CATCHER_CONFIG, CROWD_CONFIG } from '../config/config.js';
+
+const SAVE_VERSION = '2';
 import { UPGRADE_DEFINITIONS } from '../upgrades/upgrades.js';
 import InstancedParticleSystem from '../particles/InstancedParticleSystem.js';
 import InstancedDroneSystem from '../entities/InstancedDroneSystem.js';
@@ -78,10 +80,19 @@ class FireworkGame extends Engine {
             collectionRadiusMultiplier: 1,
             sparklesPerParticleMultiplier: 1,
         };
+        this.launcherStats = { spawnIntervalMultiplier: 1 };
+        this.generatorStats = { productionRateMultiplier: 1 };
+        this.droneHubStats = { spawnIntervalMultiplier: 1 };
 
         this.upgrades = UPGRADE_DEFINITIONS;
         this.upgradeLookup = Object.fromEntries(UPGRADE_DEFINITIONS.map(u => [u.id, u]));
         this.purchasedUpgrades = {};
+
+        // Clear saves when version changes
+        if (localStorage.getItem('saveVersion') !== SAVE_VERSION) {
+            localStorage.clear();
+            localStorage.setItem('saveVersion', SAVE_VERSION);
+        }
 
         const savedBaseMult = parseFloat(localStorage.getItem('baseSparkleMultiplier'));
         if (!isNaN(savedBaseMult)) {
@@ -144,10 +155,6 @@ class FireworkGame extends Engine {
             savedGameState.autoLaunchers.forEach(launcherData => {
                 if (!launcherData.accumulator) {
                     launcherData.accumulator = Math.random() * 5;
-                }
-                if (launcherData.level === undefined) {
-                    launcherData.level = 1;
-                    launcherData.spawnInterval = 5;
                 }
 
                 launcherData.x = this.clampToLauncherBounds(launcherData.x);
@@ -600,13 +607,6 @@ class FireworkGame extends Engine {
         }
     }
 
-    upgradeAllBuildingsByType(buildingType) {
-        this.buildingManager.upgradeAllOfType(buildingType);
-        this.ui.updateBuildingCounts();
-        this.ui.updateBuildingCosts();
-        this.ui.updateBuildingListByType(buildingType);
-    }
-
     calculateAutoLauncherCost(numLaunchers) {
         return Math.floor(AUTO_LAUNCHER_COST_BASE * Math.pow(AUTO_LAUNCHER_COST_RATIO, numLaunchers));
     }
@@ -637,6 +637,9 @@ class FireworkGame extends Engine {
             collectionRadiusMultiplier: 1,
             sparklesPerParticleMultiplier: 1,
         };
+        this.launcherStats = { spawnIntervalMultiplier: 1 };
+        this.generatorStats = { productionRateMultiplier: 1 };
+        this.droneHubStats = { spawnIntervalMultiplier: 1 };
 
         this.resourceManager.reset();
 
@@ -886,8 +889,7 @@ class FireworkGame extends Engine {
         this.ui.updateLauncherList(
             launchers,
             this.buildingManager.selectedBuildingId,
-            (buildingId) => this.selectLauncher(buildingId),
-            (buildingId) => this.upgradeLauncher(buildingId)
+            (buildingId) => this.selectLauncher(buildingId)
         );
     }
 
@@ -903,35 +905,6 @@ class FireworkGame extends Engine {
                 card.classList.remove('selected');
             }
         });
-    }
-
-    upgradeLauncher(buildingId) {
-        const building = this.buildingManager.getBuildingById(buildingId);
-        if (!building) {
-            this.showNotification("Building not found.");
-            return;
-        }
-
-        const success = this.buildingManager.upgradeBuilding(building);
-        if (success) {
-            this.updateLauncherList();
-        }
-    }
-
-    upgradeAllLaunchers() {
-        this.buildingManager.upgradeAllOfType('AUTO_LAUNCHER');
-        this.updateLauncherList();
-    }
-
-    stripLauncherForSave(launcher) {
-        return {
-            x: launcher.x,
-            accumulator: launcher.accumulator,
-            assignedRecipeIndex: launcher.assignedRecipeIndex ?? -1,
-            level: launcher.level ?? 1,
-            spawnInterval: launcher.spawnInterval ?? 5,
-            upgradeCost: launcher.upgradeCost ?? 15
-        };
     }
 
     serializeGameData() {
@@ -1257,6 +1230,9 @@ class FireworkGame extends Engine {
             collectionRadiusMultiplier: 1,
             sparklesPerParticleMultiplier: 1,
         };
+        this.launcherStats = { spawnIntervalMultiplier: 1 };
+        this.generatorStats = { productionRateMultiplier: 1 };
+        this.droneHubStats = { spawnIntervalMultiplier: 1 };
 
         for (const up of this.upgrades) {
             const level = this.purchasedUpgrades[up.id] ?? 0;

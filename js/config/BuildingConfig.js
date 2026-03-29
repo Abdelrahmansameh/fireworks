@@ -1,7 +1,5 @@
 export const AUTO_LAUNCHER_COST_BASE = 10;
 export const AUTO_LAUNCHER_COST_RATIO = 1.2;
-export const AUTO_UPGRADE_COST_RATIO = 1.2;
-export const AUTO_SPAWN_INTERVAL_RATIO = 0.9;
 
 // How long (seconds) the world-side colour-pulse highlight lasts when a
 // launcher card is clicked from the buildings menu.
@@ -20,10 +18,7 @@ export const BUILDING_TYPES = {
         color: { r: 136 / 255, g: 136 / 255, b: 136 / 255, a: 1 },
         texture: null,
         textureKey: null,
-        baseUpgradeCost: 15,
-        upgradeCostRatio: 1.2,
         baseSpawnInterval: 5,
-        spawnIntervalRatio: 0.9,
     },
     RESOURCE_GENERATOR: {
         id: 'resource_generator',
@@ -37,10 +32,7 @@ export const BUILDING_TYPES = {
         color: { r: 1, g: 0.84, b: 0, a: 1 },
         texture: null,
         textureKey: null,
-        baseUpgradeCost: 25,
-        upgradeCostRatio: 1.25,
         baseProductionRate: 0.5,
-        productionRateRatio: 1.5,
         resourceType: 'sparkles',
     },
 
@@ -56,11 +48,8 @@ export const BUILDING_TYPES = {
         color: { r: 0.2, g: 0.7, b: 1.0, a: 1 },
         texture: null,
         textureKey: null,
-        baseUpgradeCost: 40,
-        upgradeCostRatio: 1.3,
         // Spawn interval (seconds) between drone launches
         baseSpawnInterval: 12,
-        spawnIntervalRatio: 0.88,   // multiplied each level (shrinks interval)
         // Drone base stats (global upgrades apply multipliers on top of these)
         baseDroneLifetime: 10,
         baseDroneSpeed: 600,

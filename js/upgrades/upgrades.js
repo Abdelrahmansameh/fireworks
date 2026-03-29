@@ -158,6 +158,54 @@ const UPGRADE_DEFINITIONS = [
             game.crowdStats.sparklesPerParticleMultiplier = 1 + 0.5 * level;
         },
     },
+    // ── Auto-Launcher upgrades (global, apply to all launchers) ─────────────
+    {
+        id: 'launcher_spawn_rate',
+        group: 'LAUNCHER',
+        pattern: null,
+        name: 'Rapid Fire',
+        desc: '-10% spawn interval per level for all Auto-Launchers',
+        baseCost: 500,
+        costRatio: 1.5,
+        currency: 'sparkles',
+        maxLevel: 5,
+        isVisible: (game) => game.isBuildingTypeUnlocked('AUTO_LAUNCHER'),
+        apply: (game, level) => {
+            game.launcherStats.spawnIntervalMultiplier = Math.pow(0.9, level);
+        },
+    },
+    // ── Resource Generator upgrades (global, apply to all generators) ────────
+    {
+        id: 'generator_production',
+        group: 'GENERATOR',
+        pattern: null,
+        name: 'Efficient Channels',
+        desc: '+50% production rate per level for all Generators',
+        baseCost: 200,
+        costRatio: 1.5,
+        currency: 'gold',
+        maxLevel: 5,
+        isVisible: (game) => game.isBuildingTypeUnlocked('RESOURCE_GENERATOR'),
+        apply: (game, level) => {
+            game.generatorStats.productionRateMultiplier = Math.pow(1.5, level);
+        },
+    },
+    // ── Drone Hub spawn rate upgrade (global, apply to all hubs) ────────────
+    {
+        id: 'drone_hub_spawn_rate',
+        group: 'DRONE',
+        pattern: null,
+        name: 'Scout Protocol',
+        desc: '-12% drone hub spawn interval per level for all Drone Hubs',
+        baseCost: 200,
+        costRatio: 1.5,
+        currency: 'gold',
+        maxLevel: 5,
+        isVisible: (game) => game.isBuildingTypeUnlocked('DRONE_HUB'),
+        apply: (game, level) => {
+            game.droneHubStats.spawnIntervalMultiplier = Math.pow(0.88, level);
+        },
+    },
 ];
 
 import { DRONE_CONFIG } from '../config/config.js';

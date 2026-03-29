@@ -4,22 +4,17 @@ import { GAME_BOUNDS, DRONE_CONFIG } from '../config/config.js';
 /**
  * DroneHub – a building that periodically spawns drones into the world.
  *
- * Level scaling (building upgrades):
- *   - Spawn interval shrinks by `spawnIntervalRatio` per level.
- *
  * Drone stats (lifetime, speed, collection radius, max count) are controlled
  * exclusively by global upgrades purchased in the Upgrades tab, which modify
- * `game.droneStats`.
+ * `game.droneStats`. The spawn interval is controlled by the global
+ * `drone_hub_spawn_rate` upgrade via `game.droneHubStats`.
  */
 class DroneHub extends Building {
     constructor(game, x, y, data = {}) {
         super(game, 'DRONE_HUB', x, y, data);
 
-        // How many seconds between each drone spawn
-        this.spawnInterval = data.spawnInterval ?? this.config.baseSpawnInterval;
-
         // Stagger initial spawn so all hubs don't fire at once
-        this.accumulator = data.accumulator ?? (Math.random() * this.spawnInterval);
+        this.accumulator = data.accumulator ?? (Math.random() * this.config.baseSpawnInterval);
 
         // Per-drone options derived from current level
         this._updateDroneOptions();
@@ -53,7 +48,7 @@ class DroneHub extends Building {
         const droneSystem = this.game.droneSystem;
         if (!droneSystem) return;
 
-        // Always recalculate so that global drone upgrades are reflected immediately
+        // Recalculate so that global upgrades are always reflected
         this._updateDroneOptions();
 
         // Spawn slightly above the building so it's visually clear where it came from
@@ -63,11 +58,8 @@ class DroneHub extends Building {
         droneSystem.spawnDrone(spawnX, spawnY, this.droneOptions);
     }
 
-    onUpgrade() {
-        // Building upgrades only reduce the spawn interval
-        this.spawnInterval *= this.config.spawnIntervalRatio;
-        // Refresh drone options so any current global upgrades are reflected
-        this._updateDroneOptions();
+    get spawnInterval() {
+        return this.config.baseSpawnInterval * (this.game.droneHubStats?.spawnIntervalMultiplier ?? 1);
     }
 
     /** How many drones per second this hub spawns. */
@@ -78,8 +70,7 @@ class DroneHub extends Building {
     serialize() {
         return {
             ...super.serialize(),
-            spawnInterval: this.spawnInterval,
-            accumulator:   this.accumulator,
+            accumulator: this.accumulator,
         };
     }
 }

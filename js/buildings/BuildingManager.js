@@ -123,61 +123,6 @@ class BuildingManager {
         return this.getBuildingById(this.selectedBuildingId);
     }
 
-    upgradeBuilding(building) {
-        if (!building) return false;
-        
-        const success = building.upgrade();
-        if (success) {
-            this.game.showNotification(
-                `${building.config.name} upgraded to level ${building.level}!`
-            );
-        } else {
-            this.game.showNotification(
-                `Not enough ${building.config.currency} to upgrade!`
-            );
-        }
-        
-        return success;
-    }
-
-    upgradeAllOfType(buildingType) {
-        const buildings = this.getBuildingsByType(buildingType);
-        let upgraded = false;
-        let totalSpent = 0;
-        let foundAffordableUpgrade = true;
-
-        while (foundAffordableUpgrade) {
-            foundAffordableUpgrade = false;
-            let cheapestCost = Infinity;
-            let cheapestBuilding = null;
-
-            for (const building of buildings) {
-                const cost = building.getUpgradeCost();
-                const resource = this.game.resourceManager.resources[building.config.currency];
-                
-                if (resource && cost <= resource.amount && cost < cheapestCost) {
-                    cheapestCost = cost;
-                    cheapestBuilding = building;
-                    foundAffordableUpgrade = true;
-                }
-            }
-
-            if (foundAffordableUpgrade && cheapestBuilding) {
-                this.upgradeBuilding(cheapestBuilding);
-                totalSpent += cheapestCost;
-                upgraded = true;
-            }
-        }
-
-        if (!upgraded) {
-            this.game.showNotification("Not enough resources to upgrade any buildings!");
-        } else {
-            this.game.showNotification(
-                `Upgraded all ${BUILDING_TYPES[buildingType].name}s! (${totalSpent.toLocaleString()} spent)`
-            );
-        }
-    }
-
     spreadBuildings(buildingType = null) {
         let buildingsToSpread = buildingType ? 
             this.getBuildingsByType(buildingType) : 
@@ -208,14 +153,6 @@ class BuildingManager {
             
             const purchaseCost = Building.getPurchaseCost(buildingType, 0);
             refundAmount += purchaseCost;
-            
-            for (let level = 1; level < building.level; level++) {
-                const upgradeCost = Math.floor(
-                    building.config.baseUpgradeCost * 
-                    Math.pow(building.config.upgradeCostRatio, level - 1)
-                );
-                refundAmount += upgradeCost;
-            }
             
             this.removeBuilding(building);
         }

@@ -259,10 +259,6 @@ class UIManager {
             this.game.spreadLaunchers();
         });
 
-        document.getElementById('upgrade-all-launchers').addEventListener('click', () => {
-            this.game.upgradeAllLaunchers();
-        });
-
         document.getElementById('randomize-launcher-recipes').addEventListener('click', () => {
             this.game.randomizeLauncherRecipes();
         });
@@ -290,16 +286,8 @@ class UIManager {
             this.game.buyBuilding('RESOURCE_GENERATOR');
         });
 
-        document.getElementById('upgrade-all-generators').addEventListener('click', () => {
-            this.game.upgradeAllBuildingsByType('RESOURCE_GENERATOR');
-        });
-
         document.getElementById('buy-drone-hub').addEventListener('click', () => {
             this.game.buyBuilding('DRONE_HUB');
-        });
-
-        document.getElementById('upgrade-all-drone-hubs').addEventListener('click', () => {
-            this.game.upgradeAllBuildingsByType('DRONE_HUB');
         });
 
         const backButton = document.getElementById('back-to-game');
@@ -1204,7 +1192,7 @@ class UIManager {
         });
     }
 
-    updateLauncherList(launchers, selectedBuildingId, onSelect, onUpgrade) {
+    updateLauncherList(launchers, selectedBuildingId, onSelect) {
         const launcherList = document.getElementById('launcher-list');
         launcherList.innerHTML = '';
 
@@ -1221,8 +1209,6 @@ class UIManager {
             if (launcher.id === selectedBuildingId) {
                 launcherDiv.classList.add('selected');
             }
-
-            const upgradeCost = launcher.getUpgradeCost();
 
             launcherDiv.innerHTML = `
                 <h3>Auto-Launcher ${index + 1}</h3>
@@ -1251,10 +1237,7 @@ class UIManager {
                 </div>
                 `}
                 <div class="launcher-details">
-                    <p>Level: ${launcher.level}</p>
                     <p>Spawn Rate: Every ${launcher.spawnInterval.toFixed(1)}s</p>
-                    <p>Upgrade Cost: ${upgradeCost} sparkles</p>
-                    <button class="upgrade-button" data-building-id="${launcher.id}">Upgrade</button>
                 </div>
             `;
             launcherList.appendChild(launcherDiv);
@@ -1301,9 +1284,6 @@ class UIManager {
                     });
                 }
             }
-
-            const upgradeButton = launcherDiv.querySelector('.upgrade-button');
-            upgradeButton.addEventListener('click', () => onUpgrade(launcher.id));
 
             launcherDiv.addEventListener('click', () => {
                 onSelect(launcher.id);
@@ -1728,30 +1708,15 @@ class UIManager {
 
         if (buildingType === 'AUTO_LAUNCHER') {
             this.updateLauncherList(buildings, this.game.selectedBuildingId,
-                (id) => this.game.selectLauncher(id),
-                (id) => this.game.upgradeLauncher(id)
+                (id) => this.game.selectLauncher(id)
             );
         } else if (buildingType === 'RESOURCE_GENERATOR') {
             this.updateGeneratorList(buildings, this.game.selectedBuildingId,
-                (id) => this.game.selectLauncher(id),
-                (id) => {
-                    const building = this.game.buildingManager.getBuildingById(id);
-                    if (building) {
-                        this.game.buildingManager.upgradeBuilding(building);
-                        this.updateBuildingListByType('RESOURCE_GENERATOR');
-                    }
-                }
+                (id) => this.game.selectLauncher(id)
             );
         } else if (buildingType === 'DRONE_HUB') {
             this.updateDroneHubList(buildings, this.game.selectedBuildingId,
-                (id) => this.game.selectLauncher(id),
-                (id) => {
-                    const building = this.game.buildingManager.getBuildingById(id);
-                    if (building) {
-                        this.game.buildingManager.upgradeBuilding(building);
-                        this.updateBuildingListByType('DRONE_HUB');
-                    }
-                }
+                (id) => this.game.selectLauncher(id)
             );
         }
 
@@ -1759,7 +1724,7 @@ class UIManager {
         this.updateBuildingCounts();
     }
 
-    updateGeneratorList(generators, selectedBuildingId, onSelect, onUpgrade) {
+    updateGeneratorList(generators, selectedBuildingId, onSelect) {
         const generatorList = document.getElementById('generator-list');
         generatorList.innerHTML = '';
 
@@ -1777,25 +1742,15 @@ class UIManager {
                 generatorDiv.classList.add('selected');
             }
 
-            const upgradeCost = generator.getUpgradeCost();
             const productionRate = generator.calculateProductionRate();
 
             generatorDiv.innerHTML = `
                 <h3>Resource Generator ${index + 1}</h3>
                 <div class="launcher-details">
-                    <p>Level: ${generator.level}</p>
                     <p>Production: ${productionRate.toFixed(1)} sparkles/s</p>
-                    <p>Upgrade Cost: ${upgradeCost} gold</p>
-                    <button class="upgrade-button" data-building-id="${generator.id}">Upgrade</button>
                 </div>
             `;
             generatorList.appendChild(generatorDiv);
-
-            const upgradeButton = generatorDiv.querySelector('.upgrade-button');
-            upgradeButton.addEventListener('click', (e) => {
-                e.stopPropagation();
-                onUpgrade(generator.id);
-            });
 
             generatorDiv.addEventListener('click', () => {
                 onSelect(generator.id);
@@ -1806,7 +1761,7 @@ class UIManager {
         });
     }
 
-    updateDroneHubList(hubs, selectedBuildingId, onSelect, onUpgrade) {
+    updateDroneHubList(hubs, selectedBuildingId, onSelect) {
         const hubList = document.getElementById('drone-hub-list');
         hubList.innerHTML = '';
 
@@ -1824,26 +1779,15 @@ class UIManager {
                 hubDiv.classList.add('selected');
             }
 
-            const upgradeCost = hub.getUpgradeCost();
-            const spawnRate = hub.getSpawnRate().toFixed(3);
-
             hubDiv.innerHTML = `
                 <h3>Drone Hub ${index + 1}</h3>
                 <div class="launcher-details">
-                    <p>Level: ${hub.level}</p>
                     <p>Spawn interval: ${hub.spawnInterval.toFixed(1)}s</p>
-                    <p>Drone lifetime: ${hub.droneLifetime.toFixed(1)}s</p>
-                    <p>Drone speed: ${hub.droneSpeed.toFixed(0)}</p>
-                    <p>Upgrade Cost: ${upgradeCost} gold</p>
-                    <button class="upgrade-button" data-building-id="${hub.id}">Upgrade</button>
+                    <p>Drone lifetime: ${hub.droneOptions.lifetime.toFixed(1)}s</p>
+                    <p>Drone speed: ${hub.droneOptions.speed.toFixed(0)}</p>
                 </div>
             `;
             hubList.appendChild(hubDiv);
-
-            hubDiv.querySelector('.upgrade-button').addEventListener('click', (e) => {
-                e.stopPropagation();
-                onUpgrade(hub.id);
-            });
 
             hubDiv.addEventListener('click', () => {
                 onSelect(hub.id);

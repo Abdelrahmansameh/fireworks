@@ -7,13 +7,15 @@ class ResourceGenerator extends Building {
         super(game, 'RESOURCE_GENERATOR', x, y, data);
 
         this.resourceType = data.resourceType || this.config.resourceType;
-        this.productionRate = data.productionRate || this.calculateProductionRate();
         this.accumulator = data.accumulator || 0;
     }
 
+    get productionRate() {
+        return this.calculateProductionRate();
+    }
+
     calculateProductionRate() {
-        return this.config.baseProductionRate *
-            Math.pow(this.config.productionRateRatio, this.level - 1);
+        return this.config.baseProductionRate * (this.game.generatorStats?.productionRateMultiplier ?? 1);
     }
 
     update(deltaTime) {
@@ -95,10 +97,6 @@ class ResourceGenerator extends Building {
         }
     }
 
-    onUpgrade() {
-        this.productionRate = this.calculateProductionRate();
-    }
-
     getProductionRate() {
         return this.productionRate;
     }
@@ -107,7 +105,6 @@ class ResourceGenerator extends Building {
         return {
             ...super.serialize(),
             resourceType: this.resourceType,
-            productionRate: this.productionRate,
             accumulator: this.accumulator,
         };
     }
