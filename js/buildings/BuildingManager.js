@@ -1,6 +1,5 @@
 import AutoLauncher from './AutoLauncher.js';
 import ResourceGenerator from './ResourceGenerator.js';
-import EfficiencyBooster from './EfficiencyBooster.js';
 import DroneHub from './DroneHub.js';
 import Building from './Building.js';
 import { BUILDING_TYPES, GAME_BOUNDS } from '../config/config.js';
@@ -14,7 +13,6 @@ class BuildingManager {
         this.buildingClasses = {
             'AUTO_LAUNCHER': AutoLauncher,
             'RESOURCE_GENERATOR': ResourceGenerator,
-            'EFFICIENCY_BOOSTER': EfficiencyBooster,
             'DRONE_HUB': DroneHub,
         };
     }
@@ -80,42 +78,17 @@ class BuildingManager {
     }
 
     update(deltaTime) {
-        const boosterMultipliers = this.calculateBoosterMultipliers();
-        
         for (const building of this.buildings) {
-            const multiplier = boosterMultipliers.get(building.id) || 1.0;
-            building.multiplier = multiplier;
             building.update(deltaTime);
         }
     }
 
-    calculateBoosterMultipliers() {
-        const boosters = this.getBuildingsByType('EFFICIENCY_BOOSTER');
-        const multipliers = new Map();
-        
-        for (const building of this.buildings) {
-            let totalMultiplier = 1.0;
-            
-            for (const booster of boosters) {
-                if (booster.isInRange(building)) {
-                    totalMultiplier *= booster.boostMultiplier;
-                }
-            }
-            
-            multipliers.set(building.id, totalMultiplier);
-        }
-        
-        return multipliers;
-    }
-
     getTheoreticalAutoLauncherFPS() {
         const launchers = this.getBuildingsByType('AUTO_LAUNCHER');
-        const boosterMultipliers = this.calculateBoosterMultipliers();
         
         let totalFPS = 0;
         for (const launcher of launchers) {
-            const currentMultiplier = boosterMultipliers.get(launcher.id) || 1.0;
-            totalFPS += currentMultiplier / launcher.spawnInterval;
+            totalFPS += 1 / launcher.spawnInterval;
         }
         return totalFPS;
     }

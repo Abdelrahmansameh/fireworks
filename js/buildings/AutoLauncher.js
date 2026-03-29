@@ -15,14 +15,13 @@ class AutoLauncher extends Building {
 
     update(deltaTime) {
         super.update(deltaTime);
-        const effectiveMultiplier = this.multiplier || 1.0;
-        this.accumulator += deltaTime * effectiveMultiplier;
+        this.accumulator += deltaTime;
 
         if (this.accumulator >= this.spawnInterval) {
             this.spawnFirework();
             this.accumulator -= this.spawnInterval;
         }
-    }
+    } 
 
     spawnFirework() {
         const x = this.x;

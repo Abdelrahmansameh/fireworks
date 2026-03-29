@@ -20,9 +20,7 @@ class Building {
         
         this.level = data.level || 1;
         this.mesh = null;
-        
-        this.multiplier = 1.0; 
-        
+                
         this.createMesh();
     }    createMesh() {
         const width = this.config.width;

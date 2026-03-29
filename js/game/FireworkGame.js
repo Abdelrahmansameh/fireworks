@@ -36,7 +36,6 @@ class FireworkGame extends Engine {
             upgradesTab: false,
             crowdsTab: false,
             resourceGenerator: false,
-            efficiencyBooster: false,
             droneHub: false,
             recipesTab: false
         };
@@ -650,7 +649,6 @@ class FireworkGame extends Engine {
             upgradesTab: false,
             crowdsTab: false,
             resourceGenerator: false,
-            efficiencyBooster: false,
             droneHub: false,
             recipesTab: false
         };
@@ -1437,19 +1435,9 @@ class FireworkGame extends Engine {
             }
         }
 
-        if (!this.unlockStates.efficiencyBooster) {
+        if (!this.unlockStates.droneHub) {
             const totalSps = this.calculateTotalSparklesPerSecond();
             if (totalSps >= 2.0) {
-                this.unlockStates.efficiencyBooster = true;
-                this.showNotification("New building unlocked: Efficiency Booster!");
-                this.ui.updateBuildingTypeVisibility();
-                unlockUpdated = true;
-            }
-        }
-
-        if (!this.unlockStates.droneHub) {
-            const boosterCount = this.buildingManager.getBuildingsByType('EFFICIENCY_BOOSTER').length;
-            if (boosterCount >= 1) {
                 this.unlockStates.droneHub = true;
                 this.showNotification("New building unlocked: Drone Hub!");
                 this.ui.updateBuildingTypeVisibility();
@@ -1486,8 +1474,6 @@ class FireworkGame extends Engine {
                 return this.unlockStates.buildingsTab || false;
             case 'RESOURCE_GENERATOR':
                 return this.unlockStates.resourceGenerator || false;
-            case 'EFFICIENCY_BOOSTER':
-                return this.unlockStates.efficiencyBooster || false;
             case 'DRONE_HUB':
                 return this.unlockStates.droneHub || false;
             default:

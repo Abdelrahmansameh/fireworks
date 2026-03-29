@@ -290,16 +290,8 @@ class UIManager {
             this.game.buyBuilding('RESOURCE_GENERATOR');
         });
 
-        document.getElementById('buy-efficiency-booster').addEventListener('click', () => {
-            this.game.buyBuilding('EFFICIENCY_BOOSTER');
-        });
-
         document.getElementById('upgrade-all-generators').addEventListener('click', () => {
             this.game.upgradeAllBuildingsByType('RESOURCE_GENERATOR');
-        });
-
-        document.getElementById('upgrade-all-boosters').addEventListener('click', () => {
-            this.game.upgradeAllBuildingsByType('EFFICIENCY_BOOSTER');
         });
 
         document.getElementById('buy-drone-hub').addEventListener('click', () => {
@@ -901,7 +893,6 @@ class UIManager {
         const getBldCount = (type) => g.buildingManager.getBuildingsByType(type).length;
         set('stat-bld-auto', getBldCount('AUTO_LAUNCHER'));
         set('stat-bld-gen', getBldCount('RESOURCE_GENERATOR'));
-        set('stat-bld-boost', getBldCount('EFFICIENCY_BOOSTER'));
         set('stat-bld-drone', getBldCount('DRONE_HUB'));
 
         // ── Session totals ──────────────────────────────────────────────────
@@ -1751,17 +1742,6 @@ class UIManager {
                     }
                 }
             );
-        } else if (buildingType === 'EFFICIENCY_BOOSTER') {
-            this.updateBoosterList(buildings, this.game.selectedBuildingId,
-                (id) => this.game.selectLauncher(id),
-                (id) => {
-                    const building = this.game.buildingManager.getBuildingById(id);
-                    if (building) {
-                        this.game.buildingManager.upgradeBuilding(building);
-                        this.updateBuildingListByType('EFFICIENCY_BOOSTER');
-                    }
-                }
-            );
         } else if (buildingType === 'DRONE_HUB') {
             this.updateDroneHubList(buildings, this.game.selectedBuildingId,
                 (id) => this.game.selectLauncher(id),
@@ -1826,57 +1806,6 @@ class UIManager {
         });
     }
 
-    updateBoosterList(boosters, selectedBuildingId, onSelect, onUpgrade) {
-        const boosterList = document.getElementById('booster-list');
-        boosterList.innerHTML = '';
-
-        if (boosters.length === 0) {
-            boosterList.innerHTML = "<p>No efficiency boosters owned yet.</p>";
-            return;
-        }
-
-        boosters.forEach((booster, index) => {
-            const boosterDiv = document.createElement('div');
-            boosterDiv.classList.add('launcher-card');
-            boosterDiv.dataset.buildingId = booster.id;
-
-            if (booster.id === selectedBuildingId) {
-                boosterDiv.classList.add('selected');
-            }
-
-            const upgradeCost = booster.getUpgradeCost();
-            const radius = booster.calculateRadius();
-            const multiplier = booster.calculateMultiplier();
-            const nearbyBuildings = booster.getNearbyBuildings(this.game.buildingManager);
-
-            boosterDiv.innerHTML = `
-                <h3>Efficiency Booster ${index + 1}</h3>
-                <div class="launcher-details">
-                    <p>Level: ${booster.level}</p>
-                    <p>Range: ${radius.toFixed(0)} units</p>
-                    <p>Boost: ${((multiplier - 1) * 100).toFixed(0)}%</p>
-                    <p>Boosting: ${nearbyBuildings.length} buildings</p>
-                    <p>Upgrade Cost: ${upgradeCost} gold</p>
-                    <button class="upgrade-button" data-building-id="${booster.id}">Upgrade</button>
-                </div>
-            `;
-            boosterList.appendChild(boosterDiv);
-
-            const upgradeButton = boosterDiv.querySelector('.upgrade-button');
-            upgradeButton.addEventListener('click', (e) => {
-                e.stopPropagation();
-                onUpgrade(booster.id);
-            });
-
-            boosterDiv.addEventListener('click', () => {
-                onSelect(booster.id);
-                if (booster && booster.x !== undefined) {
-                    this.game.setCameraTarget(booster.x);
-                }
-            });
-        });
-    }
-
     updateDroneHubList(hubs, selectedBuildingId, onSelect, onUpgrade) {
         const hubList = document.getElementById('drone-hub-list');
         hubList.innerHTML = '';
@@ -1926,12 +1855,10 @@ class UIManager {
     updateBuildingCounts() {
         const autoLaunchers = this.game.buildingManager.getBuildingsByType('AUTO_LAUNCHER');
         const generators = this.game.buildingManager.getBuildingsByType('RESOURCE_GENERATOR');
-        const boosters = this.game.buildingManager.getBuildingsByType('EFFICIENCY_BOOSTER');
         const droneHubs = this.game.buildingManager.getBuildingsByType('DRONE_HUB');
 
         document.getElementById('auto-launcher-level').textContent = autoLaunchers.length;
         document.getElementById('resource-generator-count').textContent = generators.length;
-        document.getElementById('efficiency-booster-count').textContent = boosters.length;
         const droneHubCountEl = document.getElementById('drone-hub-count');
         if (droneHubCountEl) droneHubCountEl.textContent = droneHubs.length;
     }
@@ -1939,12 +1866,10 @@ class UIManager {
     updateBuildingCosts() {
         const autoLauncherCost = this.game.buildingManager.getBuyCost('AUTO_LAUNCHER');
         const generatorCost = this.game.buildingManager.getBuyCost('RESOURCE_GENERATOR');
-        const boosterCost = this.game.buildingManager.getBuyCost('EFFICIENCY_BOOSTER');
         const droneHubCost = this.game.buildingManager.getBuyCost('DRONE_HUB');
 
         document.getElementById('auto-launcher-cost').textContent = autoLauncherCost;
         document.getElementById('resource-generator-cost').textContent = generatorCost;
-        document.getElementById('efficiency-booster-cost').textContent = boosterCost;
         const droneHubCostEl = document.getElementById('drone-hub-cost');
         if (droneHubCostEl) droneHubCostEl.textContent = droneHubCost;
     }
@@ -1952,21 +1877,12 @@ class UIManager {
     updateBuildingTypeVisibility() {
         // Show/hide building type tabs based on unlock state
         const generatorTab = document.querySelector('.building-type-tab[data-building-type="RESOURCE_GENERATOR"]');
-        const boosterTab = document.querySelector('.building-type-tab[data-building-type="EFFICIENCY_BOOSTER"]');
 
         if (generatorTab) {
             if (this.game.unlockStates.resourceGenerator) {
                 generatorTab.style.display = 'block';
             } else {
                 generatorTab.style.display = 'none';
-            }
-        }
-
-        if (boosterTab) {
-            if (this.game.unlockStates.efficiencyBooster) {
-                boosterTab.style.display = 'block';
-            } else {
-                boosterTab.style.display = 'none';
             }
         }
 
@@ -1982,8 +1898,6 @@ class UIManager {
         // If currently viewing a locked building type, switch to auto launcher
         const activeBuildingType = document.querySelector('.building-type-tab.active')?.getAttribute('data-building-type');
         if (activeBuildingType === 'RESOURCE_GENERATOR' && !this.game.unlockStates.resourceGenerator) {
-            this.switchBuildingType('AUTO_LAUNCHER');
-        } else if (activeBuildingType === 'EFFICIENCY_BOOSTER' && !this.game.unlockStates.efficiencyBooster) {
             this.switchBuildingType('AUTO_LAUNCHER');
         } else if (activeBuildingType === 'DRONE_HUB' && !this.game.unlockStates.droneHub) {
             this.switchBuildingType('AUTO_LAUNCHER');
