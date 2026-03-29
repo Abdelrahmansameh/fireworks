@@ -1,4 +1,4 @@
-import { GAME_BOUNDS, DEFAULT_RECIPE_COMPONENTS, COMPONENT_PROPERTY_RANGES, PARTICLE_TYPES, STATS_CONFIG, LAUNCHER_WORLD_HIGHLIGHT_DURATION } from '../config/config.js';
+import { GAME_BOUNDS, DEFAULT_RECIPE_COMPONENTS, COMPONENT_PROPERTY_RANGES, PARTICLE_TYPES, STATS_CONFIG, LAUNCHER_WORLD_HIGHLIGHT_DURATION, BUILDING_TYPES } from '../config/config.js';
 import { patternDefinitions, patternDisplayNames } from '../entities/patterns/index.js';
 import * as Renderer2D from '../rendering/Renderer.js';
 import GameMetrics from '../metrics/GameMetrics.js';
@@ -1193,6 +1193,14 @@ class UIManager {
     }
 
     updateLauncherList(launchers, selectedBuildingId, onSelect) {
+        // Show global spawn-rate stat once at the top
+        const statsDiv = document.getElementById('auto-launcher-stats');
+        if (statsDiv) {
+            const baseInterval = BUILDING_TYPES.AUTO_LAUNCHER.baseSpawnInterval;
+            const spawnInterval = baseInterval * (this.game.launcherStats?.spawnIntervalMultiplier ?? 1);
+            statsDiv.innerHTML = `<div class="launcher-details"><p>Spawn Rate: Every ${spawnInterval.toFixed(1)}s</p></div>`;
+        }
+
         const launcherList = document.getElementById('launcher-list');
         launcherList.innerHTML = '';
 
@@ -1236,9 +1244,6 @@ class UIManager {
                     </select>
                 </div>
                 `}
-                <div class="launcher-details">
-                    <p>Spawn Rate: Every ${launcher.spawnInterval.toFixed(1)}s</p>
-                </div>
             `;
             launcherList.appendChild(launcherDiv);
 
@@ -1727,75 +1732,45 @@ class UIManager {
     }
 
     updateGeneratorList(generators, selectedBuildingId, onSelect) {
-        const generatorList = document.getElementById('generator-list');
-        generatorList.innerHTML = '';
+        const statsDiv = document.getElementById('resource-generator-stats');
+        if (!statsDiv) return;
 
         if (generators.length === 0) {
-            generatorList.innerHTML = "<p>No resource generators owned yet.</p>";
+            statsDiv.innerHTML = '';
             return;
         }
 
-        generators.forEach((generator, index) => {
-            const generatorDiv = document.createElement('div');
-            generatorDiv.classList.add('launcher-card');
-            generatorDiv.dataset.buildingId = generator.id;
-
-            if (generator.id === selectedBuildingId) {
-                generatorDiv.classList.add('selected');
-            }
-
-            const productionRate = generator.calculateProductionRate();
-
-            generatorDiv.innerHTML = `
-                <h3>Resource Generator ${index + 1}</h3>
-                <div class="launcher-details">
-                    <p>Production: ${productionRate.toFixed(1)} sparkles/s</p>
-                </div>
-            `;
-            generatorList.appendChild(generatorDiv);
-
-            generatorDiv.addEventListener('click', () => {
-                onSelect(generator.id);
-                if (generator && generator.x !== undefined) {
-                    this.game.setCameraTarget(generator.x);
-                }
-            });
-        });
+        const baseRate = BUILDING_TYPES.RESOURCE_GENERATOR.baseProductionRate;
+        const productionRate = baseRate * (this.game.generatorStats?.productionRateMultiplier ?? 1);
+        const totalRate = productionRate * generators.length;
+        statsDiv.innerHTML = `
+            <div class="launcher-details">
+                <p>Production per generator: ${productionRate.toFixed(1)} sparkles/s</p>
+                <p>Total production: ${totalRate.toFixed(1)} sparkles/s</p>
+            </div>
+        `;
     }
 
     updateDroneHubList(hubs, selectedBuildingId, onSelect) {
-        const hubList = document.getElementById('drone-hub-list');
-        hubList.innerHTML = '';
+        const statsDiv = document.getElementById('drone-hub-stats');
+        if (!statsDiv) return;
 
         if (hubs.length === 0) {
-            hubList.innerHTML = '<p>No drone hubs owned yet.</p>';
+            statsDiv.innerHTML = '';
             return;
         }
 
-        hubs.forEach((hub, index) => {
-            const hubDiv = document.createElement('div');
-            hubDiv.classList.add('launcher-card');
-            hubDiv.dataset.buildingId = hub.id;
-
-            if (hub.id === selectedBuildingId) {
-                hubDiv.classList.add('selected');
-            }
-
-            hubDiv.innerHTML = `
-                <h3>Drone Hub ${index + 1}</h3>
-                <div class="launcher-details">
-                    <p>Spawn interval: ${hub.spawnInterval.toFixed(1)}s</p>
-                    <p>Drone lifetime: ${hub.droneOptions.lifetime.toFixed(1)}s</p>
-                    <p>Drone speed: ${hub.droneOptions.speed.toFixed(0)}</p>
-                </div>
-            `;
-            hubList.appendChild(hubDiv);
-
-            hubDiv.addEventListener('click', () => {
-                onSelect(hub.id);
-                if (hub.x !== undefined) this.game.setCameraTarget(hub.x);
-            });
-        });
+        const baseInterval = BUILDING_TYPES.DRONE_HUB.baseSpawnInterval;
+        const spawnInterval = baseInterval * (this.game.droneHubStats?.spawnIntervalMultiplier ?? 1);
+        const droneLifetime = BUILDING_TYPES.DRONE_HUB.baseDroneLifetime * (this.game.droneStats?.lifetimeMultiplier ?? 1);
+        const droneSpeed = BUILDING_TYPES.DRONE_HUB.baseDroneSpeed * (this.game.droneStats?.speedMultiplier ?? 1);
+        statsDiv.innerHTML = `
+            <div class="launcher-details">
+                <p>Spawn interval: ${spawnInterval.toFixed(1)}s</p>
+                <p>Drone lifetime: ${droneLifetime.toFixed(1)}s</p>
+                <p>Drone speed: ${droneSpeed.toFixed(0)}</p>
+            </div>
+        `;
     }
 
     updateBuildingCounts() {

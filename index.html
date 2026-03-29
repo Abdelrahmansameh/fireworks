@@ -107,10 +107,10 @@
                         <span class="stats-source-label">› Drones</span>
                         <span class="stats-value" id="stat-sps-drone">0.00</span>
                     </div>
-                    <div class="stats-row">                        <span class="stats-source-label">&rsaquo; Crowd Catchers</span>
+                    <div class="stats-row"> <span class="stats-source-label">&rsaquo; Crowd Catchers</span>
                         <span class="stats-value" id="stat-sps-crowd-catch">0.00</span>
                     </div>
-                    <div class="stats-row">                        <span class="stats-source-label">› Manual Clicks</span>
+                    <div class="stats-row"> <span class="stats-source-label">› Manual Clicks</span>
                         <span class="stats-value" id="stat-sps-manual">0.00</span>
                     </div>
                     <div class="stats-row" id="stat-sps-cheat-row" style="display:none">
@@ -203,10 +203,10 @@
                         <span class="stats-source-label">› Drones</span>
                         <span class="stats-value" id="stat-sess-sp-drone">0</span>
                     </div>
-                    <div class="stats-row">                        <span class="stats-source-label">&rsaquo; Crowd Catchers</span>
+                    <div class="stats-row"> <span class="stats-source-label">&rsaquo; Crowd Catchers</span>
                         <span class="stats-value" id="stat-sess-sp-crowd-catch">0</span>
                     </div>
-                    <div class="stats-row">                        <span class="stats-source-label">› Manual</span>
+                    <div class="stats-row"> <span class="stats-source-label">› Manual</span>
                         <span class="stats-value" id="stat-sess-sp-manual">0</span>
                     </div>
                 </div>
@@ -268,10 +268,10 @@
                         <span class="stats-source-label">› Drones</span>
                         <span class="stats-value" id="stat-life-sp-drone">0</span>
                     </div>
-                    <div class="stats-row">                        <span class="stats-source-label">&rsaquo; Crowd Catchers</span>
+                    <div class="stats-row"> <span class="stats-source-label">&rsaquo; Crowd Catchers</span>
                         <span class="stats-value" id="stat-life-sp-crowd-catch">0</span>
                     </div>
-                    <div class="stats-row">                        <span class="stats-source-label">› Manual</span>
+                    <div class="stats-row"> <span class="stats-source-label">› Manual</span>
                         <span class="stats-value" id="stat-life-sp-manual">0</span>
                     </div>
                 </div>
@@ -327,8 +327,8 @@
                     <button id="buy-auto-launcher">Buy Auto-Launcher</button>
                     <button id="spread-launchers">Spread Launchers Evenly</button>
                     <button id="randomize-launcher-recipes">Assign random to all Launchers</button>
+                    <div id="auto-launcher-stats"></div>
                 </div>
-                <br>
                 <div id="launcher-list"></div>
             </div>
 
@@ -339,9 +339,9 @@
                     <p>Cost: <span id="resource-generator-cost">50</span> gold</p>
                     <p class="building-description">Passively generates sparkles over time</p>
                     <button id="buy-resource-generator">Buy Resource Generator</button>
+                    <div id="resource-generator-stats"></div>
+
                 </div>
-                <br>
-                <div id="generator-list"></div>
             </div>
 
             <!-- Drone Hub Section -->
@@ -351,9 +351,9 @@
                     <p>Cost: <span id="drone-hub-cost">75</span> gold</p>
                     <p class="building-description">Periodically launches drones that collect firework particles</p>
                     <button id="buy-drone-hub">Buy Drone Hub</button>
+                    <div id="drone-hub-stats"></div>
+
                 </div>
-                <br>
-                <div id="drone-hub-list"></div>
             </div>
         </div>
     </div>
@@ -394,7 +394,8 @@
                 <label><input type="checkbox" id="toggle-post-processing"> Enable Post-Processing</label>
             </div>
             <div class="recipes-option">
-                <label><input type="checkbox" id="toggle-floating-sparkle" checked> Show Floating Sparkle Counter</label>
+                <label><input type="checkbox" id="toggle-floating-sparkle" checked> Show Floating Sparkle
+                    Counter</label>
             </div>
             <br>
             <button id="reset-launchers" class="danger-button">Reset All Auto-Launchers</button>
