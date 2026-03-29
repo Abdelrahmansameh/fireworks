@@ -32,7 +32,7 @@ class AutoLauncher extends Building {
 
         let components;
 
-        if (!this.game.unlockStates.recipesTab) {
+        if (!this.game.progression.isUnlocked('recipes_tab')) {
             // Pre-recipe-tab: apply fixed defaults for all properties except color and pattern,
             // then apply colorOverride / patternOverride as usual.
             components = this.game.currentRecipeComponents.map(c => ({
@@ -92,7 +92,7 @@ class AutoLauncher extends Building {
     getSparklesPerSecond() {
         let components;
 
-        if (!this.game.unlockStates.recipesTab) {
+        if (!this.game.progression.isUnlocked('recipes_tab')) {
             components = this.game.currentRecipeComponents.map(c => ({
                 ...PRE_RECIPE_COMPONENT_DEFAULTS,
                 color: c.color,

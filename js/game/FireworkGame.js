@@ -1,7 +1,8 @@
 import { FIREWORK_CONFIG, GAME_BOUNDS, PROCEDURAL_BACKGROUND_CONFIG, DEFAULT_RECIPE_COMPONENTS, PRE_RECIPE_COMPONENT_DEFAULTS, GENERIC_RECIPE_NAMES, AUTO_LAUNCHER_COST_BASE, AUTO_LAUNCHER_COST_RATIO, COMPONENT_PROPERTY_RANGES, BUILDING_TYPES, DRONE_CONFIG, CROWD_CATCHER_CONFIG, CROWD_CONFIG } from '../config/config.js';
 
-const SAVE_VERSION = '2';
-import { UPGRADE_DEFINITIONS } from '../upgrades/upgrades.js';
+const SAVE_VERSION = '3';
+import ProgressionManager from '../upgrades/ProgressionManager.js';
+import { PROGRESSION_CONFIG } from '../config/ProgressionConfig.js';
 import InstancedParticleSystem from '../particles/InstancedParticleSystem.js';
 import InstancedDroneSystem from '../entities/InstancedDroneSystem.js';
 import Crowd from '../entities/Crowd.js';
@@ -31,18 +32,7 @@ class FireworkGame extends Engine {
         this.autoLauncherCost = AUTO_LAUNCHER_COST_BASE;
         this.selectedLauncherIndex = null;
 
-        this.unlockStates = {
-            sparkleCounter: false,
-            tabMenu: false,
-            buildingsTab: false,
-            upgradesTab: false,
-            crowdsTab: false,
-            resourceGenerator: false,
-            droneHub: false,
-            recipesTab: false
-        };
-
-        // Patterns unlocked progressively via AutoLauncher purchases
+        // Patterns unlocked progressively via AutoLauncher purchases (separate from progression system)
         this.unlockedPatternKeys = [patternKeys[0]];
 
         this.firstClickStates = {
@@ -51,6 +41,8 @@ class FireworkGame extends Engine {
             upgradesTab: false,
             crowdsTab: false
         };
+
+        this.progression = new ProgressionManager(PROGRESSION_CONFIG);
 
         this.resourceManager = new ResourceManager(this);
         this.buildingManager = new BuildingManager(this);
@@ -84,39 +76,26 @@ class FireworkGame extends Engine {
         this.generatorStats = { productionRateMultiplier: 1 };
         this.droneHubStats = { spawnIntervalMultiplier: 1 };
 
-        this.upgrades = UPGRADE_DEFINITIONS;
-        this.upgradeLookup = Object.fromEntries(UPGRADE_DEFINITIONS.map(u => [u.id, u]));
-        this.purchasedUpgrades = {};
-
         // Clear saves when version changes
         if (localStorage.getItem('saveVersion') !== SAVE_VERSION) {
             localStorage.clear();
             localStorage.setItem('saveVersion', SAVE_VERSION);
         }
 
-        const savedBaseMult = parseFloat(localStorage.getItem('baseSparkleMultiplier'));
-        if (!isNaN(savedBaseMult)) {
-            this.baseSparkleMultiplier = savedBaseMult;
-        }
-
-        const savedPatternMultStr = localStorage.getItem('patternSparkleMultipliers');
-        if (savedPatternMultStr) {
-            try {
-                const parsed = JSON.parse(savedPatternMultStr);
-                if (parsed && typeof parsed === 'object') {
-                    this.patternSparkleMultipliers = { ...this.patternSparkleMultipliers, ...parsed };
-                }
-            } catch (e) {
-                console.error('Failed to parse pattern sparkle multipliers:', e);
-            }
-        }
-
         try {
-            const stored = JSON.parse(localStorage.getItem('purchasedUpgrades') || '{}');
-            if (stored && typeof stored === 'object') this.purchasedUpgrades = stored;
-        } catch { }
+            const pState = JSON.parse(localStorage.getItem('progressionState') || '{}');
+            this.progression.loadState(pState);
+            if (pState.firstClicks && typeof pState.firstClicks === 'object') {
+                this.firstClickStates = { ...this.firstClickStates, ...pState.firstClicks };
+            }
+        } catch (e) {
+            console.error('Failed to load progression state:', e);
+        }
 
-        this.loadUnlockStates();
+        const savedPatterns = JSON.parse(localStorage.getItem('unlockedPatternKeys') || 'null');
+        if (Array.isArray(savedPatterns) && savedPatterns.length > 0) {
+            this.unlockedPatternKeys = savedPatterns;
+        }
 
         this.init();
     }
@@ -206,7 +185,7 @@ class FireworkGame extends Engine {
             }
         });
 
-        this.ui.initializeUnlockStates(this.unlockStates);
+        this.ui.initializeUnlockStates();
 
         this.generatePredefinedRecipes();
 
@@ -216,7 +195,7 @@ class FireworkGame extends Engine {
 
         this.ui.bindEvents();
 
-        this.recomputeUpgrades();
+        this.progression.applyAll(this);
     }
 
     generatePredefinedRecipes() {
@@ -272,7 +251,7 @@ class FireworkGame extends Engine {
         }
 
         // Ensure the current recipe matches the first one if not explicitly set
-        if (!this.unlockStates.recipesTab && this.recipes.length > 0) {
+        if (!this.progression.isUnlocked('recipes_tab') && this.recipes.length > 0) {
             this.currentRecipeComponents = this.recipes[0].components.map(component => ({ ...component }));
             this.saveCurrentRecipeComponents();
         }
@@ -479,10 +458,12 @@ class FireworkGame extends Engine {
         localStorage.setItem('resources', JSON.stringify(this.resourceManager.save()));
         localStorage.setItem('advancedCreatorUnlocked', JSON.stringify(this.advancedCreatorUnlocked));
 
-        localStorage.setItem('baseSparkleMultiplier', this.baseSparkleMultiplier);
-        localStorage.setItem('patternSparkleMultipliers', JSON.stringify(this.patternSparkleMultipliers));
-        localStorage.setItem('purchasedUpgrades', JSON.stringify(this.purchasedUpgrades));
-        this.saveUnlockStates();
+        const progressionState = {
+            ...this.progression.getState(),
+            firstClicks: this.firstClickStates,
+        };
+        localStorage.setItem('progressionState', JSON.stringify(progressionState));
+        localStorage.setItem('unlockedPatternKeys', JSON.stringify(this.unlockedPatternKeys));
         this.statsTracker.save();
     }
 
@@ -530,7 +511,7 @@ class FireworkGame extends Engine {
     launchFireworkAt(x, targetY = null, minY = null, recipeComponents = null) {
         let components = recipeComponents || this.currentRecipeComponents;
 
-        if (!this.unlockStates.recipesTab) {
+        if (!this.progression.isUnlocked('recipes_tab')) {
             const launchers = this.buildingManager.getBuildingsByType('AUTO_LAUNCHER');
             // Cycle: slot 0 = base defaults, slots 1..N = each launcher's patternOverride variant
             const cycleCount = launchers.length + 1;
@@ -580,7 +561,7 @@ class FireworkGame extends Engine {
     buyAutoLauncher() {
         const building = this.buildingManager.buyBuilding('AUTO_LAUNCHER');
         if (building) {
-            if (!this.unlockStates.recipesTab) {
+            if (!this.progression.isUnlocked('recipes_tab')) {
                 // Unlock the next pattern in sequence (if any remain)
                 const nextIndex = this.unlockedPatternKeys.length;
                 let assignedPattern;
@@ -643,18 +624,8 @@ class FireworkGame extends Engine {
 
         this.resourceManager.reset();
 
-        this.purchasedUpgrades = {};
-
-        this.unlockStates = {
-            sparkleCounter: false,
-            tabMenu: false,
-            buildingsTab: false,
-            upgradesTab: false,
-            crowdsTab: false,
-            resourceGenerator: false,
-            droneHub: false,
-            recipesTab: false
-        };
+        this.progression.resetUpgradesState();
+        this.progression.resetUnlockState();
 
         this.unlockedPatternKeys = [patternKeys[0]];
 
@@ -665,7 +636,7 @@ class FireworkGame extends Engine {
             crowdsTab: false
         };
 
-        this.recomputeUpgrades();
+        this.progression.applyAll(this);
 
         if (this.gameState.fireworks) {
             this.gameState.fireworks.forEach(firework => {
@@ -704,7 +675,7 @@ class FireworkGame extends Engine {
         localStorage.clear();
         this.statsTracker.reset();
 
-        this.ui.initializeUnlockStates(this.unlockStates);
+        this.ui.initializeUnlockStates();
 
         this.updateComponentsList();
         this.updateRecipeList();
@@ -919,9 +890,10 @@ class FireworkGame extends Engine {
             resources: this.resourceManager.save(),
             baseSparkleMultiplier: this.baseSparkleMultiplier,
             patternSparkleMultipliers: this.patternSparkleMultipliers,
-            purchasedUpgrades: this.purchasedUpgrades,
-            unlockStates: this.unlockStates,
-            firstClickStates: this.firstClickStates,
+            progression: {
+                ...this.progression.getState(),
+                firstClicks: this.firstClickStates,
+            },
             unlockedPatternKeys: this.unlockedPatternKeys
         };
         return JSON.stringify(data);
@@ -971,21 +943,15 @@ class FireworkGame extends Engine {
             this.patternSparkleMultipliers = { ...this.patternSparkleMultipliers, ...data.patternSparkleMultipliers };
         }
 
-        if (data.purchasedUpgrades && typeof data.purchasedUpgrades === 'object') {
-            this.purchasedUpgrades = data.purchasedUpgrades;
+        if (data.progression && typeof data.progression === 'object') {
+            this.progression.loadState(data.progression);
+            if (data.progression.firstClicks) {
+                this.firstClickStates = { ...this.firstClickStates, ...data.progression.firstClicks };
+            }
         }
 
-        if (data.unlockStates && typeof data.unlockStates === 'object') {
-            this.unlockStates = { ...this.unlockStates, ...data.unlockStates };
-            this.saveUnlockStates();
-            this.ui.initializeUnlockStates(this.unlockStates);
-        }
-
-        if (data.firstClickStates && typeof data.firstClickStates === 'object') {
-            this.firstClickStates = { ...this.firstClickStates, ...data.firstClickStates };
-        }
-
-        this.recomputeUpgrades();
+        this.ui.initializeUnlockStates();
+        this.progression.applyAll(this);
     }
 
 
@@ -1216,36 +1182,7 @@ class FireworkGame extends Engine {
 
 
     recomputeUpgrades() {
-        this.baseSparkleMultiplier = 1;
-        this.patternSparkleMultipliers = { default: 1 };
-        this.droneStats = {
-            lifetimeMultiplier: 1,
-            speedMultiplier: 1,
-            collectionRadiusMultiplier: 1,
-            maxDrones: DRONE_CONFIG.maxDrones,
-            sparklesPerParticleMultiplier: 1,
-        };
-        this.crowdStats = {
-            catchingEnabled: false,
-            collectionRadiusMultiplier: 1,
-            sparklesPerParticleMultiplier: 1,
-        };
-        this.launcherStats = { spawnIntervalMultiplier: 1 };
-        this.generatorStats = { productionRateMultiplier: 1 };
-        this.droneHubStats = { spawnIntervalMultiplier: 1 };
-
-        for (const up of this.upgrades) {
-            const level = this.purchasedUpgrades[up.id] ?? 0;
-            if (level > 0) {
-                up.apply(this, level);
-            }
-        }
-
-        if (this.droneSystem) {
-            this.droneSystem.maxDrones = this.droneStats.maxDrones;
-        }
-
-        this.syncCrowdStats();
+        this.progression.applyAll(this);
     }
 
     syncCrowdStats() {
@@ -1258,58 +1195,31 @@ class FireworkGame extends Engine {
     resetUpgrades() {
         const refunds = { sparkles: 0, gold: 0 };
 
-        for (const up of this.upgrades) {
-            const level = this.purchasedUpgrades[up.id] ?? 0;
+        for (const def of this.progression.getAllUpgradeDefs()) {
+            const level = this.progression.getUpgradeLevel(def.id);
             if (level > 0) {
                 for (let l = 0; l < level; l++) {
-                    const cost = Math.floor(up.baseCost * Math.pow(up.costRatio, l));
-                    if (up.currency === 'gold') {
-                        refunds.gold += cost;
-                    } else {
-                        refunds.sparkles += cost;
-                    }
+                    const cost = Math.floor(def.baseCost * Math.pow(def.costRatio, l));
+                    if (def.currency === 'gold') refunds.gold += cost;
+                    else refunds.sparkles += cost;
                 }
             }
         }
 
-        this.purchasedUpgrades = {};
-        this.recomputeUpgrades();
+        this.progression.resetUpgradesState();
+        this.progression.applyAll(this);
 
         if (refunds.sparkles > 0) this.resourceManager.resources.sparkles.add(refunds.sparkles);
         if (refunds.gold > 0) this.resourceManager.resources.gold.add(refunds.gold);
 
         this.saveProgress();
-        if (this.ui && this.ui.renderUpgrades) this.ui.renderUpgrades();
+        if (this.ui?.renderUpgrades) this.ui.renderUpgrades();
 
         return refunds;
     }
 
     buyUpgrade(id) {
-        const up = this.upgradeLookup[id];
-        if (!up) return;
-
-        const currentLevel = this.purchasedUpgrades[id] ?? 0;
-        if (currentLevel >= (up.maxLevel ?? 1)) {
-            this.showNotification('Upgrade already maxed');
-            return;
-        }
-
-        const wallet = up.currency === 'gold' ? this.resourceManager.resources.gold : this.resourceManager.resources.sparkles;
-        const nextCost = Math.floor(up.baseCost * Math.pow(up.costRatio, currentLevel));
-        if (wallet.amount < nextCost) {
-            this.showNotification(`Not enough ${up.currency}`);
-            return;
-        }
-
-        wallet.subtract(nextCost);
-        this.purchasedUpgrades[id] = currentLevel + 1;
-
-        up.apply(this, this.purchasedUpgrades[id]);
-        this.syncCrowdStats();
-
-        this.saveProgress();
-        this.ui.renderUpgrades();
-        this.showNotification('Upgrade purchased!');
+        this.progression.purchaseUpgrade(id, this);
     }
 
     addGold(amount, source = 'unknown') {
@@ -1319,120 +1229,69 @@ class FireworkGame extends Engine {
 
     unlockAllUpgrades() {
         let changed = false;
-        for (const up of this.upgrades) {
-            const maxLevel = up.maxLevel ?? 1;
-            if ((this.purchasedUpgrades[up.id] ?? 0) < maxLevel) {
-                this.purchasedUpgrades[up.id] = maxLevel;
-                up.apply(this, maxLevel);
+        for (const def of this.progression.getAllUpgradeDefs()) {
+            const maxLevel = def.maxLevel ?? 1;
+            if (this.progression.getUpgradeLevel(def.id) < maxLevel) {
+                this.progression.forceSetLevel(def.id, maxLevel);
                 changed = true;
             }
         }
         if (changed) {
+            this.progression.applyAll(this);
             this.saveProgress();
-            if (this.ui && this.ui.renderUpgrades) this.ui.renderUpgrades();
+            if (this.ui?.renderUpgrades) this.ui.renderUpgrades();
         }
     }
 
-    loadUnlockStates() {
-        const states = JSON.parse(localStorage.getItem('unlockStates') || '{}');
-        this.unlockStates = { ...this.unlockStates, ...states };
 
-        const clickStates = JSON.parse(localStorage.getItem('firstClickStates') || '{}');
-        this.firstClickStates = { ...this.firstClickStates, ...clickStates };
-
-        const savedPatterns = JSON.parse(localStorage.getItem('unlockedPatternKeys') || 'null');
-        if (Array.isArray(savedPatterns) && savedPatterns.length > 0) {
-            this.unlockedPatternKeys = savedPatterns;
-        }
-    }
-
-    saveUnlockStates() {
-        localStorage.setItem('unlockStates', JSON.stringify(this.unlockStates));
-        localStorage.setItem('firstClickStates', JSON.stringify(this.firstClickStates));
-        localStorage.setItem('unlockedPatternKeys', JSON.stringify(this.unlockedPatternKeys));
-    }
 
     checkUnlockConditions() {
-        let unlockUpdated = false;
-
-        if (!this.unlockStates.sparkleCounter && this.fireworkCount >= 1) {
-            this.unlockStates.sparkleCounter = true;
-            this.ui.showSparkleCounter();
-            unlockUpdated = true;
+        const newlyUnlocked = this.progression.tick(this);
+        for (const id of newlyUnlocked) {
+            this._handleUnlock(id);
         }
-
-        if (!this.unlockStates.tabMenu && this.fireworkCount >= 10) {
-            this.unlockStates.tabMenu = true;
-            this.ui.showTabMenu();
-            this.ui.showCollapseButton();
-            this.ui.expandAllTabs();
-            if (!this.firstClickStates.tabMenu) {
-                this.ui.addGlimmer('tabMenu');
-            }
-            unlockUpdated = true;
+        if (newlyUnlocked.length > 0) {
+            this.saveProgress();
         }
+    }
 
-        if (!this.unlockStates.buildingsTab && this.fireworkCount >= 20) {
-            this.unlockStates.buildingsTab = true;
-            this.ui.showBuildingsTab();
-            this.ui.expandAllTabs();
-            if (!this.firstClickStates.buildingsTab) {
-                this.ui.addGlimmer('buildingsTab');
-            }
-            unlockUpdated = true;
-        }
-
-        if (!this.unlockStates.upgradesTab && this.fireworkCount >= 30) {
-            this.unlockStates.upgradesTab = true;
-            this.ui.showUpgradesTab();
-            this.ui.expandAllTabs();
-            if (!this.firstClickStates.upgradesTab) {
-                this.ui.addGlimmer('upgradesTab');
-            }
-            unlockUpdated = true;
-        }
-
-        if (!this.unlockStates.crowdsTab && this.calculateTotalSparklesPerSecond() >= 0.7) {
-            this.unlockStates.crowdsTab = true;
-            this.ui.showCrowdsTab();
-            if (!this.firstClickStates.crowdsTab) {
-                this.ui.addGlimmer('crowdsTab');
-            }
-            unlockUpdated = true;
-        }
-
-        if (!this.unlockStates.resourceGenerator) {
-            const launcherCount = this.buildingManager.getBuildingsByType('AUTO_LAUNCHER').length;
-            if (launcherCount >= 3) {
-                this.unlockStates.resourceGenerator = true;
-                this.showNotification("New building unlocked: Sparkle Generator!");
+    _handleUnlock(id) {
+        switch (id) {
+            case 'sparkle_counter':
+                this.ui.showSparkleCounter();
+                break;
+            case 'tab_menu':
+                this.ui.showTabMenu();
+                this.ui.showCollapseButton();
+                this.ui.expandAllTabs();
+                if (!this.firstClickStates.tabMenu) this.ui.addGlimmer('tabMenu');
+                break;
+            case 'buildings_tab':
+                this.ui.showBuildingsTab();
+                this.ui.expandAllTabs();
+                if (!this.firstClickStates.buildingsTab) this.ui.addGlimmer('buildingsTab');
+                break;
+            case 'upgrades_tab':
+                this.ui.showUpgradesTab();
+                this.ui.expandAllTabs();
+                if (!this.firstClickStates.upgradesTab) this.ui.addGlimmer('upgradesTab');
+                break;
+            case 'crowds_tab':
+                this.ui.showCrowdsTab();
+                if (!this.firstClickStates.crowdsTab) this.ui.addGlimmer('crowdsTab');
+                break;
+            case 'resource_generator':
+                this.showNotification('New building unlocked: Sparkle Generator!');
                 this.ui.updateBuildingTypeVisibility();
-                unlockUpdated = true;
-            }
-        }
-
-        if (!this.unlockStates.droneHub) {
-            const totalSps = this.calculateTotalSparklesPerSecond();
-            if (totalSps >= 2.0) {
-                this.unlockStates.droneHub = true;
-                this.showNotification("New building unlocked: Drone Hub!");
+                break;
+            case 'drone_hub':
+                this.showNotification('New building unlocked: Drone Hub!');
                 this.ui.updateBuildingTypeVisibility();
-                unlockUpdated = true;
-            }
-        }
-
-        if (!this.unlockStates.recipesTab) {
-            const launcherCount = this.buildingManager.getBuildingsByType('AUTO_LAUNCHER').length;
-            if (launcherCount >= 20) {
-                this.unlockStates.recipesTab = true;
+                break;
+            case 'recipes_tab':
                 this.ui.showRecipesTab();
-                this.showNotification("Recipe system unlocked! You can now create and assign custom recipes.");
-                unlockUpdated = true;
-            }
-        }
-
-        if (unlockUpdated) {
-            this.saveUnlockStates();
+                this.showNotification('Recipe system unlocked! You can now create and assign custom recipes.');
+                break;
         }
     }
 
@@ -1440,20 +1299,16 @@ class FireworkGame extends Engine {
         if (!this.firstClickStates[elementType]) {
             this.firstClickStates[elementType] = true;
             this.ui.removeGlimmer(elementType);
-            this.saveUnlockStates();
+            // saveProgress() runs every game tick, no explicit save needed here
         }
     }
 
     isBuildingTypeUnlocked(buildingType) {
         switch (buildingType) {
-            case 'AUTO_LAUNCHER':
-                return this.unlockStates.buildingsTab || false;
-            case 'RESOURCE_GENERATOR':
-                return this.unlockStates.resourceGenerator || false;
-            case 'DRONE_HUB':
-                return this.unlockStates.droneHub || false;
-            default:
-                return false;
+            case 'AUTO_LAUNCHER':       return this.progression.isUnlocked('buildings_tab');
+            case 'RESOURCE_GENERATOR':  return this.progression.isUnlocked('resource_generator');
+            case 'DRONE_HUB':           return this.progression.isUnlocked('drone_hub');
+            default:                    return false;
         }
     }
 

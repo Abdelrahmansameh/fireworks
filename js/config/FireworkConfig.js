@@ -5,7 +5,7 @@ export const FIREWORK_CONFIG = {
     verticalFrictionMultiplier: .9,
     gravityMultiplier: 9,
     particleSize: 5.0,
-    ascentSpeed: 500,
+    ascentSpeed: 570,
     rocketSize: 1.5,
     minExplosionHeightPercent: 0.4,
     maxExplosionHeightPercent: 0.8,

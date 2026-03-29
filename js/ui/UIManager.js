@@ -1212,7 +1212,7 @@ class UIManager {
 
             launcherDiv.innerHTML = `
                 <h3>Auto-Launcher ${index + 1}</h3>
-                ${this.game.unlockStates.recipesTab ? `
+                ${this.game.progression.isUnlocked('recipes_tab') ? `
                 <div class="recipes-option">
                     <label>Assign Recipe:</label>
                     <select class="recipe-select" data-building-id="${launcher.id}">
@@ -1242,7 +1242,7 @@ class UIManager {
             `;
             launcherList.appendChild(launcherDiv);
 
-            if (this.game.unlockStates.recipesTab) {
+            if (this.game.progression.isUnlocked('recipes_tab')) {
                 const recipeSelect = launcherDiv.querySelector('.recipe-select');
                 if (recipeSelect) {
                     recipeSelect.addEventListener('change', (e) => {
@@ -1323,54 +1323,66 @@ class UIManager {
         availableContainer.innerHTML = '';
         ownedContainer.innerHTML = '';
 
-        const { upgrades, purchasedUpgrades } = this.game;
-        upgrades.forEach(up => {
-            // Skip upgrades that have a visibility gate which isn't satisfied yet
-            if (up.isVisible && !up.isVisible(this.game)) return;
+        const progression = this.game.progression;
+        for (const def of progression.getAllUpgradeDefs()) {
+            const { visible } = progression.isVisible(def.id, this.game);
+            if (!visible) continue;
 
-            const lvl = purchasedUpgrades[up.id] ?? 0;
-            const maxLevel = up.maxLevel ?? 1;
+            const level = progression.getUpgradeLevel(def.id);
+            const maxLevel = def.maxLevel ?? 1;
 
-            if (lvl > 0) {
+            if (level > 0) {
                 const ownedCard = document.createElement('div');
                 ownedCard.className = 'upgrade-card purchased';
 
                 const oTitle = document.createElement('div');
-                oTitle.textContent = `${up.name} (Lv ${lvl})`;
+                oTitle.textContent = `${def.name} (Lv ${level})`;
                 ownedCard.appendChild(oTitle);
 
                 const oDesc = document.createElement('div');
-                oDesc.textContent = up.desc;
+                oDesc.textContent = def.desc;
                 ownedCard.appendChild(oDesc);
 
                 ownedContainer.appendChild(ownedCard);
             }
 
-            if (lvl < maxLevel) {
+            if (level < maxLevel) {
+                const { ok: canBuy, reason } = progression.canPurchase(def.id, this.game);
+                // Show as locked (no buy button) when a hard prerequisite isn't met — i.e.
+                // the reason isn't just affordability.
+                const isPrereqLocked = !canBuy && reason !== `Not enough ${def.currency}`;
+
                 const availCard = document.createElement('div');
-                availCard.className = 'upgrade-card';
+                availCard.className = `upgrade-card${isPrereqLocked ? ' locked' : ''}`;
 
                 const aTitle = document.createElement('div');
-                aTitle.textContent = `${up.name} (Lv ${lvl + 1})`;
+                aTitle.textContent = `${def.name} (Lv ${level + 1})`;
                 availCard.appendChild(aTitle);
 
                 const aDesc = document.createElement('div');
-                aDesc.textContent = up.desc;
+                aDesc.textContent = def.desc;
                 availCard.appendChild(aDesc);
 
-                const nextCost = Math.floor(up.baseCost * Math.pow(up.costRatio, lvl));
-                const aCost = document.createElement('div');
-                aCost.textContent = `Cost: ${nextCost.toLocaleString()} ${up.currency}`;
-                availCard.appendChild(aCost);
+                if (isPrereqLocked) {
+                    const aLock = document.createElement('div');
+                    aLock.className = 'upgrade-lock-reason';
+                    aLock.textContent = `🔒 ${reason}`;
+                    availCard.appendChild(aLock);
+                } else {
+                    const nextCost = progression.getUpgradeCost(def.id);
+                    const aCost = document.createElement('div');
+                    aCost.textContent = `Cost: ${nextCost.toLocaleString()} ${def.currency}`;
+                    availCard.appendChild(aCost);
 
-                const btn = document.createElement('button');
-                btn.textContent = 'Buy';
-                btn.addEventListener('click', () => this.game.buyUpgrade(up.id));
-                availCard.appendChild(btn);
+                    const btn = document.createElement('button');
+                    btn.textContent = 'Buy';
+                    btn.addEventListener('click', () => this.game.buyUpgrade(def.id));
+                    availCard.appendChild(btn);
+                }
 
                 availableContainer.appendChild(availCard);
             }
-        });
+        }
     }
 
 
@@ -1437,50 +1449,40 @@ class UIManager {
         this.activeFloatingSparkle = elem;
     }
 
-    initializeUnlockStates(unlockStates) {
+    initializeUnlockStates() {
         this.hideSparkleCounter();
         this.hideTabMenu();
         this.hideCollapseButton();
         this.hideAllTabs();
 
-        if (unlockStates.sparkleCounter) {
-            this.showSparkleCounter();
-        }
+        const p = this.game.progression;
+        const fc = this.game.firstClickStates;
 
-        if (unlockStates.tabMenu) {
+        if (p.isUnlocked('sparkle_counter')) this.showSparkleCounter();
+
+        if (p.isUnlocked('tab_menu')) {
             this.showTabMenu();
             this.showCollapseButton();
-            if (!this.game.firstClickStates.tabMenu) {
-                this.addGlimmer('tabMenu');
-            }
+            if (!fc.tabMenu) this.addGlimmer('tabMenu');
         }
 
-        if (unlockStates.buildingsTab) {
+        if (p.isUnlocked('buildings_tab')) {
             this.showBuildingsTab();
-            if (!this.game.firstClickStates.buildingsTab) {
-                this.addGlimmer('buildingsTab');
-            }
+            if (!fc.buildingsTab) this.addGlimmer('buildingsTab');
         }
 
-        if (unlockStates.upgradesTab) {
+        if (p.isUnlocked('upgrades_tab')) {
             this.showUpgradesTab();
-            if (!this.game.firstClickStates.upgradesTab) {
-                this.addGlimmer('upgradesTab');
-            }
+            if (!fc.upgradesTab) this.addGlimmer('upgradesTab');
         }
 
-        if (unlockStates.crowdsTab) {
+        if (p.isUnlocked('crowds_tab')) {
             this.showCrowdsTab();
-            if (!this.game.firstClickStates.crowdsTab) {
-                this.addGlimmer('crowdsTab');
-            }
+            if (!fc.crowdsTab) this.addGlimmer('crowdsTab');
         }
 
-        if (unlockStates.recipesTab) {
-            this.showRecipesTab();
-        }
+        if (p.isUnlocked('recipes_tab')) this.showRecipesTab();
 
-        // Update building type visibility based on unlock states
         this.updateBuildingTypeVisibility();
     }
 
@@ -1530,7 +1532,7 @@ class UIManager {
             tabs.classList.remove('unlock-hidden');
         }
 
-        if (this.game && this.game.unlockStates && this.game.unlockStates.recipesTab) {
+        if (this.game && this.game.progression && this.game.progression.isUnlocked('recipes_tab')) {
             this.showRecipesTab();
         }
         this.showStatsTab();
@@ -1819,31 +1821,23 @@ class UIManager {
     }
 
     updateBuildingTypeVisibility() {
-        // Show/hide building type tabs based on unlock state
-        const generatorTab = document.querySelector('.building-type-tab[data-building-type="RESOURCE_GENERATOR"]');
+        const p = this.game.progression;
 
+        const generatorTab = document.querySelector('.building-type-tab[data-building-type="RESOURCE_GENERATOR"]');
         if (generatorTab) {
-            if (this.game.unlockStates.resourceGenerator) {
-                generatorTab.style.display = 'block';
-            } else {
-                generatorTab.style.display = 'none';
-            }
+            generatorTab.style.display = p.isUnlocked('resource_generator') ? 'block' : 'none';
         }
 
         const droneHubTab = document.querySelector('.building-type-tab[data-building-type="DRONE_HUB"]');
         if (droneHubTab) {
-            if (this.game.unlockStates.droneHub) {
-                droneHubTab.style.display = 'block';
-            } else {
-                droneHubTab.style.display = 'none';
-            }
+            droneHubTab.style.display = p.isUnlocked('drone_hub') ? 'block' : 'none';
         }
 
-        // If currently viewing a locked building type, switch to auto launcher
+        // If currently viewing a locked building type, switch back to auto launcher
         const activeBuildingType = document.querySelector('.building-type-tab.active')?.getAttribute('data-building-type');
-        if (activeBuildingType === 'RESOURCE_GENERATOR' && !this.game.unlockStates.resourceGenerator) {
+        if (activeBuildingType === 'RESOURCE_GENERATOR' && !p.isUnlocked('resource_generator')) {
             this.switchBuildingType('AUTO_LAUNCHER');
-        } else if (activeBuildingType === 'DRONE_HUB' && !this.game.unlockStates.droneHub) {
+        } else if (activeBuildingType === 'DRONE_HUB' && !p.isUnlocked('drone_hub')) {
             this.switchBuildingType('AUTO_LAUNCHER');
         }
     }
