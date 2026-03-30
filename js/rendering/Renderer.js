@@ -42,7 +42,11 @@ class Vector2 {
 
     normalize() {
         const len = this.length();
-        if (len === 0) return new Vector2(0, 0);
+        if (len === 0) {
+            this.x = 0;
+            this.y = 0;
+            return this;
+        }
         let normalX = this.x / len;
         let normalY = this.y / len;
         if (Math.abs(normalX) < 0.000001)
@@ -83,6 +87,13 @@ class Vector2 {
         );
     }
 
+    // Zero-allocation lerp: writes result into an existing Vector2.
+    static lerpInto(out, v1, v2, t) {
+        out.x = v1.x + (v2.x - v1.x) * t;
+        out.y = v1.y + (v2.y - v1.y) * t;
+        return out;
+    }
+
     distanceTo(v) {
         const dx = this.x - v.x;
         const dy = this.y - v.y;
@@ -119,12 +130,10 @@ class Color {
     }
 
     multiply(scalar) {
-        return new Color(
-            this.r * scalar,
-            this.g * scalar,
-            this.b * scalar,
-            this.a
-        );
+        this.r *= scalar;
+        this.g *= scalar;
+        this.b *= scalar;
+        return this;
     }
 
     clone() {
@@ -150,6 +159,15 @@ class Color {
             c1.b + (c2.b - c1.b) * t,
             c1.a + (c2.a - c1.a) * t
         );
+    }
+
+    // Zero-allocation lerp: writes result into an existing Color.
+    static lerpInto(out, c1, c2, t) {
+        out.r = c1.r + (c2.r - c1.r) * t;
+        out.g = c1.g + (c2.g - c1.g) * t;
+        out.b = c1.b + (c2.b - c1.b) * t;
+        out.a = c1.a + (c2.a - c1.a) * t;
+        return out;
     }
 }
 

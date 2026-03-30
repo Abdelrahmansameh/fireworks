@@ -141,8 +141,8 @@ class InstancedParticleSystem {
         d[base + this.gravityIdx] = gravity;
         d[base + this.frictionIdx] = friction;
 
-        const dir = velocity.clone().normalize().scale(-1);
-        d[base + this.rotationIdx] = dir.getAngle();
+        const vLen = Math.hypot(velocity.x, velocity.y);
+        d[base + this.rotationIdx] = vLen > 0 ? Math.atan2(-velocity.y, -velocity.x) : 0;
         this.meshes[shape].addInstanceRaw(
             position.x,
             position.y,
