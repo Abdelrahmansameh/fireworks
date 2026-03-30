@@ -1079,6 +1079,15 @@ export default class Renderer2D {
             this._resizeDirty = true;
         });
         this._resizeObserver.observe(this.canvas);
+
+        // Preallocated scratch buffers to avoid per-frame allocations
+        this._modelMatScratch = new Float32Array(16);
+        this._mvpMatScratch = new Float32Array(16);
+        this._colorScratch = new Float32Array(4);
+
+        // GL state cache to skip redundant calls
+        this._lastBlendMode = null;
+        this._lastProgram = null;
     }
 
     _createWhiteTexture() {
@@ -1450,28 +1459,38 @@ export default class Renderer2D {
 
     _drawNormalShape(shape) {
         const gl = this.gl;
-        switch (shape.blendMode) {
-            case BlendMode.ADDITIVE:
-                gl.blendFunc(gl.SRC_ALPHA, gl.ONE);
-                break;
-            case BlendMode.NO_BLENDING:
-                gl.blendFunc(gl.ONE, gl.ONE);
-                break;
-            case BlendMode.MULTIPLY_BLENDING:
-                gl.blendFunc(gl.DST_COLOR, gl.ONE_MINUS_SRC_ALPHA);
-                break;
-            case BlendMode.NORMAL:
-            default:
-                gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
-                break;
+        if (shape.blendMode !== this._lastBlendMode) {
+            switch (shape.blendMode) {
+                case BlendMode.ADDITIVE:
+                    gl.blendFunc(gl.SRC_ALPHA, gl.ONE);
+                    break;
+                case BlendMode.NO_BLENDING:
+                    gl.blendFunc(gl.ONE, gl.ONE);
+                    break;
+                case BlendMode.MULTIPLY_BLENDING:
+                    gl.blendFunc(gl.DST_COLOR, gl.ONE_MINUS_SRC_ALPHA);
+                    break;
+                case BlendMode.NORMAL:
+                default:
+                    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+                    break;
+            }
+            this._lastBlendMode = shape.blendMode;
         }
-        gl.useProgram(this.normalProgram);
+        if (this._lastProgram !== this.normalProgram) {
+            gl.useProgram(this.normalProgram);
+            this._lastProgram = this.normalProgram;
+        }
 
         const model = this._computeModelMatrix(shape.position, shape.rotation, shape.scale);
         const mvp = this._multiplyMat4(this._projectionMatrix, model);
 
         gl.uniformMatrix4fv(this.u_matrix_Normal, false, mvp);
-        gl.uniform4fv(this.u_color_Normal, shape.color.toArray());
+        this._colorScratch[0] = shape.color.r;
+        this._colorScratch[1] = shape.color.g;
+        this._colorScratch[2] = shape.color.b;
+        this._colorScratch[3] = shape.color.a;
+        gl.uniform4fv(this.u_color_Normal, this._colorScratch);
 
         const useTexture = shape.texture !== null;
         gl.uniform1i(this.u_useTexture_Normal, useTexture);
@@ -1514,21 +1533,28 @@ export default class Renderer2D {
         const gl = this.gl;
         if (group.instanceCount <= 0) return;
 
-        switch (group.blendMode) {
-            case BlendMode.ADDITIVE:
-                gl.blendFunc(gl.SRC_ALPHA, gl.ONE);
-                break;
-            case BlendMode.NO_BLENDING:
-                gl.blendFunc(gl.ONE, gl.ZERO);
-                break;
-            case BlendMode.MULTIPLY_BLENDING:
-                gl.blendFunc(gl.DST_COLOR, gl.ONE_MINUS_SRC_ALPHA);
-                break;
-            case BlendMode.NORMAL:
-            default:
-                gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
-                break;
-        }        gl.useProgram(this.instancedProgram);
+        if (group.blendMode !== this._lastBlendMode) {
+            switch (group.blendMode) {
+                case BlendMode.ADDITIVE:
+                    gl.blendFunc(gl.SRC_ALPHA, gl.ONE);
+                    break;
+                case BlendMode.NO_BLENDING:
+                    gl.blendFunc(gl.ONE, gl.ZERO);
+                    break;
+                case BlendMode.MULTIPLY_BLENDING:
+                    gl.blendFunc(gl.DST_COLOR, gl.ONE_MINUS_SRC_ALPHA);
+                    break;
+                case BlendMode.NORMAL:
+                default:
+                    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+                    break;
+            }
+            this._lastBlendMode = group.blendMode;
+        }
+        if (this._lastProgram !== this.instancedProgram) {
+            gl.useProgram(this.instancedProgram);
+            this._lastProgram = this.instancedProgram;
+        }
 
         const useTexture = group.texture !== null;
         gl.uniform1i(this.u_useTexture_Inst, useTexture);
@@ -1718,7 +1744,7 @@ export default class Renderer2D {
             sinr = Math.sin(rot);
         const [sx, sy] = [scl.x, scl.y];
         const [px, py] = [pos.x, pos.y];
-        const m = new Float32Array(16);
+        const m = this._modelMatScratch;
         // col-major
         m[0] = cosr * sx;
         m[1] = sinr * sx;
@@ -1739,7 +1765,7 @@ export default class Renderer2D {
         return m;
     }
     _multiplyMat4(a, b) {
-        const out = new Float32Array(16);
+        const out = this._mvpMatScratch;
         for (let i = 0; i < 4; i++) {
             const ai0 = a[i],
                 ai1 = a[i + 4],
