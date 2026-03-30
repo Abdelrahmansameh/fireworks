@@ -545,11 +545,10 @@ export class SkillTreeScreen {
 
         if (level >= maxLevel) return 'maxed';
 
-        // Check game-requirement visibility (buildings, unlock nodes)
+       
         const { visible } = progression.isVisible(id, this.game);
-        if (!visible) return 'locked';
+        if (!visible) return 'hidden';
 
-        // Check full purchasability (includes remaining upgrade prereqs + cost)
         const { ok, reason } = progression.canPurchase(id, this.game);
         if (ok) return level > 0 ? 'partial' : 'available';
 
