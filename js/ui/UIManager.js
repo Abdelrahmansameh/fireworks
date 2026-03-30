@@ -763,6 +763,9 @@ class UIManager {
             el.textContent = gold.formatAmount();
         });
 
+        if (this.skillTree?.isOpen) {
+            this.skillTree._updateResourceDisplay();
+        }
         if (!sparklesElement._hasClickHandler) {
             sparklesElement._hasClickHandler = true;
             sparklesElement.addEventListener('click', () => {
