@@ -6,9 +6,6 @@ class InstancedParticleSystem {
     constructor(renderer, profiler) {
         this.profiler = profiler;
         this.renderer = renderer;
-        this.glows = [];
-
-        this.renderer.loadTexture('assets/glow.png', 'glow');
 
         this.maxParticles = FIREWORK_CONFIG.maxParticles;
         this.pendingTrailsStride = 10;
@@ -106,30 +103,6 @@ class InstancedParticleSystem {
         return this._randomPool[this._randomIdx++];
     }
 
-    addGlow(position, color, initialSize, finalSize, lifetime, initialAlpha, finalAlpha) {
-        const glowTexture = this.renderer.getTexture('glow');
-        if (!glowTexture) return;
-
-        const glowShape = this.renderer.createNormalShape({
-            ...Renderer2D.buildTexturedSquare(initialSize, initialSize),
-            texture: glowTexture,
-            position: new Vector2(position.x, position.y),
-            color: new Color(color.r, color.g, color.b, 0.5),
-            blendMode: BlendMode.ADDITIVE,
-            zIndex: -500
-        });
-
-        this.glows.push({
-            shape: glowShape,
-            lifetime: lifetime,
-            initialLifetime: lifetime,
-            initialSize: initialSize,
-            finalSize: finalSize,
-            initialAlpha: initialAlpha,
-            finalAlpha: finalAlpha,
-        });
-    }
-
     addParticle(position,
         velocity,
         color,
@@ -139,8 +112,6 @@ class InstancedParticleSystem {
         shape = 'circle',
         acceleration = new Vector2(),
         friction = FIREWORK_CONFIG.baseFriction,
-        glowStrength = 0,
-        blurStrength = 0,
         updateFn = null,
         enableColorGradient = false,
         gradientFinalColor = null,
@@ -181,9 +152,7 @@ class InstancedParticleSystem {
             color.r,
             color.g,
             color.b,
-            color.a,
-            glowStrength,
-            blurStrength
+            color.a
         );
 
         if (enableColorGradient && gradientFinalColor) {
@@ -219,21 +188,6 @@ class InstancedParticleSystem {
 
         
         this._frictionCache.clear();
-
-        for (let i = this.glows.length - 1; i >= 0; i--) {
-            const glow = this.glows[i];
-            glow.lifetime -= delta;
-
-            if (glow.lifetime <= 0) {
-                this.renderer.removeNormalShape(glow.shape);
-                this.glows.splice(i, 1);
-            } else {
-                const lifePercent = glow.lifetime / glow.initialLifetime;
-                glow.shape.color.a = glow.initialAlpha + ((glow.finalAlpha - glow.initialAlpha) * (1 - lifePercent));
-                const currentSize = glow.initialSize + ((glow.finalSize - glow.initialSize) * (1 - lifePercent));
-                glow.shape.scale.set(currentSize, currentSize);
-            }
-        }
 
         FIREWORK_CONFIG.supportedShapes.forEach(shape => {
             if (!this.instanceData[shape]) return;
@@ -404,8 +358,6 @@ class InstancedParticleSystem {
                 FIREWORK_CONFIG.trails.shape,
                 this._trailAccVec, 
                 FIREWORK_CONFIG.trails.friction,
-                0, // no glow
-                0, // no blur
                 null, // no update function
                 false, // no gradient
                 null,
@@ -430,10 +382,6 @@ class InstancedParticleSystem {
     }
 
     dispose() {
-        this.glows.forEach(glow => {
-            this.renderer.removeNormalShape(glow.shape);
-        });
-        this.glows = [];
         FIREWORK_CONFIG.supportedShapes.forEach(shape =>
             this.renderer.removeInstancedGroup(this.meshes[shape])
         );

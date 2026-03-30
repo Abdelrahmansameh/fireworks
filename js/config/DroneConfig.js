@@ -17,7 +17,6 @@ export const DRONE_CONFIG = {
     arrivalThreshold: 25,        // world-units — particle "collected" within this dist
     maxCaptureTime: 1.0,         // seconds before a targeted particle is force-collected
     defaultScale: 14,            // render scale of the drone mesh
-    glowStrength: 0.8,           // emissive glow intensity
     scanInterval: 4,             // scan for particles once every N frames (1 = every frame)
     minParticleAge: 0.3,          // seconds a particle must have been alive before a drone can pull it
     color: { r: 0.4, g: 0.9, b: 1.0, a: 1.0 },  // default drone color (cyan-ish)
@@ -29,8 +28,8 @@ export const DRONE_CONFIG = {
         enabled: true,
         spawnRate: 0.03,
         perBurst: 3,
-        lifetime: 0.15,
-        size: 3.0,
+        lifetime: 0.1,
+        size: 2.0,
         speed: 0,
         coneAngle: 130,
         gravity: -800,

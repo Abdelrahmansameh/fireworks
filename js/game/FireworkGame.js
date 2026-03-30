@@ -56,8 +56,6 @@ class FireworkGame extends Engine {
 
         this.cameraTransitionSpeed = 2.0;
 
-        this.usePostProcessing = JSON.parse(localStorage.getItem('usePostProcessing') || 'true');
-
         this.baseSparkleMultiplier = 1;
         this.patternSparkleMultipliers = { default: 1 };
         this.droneStats = {
@@ -227,8 +225,6 @@ class FireworkGame extends Engine {
                     lifetime: randomValue('lifetime'),
                     shape: possibleShapes[Math.floor(Math.random() * possibleShapes.length)],
                     spread: randomValue('spread'),
-                    glowStrength: randomValue('glowStrength'),
-                    blurStrength: randomValue('blurStrength'),
                 });
             }
 
@@ -262,9 +258,7 @@ class FireworkGame extends Engine {
 
     initRenderer2D() {
         this.canvas2D = document.getElementById('game-canvas');
-        this.renderer2D = new Renderer2D.Renderer2D(this.canvas2D, {
-            usePostProcessing: this.usePostProcessing,
-        });
+        this.renderer2D = new Renderer2D.Renderer2D(this.canvas2D, {});
         this.renderer2D._resizeIfNeeded();
 
         this.procduralBackground = new ProcduralBackground(this.renderer2D, PROCEDURAL_BACKGROUND_CONFIG);
@@ -808,8 +802,6 @@ class FireworkGame extends Engine {
                 lifetime: randomValue('lifetime'),
                 shape: possibleShapes[Math.floor(Math.random() * possibleShapes.length)],
                 spread: randomValue('spread'),
-                glowStrength: randomValue('glowStrength'),
-                blurStrength: randomValue('blurStrength'),
             };
         }
         this.updateComponentsList();
@@ -1155,31 +1147,6 @@ class FireworkGame extends Engine {
             this.previewFireworkTimer = lifetime;
         }
     }
-
-    togglePostProcessing(enabled) {
-        const usePP = !!enabled;
-
-        if (this.renderer2D.usePostProcessing === usePP) {
-            return;
-        }
-
-        this.renderer2D.usePostProcessing = usePP;
-
-        if (usePP) {
-            if (!this.renderer2D.postProcessingInitialized) {
-                try {
-                    this.renderer2D._initPostProcessing();
-                    this.renderer2D._resizePostProcessingBuffers();
-                } catch (err) {
-                    console.warn('Failed to initialize post-processing:', err);
-                    this.renderer2D.usePostProcessing = false;
-                }
-            }
-        }
-
-        localStorage.setItem('usePostProcessing', JSON.stringify(usePP));
-    }
-
 
     recomputeUpgrades() {
         this.progression.applyAll(this);

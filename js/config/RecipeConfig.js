@@ -4,8 +4,6 @@ export const PRE_RECIPE_COMPONENT_DEFAULTS = {
     size: 0.3,
     lifetime: 3,
     spread: .8,
-    glowStrength: 1.0,
-    blurStrength: 0.7,
     shape: 'ring',
     secondaryColor: '#00ff00',
 };
@@ -18,8 +16,6 @@ export const DEFAULT_RECIPE_COMPONENTS = [{
     shape: 'ring',
     spread: .7,
     secondaryColor: '#00ff00',
-    glowStrength: 1.0,
-    blurStrength: .7
 }];
 
 export const GENERIC_RECIPE_NAMES = [
@@ -47,6 +43,4 @@ export const COMPONENT_PROPERTY_RANGES = {
     size: { min: 0.1, max: 0.7, step: 0.05 },
     lifetime: { min: 1.5, max: 4, step: 0.1 },
     spread: { min: 0.4, max: 1, step: 0.1 },
-    glowStrength: { min: 0, max: 1.25, step: 0.05 },
-    blurStrength: { min: 0.2, max: 1, step: 0.05 },
 };

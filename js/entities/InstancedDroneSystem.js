@@ -137,9 +137,7 @@ class InstancedDroneSystem {
             x, y,
             0,
             scale, scale,
-            color.r, color.g, color.b, color.a,
-            DRONE_CONFIG.glowStrength,
-            0
+            color.r, color.g, color.b, color.a
         );
 
         this.count++;
@@ -458,7 +456,6 @@ class InstancedDroneSystem {
             gpu[gBase + 6] = d[base + this.CG];
             gpu[gBase + 7] = d[base + this.CB];
             gpu[gBase + 8] = alpha;
-            // gpu[gBase + 9] = glowStrength  (written once in addInstanceRaw, not updated per-frame)
         }
 
         this.mesh.instanceCount = this.count;

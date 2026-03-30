@@ -190,13 +190,6 @@ class Firework {
             const acceleration = new Renderer2D.Vector2();
             const shape = component.shape;
             const spread = component.spread;
-            this.particleSystem.addGlow(this.rocket.position,
-                color,
-                component.glowStrength,
-                500 * component.glowStrength,
-                0.6,
-                component.glowStrength,
-                0);
             const randomSeed = Math.random() * 2 - 1;
             const sharedCtx = {
                 rocketPos,
@@ -235,8 +228,6 @@ class Firework {
                         shape,
                         accel,
                         friction,
-                        component.glowStrength,
-                        component.blurStrength,
                         updateFn,
                         component.enableColorGradient,
                         gradientFinalColor,

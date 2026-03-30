@@ -245,14 +245,6 @@ class UIManager {
             }
         });
 
-        const ppToggle = document.getElementById('toggle-post-processing');
-        if (ppToggle) {
-            ppToggle.checked = !!this.game.renderer2D.usePostProcessing;
-            ppToggle.addEventListener('change', (e) => {
-                this.game.togglePostProcessing(e.target.checked);
-            });
-        }
-
         document.addEventListener('wheel', this.handleWheelScroll, { passive: false });
 
         document.getElementById('spread-launchers').addEventListener('click', () => {
@@ -489,8 +481,6 @@ class UIManager {
                 'triangle', // shape
                 new Renderer2D.Vector2(0, 0), // acceleration
                 5, // friction
-                0, // glowStrength
-                0, // blurStrength
                 updateFn, // update function
                 false, // enableColorGradient
                 null, // gradientFinalColor
@@ -933,12 +923,6 @@ class UIManager {
             if (!('secondaryColor' in component)) {
                 component.secondaryColor = '#00ff00';
             }
-            if (!('glowStrength' in component)) {
-                component.glowStrength = 0.0;
-            }
-            if (!('blurStrength' in component)) {
-                component.blurStrength = 0.0;
-            }
             if (!('enableColorGradient' in component)) {
                 component.enableColorGradient = false;
             }
@@ -1010,14 +994,6 @@ class UIManager {
                         <label>Spread:</label>
                         <input type="range" class="spread-select" data-index="${index}" min="${COMPONENT_PROPERTY_RANGES.spread.min}" max="${COMPONENT_PROPERTY_RANGES.spread.max}" step="${COMPONENT_PROPERTY_RANGES.spread.step}" value="${component.spread}">
                     </div>
-                    <div class="recipes-option">
-                        <label>Glow Strength:</label>
-                        <input type="range" class="glow-strength-select" data-index="${index}" min="${COMPONENT_PROPERTY_RANGES.glowStrength.min}" max="${COMPONENT_PROPERTY_RANGES.glowStrength.max}" step="${COMPONENT_PROPERTY_RANGES.glowStrength.step}" value="${component.glowStrength}">
-                    </div>
-                    <div class="recipes-option">
-                        <label>Blur Strength:</label>
-                        <input type="range" class="blur-strength-select" data-index="${index}" min="${COMPONENT_PROPERTY_RANGES.blurStrength.min}" max="${COMPONENT_PROPERTY_RANGES.blurStrength.max}" step="${COMPONENT_PROPERTY_RANGES.blurStrength.step}" value="${component.blurStrength}">
-                    </div>
                 </div>
             `;
             componentsList.appendChild(componentDiv);
@@ -1048,8 +1024,6 @@ class UIManager {
             const sizeSelect = componentDiv.querySelector('.size-select');
             const lifetimeSelect = componentDiv.querySelector('.lifetime-select');
             const spreadSelect = componentDiv.querySelector('.spread-select');
-            const glowStrengthSelect = componentDiv.querySelector('.glow-strength-select');
-            const blurStrengthSelect = componentDiv.querySelector('.blur-strength-select');
 
             const updateSecondaryColorVisibility = () => {
                 if (patternSelect.value === 'helix' || patternSelect.value === 'christmasTree' || patternSelect.value === 'snowflake') {
@@ -1137,30 +1111,6 @@ class UIManager {
             spreadSelect.addEventListener('input', (e) => {
                 const idx = e.target.getAttribute('data-index');
                 components[idx].spread = parseFloat(e.target.value);
-                onUpdate();
-            });
-
-            glowStrengthSelect.addEventListener('input', (e) => {
-                const idx = e.target.getAttribute('data-index');
-                const value = parseFloat(e.target.value);
-                components[idx].glowStrength = value;
-                // Update the value display
-                const valueDisplay = e.target.nextElementSibling;
-                if (valueDisplay && valueDisplay.classList.contains('value-display')) {
-                    valueDisplay.textContent = value.toFixed(2);
-                }
-                onUpdate();
-            });
-
-            blurStrengthSelect.addEventListener('input', (e) => {
-                const idx = e.target.getAttribute('data-index');
-                const value = parseFloat(e.target.value);
-                components[idx].blurStrength = value;
-                // Update the value display
-                const valueDisplay = e.target.nextElementSibling;
-                if (valueDisplay && valueDisplay.classList.contains('value-display')) {
-                    valueDisplay.textContent = value.toFixed(2);
-                }
                 onUpdate();
             });
 
