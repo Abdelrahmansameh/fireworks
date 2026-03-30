@@ -1344,43 +1344,64 @@ class UIManager {
     showFloatingSparkle(screenX, screenY, amount) {
         if (!this.showFloatingSparkleEnabled) return;
 
-        const THRESHOLD_X_DIST = 50;
+        const MIN_MOVE_DIST = 50;
 
         if (this.activeFloatingSparkle && document.body.contains(this.activeFloatingSparkle)) {
-            const existingX = parseFloat(this.activeFloatingSparkle.style.left || '0');
+            const elem = this.activeFloatingSparkle;
 
-            if (Math.abs(existingX - screenX) <= THRESHOLD_X_DIST) {
-                const elem = this.activeFloatingSparkle;
+            const currentAmount = parseFloat(elem.dataset.amount || '0');
+            const newAmount = currentAmount + amount;
 
-                const currentAmount = parseFloat(elem.dataset.amount || '0');
-                const newAmount = currentAmount + amount;
-                elem.dataset.amount = newAmount;
-                elem.textContent = `+${newAmount.toLocaleString()}`;
+            const existingX = parseFloat(elem.style.left || '0');
+            const existingY = parseFloat(elem.style.top || '0');
+            if (Math.hypot(screenX - existingX, screenY - existingY) >= MIN_MOVE_DIST) {
+                elem.dataset.amount = '0'; 
+                elem.style.animationDuration = '.8s';
 
-                elem.style.top = `${screenY}px`;
-
-                elem.style.animation = 'none';
-                void elem.offsetWidth;
-                elem.style.animation = 'floatUpFade 1.5s ease-out forwards';
+                const newElem = document.createElement('div');
+                newElem.className = 'floating-sparkle';
+                newElem.dataset.amount = newAmount;
+                newElem.textContent = `+${newAmount.toLocaleString()}`;
+                newElem.style.left = `${screenX}px`;
+                newElem.style.top = `${screenY}px`;
+                document.body.appendChild(newElem);
 
                 if (this.floatingSparkleTimeout) {
                     clearTimeout(this.floatingSparkleTimeout);
                 }
-                const remove = () => {
-                    elem.remove();
-                    if (this.activeFloatingSparkle === elem) {
+                const removeNew = () => {
+                    newElem.remove();
+                    if (this.activeFloatingSparkle === newElem) {
                         this.activeFloatingSparkle = null;
                         this.floatingSparkleTimeout = null;
                     }
                 };
-                elem.onanimationend = remove;
-                this.floatingSparkleTimeout = setTimeout(remove, 1500);
+                newElem.onanimationend = removeNew;
+                this.floatingSparkleTimeout = setTimeout(removeNew, 1500);
+                this.activeFloatingSparkle = newElem;
                 return;
             }
-            this.activeFloatingSparkle = null;
+
+            elem.dataset.amount = newAmount;
+            elem.textContent = `+${newAmount.toLocaleString()}`;
+
+            elem.style.animation = 'none';
+            void elem.offsetWidth;
+            elem.style.animation = 'floatUpFade 1.5s ease-out forwards';
+
             if (this.floatingSparkleTimeout) {
-                this.floatingSparkleTimeout = null;
+                clearTimeout(this.floatingSparkleTimeout);
             }
+            const remove = () => {
+                elem.remove();
+                if (this.activeFloatingSparkle === elem) {
+                    this.activeFloatingSparkle = null;
+                    this.floatingSparkleTimeout = null;
+                }
+            };
+            elem.onanimationend = remove;
+            this.floatingSparkleTimeout = setTimeout(remove, 1500);
+            return;
         }
 
         const elem = document.createElement('div');
