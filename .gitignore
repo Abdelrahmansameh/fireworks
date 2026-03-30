@@ -4,3 +4,8 @@ traces/
 tools/all_js_files_concatenated.js
 js/entities/patterns/ideas.txt
 DESIGN_SPECIFICATION.md
+REFACTOR_DATA_DRIVEN_UI.md
+assets/icons/icon_base.png
+assets/icons/icon_crowd.png
+assets/icons/icon_drone.png
+assets/icons/icon_launcher.png

@@ -12,8 +12,8 @@ body {
 #game-canvas {
     display: block;
     width: 100vw;
-    height: 100vh; 
-  }
+    height: 100vh;
+}
 
 
 .top-bar-container {
@@ -47,7 +47,7 @@ body {
     pointer-events: none;
 }
 
-.top-bar-container > * {
+.top-bar-container>* {
     pointer-events: auto;
 }
 
@@ -79,9 +79,11 @@ body {
     flex-wrap: nowrap;
     transition: max-width 0.3s ease;
 }
-.tabs::-webkit-scrollbar { 
+
+.tabs::-webkit-scrollbar {
     display: none;
 }
+
 .tabs.collapsed {
     max-width: 0;
     overflow: hidden;
@@ -123,6 +125,7 @@ body {
     background: #0a0e15;
     border-radius: 10px;
 }
+
 .resource-counter {
     background: rgba(26, 31, 42, 0.95);
     padding: 8px 15px;
@@ -176,12 +179,14 @@ body {
     transform: scale(1.05);
 }
 
-.sparkle-total, .gold-total {
+.sparkle-total,
+.gold-total {
     font-weight: bold;
     color: #ffffff;
 }
 
-.sparkle-rate, .gold-rate {
+.sparkle-rate,
+.gold-rate {
     color: #ffffff;
 }
 
@@ -794,9 +799,11 @@ body {
     color: #eee;
     font-size: 14px;
 }
+
 .upgrade-card.purchased {
     opacity: 0.5;
 }
+
 .upgrade-card button {
     width: 100%;
     margin-top: 6px;
@@ -882,11 +889,12 @@ body {
     0% {
         transform: translateX(0) translateY(0);
         opacity: 1;
-        font-size: 1.5rem; 
+        font-size: 1.5rem;
     }
+
     100% {
         transform: translateX(0%) translateY(-100%);
-        font-size: 1rem; 
+        font-size: 1rem;
         opacity: 0;
     }
 }
@@ -907,12 +915,10 @@ body {
     left: -100%;
     width: 100%;
     height: 100%;
-    background: linear-gradient(
-        90deg,
-        transparent,
-        rgba(255, 255, 255, 0.4),
-        transparent
-    );
+    background: linear-gradient(90deg,
+            transparent,
+            rgba(255, 255, 255, 0.4),
+            transparent);
     animation: glimmer 2s infinite;
     z-index: 1000;
     pointer-events: none;
@@ -922,6 +928,7 @@ body {
     0% {
         left: -100%;
     }
+
     50% {
         left: 100%;
     }
@@ -957,7 +964,7 @@ body {
     justify-content: space-between;
     align-items: baseline;
     padding: 4px 0;
-    border-bottom: 1px solid rgba(255,255,255,0.04);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
 }
 
 .stats-group:last-child {

@@ -26,14 +26,14 @@ export const PROGRESSION_CONFIG = [
     // These fire automatically when their `requires` conditions are met.
     // IDs map 1-to-1 to the old game.unlockStates keys (snake_case).
 
-    { type: 'unlock', id: 'sparkle_counter',    requires: { stats: { fireworkCount: 1 } } },
-    { type: 'unlock', id: 'tab_menu',           requires: { stats: { fireworkCount: 10 } } },
-    { type: 'unlock', id: 'buildings_tab',      requires: { stats: { fireworkCount: 20 } } },
-    { type: 'unlock', id: 'upgrades_tab',       requires: { stats: { fireworkCount: 30 } } },
-    { type: 'unlock', id: 'crowds_tab',         requires: { stats: { sps: 0.7 } } },
+    { type: 'unlock', id: 'sparkle_counter', requires: { stats: { fireworkCount: 1 } } },
+    { type: 'unlock', id: 'tab_menu', requires: { stats: { fireworkCount: 10 } } },
+    { type: 'unlock', id: 'buildings_tab', requires: { stats: { fireworkCount: 20 } } },
+    { type: 'unlock', id: 'upgrades_tab', requires: { stats: { fireworkCount: 30 } } },
+    { type: 'unlock', id: 'crowds_tab', requires: { stats: { sps: 0.7 } } },
     { type: 'unlock', id: 'resource_generator', requires: { stats: { launcherCount: 3 } } },
-    { type: 'unlock', id: 'drone_hub',          requires: { stats: { sps: 2.0 } } },
-    { type: 'unlock', id: 'recipes_tab',        requires: { stats: { launcherCount: 20 } } },
+    { type: 'unlock', id: 'drone_hub', requires: { stats: { sps: 2.0 } } },
+    { type: 'unlock', id: 'recipes_tab', requires: { stats: { launcherCount: 20 } } },
 
     // ── Base upgrades ─────────────────────────────────────────────────────────
 

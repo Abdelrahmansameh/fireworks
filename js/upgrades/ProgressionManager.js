@@ -183,7 +183,6 @@ class ProgressionManager {
      */
     applyAll(game) {
         game.baseSparkleMultiplier = 1;
-        game.patternSparkleMultipliers = { default: 1 };
         game.droneStats = {
             lifetimeMultiplier: 1,
             speedMultiplier: 1,

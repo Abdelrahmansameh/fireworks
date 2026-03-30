@@ -57,7 +57,6 @@ class FireworkGame extends Engine {
         this.cameraTransitionSpeed = 2.0;
 
         this.baseSparkleMultiplier = 1;
-        this.patternSparkleMultipliers = { default: 1 };
         this.droneStats = {
             lifetimeMultiplier: 1,
             speedMultiplier: 1,
@@ -359,8 +358,7 @@ class FireworkGame extends Engine {
     }
 
     getComponentSparkles(component) {
-        const patternMult = this.patternSparkleMultipliers[component.pattern] ?? this.patternSparkleMultipliers.default ?? 1;
-        return this.baseSparkleMultiplier * patternMult;
+        return this.baseSparkleMultiplier;
     }
 
     updateUI() {
@@ -599,7 +597,6 @@ class FireworkGame extends Engine {
         this.recipes = [];
         this.currentRecipeComponents = [...DEFAULT_RECIPE_COMPONENTS];
         this.baseSparkleMultiplier = 1;
-        this.patternSparkleMultipliers = { default: 1 };
         this.droneStats = {
             lifetimeMultiplier: 1,
             speedMultiplier: 1,
@@ -881,7 +878,6 @@ class FireworkGame extends Engine {
             backgroundColor: '#f13b3b',
             resources: this.resourceManager.save(),
             baseSparkleMultiplier: this.baseSparkleMultiplier,
-            patternSparkleMultipliers: this.patternSparkleMultipliers,
             progression: {
                 ...this.progression.getState(),
                 firstClicks: this.firstClickStates,
@@ -931,9 +927,6 @@ class FireworkGame extends Engine {
         this.updateCrowdDisplay();
 
         this.baseSparkleMultiplier = (typeof data.baseSparkleMultiplier === 'number' && !isNaN(data.baseSparkleMultiplier)) ? data.baseSparkleMultiplier : 1;
-        if (data.patternSparkleMultipliers && typeof data.patternSparkleMultipliers === 'object') {
-            this.patternSparkleMultipliers = { ...this.patternSparkleMultipliers, ...data.patternSparkleMultipliers };
-        }
 
         if (data.progression && typeof data.progression === 'object') {
             this.progression.loadState(data.progression);
@@ -988,7 +981,7 @@ class FireworkGame extends Engine {
         const viewHalfWidth = (this.renderer2D.canvas.width / this.renderer2D.cameraZoom) / 2;
         const minCameraX = GAME_BOUNDS.SCROLL_MIN_X;
         const maxCameraX = GAME_BOUNDS.SCROLL_MAX_X - viewHalfWidth;
-        
+
         if (minCameraX > maxCameraX) {
             this.cameraTargetX = (GAME_BOUNDS.SCROLL_MIN_X + GAME_BOUNDS.SCROLL_MAX_X) / 2;
         } else {
@@ -1032,11 +1025,11 @@ class FireworkGame extends Engine {
 
         if (progressBar) {
             const currentThresholdFps = Math.pow((currentCrowd - config.formulaB) / config.formulaA, 2);
-            
+
             // if currentCrowd == 0, base FPS might be negative or 0 depending on formulaB
             const baseFps = Math.max(0, currentThresholdFps);
             const progress = ((currentFps - baseFps) / (nextThresholdFps - baseFps)) * 100;
-            
+
             progressBar.style.width = `${Math.min(100, Math.max(0, progress))}%`;
         }
     }
@@ -1272,10 +1265,10 @@ class FireworkGame extends Engine {
 
     isBuildingTypeUnlocked(buildingType) {
         switch (buildingType) {
-            case 'AUTO_LAUNCHER':       return this.progression.isUnlocked('buildings_tab');
-            case 'RESOURCE_GENERATOR':  return this.progression.isUnlocked('resource_generator');
-            case 'DRONE_HUB':           return this.progression.isUnlocked('drone_hub');
-            default:                    return false;
+            case 'AUTO_LAUNCHER': return this.progression.isUnlocked('buildings_tab');
+            case 'RESOURCE_GENERATOR': return this.progression.isUnlocked('resource_generator');
+            case 'DRONE_HUB': return this.progression.isUnlocked('drone_hub');
+            default: return false;
         }
     }
 

@@ -1341,6 +1341,22 @@ class UIManager {
     }
 
 
+    _formatSparkleCount(n) {
+        if (n < 1000) return Math.floor(n).toString();
+        const tiers = [[1e9, 'B'], [1e6, 'M'], [1e3, 'K']];
+        for (const [div, suffix] of tiers) {
+            if (n >= div) {
+                const val = n / div;
+                let str;
+                if (val < 10) str = val.toFixed(2);
+                else if (val < 100) str = val.toFixed(1);
+                else str = Math.floor(val).toString();
+                str = str.replace(/\.?0+$/, '');
+                return str + suffix;
+            }
+        }
+    }
+
     showFloatingSparkle(screenX, screenY, amount) {
         if (!this.showFloatingSparkleEnabled) return;
 
@@ -1355,13 +1371,13 @@ class UIManager {
             const existingX = parseFloat(elem.style.left || '0');
             const existingY = parseFloat(elem.style.top || '0');
             if (Math.hypot(screenX - existingX, screenY - existingY) >= MIN_MOVE_DIST) {
-                elem.dataset.amount = '0'; 
+                elem.dataset.amount = '0';
                 elem.style.animationDuration = '.8s';
 
                 const newElem = document.createElement('div');
                 newElem.className = 'floating-sparkle';
                 newElem.dataset.amount = newAmount;
-                newElem.textContent = `+${newAmount.toLocaleString()}`;
+                newElem.textContent = `+${this._formatSparkleCount(newAmount)}`;
                 newElem.style.left = `${screenX}px`;
                 newElem.style.top = `${screenY}px`;
                 document.body.appendChild(newElem);
@@ -1383,7 +1399,7 @@ class UIManager {
             }
 
             elem.dataset.amount = newAmount;
-            elem.textContent = `+${newAmount.toLocaleString()}`;
+            elem.textContent = `+${this._formatSparkleCount(newAmount)}`;
 
             elem.style.animation = 'none';
             void elem.offsetWidth;
@@ -1407,7 +1423,7 @@ class UIManager {
         const elem = document.createElement('div');
         elem.className = 'floating-sparkle';
         elem.dataset.amount = amount;
-        elem.textContent = `+${amount.toLocaleString()}`;
+        elem.textContent = `+${this._formatSparkleCount(amount)}`;
 
         elem.style.left = `${screenX}px`;
         elem.style.top = `${screenY}px`;
