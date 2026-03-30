@@ -54,6 +54,8 @@ export class SkillTreeScreen {
         this._dragStartY = 0;
         this._lastMouseX = 0;
         this._lastMouseY = 0;
+        this._lastClientX = 0;
+        this._lastClientY = 0;
 
         this._buildDOM();
         this._bindEvents();
@@ -238,7 +240,13 @@ export class SkillTreeScreen {
     /** Called by UIManager.renderUpgrades() when the tree is open. */
     refresh() {
         this._updateResourceDisplay();
-        // Next RAF will re-render the canvas automatically
+        // If a tooltip is currently shown, re-render its contents so text
+        // (cost / level etc.) updates immediately after a purchase.
+        if (this._hoveredId) {
+            const cx = this._lastClientX || Math.round(window.innerWidth / 2);
+            const cy = this._lastClientY || Math.round(window.innerHeight / 2);
+            this._showTooltip(this._hoveredId, cx, cy);
+        }
     }
 
     // ── Sizing ───────────────────────────────────────────────────────────────
@@ -580,6 +588,9 @@ export class SkillTreeScreen {
     // ── Hover / tooltip ──────────────────────────────────────────────────────
 
     _updateHover(canvasX, canvasY, clientX, clientY) {
+        // remember last client coords so tooltip can be refreshed programmatically
+        this._lastClientX = clientX;
+        this._lastClientY = clientY;
         const newHovered = this._hitTest(canvasX, canvasY);
 
         if (newHovered !== this._hoveredId) {
