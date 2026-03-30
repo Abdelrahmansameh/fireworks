@@ -19,6 +19,14 @@ export const BUILDING_TYPES = {
         texture: null,
         textureKey: null,
         baseSpawnInterval: 5,
+        // UI metadata
+        unlockId: 'buildings_tab',
+        statId: 'stat-bld-auto',
+        panel: {
+            showLauncherList: true,
+            showSpreadButton: true,
+            showRandomizeButton: true,
+        },
     },
     RESOURCE_GENERATOR: {
         id: 'resource_generator',
@@ -34,6 +42,14 @@ export const BUILDING_TYPES = {
         textureKey: null,
         baseProductionRate: 0.5,
         resourceType: 'sparkles',
+        // UI metadata
+        unlockId: 'resource_generator',
+        statId: 'stat-bld-gen',
+        panel: {
+            showLauncherList: false,
+            showSpreadButton: false,
+            showRandomizeButton: false,
+        },
     },
 
     DRONE_HUB: {
@@ -55,5 +71,13 @@ export const BUILDING_TYPES = {
         baseDroneSpeed: 600,
         droneScale: 16,
         droneColor: { r: 0.1, g: 0.65, b: 0.8, a: 1.0 },
+        // UI metadata
+        unlockId: 'drone_hub',
+        statId: 'stat-bld-drone',
+        panel: {
+            showLauncherList: false,
+            showSpreadButton: false,
+            showRandomizeButton: false,
+        },
     }
 };

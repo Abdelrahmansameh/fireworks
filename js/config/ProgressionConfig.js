@@ -30,7 +30,7 @@ export const PROGRESSION_CONFIG = [
     { type: 'unlock', id: 'tab_menu', requires: { stats: { fireworkCount: 10 } } },
     { type: 'unlock', id: 'buildings_tab', requires: { stats: { fireworkCount: 20 } } },
     { type: 'unlock', id: 'upgrades_tab', requires: { stats: { fireworkCount: 30 } } },
-    { type: 'unlock', id: 'crowds_tab', requires: { stats: { sps: 0.7 } } },
+    { type: 'unlock', id: 'crowds_tab', requires: { stats: { sps: 0.4 } } },
     { type: 'unlock', id: 'resource_generator', requires: { stats: { launcherCount: 3 } } },
     { type: 'unlock', id: 'drone_hub', requires: { stats: { sps: 2.0 } } },
     { type: 'unlock', id: 'recipes_tab', requires: { stats: { launcherCount: 20 } } },

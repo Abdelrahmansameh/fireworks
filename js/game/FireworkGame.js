@@ -17,18 +17,18 @@ import BuildingManager from '../buildings/BuildingManager.js';
 import AudioManager from '../audio/AudioManager.js';
 import GameMetrics from '../metrics/GameMetrics.js';
 import ProcduralBackground from '../entities/ProcduralBackground.js';
+import FireworkSystem from '../systems/FireworkSystem.js';
 
 class FireworkGame extends Engine {
     constructor() {
         super();
         this.gameState = {
-            fireworks: [],
             autoLaunchers: []
         };
+        this.fireworkSystem = new FireworkSystem(this);
 
         this.recipes = [];
         this.currentRecipeComponents = [];
-        this.fireworkCount = 0;
         this.autoLauncherCost = AUTO_LAUNCHER_COST_BASE;
         this.selectedLauncherIndex = null;
 
@@ -98,7 +98,8 @@ class FireworkGame extends Engine {
     }
 
     init() {
-        this.fireworkCount = parseInt(localStorage.getItem('fireworkCount')) || 0;
+        const savedCount = parseInt(localStorage.getItem('fireworkCount')) || 0;
+        this.fireworkSystem.init(savedCount);
         this.autoLauncherCost = parseInt(localStorage.getItem('autoLauncherCost')) || AUTO_LAUNCHER_COST_BASE;
 
         const savedResources = localStorage.getItem('resources');
@@ -370,7 +371,7 @@ class FireworkGame extends Engine {
         this.ui.updateUI(
             Math.floor(this.getSparkles()),
             totalSparklesPerSec.toFixed(2),
-            this.fireworkCount,
+            this.fireworkSystem.fireworkCount,
             launcherCount,
             this.calculateAutoLauncherCost(launcherCount)
         );
@@ -432,7 +433,7 @@ class FireworkGame extends Engine {
     }
 
     saveProgress() {
-        localStorage.setItem('fireworkCount', this.fireworkCount);
+        localStorage.setItem('fireworkCount', this.fireworkSystem.fireworkCount);
         localStorage.setItem('autoLauncherCost', this.autoLauncherCost);
         localStorage.setItem('sparkles', this.getSparkles());
         localStorage.setItem('fireworkRecipes', JSON.stringify(this.recipes));
@@ -470,14 +471,7 @@ class FireworkGame extends Engine {
 
     update(delta) {
         if (this.currentState === 'game') {
-            const currentFireworks = this.gameState.fireworks;
-            for (let i = currentFireworks.length - 1; i >= 0; i--) {
-                currentFireworks[i].update(delta);
-                if (!currentFireworks[i].alive) {
-                    currentFireworks[i].dispose();
-                    currentFireworks.splice(i, 1);
-                }
-            }
+            this.fireworkSystem.update(delta);
 
             this.updateGame(delta);
         } else if (this.currentState === 'creator') {
@@ -497,57 +491,6 @@ class FireworkGame extends Engine {
 
     getLauncherAt(x, y) {
         return this.buildingManager.getBuildingAt(x, y);
-    }
-
-    // dont use every frame because js is weird 
-    launchFireworkAt(x, targetY = null, minY = null, recipeComponents = null) {
-        let components = recipeComponents || this.currentRecipeComponents;
-
-        if (!this.progression.isUnlocked('recipes_tab')) {
-            const launchers = this.buildingManager.getBuildingsByType('AUTO_LAUNCHER');
-            // Cycle: slot 0 = base defaults, slots 1..N = each launcher's patternOverride variant
-            const cycleCount = launchers.length + 1;
-            const cycleIndex = this.fireworkCount % cycleCount;
-            // Base component: fixed defaults + color/pattern from DEFAULT_RECIPE_COMPONENTS
-            const baseComponents = DEFAULT_RECIPE_COMPONENTS.map(c => ({
-                ...PRE_RECIPE_COMPONENT_DEFAULTS,
-                color: c.color,
-                pattern: c.pattern,
-            }));
-            if (cycleIndex === 0) {
-                components = baseComponents;
-            } else {
-                const launcher = launchers[cycleIndex - 1];
-                if (launcher && launcher.patternOverride) {
-                    components = baseComponents.map(c => ({ ...c, pattern: launcher.patternOverride, color: launcher.colorOverride || c.color }));
-                } else {
-                    components = baseComponents;
-                }
-            }
-        }
-
-        if (components.length === 0) {
-            this.showNotification("Add at least one component to launch a firework!");
-            return;
-        }
-
-        const y = minY || GAME_BOUNDS.WORLD_LAUNCHER_Y;
-        const spawnX = x + (Math.random() - 0.5) * FIREWORK_CONFIG.autoLauncherMeshWidth;
-        const spawnY = y + FIREWORK_CONFIG.autoLauncherMeshHeight / 2;
-
-        this.launch(spawnX, spawnY, components, Math.max(targetY, minY));
-        this.fireworkCount++;
-        const sparkleAmount = components.reduce((sum, c) => sum + this.getComponentSparkles(c), 0);
-        this.addSparkles(sparkleAmount, 'manual');
-        this.statsTracker.recordFirework('manual');
-        this.checkUnlockConditions();
-        return { sparkleAmount, spawnX, spawnY };
-    }
-
-    // dont use every frame because js is weird 
-    launch(x, y, components, targetY = null) {
-        const firework = new Firework(x, y, components, this.renderer2D, this.particleSystem, targetY, this.audioManager);
-        this.gameState.fireworks.push(firework);
     }
 
     buyAutoLauncher() {
@@ -572,6 +515,10 @@ class FireworkGame extends Engine {
     }
 
     buyBuilding(buildingType) {
+        // AUTO_LAUNCHER has special pattern-unlock logic – delegate to its method
+        if (buildingType === 'AUTO_LAUNCHER') {
+            return this.buyAutoLauncher();
+        }
         const building = this.buildingManager.buyBuilding(buildingType);
         if (building) {
             this.ui.updateBuildingCounts();
@@ -593,7 +540,7 @@ class FireworkGame extends Engine {
 
     resetGame() {
         this.ui.hideActiveTab();
-        this.fireworkCount = 0;
+        this.fireworkSystem.init(0);
         this.recipes = [];
         this.currentRecipeComponents = [...DEFAULT_RECIPE_COMPONENTS];
         this.baseSparkleMultiplier = 1;
@@ -629,12 +576,7 @@ class FireworkGame extends Engine {
 
         this.progression.applyAll(this);
 
-        if (this.gameState.fireworks) {
-            this.gameState.fireworks.forEach(firework => {
-                firework.dispose();
-            });
-        }
-        this.gameState.fireworks = [];
+        this.fireworkSystem.disposeAll();
 
         // Reset all buildings
         this.buildingManager.destroy();
@@ -869,7 +811,7 @@ class FireworkGame extends Engine {
 
     serializeGameData() {
         const data = {
-            fireworkCount: this.fireworkCount,
+            fireworkCount: this.fireworkSystem.fireworkCount,
             autoLauncherCost: this.autoLauncherCost,
             sparkles: this.getSparkles(),
             recipes: this.recipes,
@@ -898,7 +840,7 @@ class FireworkGame extends Engine {
             localStorage.setItem('resources', JSON.stringify(resourceData));
         }
 
-        this.fireworkCount = data.fireworkCount || 0;
+        this.fireworkSystem.init(data.fireworkCount || 0);
         this.autoLauncherCost = data.autoLauncherCost || AUTO_LAUNCHER_COST_BASE;
         this.recipes = data.recipes || [];
         this.currentRecipeComponents = data.currentRecipeComponents || [...DEFAULT_RECIPE_COMPONENTS];
@@ -1216,6 +1158,9 @@ class FireworkGame extends Engine {
     }
 
     _handleUnlock(id) {
+        // Delegate tab/sub-tab DOM reveals to UIManager (data-driven)
+        this.ui.handleUnlock(id);
+
         switch (id) {
             case 'sparkle_counter':
                 this.ui.showSparkleCounter();

@@ -304,7 +304,7 @@ body {
     background: #3b4f6b;
 }
 
-#launcher-list {
+#auto_launcher-list {
     display: flex;
     flex-direction: column;
     gap: 10px;

@@ -1,4 +1,5 @@
 import { GAME_BOUNDS, DEFAULT_RECIPE_COMPONENTS, COMPONENT_PROPERTY_RANGES, PARTICLE_TYPES, STATS_CONFIG, LAUNCHER_WORLD_HIGHLIGHT_DURATION, BUILDING_TYPES } from '../config/config.js';
+import { TABS } from './uiSchema.js';
 import { patternDefinitions, patternDisplayNames } from '../entities/patterns/index.js';
 import * as Renderer2D from '../rendering/Renderer.js';
 import GameMetrics from '../metrics/GameMetrics.js';
@@ -80,9 +81,11 @@ class UIManager {
         }));
 
 
-        document.getElementById('buy-auto-launcher').addEventListener('click', () => {
-            this.game.buyAutoLauncher();
-        });
+        // Buy buttons — one handler per building type, derived from BUILDING_TYPES
+        for (const [key, type] of Object.entries(BUILDING_TYPES)) {
+            document.getElementById(`buy-${type.id}`)
+                ?.addEventListener('click', () => this.game.buyBuilding(key));
+        }
 
         document.getElementById('reset-game').addEventListener('click', () => {
             this.showConfirmation(
@@ -116,38 +119,20 @@ class UIManager {
             );
         });
 
-        document.getElementById('recipes-tab').addEventListener('click', () => {
-            this.toggleTab('recipes');
-        });
-        document.getElementById('stats-tab').addEventListener('click', () => {
-            this.toggleTab('stats');
-        });
-        document.getElementById('crowd-tab').addEventListener('click', () => {
-            this.toggleTab('crowd');
-        });
-        document.getElementById('buildings-tab').addEventListener('click', () => {
-            this.toggleTab('buildings');
-            this.game.updateLauncherList();
-            this.updateBuildingCosts();
-            this.updateBuildingTypeVisibility();
-        });
-        const settingsTabBtn = document.getElementById('settings-tab');
-        if (settingsTabBtn) {
-            settingsTabBtn.addEventListener('click', () => {
-                this.toggleTab('settings');
-            });
-        }
-        const upgradesTabBtn = document.getElementById('upgrades-tab');
-        if (upgradesTabBtn) {
-            upgradesTabBtn.addEventListener('click', () => {
-                this.toggleTab('upgrades');
-                this.renderUpgrades();
-            });
-        }
-        const cheatsTabBtn = document.getElementById('cheats-tab');
-        if (cheatsTabBtn) {
-            cheatsTabBtn.addEventListener('click', () => {
-                this.toggleTab('cheats');
+        // Tab buttons — loop over TABS schema
+        for (const tab of TABS) {
+            const btn = document.getElementById(`${tab.id}-tab`);
+            if (!btn) continue;
+            btn.addEventListener('click', () => {
+                this.toggleTab(tab.id);
+                if (tab.id === 'buildings') {
+                    this.game.updateLauncherList();
+                    this.updateBuildingCosts();
+                    this.updateBuildingTypeVisibility();
+                }
+                if (tab.id === 'upgrades') {
+                    this.renderUpgrades();
+                }
             });
         }
 
@@ -264,23 +249,13 @@ class UIManager {
             });
         }
 
-        // Building type tab switching
-        const buildingTypeTabs = document.querySelectorAll('.building-type-tab');
-        buildingTypeTabs.forEach(tab => {
-            tab.addEventListener('click', (e) => {
-                const buildingType = e.target.getAttribute('data-building-type');
-                this.switchBuildingType(buildingType);
-            });
-        });
-
-        // Buy buttons for new building types
-        document.getElementById('buy-resource-generator').addEventListener('click', () => {
-            this.game.buyBuilding('RESOURCE_GENERATOR');
-        });
-
-        document.getElementById('buy-drone-hub').addEventListener('click', () => {
-            this.game.buyBuilding('DRONE_HUB');
-        });
+        // Building type sub-tab switching — loop over BUILDING_TYPES
+        for (const [key] of Object.entries(BUILDING_TYPES)) {
+            const btn = document.querySelector(`.building-type-tab[data-building-type="${key}"]`);
+            if (btn) {
+                btn.addEventListener('click', () => this.switchBuildingType(key));
+            }
+        }
 
         const backButton = document.getElementById('back-to-game');
         if (backButton) {
@@ -573,7 +548,7 @@ class UIManager {
                 const shouldLaunch = !this.hasScrolledDuringDrag && !this.game.isClickInsideUI(e);
                 if (shouldLaunch) {
                     const worldPos = this.game.screenToWorld(e.clientX, e.clientY);
-                    const res = this.game.launchFireworkAt(worldPos.x, worldPos.y);
+                    const res = this.game.fireworkSystem.launchFireworkAt(worldPos.x, worldPos.y);
                     if (res.sparkleAmount) {
                         const screenPos = this.game.renderer2D.worldToScreen(res.spawnX, res.spawnY);
                         this.showFloatingSparkle(e.clientX + 30, screenPos.y - 50, res.sparkleAmount);
@@ -787,8 +762,10 @@ class UIManager {
         }
 
         document.getElementById('firework-count').textContent = fireworkCount;
-        document.getElementById('auto-launcher-level').textContent = autoLauncherCount;
-        document.getElementById('auto-launcher-cost').textContent = nextCost;
+
+        // Update building counts and costs via data-driven loops
+        this.updateBuildingCounts();
+        this.updateBuildingCosts();
 
         // Update stats tab (throttled to every 250 ms)
         const now = performance.now();
@@ -894,7 +871,7 @@ class UIManager {
         set('stat-sess-crowd-parts', fmt(st.sessionCrowdCatchParticles));
 
         // ── Lifetime records ────────────────────────────────────────────────
-        set('firework-count', fmt(g.fireworkCount));
+        set('firework-count', fmt(g.fireworkSystem.fireworkCount));
         set('stat-life-sparkles', fmt(st.lifetimeSparkles));
         set('stat-life-sp-auto', fmt(st.lifetimeSparklesBySource['auto_launcher'] ?? 0));
         set('stat-life-sp-gen', fmt(st.lifetimeSparklesBySource['resource_generator'] ?? 0));
@@ -1144,14 +1121,15 @@ class UIManager {
 
     updateLauncherList(launchers, selectedBuildingId, onSelect) {
         // Show global spawn-rate stat once at the top
-        const statsDiv = document.getElementById('auto-launcher-stats');
+        const statsDiv = document.getElementById('auto_launcher-stats');
         if (statsDiv) {
             const baseInterval = BUILDING_TYPES.AUTO_LAUNCHER.baseSpawnInterval;
             const spawnInterval = baseInterval * (this.game.launcherStats?.spawnIntervalMultiplier ?? 1);
             statsDiv.innerHTML = `<div class="launcher-details"><p>Spawn Rate: Every ${spawnInterval.toFixed(1)}s</p></div>`;
         }
 
-        const launcherList = document.getElementById('launcher-list');
+        const launcherList = document.getElementById('auto_launcher-list');
+        if (!launcherList) return;
         launcherList.innerHTML = '';
 
         if (launchers.length === 0) {
@@ -1479,22 +1457,9 @@ class UIManager {
     }
 
     hideAllTabs() {
-        const tabs = [
-            'recipes-tab',
-            'stats-tab',
-            'crowd-tab',
-            'buildings-tab',
-            'settings-tab',
-            'upgrades-tab',
-            'cheats-tab'
-        ];
-
-        tabs.forEach(tabId => {
-            const tab = document.getElementById(tabId);
-            if (tab) {
-                tab.classList.add('unlock-hidden');
-            }
-        });
+        for (const tab of TABS) {
+            document.getElementById(`${tab.id}-tab`)?.classList.add('unlock-hidden');
+        }
     }
 
     hideSparkleCounter() {
@@ -1719,7 +1684,7 @@ class UIManager {
     }
 
     updateGeneratorList(generators, selectedBuildingId, onSelect) {
-        const statsDiv = document.getElementById('resource-generator-stats');
+        const statsDiv = document.getElementById('resource_generator-stats');
         if (!statsDiv) return;
 
         if (generators.length === 0) {
@@ -1739,7 +1704,7 @@ class UIManager {
     }
 
     updateDroneHubList(hubs, selectedBuildingId, onSelect) {
-        const statsDiv = document.getElementById('drone-hub-stats');
+        const statsDiv = document.getElementById('drone_hub-stats');
         if (!statsDiv) return;
 
         if (hubs.length === 0) {
@@ -1761,46 +1726,62 @@ class UIManager {
     }
 
     updateBuildingCounts() {
-        const autoLaunchers = this.game.buildingManager.getBuildingsByType('AUTO_LAUNCHER');
-        const generators = this.game.buildingManager.getBuildingsByType('RESOURCE_GENERATOR');
-        const droneHubs = this.game.buildingManager.getBuildingsByType('DRONE_HUB');
-
-        document.getElementById('auto-launcher-level').textContent = autoLaunchers.length;
-        document.getElementById('resource-generator-count').textContent = generators.length;
-        const droneHubCountEl = document.getElementById('drone-hub-count');
-        if (droneHubCountEl) droneHubCountEl.textContent = droneHubs.length;
+        for (const [key, type] of Object.entries(BUILDING_TYPES)) {
+            const count = this.game.buildingManager.getBuildingsByType(key).length;
+            const el = document.getElementById(`${type.id}-count`);
+            if (el) el.textContent = count;
+        }
     }
 
     updateBuildingCosts() {
-        const autoLauncherCost = this.game.buildingManager.getBuyCost('AUTO_LAUNCHER');
-        const generatorCost = this.game.buildingManager.getBuyCost('RESOURCE_GENERATOR');
-        const droneHubCost = this.game.buildingManager.getBuyCost('DRONE_HUB');
-
-        document.getElementById('auto-launcher-cost').textContent = autoLauncherCost;
-        document.getElementById('resource-generator-cost').textContent = generatorCost;
-        const droneHubCostEl = document.getElementById('drone-hub-cost');
-        if (droneHubCostEl) droneHubCostEl.textContent = droneHubCost;
+        for (const [key, type] of Object.entries(BUILDING_TYPES)) {
+            const cost = this.game.buildingManager.getBuyCost(key);
+            const el = document.getElementById(`${type.id}-cost`);
+            if (el) el.textContent = cost;
+            // Update disabled state on the buy button based on current resources
+            const btn = document.getElementById(`buy-${type.id}`);
+            if (btn) {
+                const balance = this.game.resourceManager.resources[type.currency]?.amount ?? 0;
+                btn.disabled = balance < cost;
+            }
+        }
     }
 
     updateBuildingTypeVisibility() {
         const p = this.game.progression;
+        let activeBuildingType = document.querySelector('.building-type-tab.active')?.getAttribute('data-building-type');
 
-        const generatorTab = document.querySelector('.building-type-tab[data-building-type="RESOURCE_GENERATOR"]');
-        if (generatorTab) {
-            generatorTab.style.display = p.isUnlocked('resource_generator') ? 'block' : 'none';
+        for (const [key, type] of Object.entries(BUILDING_TYPES)) {
+            if (!type.unlockId) continue; // always visible if no unlockId
+            const tab = document.querySelector(`.building-type-tab[data-building-type="${key}"]`);
+            if (!tab) continue;
+            const unlocked = p.isUnlocked(type.unlockId);
+            tab.style.display = unlocked ? 'block' : 'none';
+            // If the active section belongs to a now-locked type, fall back to AUTO_LAUNCHER
+            if (activeBuildingType === key && !unlocked) {
+                this.switchBuildingType('AUTO_LAUNCHER');
+                activeBuildingType = 'AUTO_LAUNCHER';
+            }
         }
+    }
 
-        const droneHubTab = document.querySelector('.building-type-tab[data-building-type="DRONE_HUB"]');
-        if (droneHubTab) {
-            droneHubTab.style.display = p.isUnlocked('drone_hub') ? 'block' : 'none';
+    /**
+     * Reveal any tab or building sub-tab whose unlockId matches.
+     * Called by FireworkGame._handleUnlock() instead of direct DOM manipulation.
+     */
+    handleUnlock(unlockId) {
+        // Reveal matching top-level tabs
+        for (const tab of TABS) {
+            if (tab.unlockId === unlockId) {
+                document.getElementById(`${tab.id}-tab`)?.classList.remove('unlock-hidden');
+            }
         }
-
-        // If currently viewing a locked building type, switch back to auto launcher
-        const activeBuildingType = document.querySelector('.building-type-tab.active')?.getAttribute('data-building-type');
-        if (activeBuildingType === 'RESOURCE_GENERATOR' && !p.isUnlocked('resource_generator')) {
-            this.switchBuildingType('AUTO_LAUNCHER');
-        } else if (activeBuildingType === 'DRONE_HUB' && !p.isUnlocked('drone_hub')) {
-            this.switchBuildingType('AUTO_LAUNCHER');
+        // Reveal matching building sub-tabs
+        for (const [key, type] of Object.entries(BUILDING_TYPES)) {
+            if (type.unlockId === unlockId) {
+                const btn = document.querySelector(`.building-type-tab[data-building-type="${key}"]`);
+                if (btn) btn.style.display = 'block';
+            }
         }
     }
 }

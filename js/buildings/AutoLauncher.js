@@ -64,18 +64,8 @@ class AutoLauncher extends Building {
 
         const spawnX = x + (Math.random() * 0.5 - 0.25) * this.config.width;
 
-        const firework = new Firework(
-            spawnX,
-            launchY,
-            components,
-            this.game.renderer2D,
-            this.game.particleSystem,
-            null,
-            this.game.audioManager
-        );
-
-        this.game.gameState.fireworks.push(firework);
-        this.game.fireworkCount++;
+        this.game.fireworkSystem.launch(spawnX, launchY, components, null);
+        this.game.fireworkSystem.fireworkCount++;
 
         const sparkleAmount = components.reduce(
             (sum, c) => sum + this.game.getComponentSparkles(c),

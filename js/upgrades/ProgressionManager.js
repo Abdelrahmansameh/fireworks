@@ -239,7 +239,7 @@ class ProgressionManager {
 
         if (requires.stats) {
             const s = requires.stats;
-            if (s.fireworkCount !== undefined && game.fireworkCount < s.fireworkCount) {
+            if (s.fireworkCount !== undefined && game.fireworkSystem.fireworkCount < s.fireworkCount) {
                 return { met: false, reason: `Launch ${s.fireworkCount} fireworks` };
             }
             if (s.sps !== undefined && game.calculateTotalSparklesPerSecond() < s.sps) {
