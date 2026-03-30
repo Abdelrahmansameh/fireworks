@@ -382,9 +382,9 @@ export class SkillTreeScreen {
             const cpX2 = to.x;
             const cpY2 = from.y + (to.y - from.y) * 0.5;
 
-            // Glowing line
+            // glow
             ctx.shadowColor = branchColor;
-            ctx.shadowBlur = 6 * this.zoom;
+            ctx.shadowBlur = 4 * this.zoom;
 
             const lineGrad = ctx.createLinearGradient(from.x, from.y, to.x, to.y);
             lineGrad.addColorStop(0, branchColor + 'cc');
@@ -443,14 +443,14 @@ export class SkillTreeScreen {
             case 'available': {
                 const pulse = 0.55 + 0.45 * Math.sin(t * 2.4 + phaseOffset);
                 shadowColor = branchColor;
-                shadowBlur = (16 + 12 * pulse) * this.zoom;
+                shadowBlur = (10 + 8 * pulse) * this.zoom;
                 borderWidth = 2.5;
                 break;
             }
             case 'partial': {
                 const pulse = 0.65 + 0.35 * Math.sin(t * 1.8 + phaseOffset);
                 shadowColor = branchColor;
-                shadowBlur = (10 + 8 * pulse) * this.zoom;
+                shadowBlur = (6 + 5 * pulse) * this.zoom;
                 borderWidth = 2.5;
                 fillColor = '#0e1520';
                 break;
@@ -469,17 +469,20 @@ export class SkillTreeScreen {
                 borderColor = '#444';
                 fillColor = '#080a0f';
                 break;
-            case 'maxed':
+            case 'maxed': {
                 const pulse = 0.55 + 0.45 * Math.sin(t * 2.4 + phaseOffset);
-                shadowColor = branchColor;
-                shadowBlur = (16 + 12 * pulse) * this.zoom;
+                shadowColor = null;
+                shadowBlur = 0;
                 borderWidth = 2.5;
                 break;
+            }
         }
 
-        if (isHovered && state !== 'locked') {
+        if (isHovered && state !== 'locked' && state !== 'maxed') {
             shadowColor = branchColor;
-            shadowBlur = Math.max(shadowBlur, 22 * this.zoom);
+            shadowBlur = Math.max(shadowBlur, 16 * this.zoom);
+            borderWidth = Math.max(borderWidth, 3);
+        } else if (isHovered && state === 'maxed') {
             borderWidth = Math.max(borderWidth, 3);
         }
 
@@ -636,7 +639,7 @@ export class SkillTreeScreen {
         // Set tooltip glow border to branch colour
         this.tooltip.style.borderColor = branchColor + '77';
         this.tooltip.style.boxShadow =
-            `0 4px 28px rgba(0,0,0,0.65), 0 0 14px ${branchColor}22`;
+            `0 4px 28px rgba(0,0,0,0.65), 0 0 10px ${branchColor}17`;
         this.tooltip.style.display = 'block';
         this._positionTooltip(clientX, clientY);
     }
