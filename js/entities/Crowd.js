@@ -154,7 +154,7 @@ class Crowd {
             coinAnimTimer: 0,
             collected: 0,
             bounceCount: 0,
-            flipX: rng() > 0.5 ? 1 : -1,
+            flipX: 1,
         };
 
         this.people.push(person);

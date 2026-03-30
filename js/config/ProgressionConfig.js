@@ -43,7 +43,7 @@ export const PROGRESSION_CONFIG = [
         group: 'BASE',
         name: 'Spark Core I',
         desc: '+2 sparkles per component',
-        baseCost: 1000,
+        baseCost: 100,
         costRatio: 1.5,
         currency: 'sparkles',
         maxLevel: 3,

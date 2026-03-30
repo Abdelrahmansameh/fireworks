@@ -1,5 +1,6 @@
 import { GAME_BOUNDS, DEFAULT_RECIPE_COMPONENTS, COMPONENT_PROPERTY_RANGES, PARTICLE_TYPES, STATS_CONFIG, LAUNCHER_WORLD_HIGHLIGHT_DURATION, BUILDING_TYPES } from '../config/config.js';
 import { TABS } from './uiSchema.js';
+import { SkillTreeScreen } from './SkillTreeScreen.js';
 import { patternDefinitions, patternDisplayNames } from '../entities/patterns/index.js';
 import * as Renderer2D from '../rendering/Renderer.js';
 import GameMetrics from '../metrics/GameMetrics.js';
@@ -31,6 +32,9 @@ class UIManager {
 
         const storedFS = localStorage.getItem('showFloatingSparkle');
         this.showFloatingSparkleEnabled = storedFS === null ? true : (storedFS === 'true');
+
+        /** @type {SkillTreeScreen|null} Initialised in bindUIEvents() once DOM is ready. */
+        this.skillTree = null;
     }
 
     initializeRendererEvents() {
@@ -39,6 +43,9 @@ class UIManager {
     }
 
     bindUIEvents() {
+        // Initialise the skill-tree screen once the full DOM is available
+        this.skillTree = new SkillTreeScreen(this.game);
+
         const addComponentButtons = [
             document.getElementById('add-component'),
             document.getElementById('creator-add-component')
@@ -124,14 +131,16 @@ class UIManager {
             const btn = document.getElementById(`${tab.id}-tab`);
             if (!btn) continue;
             btn.addEventListener('click', () => {
+                // Upgrades tab opens the full-screen skill tree instead of a panel
+                if (tab.id === 'upgrades') {
+                    this.skillTree.open();
+                    return;
+                }
                 this.toggleTab(tab.id);
                 if (tab.id === 'buildings') {
                     this.game.updateLauncherList();
                     this.updateBuildingCosts();
                     this.updateBuildingTypeVisibility();
-                }
-                if (tab.id === 'upgrades') {
-                    this.renderUpgrades();
                 }
             });
         }
@@ -1249,6 +1258,12 @@ class UIManager {
     }
 
     renderUpgrades() {
+        // When the skill tree is open, refresh it and skip the legacy panel
+        if (this.skillTree?.isOpen) {
+            this.skillTree.refresh();
+            return;
+        }
+
         const availableContainer = document.getElementById('upgrades-available');
         const ownedContainer = document.getElementById('upgrades-owned');
         if (!availableContainer || !ownedContainer) return;
