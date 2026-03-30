@@ -462,11 +462,10 @@ export class SkillTreeScreen {
                 fillColor = '#080a0f';
                 break;
             case 'maxed':
-                fillColor = '#161208';
-                borderColor = '#FFD700';
-                borderWidth = 3;
-                shadowColor = '#FFD700';
-                shadowBlur = 8 * this.zoom;
+                const pulse = 0.55 + 0.45 * Math.sin(t * 2.4 + phaseOffset);
+                shadowColor = branchColor;
+                shadowBlur = (16 + 12 * pulse) * this.zoom;
+                borderWidth = 2.5;
                 break;
         }
 
@@ -499,7 +498,7 @@ export class SkillTreeScreen {
         ctx.stroke();
 
         // ── Level-progress arc (for partial / partial_insufficient / maxed) ─
-        if (level > 0 && level < maxLevel && maxLevel > 1) {
+        if (level > 0) {
             const fraction = level / maxLevel;
             ctx.shadowBlur = 0;
             ctx.strokeStyle = branchColor + 'bb';
