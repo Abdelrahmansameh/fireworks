@@ -300,35 +300,19 @@ export class SkillTreeScreen {
     // ── Background ───────────────────────────────────────────────────────────
 
     _drawBackground(ctx, W, H) {
-        // Deep-space gradient
-        const grad = ctx.createRadialGradient(
-            W * 0.5, H * 0.5, 0,
-            W * 0.5, H * 0.5, Math.max(W, H) * 0.75
-        );
-        grad.addColorStop(0, '#0b0f1e');
-        grad.addColorStop(1, '#020408');
-        ctx.fillStyle = grad;
+        // Flat dark color from theme
+        ctx.fillStyle = '#1e1b26';
         ctx.fillRect(0, 0, W, H);
 
-        // Deterministic stars (seeded so they never jitter)
+        // Simple pixelated stars
         let seed = 7919;
         const lcg = () => { seed = ((seed * 214013 + 2531011) >>> 0); return (seed & 0xFFFF) / 0xFFFF; };
-        ctx.fillStyle = 'rgba(255,255,255,0.45)';
-        for (let i = 0; i < 130; i++) {
-            const px = lcg() * W;
-            const py = lcg() * H;
-            const pr = lcg() * 1.3 + 0.25;
-            ctx.beginPath();
-            ctx.arc(px, py, pr, 0, Math.PI * 2);
-            ctx.fill();
+        ctx.fillStyle = 'rgba(255,255,255,0.4)';
+        for (let i = 0; i < 80; i++) {
+            const px = Math.floor(lcg() * W);
+            const py = Math.floor(lcg() * H);
+            ctx.fillRect(px, py, 2, 2);
         }
-
-        // Subtle vignette
-        const vig = ctx.createRadialGradient(W * 0.5, H * 0.5, H * 0.28, W * 0.5, H * 0.5, H * 0.75);
-        vig.addColorStop(0, 'rgba(0,0,0,0)');
-        vig.addColorStop(1, 'rgba(0,0,0,0.5)');
-        ctx.fillStyle = vig;
-        ctx.fillRect(0, 0, W, H);
     }
 
     // ── Coordinate helpers ───────────────────────────────────────────────────
@@ -367,35 +351,21 @@ export class SkillTreeScreen {
             const parentState = this._getNodeState(parentId);
             const from = this._toScreen(parentPos.x, parentPos.y, W, H);
             const to = this._toScreen(node.x, node.y, W, H);
-            const branchColor = cfg.branches[node.branch]?.color ?? '#888';
+            const branchColor = cfg.branches[node.branch]?.color ?? '#fff';
 
-            const alpha = (childState === 'locked' || childState === 'insufficient') ? 0.25
-                : (parentState === 'maxed' || parentState === 'available' || parentState === 'partial') ? 0.75
-                    : 0.35;
+            const alpha = (childState === 'locked' || childState === 'insufficient') ? 0.2
+                : (parentState === 'maxed' || parentState === 'available' || parentState === 'partial') ? 1.0
+                    : 0.4;
 
             ctx.save();
             ctx.globalAlpha = alpha;
 
-            // Smooth S-curve bezier
-            const cpX1 = from.x;
-            const cpY1 = from.y + (to.y - from.y) * 0.5;
-            const cpX2 = to.x;
-            const cpY2 = from.y + (to.y - from.y) * 0.5;
-
-            // glow
-            ctx.shadowColor = branchColor;
-            ctx.shadowBlur = 4 * this.zoom;
-
-            const lineGrad = ctx.createLinearGradient(from.x, from.y, to.x, to.y);
-            lineGrad.addColorStop(0, branchColor + 'cc');
-            lineGrad.addColorStop(1, branchColor + '44');
-
-            ctx.strokeStyle = lineGrad;
-            ctx.lineWidth = 2.5 * this.zoom;
-            ctx.lineCap = 'round';
+            // Straight lines for pixel style
+            ctx.strokeStyle = branchColor;
+            ctx.lineWidth = 2 * this.zoom;
             ctx.beginPath();
             ctx.moveTo(from.x, from.y);
-            ctx.bezierCurveTo(cpX1, cpY1, cpX2, cpY2, to.x, to.y);
+            ctx.lineTo(to.x, to.y);
             ctx.stroke();
 
             ctx.restore();
@@ -423,104 +393,62 @@ export class SkillTreeScreen {
         const def = progression.getUpgradeDef(id);
         const level = def ? progression.getUpgradeLevel(id) : 0;
         const maxLevel = def?.maxLevel ?? 1;
-        const branchColor = SKILL_TREE_CONFIG.branches[layout.branch]?.color ?? '#888';
+        const branchColor = SKILL_TREE_CONFIG.branches[layout.branch]?.color ?? '#fff';
         const r = NODE_RADIUS * this.zoom;
         const isHovered = this._hoveredId === id;
-        // Simple hash so nodes pulse at slightly different phases
-        const phaseOffset = (id.charCodeAt(0) + id.charCodeAt(id.length - 1)) * 0.37;
 
         ctx.save();
 
-        // ── Visual parameters per state ──────────────────────────────────
         let alpha = 1;
-        let fillColor = '#0d1117';
-        let borderColor = branchColor;
+        let fillColor = '#2e2b3c';
+        let borderColor = '#ffffff';
         let borderWidth = 2;
-        let shadowColor = null;
-        let shadowBlur = 0;
 
         switch (state) {
             case 'available': {
-                const pulse = 0.55 + 0.45 * Math.sin(t * 2.4 + phaseOffset);
-                shadowColor = branchColor;
-                shadowBlur = (10 + 8 * pulse) * this.zoom;
-                borderWidth = 2.5;
+                fillColor = branchColor;
+                borderColor = '#ffffff';
                 break;
             }
-            case 'partial': {
-                const pulse = 0.65 + 0.35 * Math.sin(t * 1.8 + phaseOffset);
-                shadowColor = branchColor;
-                shadowBlur = (6 + 5 * pulse) * this.zoom;
-                borderWidth = 2.5;
-                fillColor = '#0e1520';
-                break;
-            }
-            case 'partial_insufficient':
-                alpha = 0.55;
-                borderColor = branchColor + '88';
-                fillColor = '#0e1520';
-                break;
-            case 'insufficient':
-                alpha = 0.45;
-                borderColor = branchColor + '55';
-                break;
-            case 'locked':
-                alpha = 0.28;
-                borderColor = '#444';
-                fillColor = '#080a0f';
-                break;
             case 'maxed': {
-                const pulse = 0.55 + 0.45 * Math.sin(t * 2.4 + phaseOffset);
-                shadowColor = null;
-                shadowBlur = 0;
-                borderWidth = 2.5;
+                fillColor = '#2e2b3c';
+                borderColor = branchColor;
+                borderWidth = 3;
                 break;
             }
+            case 'locked':
+                alpha = 0.3;
+                borderColor = '#555';
+                fillColor = '#111';
+                break;
+            default:
+                fillColor = '#2e2b3c';
+                borderColor = '#ffffff';
+                break;
         }
 
-        if (isHovered && state !== 'locked' && state !== 'maxed') {
-            shadowColor = branchColor;
-            shadowBlur = Math.max(shadowBlur, 16 * this.zoom);
-            borderWidth = Math.max(borderWidth, 3);
-        } else if (isHovered && state === 'maxed') {
-            borderWidth = Math.max(borderWidth, 3);
+        if (isHovered) {
+            ctx.scale(1.1, 1.1);
+            sx /= 1.1;
+            sy /= 1.1;
         }
 
         ctx.globalAlpha = alpha;
 
-        // ── Glow ─────────────────────────────────────────────────────────
-        if (shadowColor && shadowBlur > 0) {
-            ctx.shadowColor = shadowColor;
-            ctx.shadowBlur = shadowBlur;
-        }
-
-        // ── Circle fill ──────────────────────────────────────────────────
+        // Draw Square Node for pixel aesthetic
         ctx.fillStyle = fillColor;
-        ctx.beginPath();
-        ctx.arc(sx, sy, r, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.shadowBlur = 0;
+        ctx.fillRect(sx - r, sy - r, r * 2, r * 2);
 
-        // ── Circle border ────────────────────────────────────────────────
         ctx.strokeStyle = borderColor;
         ctx.lineWidth = borderWidth * this.zoom;
-        ctx.beginPath();
-        ctx.arc(sx, sy, r, 0, Math.PI * 2);
-        ctx.stroke();
+        ctx.strokeRect(sx - r, sy - r, r * 2, r * 2);
 
-        // ── Level-progress arc (for partial / partial_insufficient / maxed) ─
-        if (level > 0) {
+        // Progress bar inside node
+        if (level > 0 && state !== 'maxed') {
             const fraction = level / maxLevel;
-            ctx.shadowBlur = 0;
-            ctx.strokeStyle = branchColor + 'bb';
-            ctx.lineWidth = 4 * this.zoom;
-            ctx.lineCap = 'round';
-            ctx.beginPath();
-            ctx.arc(sx, sy, r + 4 * this.zoom, -Math.PI * 0.5,
-                -Math.PI * 0.5 + fraction * Math.PI * 2);
-            ctx.stroke();
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(sx - r + 4, sy + r - 8, (r * 2 - 8) * fraction, 4);
         }
-
 
         ctx.restore();
     }
@@ -629,17 +557,12 @@ export class SkillTreeScreen {
             : '';
 
         this.tooltip.innerHTML = `
-            <div class="stt-name"  style="color:${branchColor}">${def.name}</div>
+            <div class="stt-name" style="color:${branchColor}">${def.name} [LV ${level}/${maxLevel}]</div>
             <div class="stt-desc">${def.desc}</div>
-            <div class="stt-level">Level ${level} / ${maxLevel}</div>
             ${costHTML}
             ${ctaHTML}
         `;
 
-        // Set tooltip glow border to branch colour
-        this.tooltip.style.borderColor = branchColor + '77';
-        this.tooltip.style.boxShadow =
-            `0 4px 28px rgba(0,0,0,0.65), 0 0 10px ${branchColor}17`;
         this.tooltip.style.display = 'block';
         this._positionTooltip(clientX, clientY);
     }
