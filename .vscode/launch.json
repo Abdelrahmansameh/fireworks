@@ -11,6 +11,14 @@
             "sourceMapPathOverrides": {
                 "webpack:///./src/*": "${webRoot}/*"
             }
+        },
+        {
+            "name": "Run Bonesmith (Script)",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/tools/bonesmith/run_bonesmith.py",
+            "console": "integratedTerminal",
+            "args": []
         }
     ]
 }

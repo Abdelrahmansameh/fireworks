@@ -9,6 +9,11 @@
       "id": "catapult",
       "name": "Catapult",
       "file": "catapult.json"
+    },
+    {
+      "id": "launcher",
+      "name": "Launcher",
+      "file": "launcher.json"
     }
   ]
 }
