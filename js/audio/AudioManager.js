@@ -8,8 +8,8 @@ class AudioManager {
         this.maxSoundsPerSecond = 10;
         this.recentSoundTimestamps = [];
         this._explNum = 0;
-        this._musicVolume = 0.15;
-        this._sfxVolume = 0.15;
+        this._musicVolume = 0.5;
+        this._sfxVolume = 0.35;
 
         this._whistleVol = 0.02;
         this._explosionVol = 0.02;
@@ -134,20 +134,20 @@ class AudioManager {
         const sampleRate = ac.sampleRate;
 
         // whistle
-        const whisDuration = 6.0; 
+        const whisDuration = 6.0;
         const whisSamples = Math.ceil(whisDuration * sampleRate);
         const whisBuf = ac.createBuffer(2, whisSamples, sampleRate);
         const wL = whisBuf.getChannelData(0);
         const wR = whisBuf.getChannelData(1);
 
-        const fmaxActual = this._fmax + 100; 
+        const fmaxActual = this._fmax + 100;
         const fmin = this._fmin;
         const wVol = this._whistleVol;
 
         for (let i = 0; i < whisSamples; i++) {
             const t = i / sampleRate;
             const whist = Math.sin(2 * Math.PI * (t * fmaxActual - t * t / 2 * (fmaxActual - fmin)));
-            const wEnv = this._smoothstep(0, 0.3, t); 
+            const wEnv = this._smoothstep(0, 0.3, t);
             const inten = (0.5 + 0.49 * Math.sin(2.62 * t)) * (0.5 - 0.49 * Math.cos(t)) * (0.5 + 0.3 * Math.sin(13 * t));
             const wSig = whist * wEnv * inten;
             const th = 0.3 * Math.cos(3 * t);
@@ -217,7 +217,7 @@ class AudioManager {
         const wSrc = ac.createBufferSource();
         wSrc.buffer = this._whisBuffer;
         wSrc.playbackRate.value = 1.0 + (this._rand(myNum) * 0.1 - 0.05);
-        
+
         const whisGain = ac.createGain();
         whisGain.gain.setValueAtTime(1, ac.currentTime);
         const fadeStart = ac.currentTime + Math.max(0, ascentDuration - 0.15);
@@ -234,7 +234,7 @@ class AudioManager {
         const eSrc = ac.createBufferSource();
         eSrc.buffer = this._explBuffer;
         eSrc.playbackRate.value = 1.0 + (this._rand(myNum + 100) * 0.2 - 0.1);
-        
+
         eSrc.connect(fireworkGain);
         eSrc.start(ac.currentTime + ascentDuration);
     }
