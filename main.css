@@ -17,7 +17,7 @@
 
     /* Radius (0 for retro aesthetic) */
     --radius-base: 0px;
-    
+
     /* Layout Variables */
     --grid-gap: var(--space-md);
     --container-padding: var(--space-md);
@@ -900,25 +900,54 @@ body {
 .floating-sparkle {
     position: fixed;
     color: #ffffff;
-    font-weight: bold;
+    font-family: 'Press Start 2P', cursive;
+    text-shadow:
+        -2px -2px 0 #000,
+        2px -2px 0 #000,
+        -2px 2px 0 #000,
+        2px 2px 0 #000;
     pointer-events: none;
     user-select: none;
-    transform: translateX(0) translateY(0);
+    transform: translateX(-50%) translateY(-50%);
     opacity: 1;
     z-index: 4000;
     animation: floatUpFade 1s ease-out forwards;
+
+    background-image: url('assets/floating_sparkles_bg.png');
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    width: 90px;
+    height: 90px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
 }
 
 @keyframes floatUpFade {
     0% {
-        transform: translateX(0) translateY(0);
+        transform: translateX(-50%) translateY(0) scale(0.5);
+        opacity: 0;
+    }
+
+    15% {
+        transform: translateX(-50%) translateY(-10px) scale(1.2);
         opacity: 1;
-        font-size: 1.5rem;
+    }
+
+    30% {
+        transform: translateX(-50%) translateY(-20px) scale(1);
+        opacity: 1;
+    }
+
+    80% {
+        transform: translateX(-50%) translateY(-60px) scale(1);
+        opacity: 1;
     }
 
     100% {
-        transform: translateX(0%) translateY(-100%);
-        font-size: 1rem;
+        transform: translateX(-50%) translateY(-100px) scale(0.8);
         opacity: 0;
     }
 }

@@ -56,6 +56,33 @@
                 </div>
             </div>
             </div>
+
+            <div id="section-anim-props" style="display:none">
+                <div class="panel-header">Animation Props</div>
+                <div class="panel-content">
+                    <select id="anim-props-list" style="width:100%; margin-bottom: 8px;" size="3"></select>
+                    <select id="prop-skeleton-picker" style="width:100%; margin-bottom: 4px;">
+                        <option value="">(Skeleton JSON URL)</option>
+                    </select>
+                    <input type="text" id="prop-anim-name" placeholder="Anim name (e.g. idle)" style="width:100%; margin-bottom: 4px; box-sizing: border-box;" />
+                    <div style="display:flex; gap:5px; margin-bottom:4px;">
+                        <input type="number" id="prop-start-time" placeholder="Start Time" step="0.1" style="flex:1; min-width:0; box-sizing:border-box;" />
+                        <input type="number" id="prop-end-time" placeholder="End Time" step="0.1" style="flex:1; min-width:0; box-sizing:border-box;" />
+                    </div>
+                    <select id="prop-parent-part" style="width:100%; margin-bottom: 4px;">
+                        <option value="">(Attach Part)</option>
+                    </select>
+                    <div style="display:flex; justify-content: space-between; margin-bottom:4px;">
+                        <label>OffX</label><input type="number" id="prop-offx-input" step="0.1" style="width:40px" />
+                        <label>OffY</label><input type="number" id="prop-offy-input" step="0.1" style="width:40px" />
+                    </div>
+                    <div style="display:flex; gap:5px;">
+                        <button id="btn-add-anim-prop" style="flex:1">Add</button>
+                        <button id="btn-update-anim-prop" style="flex:1">Update</button>
+                        <button id="btn-delete-anim-prop" style="color:salmon; border-color:salmon;">Delete</button>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <!-- Canvas -->

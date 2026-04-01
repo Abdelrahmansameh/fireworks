@@ -1,0 +1,44 @@
+{
+  "parts": [
+    {
+      "id": "Coin",
+      "parentId": null,
+      "width": 1,
+      "height": 1,
+      "color": "f2d726",
+      "anchorX": 0,
+      "anchorY": 0,
+      "relX": 0,
+      "relY": 0,
+      "z": 0,
+      "baseRotation": 0
+    },
+    {
+      "id": "Coin_outline",
+      "parentId": "Coin",
+      "width": 1.05,
+      "height": 1.05,
+      "color": "000000",
+      "anchorX": 0,
+      "anchorY": 0,
+      "relX": 0,
+      "relY": 0,
+      "baseRotation": 0,
+      "z": -100
+    },
+    {
+      "id": "InnerCoin",
+      "parentId": "Coin",
+      "width": 0.6,
+      "height": 0.6,
+      "color": "ffe047",
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "relX": 0.3175340756619942,
+      "relY": 0.32341433632240146,
+      "z": 0,
+      "baseRotation": 0
+    }
+  ],
+  "animations": {}
+}

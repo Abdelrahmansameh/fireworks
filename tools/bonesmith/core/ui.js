@@ -188,8 +188,62 @@ export function populateAnimations() {
     sel.onchange = (e) => {
         state.currentAnimId = e.target.value;
         state.currentTime = 0;
+        state.selectedPropIndex = -1;
+        updateAnimPropsPanel();
         updateTimelineUI();
     };
+}
+
+export function updateAnimPropsPanel() {
+    const anim = state.meshData.animations[state.currentAnimId];
+    if (!anim) return;
+
+    // Populate skeleton picker if needed
+    const skeletonPicker = document.getElementById('prop-skeleton-picker');
+    if (skeletonPicker.options.length <= 1) {
+        state.manifest.skeletons.forEach(s => {
+            const opt = document.createElement('option');
+            opt.value = `assets/skeletons/${s.file}`;
+            opt.textContent = s.name;
+            skeletonPicker.appendChild(opt);
+        });
+    }
+
+    // Populate parent parts
+    const propParent = document.getElementById('prop-parent-part');
+    propParent.innerHTML = '<option value="">(No Parent)</option>';
+    state.meshData.parts.forEach(p => {
+        const opt = document.createElement('option');
+        opt.value = p.id;
+        opt.textContent = p.id;
+        propParent.appendChild(opt);
+    });
+
+    const list = document.getElementById('anim-props-list');
+    list.innerHTML = '';
+    const props = anim.props || [];
+    props.forEach((prop, i) => {
+        const opt = document.createElement('option');
+        opt.value = i;
+        opt.textContent = `[${prop.startTime}-${prop.endTime}] ${prop.skeletonUrl.split('/').pop()} (${prop.animation})`;
+        list.appendChild(opt);
+    });
+
+    list.value = state.selectedPropIndex >= 0 ? state.selectedPropIndex : "";
+    
+    if (state.selectedPropIndex >= 0 && state.selectedPropIndex < props.length) {
+        const p = props[state.selectedPropIndex];
+        skeletonPicker.value = p.skeletonUrl;
+        document.getElementById('prop-anim-name').value = p.animation || '';
+        document.getElementById('prop-start-time').value = p.startTime;
+        document.getElementById('prop-end-time').value = p.endTime;
+        propParent.value = p.parentPartId || '';
+        document.getElementById('prop-offx-input').value = p.offsetX || 0;
+        document.getElementById('prop-offy-input').value = p.offsetY || 0;
+        document.getElementById('btn-update-anim-prop').disabled = false;
+    } else {
+        document.getElementById('btn-update-anim-prop').disabled = true;
+    }
 }
 
 export function setEditorMode(mode) {
@@ -201,6 +255,7 @@ export function setEditorMode(mode) {
 
     document.getElementById('section-add-part').style.display = isSkeleton ? '' : 'none';
     document.getElementById('section-animations').style.display = isSkeleton ? 'none' : '';
+    document.getElementById('section-anim-props').style.display = isSkeleton ? 'none' : '';
 
     document.getElementById('timeline-panel').style.display = isSkeleton ? 'none' : 'flex';
 

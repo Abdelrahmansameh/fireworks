@@ -18,6 +18,8 @@ export const state = {
     currentTime: 0,
     lastTime: 0,
     selectedKeyframe: null,
+    selectedPropIndex: -1,
+    loadedProps: new Map(), // cached prop skeletonData and animData
     timelinePixelsPerSecond: 200,
     hideOutlines: false,
 

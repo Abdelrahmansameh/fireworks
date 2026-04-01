@@ -576,7 +576,7 @@ class UIManager {
                     const res = this.game.fireworkSystem.launchFireworkAt(worldPos.x, worldPos.y);
                     if (res.sparkleAmount) {
                         const screenPos = this.game.renderer2D.worldToScreen(res.spawnX, res.spawnY);
-                        this.showFloatingSparkle(e.clientX + 30, screenPos.y - 50, res.sparkleAmount);
+                        this.showFloatingSparkle(e.clientX + 130, screenPos.y - 200, res.sparkleAmount);
                     }
                 }
             }
@@ -1372,54 +1372,30 @@ class UIManager {
     showFloatingSparkle(screenX, screenY, amount) {
         if (!this.showFloatingSparkleEnabled) return;
 
-        const MIN_MOVE_DIST = 50;
-
         if (this.activeFloatingSparkle && document.body.contains(this.activeFloatingSparkle)) {
             const elem = this.activeFloatingSparkle;
 
             const currentAmount = parseFloat(elem.dataset.amount || '0');
             const newAmount = currentAmount + amount;
 
-            const existingX = parseFloat(elem.style.left || '0');
-            const existingY = parseFloat(elem.style.top || '0');
-            if (Math.hypot(screenX - existingX, screenY - existingY) >= MIN_MOVE_DIST) {
-                elem.dataset.amount = '0';
-                elem.style.animationDuration = '.8s';
-
-                const newElem = document.createElement('div');
-                newElem.className = 'floating-sparkle';
-                newElem.dataset.amount = newAmount;
-                newElem.textContent = `+${this._formatSparkleCount(newAmount)}`;
-                newElem.style.left = `${screenX}px`;
-                newElem.style.top = `${screenY}px`;
-                document.body.appendChild(newElem);
-
-                if (this.floatingSparkleTimeout) {
-                    clearTimeout(this.floatingSparkleTimeout);
-                }
-                const removeNew = () => {
-                    newElem.remove();
-                    if (this.activeFloatingSparkle === newElem) {
-                        this.activeFloatingSparkle = null;
-                        this.floatingSparkleTimeout = null;
-                    }
-                };
-                newElem.onanimationend = removeNew;
-                this.floatingSparkleTimeout = setTimeout(removeNew, 1500);
-                this.activeFloatingSparkle = newElem;
-                return;
-            }
-
             elem.dataset.amount = newAmount;
             elem.textContent = `+${this._formatSparkleCount(newAmount)}`;
 
-            elem.style.animation = 'none';
-            void elem.offsetWidth;
-            elem.style.animation = 'floatUpFade 1.5s ease-out forwards';
+            elem.style.left = `${screenX}px`;
+            elem.style.top = `${screenY}px`;
+
+            const anims = elem.getAnimations();
+            let timeLeft = 1500;
+            if (anims.length > 0) {
+                const anim = anims[0];
+                anim.currentTime = Math.max(50, anim.currentTime - 250);
+                timeLeft = 1500 - anim.currentTime;
+            }
 
             if (this.floatingSparkleTimeout) {
                 clearTimeout(this.floatingSparkleTimeout);
             }
+
             const remove = () => {
                 elem.remove();
                 if (this.activeFloatingSparkle === elem) {
@@ -1428,7 +1404,7 @@ class UIManager {
                 }
             };
             elem.onanimationend = remove;
-            this.floatingSparkleTimeout = setTimeout(remove, 1500);
+            this.floatingSparkleTimeout = setTimeout(remove, timeLeft + 100);
             return;
         }
 

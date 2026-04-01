@@ -2,7 +2,7 @@ import * as Renderer2D from '../../js/rendering/Renderer.js';
 import { state } from './core/state.js';
 import { undoManager, saveState } from './core/undo.js';
 import { initIO, loadSkeletonById, populateSkeletonPicker } from './core/io.js';
-import { updateHierarchyUI, selectPart, updateTimelineUI, updateAnimPropsUI, populateAnimations, setEditorMode } from './core/ui.js';
+import { updateHierarchyUI, selectPart, updateTimelineUI, updateAnimPropsUI, populateAnimations, setEditorMode, updateAnimPropsPanel } from './core/ui.js';
 import { addSkeletonOutline, deletePart, renamePart, mirrorSkeleton } from './core/skeleton.js';
 import { makeAnimationLoop, mirrorAnimation, flipAnimation } from './core/animation.js';
 import { getParentTransform } from './core/math.js';
@@ -32,6 +32,7 @@ async function init() {
         selectPart(state.selectedPartId);
         updateTimelineUI();
         updateAnimPropsUI();
+        updateAnimPropsPanel();
     };
 
     await initIO();
@@ -57,6 +58,7 @@ function newSkeleton() {
     populateAnimations();
     selectPart(null);
     updateTimelineUI();
+    updateAnimPropsPanel();
 }
 
 function populateHierarchy() { updateHierarchyUI(); }
@@ -515,11 +517,57 @@ function setupUI() {
         if (!name) return;
         if (state.meshData.animations[name]) { alert(`Animation "${name}" already exists.`); return; }
         saveState();
-        state.meshData.animations[name] = { duration: 1.0, loop: true, tracks: {} };
+        state.meshData.animations[name] = { duration: 1.0, loop: true, tracks: {}, props: [] };
         state.currentAnimId = name;
         input.value = '';
         populateAnimations();
         updateTimelineUI();
+        updateAnimPropsPanel();
+    };
+
+    document.getElementById('anim-props-list').onchange = (e) => {
+        state.selectedPropIndex = e.target.selectedIndex >= 0 ? parseInt(e.target.value) : -1;
+        updateAnimPropsPanel();
+    };
+
+    const getPropFormData = () => {
+        return {
+            skeletonUrl: document.getElementById('prop-skeleton-picker').value,
+            animation: document.getElementById('prop-anim-name').value.trim(),
+            startTime: parseFloat(document.getElementById('prop-start-time').value) || 0,
+            endTime: parseFloat(document.getElementById('prop-end-time').value) || 1,
+            parentPartId: document.getElementById('prop-parent-part').value || null,
+            offsetX: parseFloat(document.getElementById('prop-offx-input').value) || 0,
+            offsetY: parseFloat(document.getElementById('prop-offy-input').value) || 0,
+            rotation: 0
+        };
+    };
+
+    document.getElementById('btn-add-anim-prop').onclick = () => {
+        const anim = state.meshData.animations[state.currentAnimId];
+        if (!anim) return;
+        saveState();
+        if (!anim.props) anim.props = [];
+        anim.props.push(getPropFormData());
+        state.selectedPropIndex = anim.props.length - 1;
+        updateAnimPropsPanel();
+    };
+
+    document.getElementById('btn-update-anim-prop').onclick = () => {
+        const anim = state.meshData.animations[state.currentAnimId];
+        if (!anim || state.selectedPropIndex < 0 || !anim.props || !anim.props[state.selectedPropIndex]) return;
+        saveState();
+        anim.props[state.selectedPropIndex] = getPropFormData();
+        updateAnimPropsPanel();
+    };
+
+    document.getElementById('btn-delete-anim-prop').onclick = () => {
+        const anim = state.meshData.animations[state.currentAnimId];
+        if (!anim || state.selectedPropIndex < 0 || !anim.props) return;
+        saveState();
+        anim.props.splice(state.selectedPropIndex, 1);
+        state.selectedPropIndex = -1;
+        updateAnimPropsPanel();
     };
 
     document.getElementById('btn-load').onclick = () => {

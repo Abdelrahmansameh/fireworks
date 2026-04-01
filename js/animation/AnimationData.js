@@ -41,12 +41,14 @@ export class AnimationClip {
      * @param {number} duration
      * @param {boolean} loop
      * @param {Object<string, Array>} tracks — partId → keyframe array
+     * @param {Array<Object>} props — array of prop definitions spawned during animation
      */
-    constructor(name, duration, loop, tracks) {
+    constructor(name, duration, loop, tracks, props = []) {
         this.name = name;
         this.duration = duration;
         this.loop = loop;
         this.tracks = tracks;
+        this.props = props;
     }
 
     /**
@@ -71,7 +73,7 @@ export class AnimationData {
         /** @type {Map<string, AnimationClip>} */
         this.clips = new Map();
         for (const [name, data] of Object.entries(rawAnimations)) {
-            this.clips.set(name, new AnimationClip(name, data.duration, data.loop, data.tracks));
+            this.clips.set(name, new AnimationClip(name, data.duration, data.loop, data.tracks, data.props || []));
         }
     }
 

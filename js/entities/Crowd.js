@@ -35,6 +35,13 @@ class Crowd {
         this.goldPerSecondPerPerson = 0.1;
         this.onCoinDrop = null;
 
+        this.goldPerSecondPerPerson = 0.1;
+        this.onCoinDrop = null;
+        
+        this._propCache = new Map();
+        this.maxPropParts = 0;
+        this.totalPartsPerPerson = 1;
+
         this._initializeCrowd();
     }
 
@@ -58,6 +65,41 @@ class Crowd {
             });
         }
 
+        // Initialize props
+        const uniquePropUrls = new Set();
+        for (const clip of this._animData.clips.values()) {
+            if (clip.props) {
+                for (const prop of clip.props) {
+                    if (prop.skeletonUrl) uniquePropUrls.add(prop.skeletonUrl);
+                }
+            }
+        }
+
+        for (const url of uniquePropUrls) {
+            try {
+                const { skeleton, rawAnimations } = await SkeletonData.load(url);
+                this._propCache.set(url, {
+                    skeleton,
+                    animData: new AnimationData(rawAnimations)
+                });
+            } catch (e) {
+                console.warn('Failed to load prop skeleton:', url, e);
+            }
+        }
+
+        for (const clip of this._animData.clips.values()) {
+            let sum = 0;
+            if (clip.props) {
+                for (const prop of clip.props) {
+                    const cached = this._propCache.get(prop.skeletonUrl);
+                    if (cached) sum += cached.skeleton.partCount;
+                }
+            }
+            this.maxPropParts = Math.max(this.maxPropParts, sum);
+        }
+
+        this.totalPartsPerPerson = this._skeleton.partCount + this.maxPropParts;
+
         try {
             const geometry = Renderer2D.buildTexturedSquare(1, 1);
             this.instancedGroup = this.renderer.createInstancedGroup({
@@ -74,7 +116,7 @@ class Crowd {
                 this._addPerson();
             }
             this.missingCrowdsToInit = 0;
-            console.log(`Crowd initialized: ${this._skeleton.partCount} parts, max ${CROWD_CONFIG.maxInstances} instances.`);
+            console.log(`Crowd initialized: ${this._skeleton.partCount} main parts + max ${this.maxPropParts} prop parts. Max ${CROWD_CONFIG.maxInstances} total instances.`);
         } catch (error) {
             console.error('Failed to create instanced group for crowd:', error);
         }
@@ -95,7 +137,7 @@ class Crowd {
 
             while (this.people.length > count) {
                 this.people.pop();
-                this.instancedGroup.instanceCount -= this._skeleton.partCount;
+                this.instancedGroup.instanceCount -= this.totalPartsPerPerson;
             }
         } else {
             const added = count - this.people.length;
@@ -161,16 +203,10 @@ class Crowd {
 
         this.people.push(person);
 
-        // Add instances for this person in the skeleton's draw order so z ordering is stable
-        const drawOrder = (this._skeleton && this._skeleton.drawOrder) ? this._skeleton.drawOrder : null;
-        if (drawOrder) {
-            for (let k = 0; k < drawOrder.length; k++) {
-                group.addInstanceRaw(person.x, person.y, 0, 1, 1, 0, 0, 0, 1, 0, 0, 0);
-            }
-        } else {
-            for (let i = 0; i < this._skeleton.partCount; i++) {
-                group.addInstanceRaw(person.x, person.y, 0, 1, 1, 0, 0, 0, 1, 0, 0, 0);
-            }
+        // Add instances for this person
+        for (let i = 0; i < this.totalPartsPerPerson; i++) {
+            // Default scale 0 so hidden until explicitly placed
+            group.addInstanceRaw(person.x, person.y, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0);
         }
 
         this._updateProceduralAnimation(person, 0);
@@ -345,6 +381,54 @@ class Crowd {
             person.x, person.y,
             finalScale, flipX
         );
+
+        let propInstanceOffset = this._skeleton.partCount;
+
+        // Render props
+        if (clip && clip.props) {
+            for (const prop of clip.props) {
+                if (time >= prop.startTime && time <= prop.endTime) {
+                    const cached = this._propCache.get(prop.skeletonUrl);
+                    if (!cached) continue;
+
+                    const pTf = pose.get(prop.parentPartId);
+                    if (!pTf) continue;
+
+                    const anchorRot = pTf.rotation;
+                    const propRootX = pTf.x + ((prop.offsetX||0) * Math.cos(anchorRot) - (prop.offsetY||0) * Math.sin(anchorRot));
+                    const propRootY = pTf.y + ((prop.offsetX||0) * Math.sin(anchorRot) + (prop.offsetY||0) * Math.cos(anchorRot));
+                    const propRootRot = anchorRot + (prop.rotation || 0);
+
+                    const propClip = prop.animation ? cached.animData.getClip(prop.animation) : null;
+                    const propLocalTime = time - prop.startTime;
+                    const propTime = propClip && propClip.loop ? (propLocalTime % propClip.duration) : Math.min(propLocalTime, propClip ? propClip.duration : 0);
+
+                    const propPose = computePose(cached.skeleton, propClip, propTime);
+                    
+                    const finalPropPose = new Map();
+                    for (const [pid, ptf] of propPose.entries()) {
+                        const finalX = propRootX + (ptf.x * Math.cos(propRootRot) - ptf.y * Math.sin(propRootRot));
+                        const finalY = propRootY + (ptf.x * Math.sin(propRootRot) + ptf.y * Math.cos(propRootRot));
+                        const finalRot = propRootRot + ptf.rotation;
+                        finalPropPose.set(pid, { x: finalX, y: finalY, rotation: finalRot });
+                    }
+
+                    applyPoseToInstances(
+                        cached.skeleton, finalPropPose, this.instancedGroup,
+                        person.instanceBaseIndex + propInstanceOffset,
+                        person.x, person.y,
+                        finalScale, flipX
+                    );
+
+                    propInstanceOffset += cached.skeleton.partCount;
+                }
+            }
+        }
+
+        // Hide unused preallocated instances
+        for (let i = propInstanceOffset; i < this.totalPartsPerPerson; i++) {
+            this.instancedGroup.updateInstanceScale(person.instanceBaseIndex + i, 0, 0);
+        }
     }
 
     _reorderInstancesByY() {
@@ -352,7 +436,7 @@ class Crowd {
 
         const group = this.instancedGroup;
         const stride = group.instanceStrideFloats;
-        const partCount = this._skeleton ? this._skeleton.partCount : 1;
+        const partCount = this.totalPartsPerPerson;
 
         const oldData = group.instanceData;
         const newData = new Float32Array(group.maxInstances * stride);
