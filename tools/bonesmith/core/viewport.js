@@ -1,5 +1,5 @@
 import { state } from './state.js';
-import { getParentTransform, hexToRgb } from './math.js';
+import { computePose, SkeletonData, hexToRgb, getParentTransform } from './math.js';
 import { updateTimelineUI } from './ui.js';
 
 export function loop(now) {
@@ -7,7 +7,6 @@ export function loop(now) {
 
     const dt = (now - state.lastTime) / 1000.0;
     state.lastTime = now;
-
     const anim = state.meshData.animations[state.currentAnimId];
     if (state.isPlaying && anim) {
         state.currentTime += dt;
@@ -24,6 +23,22 @@ export function loop(now) {
     }
 
     if (!state.instancedGroup || !state.renderer) return;
+
+    // Refresh skeleton data if needed
+    if (!state.skeletonData || state.skeletonData.parts !== state.meshData.parts) {
+        state.skeletonData = new SkeletonData(state.meshData.parts);
+    }
+
+    // Compute current pose
+    const overrides = new Map();
+    if (state.editorMode === 'animation' && state.selectedPartId && !state.isPlaying) {
+        const localRot = parseFloat(document.getElementById('prop-rot').value) || 0;
+        const localOffX = parseFloat(document.getElementById('prop-offx').value) || 0;
+        const localOffY = parseFloat(document.getElementById('prop-offy').value) || 0;
+        overrides.set(state.selectedPartId, { rotation: localRot, offsetX: localOffX, offsetY: localOffY });
+    }
+
+    state.currentPose = computePose(state.skeletonData, anim, state.currentTime, overrides);
 
     state.instancedGroup.clear();
 

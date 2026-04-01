@@ -9,7 +9,7 @@
  * Animation data is handled by AnimationData.js.
  */
 
-function _parseHexColor(hex) {
+export function hexToRgb(hex) {
     const h = (hex || '000000').replace('#', '');
     return {
         r: parseInt(h.slice(0, 2), 16) / 255,
@@ -37,7 +37,7 @@ export class SkeletonData {
 
         for (const p of parts) {
             this.partLookup.set(p.id, p);
-            this.partColors.push(_parseHexColor(p.color));
+            this.partColors.push(hexToRgb(p.color));
         }
 
         const indexed = parts.map((p, idx) => ({ idx, z: (p.z || 0) }));

@@ -1,6 +1,6 @@
 import { state } from './state.js';
 import { saveState } from './undo.js';
-import { sampleAnimValuesAt } from './math.js';
+import { evalTrack } from './math.js';
 import { updateTimelineUI, updateAnimPropsUI } from './ui.js';
 
 export function makeAnimationLoop() {
@@ -19,7 +19,7 @@ export function makeAnimationLoop() {
         let track = anim.tracks[pid];
 
         // sample start values at t=0
-        const start = sampleAnimValuesAt(pid, 0, anim);
+        const start = evalTrack(anim.tracks[pid], 0);
 
         if (!track || track.length === 0) {
             track = [{ time: 0, rotation: start.rotation, offsetX: start.offsetX, offsetY: start.offsetY }];

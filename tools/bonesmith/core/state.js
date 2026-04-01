@@ -4,6 +4,11 @@ export const state = {
     currentSkeletonName: '',
     manifest: { skeletons: [] },
 
+    // Game system wrapper objects (cached)
+    skeletonData: null,
+    currentAnimationClip: null,
+    currentPose: new Map(), // partId → {x, y, rotation}
+
     selectedPartId: null,
     currentAnimId: '',
     currentTool: 'select',

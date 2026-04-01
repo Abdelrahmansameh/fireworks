@@ -1,5 +1,5 @@
 import { state } from './state.js';
-import { sampleAnimValuesAt } from './math.js';
+import { evalTrack } from './math.js';
 import { saveState } from './undo.js';
 
 export function updateHierarchyUI() {
@@ -83,7 +83,7 @@ export function updateAnimPropsUI() {
     const anim = state.meshData.animations[state.currentAnimId];
     let localRot = 0, localOffX = 0, localOffY = 0;
     if (anim && anim.tracks && anim.tracks[state.selectedPartId]) {
-        const vals = sampleAnimValuesAt(state.selectedPartId, state.currentTime, anim);
+        const vals = evalTrack(anim.tracks[state.selectedPartId], state.currentTime);
         localRot = vals.rotation || 0;
         localOffX = vals.offsetX || 0;
         localOffY = vals.offsetY || 0;

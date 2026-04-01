@@ -13,9 +13,10 @@ import { evalTrack } from './AnimationData.js';
  * @param {import('./SkeletonData.js').SkeletonData} skeletonData
  * @param {import('./AnimationData.js').AnimationClip|null} clip — current animation clip (may be null for bind pose)
  * @param {number} time — current playback time within the clip
+ * @param {Map<string, {rotation?:number, offsetX?:number, offsetY?:number}>} [overrides] — optional overrides for specific parts
  * @returns {Map<string, {x:number, y:number, rotation:number}>} partId → world transform of pivot
  */
-export function computePose(skeletonData, clip, time) {
+export function computePose(skeletonData, clip, time, overrides = null) {
     const parts = skeletonData.parts;
     const pivotMap = new Map();
 
@@ -41,6 +42,14 @@ export function computePose(skeletonData, clip, time) {
             localRot = kf.rotation;
             localOffX = kf.offsetX;
             localOffY = kf.offsetY;
+        }
+
+        // Apply overrides if any
+        if (overrides && overrides.has(part.id)) {
+            const o = overrides.get(part.id);
+            if (o.rotation !== undefined) localRot = o.rotation;
+            if (o.offsetX !== undefined) localOffX = o.offsetX;
+            if (o.offsetY !== undefined) localOffY = o.offsetY;
         }
 
         const cosP = Math.cos(parentRot);
