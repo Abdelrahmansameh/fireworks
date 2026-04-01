@@ -135,6 +135,50 @@ function newSkeleton() {
     updateTimelineUI();
 }
 
+function addSkeletonOutline() {
+    const outlineSuffix = "_outline";
+    const newParts = [];
+    const sizeIncrease = 0.4; // total increase (+0.2 units per side)
+    
+    for (const part of meshData.parts) {
+        if (part.id.endsWith(outlineSuffix)) continue;
+        
+        const outlineId = part.id + outlineSuffix;
+        if (meshData.parts.some(p => p.id === outlineId)) continue;
+        
+        const newWidth = part.width + sizeIncrease;
+        const newHeight = part.height + sizeIncrease;
+        
+        const outlinePart = {
+            id: outlineId,
+            parentId: part.id,
+            width: newWidth,
+            height: newHeight,
+            color: "000000",
+            // To ensure the outline's DRAWN center matches the parent's DRAWN center:
+            // Calculate anchor so that outline.anchorX * outline.width == part.anchorX * part.width.
+            anchorX: (part.anchorX * part.width) / newWidth,
+            anchorY: (part.anchorY * part.height) / newHeight,
+            // Offset the outline pivot from the parent pivot. 
+            // Setting this to 0 aligns their pivots perfectly in world space.
+            relX: 0,
+            relY: 0,
+            baseRotation: 0,
+            z: (part.z || 0) - 100
+        };
+        
+        newParts.push(outlinePart);
+    }
+    
+    if (newParts.length > 0) {
+        meshData.parts.push(...newParts);
+        updateHierarchyUI();
+        console.log(`Added ${newParts.length} outline parts.`);
+    } else {
+        alert("No new outline parts to add (all parts already have outlines or no parts exist).");
+    }
+}
+
 // ─── Transform Math ──────────────────────────────────────────────────────────
 
 function getParentTransform(partId, time) {
@@ -484,6 +528,8 @@ function setupUI() {
     document.getElementById('btn-mode-skeleton').onclick = () => setEditorMode('skeleton');
     document.getElementById('btn-mode-animation').onclick = () => setEditorMode('animation');
 
+    document.getElementById('btn-add-outline').onclick = () => addSkeletonOutline();
+
     // Attach tool is available in skeleton editing mode. Visibility toggled by setEditorMode.
     document.getElementById('btn-tool-attach').style.display = '';
 
@@ -518,7 +564,10 @@ function setupUI() {
         if (e.target.id === 'prop-rx') part.relX = parseFloat(e.target.value);
         if (e.target.id === 'prop-ry') part.relY = parseFloat(e.target.value);
         if (e.target.id === 'prop-base-rot') part.baseRotation = parseFloat(e.target.value);
-        if (e.target.id === 'prop-z') part.z = parseFloat(e.target.value) || 0;
+        if (e.target.id === 'prop-z') {
+            const val = parseFloat(e.target.value);
+            part.z = isNaN(val) ? 0 : val;
+        }
     });
 
     // Color picker <-> text sync

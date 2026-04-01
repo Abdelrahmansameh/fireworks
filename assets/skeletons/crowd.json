@@ -9,7 +9,8 @@
       "anchorY": 0,
       "relX": 0,
       "relY": 0,
-      "color": "a1a1a1"
+      "color": "a1a1a1",
+      "z": 2
     },
     {
       "id": "arm_1_r",
@@ -93,7 +94,8 @@
       "relX": -0.24464273324973762,
       "relY": 0.15,
       "color": "ffffff",
-      "baseRotation": 0
+      "baseRotation": 0,
+      "z": 2
     },
     {
       "id": "eye_r",
@@ -105,7 +107,8 @@
       "relX": 0.24464273324973762,
       "relY": 0.15,
       "color": "ffffff",
-      "baseRotation": 0
+      "baseRotation": 0,
+      "z": 2
     },
     {
       "id": "pupil_l",
@@ -117,7 +120,8 @@
       "relX": 0,
       "relY": 0,
       "color": "000000",
-      "baseRotation": 0
+      "baseRotation": 0,
+      "z": 3
     },
     {
       "id": "pupil_r",
@@ -129,7 +133,8 @@
       "relX": 0,
       "relY": 0,
       "color": "000000",
-      "baseRotation": 0
+      "baseRotation": 0,
+      "z": 3
     },
     {
       "id": "arm_2_r",
@@ -178,6 +183,201 @@
       "relX": -0.5390084556920852,
       "relY": -0.9999155394531261,
       "baseRotation": 0
+    },
+    {
+      "id": "body_outline",
+      "parentId": "body",
+      "width": 4.4,
+      "height": 4.4,
+      "color": "000000",
+      "anchorX": 0,
+      "anchorY": 0,
+      "relX": 0,
+      "relY": 0,
+      "baseRotation": 0,
+      "z": 1
+    },
+    {
+      "id": "arm_1_r_outline",
+      "parentId": "arm_1_r",
+      "width": 0.6183131290943633,
+      "height": 0.9041447941111054,
+      "color": "000000",
+      "anchorX": 0,
+      "anchorY": 0.278796492218233,
+      "relX": 0,
+      "relY": 0,
+      "baseRotation": 0,
+      "z": -100
+    },
+    {
+      "id": "arm_1_l_outline",
+      "parentId": "arm_1_l",
+      "width": 0.6183131290943633,
+      "height": 0.9041447941111054,
+      "color": "000000",
+      "anchorX": 0,
+      "anchorY": 0.278796492218233,
+      "relX": 0,
+      "relY": 0,
+      "baseRotation": 0,
+      "z": -100
+    },
+    {
+      "id": "leg_l_outline",
+      "parentId": "leg_l",
+      "width": 0.647543586100248,
+      "height": 2.1855380762831143,
+      "color": "000000",
+      "anchorX": 0,
+      "anchorY": 0.4084893545574211,
+      "relX": 0,
+      "relY": 0,
+      "baseRotation": 0,
+      "z": -100
+    },
+    {
+      "id": "leg_r_outline",
+      "parentId": "leg_r",
+      "width": 0.647543586100248,
+      "height": 2.1855380762831143,
+      "color": "000000",
+      "anchorX": 0,
+      "anchorY": 0.4084893545574211,
+      "relX": 0,
+      "relY": 0,
+      "baseRotation": 0,
+      "z": -100
+    },
+    {
+      "id": "foot_l_outline",
+      "parentId": "foot_l",
+      "width": 1.0364317490521437,
+      "height": 0.5804662763998863,
+      "color": "000000",
+      "anchorX": 0,
+      "anchorY": 0,
+      "relX": 0,
+      "relY": 0,
+      "baseRotation": 0,
+      "z": -100
+    },
+    {
+      "id": "foot_r_outline",
+      "parentId": "foot_r",
+      "width": 1.0364317490521437,
+      "height": 0.5804662763998863,
+      "color": "000000",
+      "anchorX": 0,
+      "anchorY": 0,
+      "relX": 0,
+      "relY": 0,
+      "baseRotation": 0,
+      "z": -100
+    },
+    {
+      "id": "eye_l_outline",
+      "parentId": "eye_l",
+      "width": 1.9,
+      "height": 1.9,
+      "color": "000000",
+      "anchorX": 0,
+      "anchorY": 0,
+      "relX": 0,
+      "relY": 0,
+      "baseRotation": 0,
+      "z": -100
+    },
+    {
+      "id": "eye_r_outline",
+      "parentId": "eye_r",
+      "width": 1.9,
+      "height": 1.9,
+      "color": "000000",
+      "anchorX": 0,
+      "anchorY": 0,
+      "relX": 0,
+      "relY": 0,
+      "baseRotation": 0,
+      "z": -100
+    },
+    {
+      "id": "pupil_l_outline",
+      "parentId": "pupil_l",
+      "width": 0.9,
+      "height": 0.9,
+      "color": "000000",
+      "anchorX": 0,
+      "anchorY": 0,
+      "relX": 0,
+      "relY": 0,
+      "baseRotation": 0,
+      "z": -100
+    },
+    {
+      "id": "pupil_r_outline",
+      "parentId": "pupil_r",
+      "width": 0.9,
+      "height": 0.9,
+      "color": "000000",
+      "anchorX": 0,
+      "anchorY": 0,
+      "relX": 0,
+      "relY": 0,
+      "baseRotation": 0,
+      "z": -100
+    },
+    {
+      "id": "arm_2_r_outline",
+      "parentId": "arm_2_r",
+      "width": 0.6189074639767115,
+      "height": 0.9365349726954346,
+      "color": "000000",
+      "anchorX": 0,
+      "anchorY": 0.2864468430640861,
+      "relX": 0,
+      "relY": 0,
+      "baseRotation": 0,
+      "z": -100
+    },
+    {
+      "id": "arm_2_l_outline",
+      "parentId": "arm_2_l",
+      "width": 0.6189074639767115,
+      "height": 0.9365349726954346,
+      "color": "000000",
+      "anchorX": 0,
+      "anchorY": 0.2864468430640861,
+      "relX": 0,
+      "relY": 0,
+      "baseRotation": 0,
+      "z": -100
+    },
+    {
+      "id": "arm_3_r_outline",
+      "parentId": "arm_3_r",
+      "width": 0.6292585740384222,
+      "height": 0.9677712634586295,
+      "color": "000000",
+      "anchorX": 0.18216563388806822,
+      "anchorY": 0.2933395962954735,
+      "relX": 0,
+      "relY": 0,
+      "baseRotation": 0,
+      "z": -100
+    },
+    {
+      "id": "arm_3_l_outline",
+      "parentId": "arm_3_l",
+      "width": 0.6292585740384222,
+      "height": 0.9677712634586295,
+      "color": "000000",
+      "anchorX": -0.18216563388806822,
+      "anchorY": 0.2933395962954735,
+      "relX": 0,
+      "relY": 0,
+      "baseRotation": 0,
+      "z": -100
     }
   ],
   "animations": {
