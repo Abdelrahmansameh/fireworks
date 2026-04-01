@@ -70,11 +70,21 @@ def main() -> int:
         if not args.no_browser:
             webbrowser.open(url)
 
-        print('Bonesmith launched.')
-        return 0
+        print('Bonesmith launched (Press Ctrl+C to stop).')
+        # Keep the wrapper running until the server process exits
+        return proc.wait()
     except KeyboardInterrupt:
-        print('Aborted by user', file=sys.stderr)
-        return 4
+        print('\nStopping Bonesmith server...', file=sys.stderr)
+        return 0
+    finally:
+        # Ensure the server is stopped if this script exits for any reason
+        if proc.poll() is None:
+            print('Terminating server...')
+            proc.terminate()
+            try:
+                proc.wait(timeout=3)
+            except subprocess.TimeoutExpired:
+                proc.kill()
 
 
 if __name__ == '__main__':
