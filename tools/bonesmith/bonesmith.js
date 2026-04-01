@@ -35,6 +35,81 @@ let panStartCameraX = 0;
 let panStartCameraY = 0;
 const CAMERA_MIN_ZOOM = 0.2;
 const CAMERA_MAX_ZOOM = 200;
+const MAX_UNDO_STATES = 50;
+
+// ─── Undo/Redo Logic ─────────────────────────────────────────────────────────
+
+class UndoManager {
+    constructor() {
+        this.undoStack = [];
+        this.redoStack = [];
+    }
+
+    save() {
+        // Deep clone current state
+        const state = JSON.parse(JSON.stringify({
+            meshData,
+            selectedPartId,
+            currentAnimId
+        }));
+        
+        this.undoStack.push(state);
+        this.redoStack = []; // Clear redo stack on new action
+        
+        if (this.undoStack.length > MAX_UNDO_STATES) {
+            this.undoStack.shift();
+        }
+    }
+
+    undo() {
+        if (this.undoStack.length === 0) return;
+
+        // Save current to redo before applying undo
+        const currentState = JSON.parse(JSON.stringify({
+            meshData,
+            selectedPartId,
+            currentAnimId
+        }));
+        this.redoStack.push(currentState);
+
+        const state = this.undoStack.pop();
+        this.applyState(state);
+    }
+
+    redo() {
+        if (this.redoStack.length === 0) return;
+
+        // Save current to undo before applying redo
+        const currentState = JSON.parse(JSON.stringify({
+            meshData,
+            selectedPartId,
+            currentAnimId
+        }));
+        this.undoStack.push(currentState);
+
+        const state = this.redoStack.pop();
+        this.applyState(state);
+    }
+
+    applyState(state) {
+        meshData = state.meshData;
+        selectedPartId = state.selectedPartId;
+        currentAnimId = state.currentAnimId;
+
+        // Full UI refresh
+        populateHierarchy();
+        populateAnimations();
+        selectPart(selectedPartId);
+        updateTimelineUI();
+        updateAnimPropsUI();
+    }
+}
+
+const undoManager = new UndoManager();
+
+function saveState() {
+    undoManager.save();
+}
 
 // ─── Init ────────────────────────────────────────────────────────────────────
 
@@ -118,6 +193,7 @@ async function loadSkeletonById(id) {
 }
 
 function newSkeleton() {
+    saveState();
     const nameInput = document.getElementById('skeleton-name');
     const name = nameInput.value.trim() || 'Untitled';
     meshData = { parts: [], animations: {} };
@@ -136,6 +212,7 @@ function newSkeleton() {
 }
 
 function addSkeletonOutline() {
+    saveState();
     const outlineSuffix = "_outline";
     const newParts = [];
     const sizeIncrease = 0.4; // total increase (+0.2 units per side)
@@ -447,6 +524,7 @@ function sampleAnimValuesAt(partId, time, anim) {
 
 // Make the current animation loop by copying start frame values to the end time
 function makeAnimationLoop() {
+    saveState();
     const anim = meshData.animations[currentAnimId];
     if (!anim) {
         alert('No animation selected.');
@@ -495,6 +573,7 @@ function makeAnimationLoop() {
 function setupUI() {
     // Skeleton picker
     document.getElementById('skeleton-picker').addEventListener('change', async (e) => {
+        saveState();
         const id = e.target.value;
         if (!id) {
             newSkeleton();
@@ -543,9 +622,13 @@ function setupUI() {
         }
     });
 
+    document.getElementById('btn-undo').onclick = () => undoManager.undo();
+    document.getElementById('btn-redo').onclick = () => undoManager.redo();
+
     // Properties generic change listener
     document.getElementById('properties-content').addEventListener('change', (e) => {
         if (!selectedPartId) return;
+        saveState();
         const part = meshData.parts.find(p => p.id === selectedPartId);
 
         if (e.target.id === 'prop-w') part.width = parseFloat(e.target.value);
@@ -575,6 +658,7 @@ function setupUI() {
         const propColor = document.getElementById('prop-color');
         const propColorText = document.getElementById('prop-color-text');
         if (propColor) {
+            propColor.addEventListener('mousedown', () => saveState());
             propColor.addEventListener('input', (ev) => {
                 const v = ev.target.value || '#000000';
                 if (propColorText) propColorText.value = v.toUpperCase();
@@ -585,6 +669,7 @@ function setupUI() {
             });
         }
         if (propColorText && propColor) {
+            propColorText.addEventListener('focus', () => saveState());
             propColorText.addEventListener('input', (ev) => {
                 const val = (ev.target.value || '').trim().replace(/^#/, '');
                 if (/^[0-9a-fA-F]{6}$/.test(val)) {
@@ -602,6 +687,7 @@ function setupUI() {
     // Keyframing
     document.getElementById('btn-keyframe').onclick = () => {
         if (!selectedPartId) return;
+        saveState();
         if (!meshData.animations[currentAnimId]) {
             meshData.animations[currentAnimId] = { duration: 1.0, loop: true, tracks: {} };
         }
@@ -626,6 +712,7 @@ function setupUI() {
 
     document.getElementById('btn-remove-keyframe').onclick = () => {
         if (!selectedPartId) return;
+        saveState();
         const anim = meshData.animations[currentAnimId];
         if (!anim || !anim.tracks[selectedPartId]) return;
 
@@ -644,6 +731,7 @@ function setupUI() {
     document.getElementById('anim-duration').addEventListener('change', (e) => {
         const anim = meshData.animations[currentAnimId];
         if (anim) {
+            saveState();
             const oldDuration = Math.max(0.0001, anim.duration || 1.0);
             const newDuration = Math.max(0.1, parseFloat(e.target.value) || 1.0);
             const ratio = newDuration / oldDuration;
@@ -675,6 +763,7 @@ function setupUI() {
     document.getElementById('anim-loop').addEventListener('change', (e) => {
         const anim = meshData.animations[currentAnimId];
         if (anim) {
+            saveState();
             anim.loop = e.target.checked;
         }
     });
@@ -733,6 +822,7 @@ function setupUI() {
         dragStartY = wPos.y;
 
         if (selectedPartId) {
+            saveState();
             const part = meshData.parts.find(p => p.id === selectedPartId);
 
             if (currentTool === 'attach') {
@@ -853,6 +943,19 @@ function setupUI() {
     window.addEventListener('keydown', (e) => {
         if (e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
             const key = e.key.toLowerCase();
+
+            // Undo / Redo shortcuts
+            if (e.ctrlKey && key === 'z') {
+                e.preventDefault();
+                undoManager.undo();
+                return;
+            }
+            if (e.ctrlKey && (key === 'y' || (e.shiftKey && key === 'z'))) {
+                e.preventDefault();
+                undoManager.redo();
+                return;
+            }
+
             let toolBtnId = null;
             if (key === 'v') toolBtnId = 'btn-tool-select';
             else if (key === 'w') toolBtnId = 'btn-tool-move';
@@ -869,6 +972,7 @@ function setupUI() {
 
     // Add Part
     document.getElementById('btn-add-part').onclick = () => {
+        saveState();
         const idInput = document.getElementById('new-part-id');
         const parentSelect = document.getElementById('new-part-parent');
         const newId = idInput.value.trim();
@@ -904,6 +1008,7 @@ function setupUI() {
         }
         msg += '\n\nAll animation tracks for this part will also be removed.';
         if (!confirm(msg)) return;
+        saveState();
         deletePart(selectedPartId);
     };
 
@@ -919,6 +1024,7 @@ function setupUI() {
             renamePending = true;
         } else {
             const newId = propIdInput.value;
+            saveState();
             if (renamePart(selectedPartId, newId)) {
                 propIdInput.disabled = true;
                 document.getElementById('btn-rename-part').textContent = 'Rename';
@@ -946,6 +1052,7 @@ function setupUI() {
         const name = input.value.trim();
         if (!name) return;
         if (meshData.animations[name]) { alert(`Animation "${name}" already exists.`); return; }
+        saveState();
         meshData.animations[name] = { duration: 1.0, loop: true, tracks: {} };
         currentAnimId = name;
         input.value = '';
@@ -955,6 +1062,7 @@ function setupUI() {
 
     // Load from file
     document.getElementById('btn-load').onclick = () => {
+        saveState();
         const fileInput = document.createElement('input');
         fileInput.type = 'file';
         fileInput.accept = '.json';
@@ -980,6 +1088,7 @@ function setupUI() {
 
     // Mirror skeleton / animation
     document.getElementById('btn-mirror-skeleton').onclick = () => {
+        saveState();
         const dir = document.getElementById('mirror-direction').value;
         const fromSuffix = dir === 'r-to-l' ? '_r' : '_l';
         const toSuffix = dir === 'r-to-l' ? '_l' : '_r';
@@ -992,6 +1101,7 @@ function setupUI() {
     };
 
     document.getElementById('btn-flip-animation').onclick = () => {
+        saveState();
         flipAnimation();
     };
 

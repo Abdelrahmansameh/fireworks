@@ -21,9 +21,9 @@ export const CROWD_CONFIG = {
     zIndex: -10,
 
     // Spawn / positioning
-    minOverlapDistance: 10,          // world-units — min spacing between people
-    maxPlacementAttempts: 20,
-    ySpread: 100,                    // random Y offset below CROWD_Y
+    minOverlapDistance: 50,          // world-units — min spacing between people
+    maxPlacementAttempts: 10,
+    ySpread: 70,                    // random Y offset below CROWD_Y
     baseScale: 8,
     scaleVariance: 0.4,             // scale = baseScale + random * scaleVariance
 
