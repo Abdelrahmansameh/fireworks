@@ -10,7 +10,10 @@ export function updateHierarchyUI() {
     parentSelect.innerHTML = '<option value="">(No Parent)</option>';
 
     function renderTree(parentId, depth) {
-        state.meshData.parts.filter(p => p.parentId === parentId).forEach(part => {
+        state.meshData.parts
+            .filter(p => p.parentId === parentId)
+            .filter(p => !state.hideOutlines || !p.id.endsWith('_outline'))
+            .forEach(part => {
             const li = document.createElement('li');
             li.innerHTML = `<span class="tree-indent" style="width:${depth * 15}px"></span>${part.id} (${part.z || 0})`;
             if (part.id === state.selectedPartId) li.classList.add('selected');
@@ -120,7 +123,9 @@ export function updateTimelineUI() {
         }
     };
 
-    state.meshData.parts.forEach(part => {
+    state.meshData.parts
+        .filter(p => !state.hideOutlines || !p.id.endsWith('_outline'))
+        .forEach(part => {
         const row = document.createElement('div');
         row.className = 'track-row';
 

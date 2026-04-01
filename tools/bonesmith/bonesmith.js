@@ -104,6 +104,15 @@ function setupUI() {
         }
     });
 
+    const hideOutlinesEl = document.getElementById('hide-outlines');
+    if (hideOutlinesEl) {
+        hideOutlinesEl.onchange = (e) => {
+            state.hideOutlines = e.target.checked;
+            updateHierarchyUI();
+            updateTimelineUI();
+        };
+    }
+
     document.getElementById('btn-undo').onclick = () => undoManager.undo();
     document.getElementById('btn-redo').onclick = () => undoManager.redo();
 
@@ -250,7 +259,10 @@ function setupUI() {
         const wPos = state.renderer.screenToCanvas(e.clientX, e.clientY);
 
         let clickedPartId = null;
-        const sortedParts = Array.from(state.meshData.parts || []).slice().sort((a, b) => (a.z || 0) - (b.z || 0));
+        const sortedParts = Array.from(state.meshData.parts || [])
+            .filter(p => !state.hideOutlines || !p.id.endsWith('_outline'))
+            .slice()
+            .sort((a, b) => (a.z || 0) - (b.z || 0));
         for (let i = sortedParts.length - 1; i >= 0; i--) {
             const part = sortedParts[i];
             const tf = getParentTransform(part.id, state.currentTime);

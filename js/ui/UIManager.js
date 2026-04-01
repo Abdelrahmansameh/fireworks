@@ -294,22 +294,38 @@ class UIManager {
             });
         }
 
-        const volumeSlider = document.getElementById('music-volume');
-        const volumeValue = document.getElementById('volume-value');
-        if (volumeSlider && volumeValue) {
-            const savedVolume = localStorage.getItem('musicVolume');
-            if (savedVolume !== null) {
-                const volume = parseInt(savedVolume);
-                volumeSlider.value = volume;
-                volumeValue.textContent = volume;
-                this.game.audioManager.setVolume(volume / 100);
-            }
+        const musicSlider = document.getElementById('music-volume');
+        const musicValue = document.getElementById('music-volume-value');
+        const sfxSlider = document.getElementById('sfx-volume');
+        const sfxValue = document.getElementById('sfx-volume-value');
 
-            volumeSlider.addEventListener('input', (e) => {
+        if (musicSlider && musicValue) {
+            const savedVolume = localStorage.getItem('musicVolume');
+            const volume = savedVolume !== null ? parseInt(savedVolume) : 15;
+            musicSlider.value = volume;
+            musicValue.textContent = volume;
+            this.game.audioManager.setMusicVolume(volume / 100);
+
+            musicSlider.addEventListener('input', (e) => {
                 const volume = parseInt(e.target.value);
-                volumeValue.textContent = volume;
-                this.game.audioManager.setVolume(volume / 100);
+                musicValue.textContent = volume;
+                this.game.audioManager.setMusicVolume(volume / 100);
                 localStorage.setItem('musicVolume', volume);
+            });
+        }
+
+        if (sfxSlider && sfxValue) {
+            const savedVolume = localStorage.getItem('sfxVolume');
+            const volume = savedVolume !== null ? parseInt(savedVolume) : 15;
+            sfxSlider.value = volume;
+            sfxValue.textContent = volume;
+            this.game.audioManager.setSfxVolume(volume / 100);
+
+            sfxSlider.addEventListener('input', (e) => {
+                const volume = parseInt(e.target.value);
+                sfxValue.textContent = volume;
+                this.game.audioManager.setSfxVolume(volume / 100);
+                localStorage.setItem('sfxVolume', volume);
             });
         }
     }

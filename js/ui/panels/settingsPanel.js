@@ -10,8 +10,12 @@ export function render(container) {
     panel.innerHTML = `
         <h2 class="panel-title">Settings</h2>
         <div class="recipes-option">
-            <label>Volume: <span id="volume-value">15</span>%</label>
+            <label>Music Volume: <span id="music-volume-value">15</span>%</label>
             <input type="range" id="music-volume" min="0" max="100" value="15" step="1">
+        </div>
+        <div class="recipes-option">
+            <label>SFX Volume: <span id="sfx-volume-value">15</span>%</label>
+            <input type="range" id="sfx-volume" min="0" max="100" value="15" step="1">
         </div>
         <h3>Save / Load</h3>
         <button id="save-progress">Save Progress</button>

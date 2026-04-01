@@ -3,7 +3,7 @@ export const state = {
     currentSkeletonId: '',
     currentSkeletonName: '',
     manifest: { skeletons: [] },
-    
+
     selectedPartId: null,
     currentAnimId: '',
     currentTool: 'select',
@@ -14,11 +14,12 @@ export const state = {
     lastTime: 0,
     selectedKeyframe: null,
     timelinePixelsPerSecond: 200,
-    
+    hideOutlines: false,
+
     renderer: null,
     instancedGroup: null,
     canvas: null,
-    
+
     isDragging: false,
     dragStartX: 0,
     dragStartY: 0,
@@ -29,7 +30,7 @@ export const state = {
     panStartMouseY: 0,
     panStartCameraX: 0,
     panStartCameraY: 0,
-    
+
     CAMERA_MIN_ZOOM: 0.2,
     CAMERA_MAX_ZOOM: 200,
     MAX_UNDO_STATES: 50

@@ -8,7 +8,8 @@ class AudioManager {
         this.maxSoundsPerSecond = 10;
         this.recentSoundTimestamps = [];
         this._explNum = 0;
-        this._currentVolume = 0.15;
+        this._musicVolume = 0.15;
+        this._sfxVolume = 0.15;
 
         this._whistleVol = 0.02;
         this._explosionVol = 0.02;
@@ -33,9 +34,12 @@ class AudioManager {
         this.backgroundMusic = new Audio('assets/backgroundsong.mp3');
         this.backgroundMusic.loop = true;
 
-        const savedVolume = localStorage.getItem('musicVolume');
-        this._currentVolume = savedVolume !== null ? parseInt(savedVolume) / 100 : 0.15;
-        this.backgroundMusic.volume = this._currentVolume;
+        const savedMusicVolume = localStorage.getItem('musicVolume');
+        this._musicVolume = savedMusicVolume !== null ? parseInt(savedMusicVolume) / 100 : 0.15;
+        this.backgroundMusic.volume = this._musicVolume;
+
+        const savedSfxVolume = localStorage.getItem('sfxVolume');
+        this._sfxVolume = savedSfxVolume !== null ? parseInt(savedSfxVolume) / 100 : 0.15;
 
         this.playBackgroundMusic();
 
@@ -86,13 +90,17 @@ class AudioManager {
         }
     }
 
-    setVolume(volume) {
-        this._currentVolume = Math.max(0, Math.min(1, volume));
+    setMusicVolume(volume) {
+        this._musicVolume = Math.max(0, Math.min(1, volume));
         if (this.backgroundMusic) {
-            this.backgroundMusic.volume = this._currentVolume;
+            this.backgroundMusic.volume = this._musicVolume;
         }
+    }
+
+    setSfxVolume(volume) {
+        this._sfxVolume = Math.max(0, Math.min(1, volume));
         if (this.masterGain) {
-            this.masterGain.gain.value = this._currentVolume * (0.8 / 0.15);
+            this.masterGain.gain.value = this._sfxVolume * (0.8 / 0.15);
         }
     }
 
@@ -195,7 +203,7 @@ class AudioManager {
 
         if (!this.masterGain) {
             this.masterGain = ac.createGain();
-            this.masterGain.gain.value = this._currentVolume * (0.8 / 0.15);
+            this.masterGain.gain.value = this._sfxVolume * (0.8 / 0.15);
             this.masterGain.connect(ac.destination);
         }
 
