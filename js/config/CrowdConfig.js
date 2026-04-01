@@ -1,9 +1,12 @@
 export const CROWD_CONFIG = {
     // Scaling
     scaling: {
+        formula: 'linear',
+        minSize: .9,
+        maxSize: 1.25,
+        seed: 12345,
         formulaA: 2.0,
         formulaB: 0.0,
-        seed: 12345
     },
 
     // Sprite geometry
@@ -16,7 +19,7 @@ export const CROWD_CONFIG = {
     // We max out at 15000 instances to accommodate ~1000 people * 11 shapes per person
     maxInstances: 15000,
     zIndex: -10,
-    
+
     // Spawn / positioning
     minOverlapDistance: 10,          // world-units — min spacing between people
     maxPlacementAttempts: 20,

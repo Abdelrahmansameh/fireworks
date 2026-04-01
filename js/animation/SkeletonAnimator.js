@@ -79,9 +79,13 @@ export function applyPoseToInstances(skeletonData, pose, instancedGroup, baseIns
     const parts = skeletonData.parts;
     const colors = skeletonData.partColors;
 
+    const drawIndexMap = skeletonData.drawIndexMap || null;
+
     for (let i = 0; i < parts.length; i++) {
         const part = parts[i];
         const tf = pose.get(part.id);
+        if (!tf) 
+            continue;
 
         const anchorOffX = part.anchorX * part.width;
         const anchorOffY = part.anchorY * part.height;
@@ -97,7 +101,8 @@ export function applyPoseToInstances(skeletonData, pose, instancedGroup, baseIns
         const wy = worldY + meshDrawY * scale;
 
         const c = colors[i];
-        const idx = baseInstanceIndex + i;
+        const drawOffset = drawIndexMap ? (drawIndexMap.get(part.id) || 0) : i;
+        const idx = baseInstanceIndex + drawOffset;
         instancedGroup.updateInstancePosition(idx, wx, wy);
         instancedGroup.updateInstanceScale(idx, part.width * scale, part.height * scale);
         instancedGroup.updateInstanceRotation(idx, tf.rotation * flipX);

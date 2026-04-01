@@ -15,8 +15,8 @@ export const FIREWORK_CONFIG = {
     autoLauncherTexture: 'assets/launcher.png',
     patternGravities: {
         default: 110,
-        helix: 80,
-        willow: 60,
+        helix: 40,
+        willow: 30,
         dragonsBreath: 70,
     },
     patternFriction: {

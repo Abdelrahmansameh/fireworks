@@ -103,6 +103,8 @@ class Crowd {
                 this._addPerson();
             }
         }
+
+        this._reorderInstancesByY();
     }
 
     _addPerson() {
@@ -159,13 +161,21 @@ class Crowd {
 
         this.people.push(person);
 
-        // Add one instance per part
-        for (let i = 0; i < this._skeleton.partCount; i++) {
-            group.addInstanceRaw(person.x, person.y, 0, 1, 1, 0, 0, 0, 1, 0, 0, 0);
+        // Add instances for this person in the skeleton's draw order so z ordering is stable
+        const drawOrder = (this._skeleton && this._skeleton.drawOrder) ? this._skeleton.drawOrder : null;
+        if (drawOrder) {
+            for (let k = 0; k < drawOrder.length; k++) {
+                group.addInstanceRaw(person.x, person.y, 0, 1, 1, 0, 0, 0, 1, 0, 0, 0);
+            }
+        } else {
+            for (let i = 0; i < this._skeleton.partCount; i++) {
+                group.addInstanceRaw(person.x, person.y, 0, 1, 1, 0, 0, 0, 1, 0, 0, 0);
+            }
         }
 
-        // Initialize transformation visually once
         this._updateProceduralAnimation(person, 0);
+
+        this._reorderInstancesByY();
     }
 
     update(deltaTime) {
@@ -179,6 +189,9 @@ class Crowd {
 
         for (let i = 0; i < this.people.length; i++) {
             this._updatePerson(i, deltaTime, GRAVITY, FRICTION, WALK_SPEED, goldRate);
+        }
+
+        for (let i = 0; i < this.people.length; i++) {
             this._updateProceduralAnimation(this.people[i], deltaTime);
         }
 
@@ -189,7 +202,13 @@ class Crowd {
         const person = this.people[personIndex];
         person.state = newState;
         person.bounceCount = 0;
-        person.animTimer = 0;
+        if (newState === 'cheering') {
+            const clip = this._animData ? this._animData.getClip('cheering') : null;
+            const baseDur = clip ? clip.duration : 1.0;
+            person.animTimer = Math.random() * baseDur * 0.5;
+        } else {
+            person.animTimer = 0;
+        }
         person.coinAnimTimer = 0;
         person.collected = 0;
 
@@ -306,13 +325,68 @@ class Crowd {
         // Use the generic pose solver
         const pose = computePose(this._skeleton, clip, time);
 
-        // Apply to instanced group
+        const minY = GAME_BOUNDS.CROWD_Y;
+        const maxY = GAME_BOUNDS.CROWD_Y + (CROWD_CONFIG.ySpread || 0);
+        let t = 0;
+        if (maxY !== minY) t = (person.spawnY - minY) / (maxY - minY);
+        t = Math.max(0, Math.min(1, t));
+        t = 1 - t;
+
+        const scalingCfg = CROWD_CONFIG.scaling;
+        const minSize = scalingCfg.minSize;
+        const maxSize = scalingCfg.maxSize;
+        const ySizeFactor = minSize + (maxSize - minSize) * t;
+
+        const finalScale = scale * ySizeFactor;
+
         applyPoseToInstances(
             this._skeleton, pose, this.instancedGroup,
             person.instanceBaseIndex,
             person.x, person.y,
-            scale, flipX
+            finalScale, flipX
         );
+    }
+
+    _reorderInstancesByY() {
+        if (!this.instancedGroup || this.people.length === 0) return;
+
+        const group = this.instancedGroup;
+        const stride = group.instanceStrideFloats;
+        const partCount = this._skeleton ? this._skeleton.partCount : 1;
+
+        const oldData = group.instanceData;
+        const newData = new Float32Array(group.maxInstances * stride);
+
+        let newInstanceIndex = 0;
+
+        const sortedPeople = this.people.slice().sort((a, b) => {
+            const ay = a.spawnY;
+            const by = b.spawnY;
+            return by - ay;
+        });
+
+        for (const person of sortedPeople) {
+            const oldBaseInst = person.instanceBaseIndex;
+            if (typeof oldBaseInst !== 'number' || oldBaseInst < 0) {
+                person.instanceBaseIndex = newInstanceIndex;
+                newInstanceIndex += partCount;
+                continue;
+            }
+
+            for (let p = 0; p < partCount; p++) {
+                const srcBase = (oldBaseInst + p) * stride;
+                const dstBase = (newInstanceIndex + p) * stride;
+                for (let f = 0; f < stride; f++) {
+                    newData[dstBase + f] = oldData[srcBase + f] || 0;
+                }
+            }
+
+            person.instanceBaseIndex = newInstanceIndex;
+            newInstanceIndex += partCount;
+        }
+
+        group.instanceData = newData;
+        group.instanceCount = newInstanceIndex;
     }
 
     _scanParticlesForPerson(person) {

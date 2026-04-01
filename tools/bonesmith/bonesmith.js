@@ -226,14 +226,15 @@ function loop(now) {
     }
 
     instancedGroup.clear();
-    
+
     // Background
     instancedGroup.addInstanceRaw(0, 0, 0, 200, 200, 1, 1, 1, 1);
     // Origin dot
     instancedGroup.addInstanceRaw(0, 0, 0, 0.2, 0.2, 1, 0, 0, 1);
 
-    for (let i = 0; i < meshData.parts.length; i++) {
-        const part = meshData.parts[i];
+    const sortedParts = Array.from(meshData.parts || []).slice().sort((a, b) => (a.z || 0) - (b.z || 0));
+    for (let i = 0; i < sortedParts.length; i++) {
+        const part = sortedParts[i];
         const tf = getParentTransform(part.id, currentTime);
 
         const anchorOffX = part.anchorX * part.width;
@@ -303,7 +304,7 @@ function updateHierarchyUI() {
     function renderTree(parentId, depth) {
         meshData.parts.filter(p => p.parentId === parentId).forEach(part => {
             const li = document.createElement('li');
-            li.innerHTML = `<span class="tree-indent" style="width:${depth * 15}px"></span>${part.id}`;
+            li.innerHTML = `<span class="tree-indent" style="width:${depth * 15}px"></span>${part.id} (${part.z || 0})`;
             if (part.id === selectedPartId) li.classList.add('selected');
             li.onclick = () => selectPart(part.id);
             list.appendChild(li);
@@ -358,6 +359,7 @@ function selectPart(id) {
     document.getElementById('prop-rx').value = part.relX;
     document.getElementById('prop-ry').value = part.relY;
     document.getElementById('prop-base-rot').value = (part.baseRotation || 0).toFixed(2);
+    document.getElementById('prop-z').value = (part.z || 0);
 
     updateAnimPropsUI();
 }
@@ -516,10 +518,11 @@ function setupUI() {
         if (e.target.id === 'prop-rx') part.relX = parseFloat(e.target.value);
         if (e.target.id === 'prop-ry') part.relY = parseFloat(e.target.value);
         if (e.target.id === 'prop-base-rot') part.baseRotation = parseFloat(e.target.value);
+        if (e.target.id === 'prop-z') part.z = parseFloat(e.target.value) || 0;
     });
 
     // Color picker <-> text sync
-    (function() {
+    (function () {
         const propColor = document.getElementById('prop-color');
         const propColorText = document.getElementById('prop-color-text');
         if (propColor) {
@@ -635,20 +638,21 @@ function setupUI() {
         const wPos = renderer.screenToCanvas(e.clientX, e.clientY);
 
         let clickedPartId = null;
-        for (let i = meshData.parts.length - 1; i >= 0; i--) {
-            const part = meshData.parts[i];
+        const sortedParts = Array.from(meshData.parts || []).slice().sort((a, b) => (a.z || 0) - (b.z || 0));
+        for (let i = sortedParts.length - 1; i >= 0; i--) {
+            const part = sortedParts[i];
             const tf = getParentTransform(part.id, currentTime);
             const hw = Math.abs(part.width * tf.scaleX) / 2;
             const hh = Math.abs(part.height * tf.scaleY) / 2;
-            
+
             const cos = Math.cos(-tf.rotation);
             const sin = Math.sin(-tf.rotation);
             const dx = wPos.x - tf.x;
             const dy = wPos.y - tf.y;
-            
+
             let localX = dx * cos - dy * sin;
             let localY = dx * sin + dy * cos;
-            
+
             const anchorOffX = part.anchorX * part.width;
             const anchorOffY = part.anchorY * part.height;
             localX += anchorOffX;
@@ -661,9 +665,9 @@ function setupUI() {
         }
 
         if (clickedPartId && currentTool === 'select') {
-             selectPart(clickedPartId);
+            selectPart(clickedPartId);
         } else if (clickedPartId && !selectedPartId) {
-             selectPart(clickedPartId);
+            selectPart(clickedPartId);
         }
 
         // start panning when clicking empty space in select tool
@@ -783,10 +787,10 @@ function setupUI() {
         else if (currentTool === 'scale') {
             const scaleFactorX = 1 + (dx / 50);
             const scaleFactorY = 1 + (dy / 50);
-            
+
             part.width = Math.max(0.1, initialProp1 * scaleFactorX);
             part.height = Math.max(0.1, initialProp2 * scaleFactorY);
-            
+
             document.getElementById('prop-w').value = part.width.toFixed(2);
             document.getElementById('prop-h').value = part.height.toFixed(2);
         }
@@ -806,7 +810,7 @@ function setupUI() {
             else if (key === 'a') toolBtnId = 'btn-tool-attach';
             else if (key === 'e') toolBtnId = 'btn-tool-rotate';
             else if (key === 'r') toolBtnId = 'btn-tool-scale';
-            
+
             if (toolBtnId) {
                 const btn = document.getElementById(toolBtnId);
                 if (btn && btn.style.display !== 'none') btn.click();
@@ -832,6 +836,7 @@ function setupUI() {
             anchorY: 0.5,
             relX: 0,
             relY: 0,
+            z: 0,
             baseRotation: 0
         };
         meshData.parts.push(newPart);
@@ -1028,25 +1033,25 @@ function updateTimelineUI() {
     meshData.parts.forEach(part => {
         const row = document.createElement('div');
         row.className = 'track-row';
-        
+
         const label = document.createElement('div');
         label.className = 'track-label';
         label.textContent = part.id;
         row.appendChild(label);
-        
+
         const area = document.createElement('div');
         area.className = 'track-area';
-        
+
         if (anim.tracks[part.id]) {
             anim.tracks[part.id].forEach((kf, idx) => {
                 const kfEl = document.createElement('div');
                 kfEl.className = 'keyframe';
                 kfEl.style.left = (kf.time * timelinePixelsPerSecond) + 'px';
-                
+
                 if (window.selectedKeyframe && window.selectedKeyframe.partId === part.id && Math.abs(window.selectedKeyframe.time - kf.time) < 0.001) {
                     kfEl.classList.add('selected');
                 }
-                
+
                 kfEl.onclick = (e) => {
                     e.stopPropagation();
                     window.selectedKeyframe = { partId: part.id, time: kf.time };
@@ -1055,11 +1060,11 @@ function updateTimelineUI() {
                     updateTimelineUI();
                     updateAnimPropsUI();
                 };
-                
+
                 area.appendChild(kfEl);
             });
         }
-        
+
         row.appendChild(area);
         tracksInner.appendChild(row);
     });
@@ -1120,7 +1125,7 @@ function setEditorMode(mode) {
     document.getElementById('btn-tool-scale').style.display = isSkeleton ? '' : 'none';
     // show/hide attach tool only in skeleton editing mode
     document.getElementById('btn-tool-attach').style.display = isSkeleton ? '' : 'none';
-    
+
     const mirrorDisplay = (isSkeleton || mode === 'animation') ? '' : 'none';
     document.getElementById('btn-mirror-skeleton').style.display = mirrorDisplay;
     document.getElementById('mirror-direction').style.display = mirrorDisplay;
@@ -1216,14 +1221,14 @@ function mirrorSkeleton(fromSuffix, toSuffix) {
             meshData.parts.splice(fromIdx + 1, 0, toPart);
         }
 
-        toPart.parentId     = toParentId;
-        toPart.width        = fromPart.width;
-        toPart.height       = fromPart.height;
-        toPart.color        = fromPart.color;
-        toPart.anchorX      = -fromPart.anchorX;
-        toPart.anchorY      = fromPart.anchorY;
-        toPart.relX         = -fromPart.relX;
-        toPart.relY         = fromPart.relY;
+        toPart.parentId = toParentId;
+        toPart.width = fromPart.width;
+        toPart.height = fromPart.height;
+        toPart.color = fromPart.color;
+        toPart.anchorX = -fromPart.anchorX;
+        toPart.anchorY = fromPart.anchorY;
+        toPart.relX = -fromPart.relX;
+        toPart.relY = fromPart.relY;
         toPart.baseRotation = -(fromPart.baseRotation || 0);
     }
 

@@ -123,4 +123,8 @@ if __name__ == '__main__':
     parser.add_argument('--port', type=int, default=5000)
     args = parser.parse_args()
     print(f"Serving Bonesmith at http://{args.host}:{args.port}/bonesmith")
-    app.run(host=args.host, port=args.port, debug=True)
+    # Disable the auto-reloader when running under a debugger or from VS Code tasks.
+    # The reloader restarts the process and some debuggers (debugpy/pydevd) can
+    # mis-handle paths with spaces, causing FileNotFoundError. Turning the
+    # reloader off avoids that restart while keeping debug output enabled.
+    app.run(host=args.host, port=args.port, debug=True, use_reloader=False)

@@ -39,6 +39,16 @@ export class SkeletonData {
             this.partLookup.set(p.id, p);
             this.partColors.push(_parseHexColor(p.color));
         }
+
+        const indexed = parts.map((p, idx) => ({ idx, z: (p.z || 0) }));
+        indexed.sort((a, b) => a.z - b.z);
+        this.drawOrder = indexed.map(x => x.idx);
+
+        this.drawIndexMap = new Map();
+        for (let i = 0; i < this.drawOrder.length; i++) {
+            const part = parts[this.drawOrder[i]];
+            this.drawIndexMap.set(part.id, i);
+        }
     }
 
     /**
