@@ -15,14 +15,13 @@ export const TABS = [
         id: 'buildings',
         label: 'Buildings',
         unlockId: 'buildings_tab',
-        icon: 'assets/buttons/buildings_tab_button.png',
+
         panelModule: () => import('./panels/buildingsPanel.js'),
     },
     {
         id: 'crowd',
         label: 'Crowd',
         unlockId: 'crowds_tab',
-        icon: 'assets/buttons/crowd_tab_button.png',
 
         panelModule: () => import('./panels/crowdPanel.js'),
     },
@@ -30,7 +29,6 @@ export const TABS = [
         id: 'upgrades',
         label: 'Upgrades',
         unlockId: 'upgrades_tab',
-        icon: 'assets/buttons/upgrades_tab_button.png',
 
         panelModule: () => import('./panels/upgradesPanel.js'),
     },
@@ -38,7 +36,6 @@ export const TABS = [
         id: 'stats',
         label: 'Stats',
         unlockId: null,
-        icon: 'assets/buttons/stats_tab_button.png',
 
         panelModule: () => import('./panels/statsPanel.js'),
     },
@@ -46,7 +43,6 @@ export const TABS = [
         id: 'settings',
         label: 'Settings',
         unlockId: null,
-        icon: 'assets/buttons/settings_tab_button.png',
 
         panelModule: () => import('./panels/settingsPanel.js'),
     },
@@ -54,7 +50,6 @@ export const TABS = [
         id: 'cheats',
         label: 'Cheats',
         unlockId: null,
-        icon: 'assets/buttons/cheats_tab_button.png',
 
         panelModule: () => import('./panels/cheatsPanel.js'),
     },

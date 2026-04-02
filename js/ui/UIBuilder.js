@@ -34,8 +34,8 @@ export function buildChrome() {
     topBar.className = 'top-bar-container';
     topBar.innerHTML = `
         <div class="tab-bar">
-            <button id="collapse-button" class="collapse-button"><img src="assets/buttons/collapse_button.png" alt="collapse"></button>
-            <div class="tabs collapsed" id="tab-list"></div>
+            <button id="collapse-button" class="collapse-button">☰</button>
+                <div class="tabs collapsed" id="tab-list"></div>
         </div>
         <div class="resource-counter">
             <div id="ressource-count" class="ressource-count">

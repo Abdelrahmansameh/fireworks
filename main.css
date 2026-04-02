@@ -66,8 +66,8 @@ body {
     min-width: 0;
     flex: 1 1 0;
     display: flex;
-    align-items: flex-start;
-    align-self: flex-start;
+    align-items: center;
+    align-self: center;
     pointer-events: none;
     overflow: hidden;
 }
@@ -77,28 +77,22 @@ body {
 }
 
 .collapse-button {
-    background: none;
+    height: auto;
+    width: auto;
+    background: #2e3f57;
     border: none;
+    color: white;
     cursor: pointer;
-    padding: 0;
-    margin-right: 3px;
     display: flex;
     align-items: center;
-}
-
-.collapse-button img {
-    height: 60px;
-    width: auto;
-    display: block;
-    transition: transform 0.2s ease;
+    justify-content: center;
+    margin-right: var(--space-xs);
+    /* match tab button vertical sizing and horizontal spacing */
+    padding: var(--space-sm) var(--space-md);
 }
 
 .collapse-button:hover {
-    background: none;
-}
-
-.collapse-button:hover img {
-    transform: scale(1.1);
+    background: #1a1f2a;
 }
 
 .tabs {
