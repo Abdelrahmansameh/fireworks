@@ -48,7 +48,7 @@ export const PROCEDURAL_BACKGROUND_CONFIG = {
     trees: {
         layers: [
             {
-                treeCount: 200,
+                treeCount: 0,
                 baseY: GAME_BOUNDS.WORLD_GROUND_Y + 100,
                 distributionJitter: 30,
                 baseYJitter: 0,
