@@ -15,7 +15,7 @@ export const BUILDING_TYPES = {
         currency: 'sparkles',
         width: 25,
         height: 40,
-        color: { r: 136 / 255, g: 136 / 255, b: 136 / 255, a: 1 },
+        color: { r: 95 / 255, g: 101 / 255, b: 180 / 255, a: 1 },
         texture: null,
         textureKey: null,
         baseSpawnInterval: 5,

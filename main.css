@@ -63,13 +63,13 @@ body {
     left: 0;
     padding: var(--space-sm);
     box-sizing: content-box;
-    width: fit-content;
+    min-width: 0;
+    flex: 1 1 0;
     display: flex;
     align-items: flex-start;
-    flex-shrink: 0;
-    max-width: calc(100vw - 20px);
     align-self: flex-start;
     pointer-events: none;
+    overflow: hidden;
 }
 
 .top-bar-container>* {
@@ -77,36 +77,41 @@ body {
 }
 
 .collapse-button {
-    height: auto;
-    width: 10px;
-    background: #2e3f57;
+    background: none;
     border: none;
-    color: white;
     cursor: pointer;
+    padding: 0;
+    margin-right: 3px;
     display: flex;
     align-items: center;
-    justify-content: center;
-    margin-right: 3px;
-    padding: 6px 10px;
+}
+
+.collapse-button img {
+    height: 60px;
+    width: auto;
+    display: block;
+    transition: transform 0.2s ease;
 }
 
 .collapse-button:hover {
-    background: #1a1f2a;
+    background: none;
+}
+
+.collapse-button:hover img {
+    transform: scale(1.1);
 }
 
 .tabs {
     display: flex;
     overflow-x: auto;
-    white-space: nowrap;
-    scrollbar-width: thin;
+    overflow-y: hidden;
     gap: var(--space-xs);
     padding: 2px;
     flex-wrap: nowrap;
     transition: max-width 0.3s ease;
-}
-
-.tabs::-webkit-scrollbar {
-    display: none;
+    pointer-events: auto;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255,255,255,0.3) transparent;
 }
 
 .tabs.collapsed {
@@ -201,6 +206,7 @@ body {
     transition: all 0.3s ease;
     color: #fff;
     text-shadow: 0 0 5px rgba(255, 255, 255, 0.5);
+    font-family: 'Press Start 2P', cursive;
 }
 
 .ressource-count.compact {

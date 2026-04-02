@@ -45,11 +45,11 @@ export const FIREWORK_CONFIG = {
     trails: {
         enabled: true,
         spawnRate: 0.025,           // seconds between trail spawns
-        lifetime: 1,             // trail particle lifetime
+        lifetime: 1.25,             // trail particle lifetime
         size: 1.5,                 // size multiplier (relative to parent)
         gravity: 0,              // gravity for trail particles
         friction: 1,             // air resistance
-        maxCount: 100,              // max trails per particle
+        maxCount: 50,              // max trails per particle
         alphaMultiplier: .8,      // transparency of trails
         shape: 'sphere',           // shape for trail particles
         velocitySpread: 15       // random velocity spread (pixels/sec)
@@ -66,5 +66,12 @@ export const FIREWORK_CONFIG = {
         shape: 'sphere',            // shape for trail particles
         velocitySpread: 25,         // random velocity spread (pixels/sec)
         perBurst: 5               // trails to spawn per burst
+    }
+,
+    // Rocket tilt / jitter while ascending. Angle values are degrees relative to vertical.
+    rocketTilt: {
+        enabled: true,
+        maxAngleDeg: 4, // maximum tilt angle left/right from vertical
+        maxJitterChangeDegPerSecond: 20 // how fast the tilt can change (deg/sec)
     }
 };

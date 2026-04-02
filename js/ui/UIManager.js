@@ -491,18 +491,24 @@ class UIManager {
         }
     }
 
-    emitFloatingSparkleNumberBurst(screenX, screenY, hexColor = null) {
+    emitFloatingSparkleNumberBurst(screenX, screenY, color = null) {
         if (!this.game.particleSystem) 
             return;
         const worldPos = this.game.screenToWorld(screenX, screenY);
 
-        // Parse hex color to normalized RGB, fallback to gold
+        // Parse color to normalized RGB, fallback to gold
         let baseR = 1.0, baseG = 0.88, baseB = 0.25;
-        if (hexColor && hexColor.startsWith('#')) {
-            const hex = hexColor.slice(1);
-            baseR = parseInt(hex.substring(0, 2), 16) / 255;
-            baseG = parseInt(hex.substring(2, 4), 16) / 255;
-            baseB = parseInt(hex.substring(4, 6), 16) / 255;
+        if (color) {
+            if (typeof color === 'string' && color.startsWith('#')) {
+                const hex = color.slice(1);
+                baseR = parseInt(hex.substring(0, 2), 16) / 255;
+                baseG = parseInt(hex.substring(2, 4), 16) / 255;
+                baseB = parseInt(hex.substring(4, 6), 16) / 255;
+            } else if (color.r !== undefined) {
+                baseR = color.r;
+                baseG = color.g;
+                baseB = color.b;
+            }
         }
 
         const burstCount = 10 + Math.floor(Math.random() * 5); // 10–14 particles
@@ -512,8 +518,8 @@ class UIManager {
             // Spherical-style: even base angle + random jitter within the slice
             const angle = i * angleStep + (Math.random() - 0.5) * angleStep;
             // replace circle with ellipse for more horiontal spread
-            const smallRadius = 16 + Math.random() * 4;
-            const bigRadius = 30 + Math.random() * 3;
+            const smallRadius = 20+ Math.random() * 4;
+            const bigRadius = 50 + Math.random() * 3;
             const dirX = Math.cos(angle);
             const dirY = Math.sin(angle);
 
@@ -525,8 +531,8 @@ class UIManager {
             );
 
             const position = new Renderer2D.Vector2(
-                worldPos.x + dirX * bigRadius,
-                worldPos.y + dirY * smallRadius
+                worldPos.x + dirX * bigRadius +5,
+                worldPos.y + dirY * smallRadius + 10
             );
 
             // Slight per-particle brightness variation
@@ -542,8 +548,8 @@ class UIManager {
                 position,
                 velocity,
                 color,
-                4 + Math.random() * 3,
-                0.35 + Math.random() * 0.2,
+                3 + Math.random() * 3,
+                0.2 + Math.random() * 0.1,
                 0,
                 'triangle',
                 new Renderer2D.Vector2(0, 0),
@@ -1459,6 +1465,9 @@ class UIManager {
 
             elem.style.left = `${screenX}px`;
             elem.style.top = `${screenY}px`;
+            if (rocketColor) {
+                elem.style.color = typeof rocketColor === 'string' ? rocketColor : `rgb(${Math.round(rocketColor.r * 255)}, ${Math.round(rocketColor.g * 255)}, ${Math.round(rocketColor.b * 255)})`;
+            }
 
             const anims = elem.getAnimations();
             let timeLeft = 1500;
@@ -1495,7 +1504,10 @@ class UIManager {
                 inner.classList.remove('shake');
                 inner._shakeTimeout = null;
             }, 600);
-            this.emitFloatingSparkleNumberBurst(screenX, screenY, rocketColor);
+            const rect = elem.getBoundingClientRect();
+            const burstX = rect.left + rect.width / 2;
+            const burstY = rect.top + rect.height / 2;
+            this.emitFloatingSparkleNumberBurst(burstX, burstY, rocketColor);
             return;
         }
 
@@ -1511,6 +1523,9 @@ class UIManager {
 
         elem.style.left = `${screenX}px`;
         elem.style.top = `${screenY}px`;
+        if (rocketColor) {
+            elem.style.color = typeof rocketColor === 'string' ? rocketColor : `rgb(${Math.round(rocketColor.r * 255)}, ${Math.round(rocketColor.g * 255)}, ${Math.round(rocketColor.b * 255)})`;
+        }
 
         document.body.appendChild(elem);
         this.emitFloatingSparkleNumberBurst(screenX, screenY, rocketColor);

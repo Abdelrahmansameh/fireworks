@@ -19,12 +19,30 @@ class Firework {
 
         this.rocket = this.createRocket(x, y);
 
+        // Initialize per-rocket tilt/jitter configuration
+        if (FIREWORK_CONFIG.rocketTilt && FIREWORK_CONFIG.rocketTilt.enabled) {
+            const maxTiltDeg = FIREWORK_CONFIG.rocketTilt.maxAngleDeg || 0;
+            const maxJitterDegPerSec = FIREWORK_CONFIG.rocketTilt.maxJitterChangeDegPerSecond || 0;
+            this._maxTiltRad = (maxTiltDeg * Math.PI) / 180.0;
+            this._maxJitterRadPerSec = (maxJitterDegPerSec * Math.PI) / 180.0;
+            this.currentTiltRad = (Math.random() * 2 - 1) * this._maxTiltRad;
+            if (this.rocket) this.rocket.rotation = this.currentTiltRad;
+        } else {
+            this._maxTiltRad = 0;
+            this._maxJitterRadPerSec = 0;
+            this.currentTiltRad = 0;
+        }
+
         const minY = GAME_BOUNDS.WORLD_MIN_EXPLOSION_Y;
         const maxY = GAME_BOUNDS.WORLD_MAX_EXPLOSION_Y;
 
         this.targetY = targetY || minY + Math.random() * (maxY - minY);
 
-        const timeToExplode = (this.targetY - y) / FIREWORK_CONFIG.ascentSpeed;
+        // Estimate time to explode (use vertical component if tilted)
+        const verticalAscentSpeed = FIREWORK_CONFIG.rocketTilt && FIREWORK_CONFIG.rocketTilt.enabled
+            ? FIREWORK_CONFIG.ascentSpeed * Math.cos(this.currentTiltRad)
+            : FIREWORK_CONFIG.ascentSpeed;
+        const timeToExplode = (this.targetY - y) / verticalAscentSpeed;
         if (this.audioManager) {
             const bounds = this.renderer.getVisibleWorldBounds();
             if (x >= bounds.left && x <= bounds.right && y >= bounds.bottom && y <= bounds.top) {
@@ -75,7 +93,22 @@ class Firework {
 
     update(delta) {
         if (!this.exploded) {
-            this.rocket.position.y += FIREWORK_CONFIG.ascentSpeed * delta;
+            // Update tilt jitter
+            if (this._maxTiltRad > 0 && this._maxJitterRadPerSec > 0) {
+                const maxChange = this._maxJitterRadPerSec * delta;
+                this.currentTiltRad += (Math.random() * 2 - 1) * maxChange;
+                // clamp
+                if (this.currentTiltRad > this._maxTiltRad) this.currentTiltRad = this._maxTiltRad;
+                if (this.currentTiltRad < -this._maxTiltRad) this.currentTiltRad = -this._maxTiltRad;
+                if (this.rocket) this.rocket.rotation = this.currentTiltRad;
+            }
+
+            // Move rocket along its tilt angle (angle is relative to vertical)
+            const ascent = FIREWORK_CONFIG.ascentSpeed * delta;
+            const dx = Math.sin(this.currentTiltRad) * ascent;
+            const dy = Math.cos(this.currentTiltRad) * ascent;
+            this.rocket.position.x += dx;
+            this.rocket.position.y += dy;
 
             if (FIREWORK_CONFIG.rocketTrails.enabled) {
                 this.rocketTrailTimer += delta;
