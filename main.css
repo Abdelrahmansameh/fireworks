@@ -134,6 +134,29 @@ body {
     color: #45a29e;
 }
 
+.tab-icon {
+    height: 70px;
+    width: auto;
+    display: block;
+    margin: 0 auto;
+    transition: transform 0.2s ease;
+}
+
+.tab:has(.tab-icon) {
+    background: none;
+    padding: 0;
+    min-width: 0;
+}
+
+.tab:has(.tab-icon):hover .tab-icon {
+    transform: scale(1.1);
+    filter: brightness(1.2);
+}
+
+.tab:has(.tab-icon).active .tab-icon {
+    filter: drop-shadow(0 0 8px rgba(69, 162, 158, 0.8)) brightness(1.3);
+}
+
 .panel-title {
     text-align: center;
     font-size: var(--font-size-xl);
@@ -913,16 +936,35 @@ body {
     z-index: 4000;
     animation: floatUpFade 1s ease-out forwards;
 
-    background-image: url('assets/floating_sparkles_bg.png');
-    background-size: contain;
-    background-repeat: no-repeat;
-    background-position: center;
-    width: 90px;
-    height: 90px;
-    display: flex;
+    background: none;
+    width: auto;
+    height: auto;
+    display: inline-flex;
     align-items: center;
     justify-content: center;
     font-size: 16px;
+}
+
+/* Inner element used for shaking so float animation (outer) and shake (inner)
+   can compose without clobbering each other's transform. */
+.floating-sparkle-inner {
+    display: inline-block;
+    transform-origin: center center;
+    will-change: transform;
+}
+
+@keyframes sparkleShake {
+    0% { transform: translateX(0) rotate(0deg); }
+    15% { transform: translateX(-2px) rotate(-2deg); }
+    30% { transform: translateX(2px) rotate(2deg); }
+    45% { transform: translateX(-1px) rotate(-1deg); }
+    60% { transform: translateX(1px) rotate(1deg); }
+    75% { transform: translateX(-1px) rotate(-1deg  ); }
+    100% { transform: translateX(0) rotate(0deg); }
+}
+
+.floating-sparkle-inner.shake {
+    animation: sparkleShake 320ms ease-in-out;
 }
 
 @keyframes floatUpFade {
@@ -951,6 +993,7 @@ body {
         opacity: 0;
     }
 }
+
 
 .unlock-hidden {
     display: none !important;

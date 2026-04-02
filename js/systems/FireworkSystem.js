@@ -86,6 +86,7 @@ export default class FireworkSystem {
         this.game.statsTracker.recordFirework('manual');
         this.game.checkUnlockConditions();
         
-        return { sparkleAmount, spawnX, spawnY };
+        const rocketColor = components[0]?.color ?? null;
+        return { sparkleAmount, spawnX, spawnY, rocketColor };
     }
 }

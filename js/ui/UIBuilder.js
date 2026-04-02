@@ -64,7 +64,17 @@ export function buildChrome() {
         const btn = document.createElement('div');
         btn.className = 'tab';
         btn.id = `${tab.id}-tab`;
-        btn.textContent = tab.label;
+        
+        if (tab.icon) {
+            const iconImg = document.createElement('img');
+            iconImg.src = tab.icon;
+            iconImg.alt = tab.label;
+            iconImg.className = 'tab-icon';
+            btn.appendChild(iconImg);
+        } else {
+            btn.textContent = tab.label;
+        }
+
         if (tab.unlockId) btn.classList.add('unlock-hidden');
         tabList.appendChild(btn);
 

@@ -491,6 +491,73 @@ class UIManager {
         }
     }
 
+    emitFloatingSparkleNumberBurst(screenX, screenY, hexColor = null) {
+        if (!this.game.particleSystem) 
+            return;
+        const worldPos = this.game.screenToWorld(screenX, screenY);
+
+        // Parse hex color to normalized RGB, fallback to gold
+        let baseR = 1.0, baseG = 0.88, baseB = 0.25;
+        if (hexColor && hexColor.startsWith('#')) {
+            const hex = hexColor.slice(1);
+            baseR = parseInt(hex.substring(0, 2), 16) / 255;
+            baseG = parseInt(hex.substring(2, 4), 16) / 255;
+            baseB = parseInt(hex.substring(4, 6), 16) / 255;
+        }
+
+        const burstCount = 10 + Math.floor(Math.random() * 5); // 10–14 particles
+        const angleStep = (Math.PI * 2) / burstCount;
+
+        for (let i = 0; i < burstCount; i++) {
+            // Spherical-style: even base angle + random jitter within the slice
+            const angle = i * angleStep + (Math.random() - 0.5) * angleStep;
+            // replace circle with ellipse for more horiontal spread
+            const smallRadius = 16 + Math.random() * 4;
+            const bigRadius = 30 + Math.random() * 3;
+            const dirX = Math.cos(angle);
+            const dirY = Math.sin(angle);
+
+            // Speed with spherical-style random multiplier: 70%–130% of base
+            const speed = 150 * (0.7 + Math.random() * 0.6);
+            const velocity = new Renderer2D.Vector2(
+                dirX * speed,
+                dirY * speed
+            );
+
+            const position = new Renderer2D.Vector2(
+                worldPos.x + dirX * bigRadius,
+                worldPos.y + dirY * smallRadius
+            );
+
+            // Slight per-particle brightness variation
+            const bright = 0.82 + Math.random() * 0.18;
+            const color = new Renderer2D.Color(
+                baseR * bright,
+                baseG * bright,
+                baseB * bright,
+                0.88 + Math.random() * 0.12
+            );
+
+            this.game.particleSystem.addParticle(
+                position,
+                velocity,
+                color,
+                4 + Math.random() * 3,
+                0.35 + Math.random() * 0.2,
+                0,
+                'triangle',
+                new Renderer2D.Vector2(0, 0),
+                6,
+                null,
+                false,
+                null,
+                0.0,
+                1.0,
+                PARTICLE_TYPES.UI_EFFECT
+            );
+        }
+    }
+
     pointerMoveHandler(e) {
         if (this.isCrowdDragging) {
             e.preventDefault();
@@ -576,7 +643,7 @@ class UIManager {
                     const res = this.game.fireworkSystem.launchFireworkAt(worldPos.x, worldPos.y);
                     if (res.sparkleAmount) {
                         const screenPos = this.game.renderer2D.worldToScreen(res.spawnX, res.spawnY);
-                        this.showFloatingSparkle(e.clientX + 130, screenPos.y - 200, res.sparkleAmount);
+                        this.showFloatingSparkle(e.clientX + 100, screenPos.y - 70, res.sparkleAmount, res.rocketColor);
                     }
                 }
             }
@@ -1369,17 +1436,26 @@ class UIManager {
         }
     }
 
-    showFloatingSparkle(screenX, screenY, amount) {
+    showFloatingSparkle(screenX, screenY, amount, rocketColor = null) {
         if (!this.showFloatingSparkleEnabled) return;
-
+        // If an active floating sparkle exists, update amount and trigger a shake.
         if (this.activeFloatingSparkle && document.body.contains(this.activeFloatingSparkle)) {
             const elem = this.activeFloatingSparkle;
+
+            let inner = elem.querySelector('.floating-sparkle-inner');
+            if (!inner) {
+                inner = document.createElement('span');
+                inner.className = 'floating-sparkle-inner';
+                inner.textContent = elem.textContent;
+                elem.textContent = '';
+                elem.appendChild(inner);
+            }
 
             const currentAmount = parseFloat(elem.dataset.amount || '0');
             const newAmount = currentAmount + amount;
 
             elem.dataset.amount = newAmount;
-            elem.textContent = `+${this._formatSparkleCount(newAmount)}`;
+            inner.textContent = `+${this._formatSparkleCount(newAmount)}`;
 
             elem.style.left = `${screenX}px`;
             elem.style.top = `${screenY}px`;
@@ -1403,30 +1479,62 @@ class UIManager {
                     this.floatingSparkleTimeout = null;
                 }
             };
-            elem.onanimationend = remove;
+            elem.onanimationend = (e) => { if (e.target === elem) remove(); };
             this.floatingSparkleTimeout = setTimeout(remove, timeLeft + 100);
+
+            // trigger shake on inner span. Clear any previous timeout so
+            // overlapping removals don't cancel a newly-started shake.
+            if (inner._shakeTimeout) {
+                clearTimeout(inner._shakeTimeout);
+                inner._shakeTimeout = null;
+            }
+            inner.classList.remove('shake');
+            void inner.offsetWidth; // force reflow to restart animation
+            inner.classList.add('shake');
+            inner._shakeTimeout = setTimeout(() => {
+                inner.classList.remove('shake');
+                inner._shakeTimeout = null;
+            }, 600);
+            this.emitFloatingSparkleNumberBurst(screenX, screenY, rocketColor);
             return;
         }
 
+        // Create new floating sparkle element with inner span so we can animate shake
         const elem = document.createElement('div');
         elem.className = 'floating-sparkle';
         elem.dataset.amount = amount;
-        elem.textContent = `+${this._formatSparkleCount(amount)}`;
+
+        const inner = document.createElement('span');
+        inner.className = 'floating-sparkle-inner';
+        inner.textContent = `+${this._formatSparkleCount(amount)}`;
+        elem.appendChild(inner);
 
         elem.style.left = `${screenX}px`;
         elem.style.top = `${screenY}px`;
 
         document.body.appendChild(elem);
+        this.emitFloatingSparkleNumberBurst(screenX, screenY, rocketColor);
 
         const remove = () => {
             elem.remove();
             this.activeFloatingSparkle = null;
             this.floatingSparkleTimeout = null;
         };
-        elem.onanimationend = remove;
+        elem.onanimationend = (e) => { if (e.target === elem) remove(); };
         this.floatingSparkleTimeout = setTimeout(remove, 1500);
 
         this.activeFloatingSparkle = elem;
+
+        // initial spawn shake — clear any previous timeout and schedule removal
+        if (inner._shakeTimeout) {
+            clearTimeout(inner._shakeTimeout);
+            inner._shakeTimeout = null;
+        }
+        inner.classList.add('shake');
+        inner._shakeTimeout = setTimeout(() => {
+            inner.classList.remove('shake');
+            inner._shakeTimeout = null;
+        }, 600);
     }
 
     initializeUnlockStates() {
