@@ -27,6 +27,7 @@ export function render(container) {
         <fieldset>
             <legend>Upgrades</legend>
             <button id="cheat-unlock-upgrades">Unlock All Upgrades</button>
+            <button id="cheat-unlock-everything">Unlock Everything</button>
         </fieldset>
 
         <fieldset>

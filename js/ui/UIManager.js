@@ -178,6 +178,13 @@ class UIManager {
             });
         }
 
+        const cheatUnlockEverythingBtn = document.getElementById('cheat-unlock-everything');
+        if (cheatUnlockEverythingBtn) {
+            cheatUnlockEverythingBtn.addEventListener('click', () => {
+                this.game.cheatUnlockEverything();
+            });
+        }
+
         // Cheat: spawn drones
         const cheatSpawnDroneBtn = document.getElementById('cheat-spawn-drone');
         if (cheatSpawnDroneBtn) {
@@ -492,7 +499,7 @@ class UIManager {
     }
 
     emitFloatingSparkleNumberBurst(screenX, screenY, color = null) {
-        if (!this.game.particleSystem) 
+        if (!this.game.particleSystem)
             return;
         const worldPos = this.game.screenToWorld(screenX, screenY);
 
@@ -518,7 +525,7 @@ class UIManager {
             // Spherical-style: even base angle + random jitter within the slice
             const angle = i * angleStep + (Math.random() - 0.5) * angleStep;
             // replace circle with ellipse for more horiontal spread
-            const smallRadius = 20+ Math.random() * 4;
+            const smallRadius = 20 + Math.random() * 4;
             const bigRadius = 50 + Math.random() * 3;
             const dirX = Math.cos(angle);
             const dirY = Math.sin(angle);
@@ -531,7 +538,7 @@ class UIManager {
             );
 
             const position = new Renderer2D.Vector2(
-                worldPos.x + dirX * bigRadius +5,
+                worldPos.x + dirX * bigRadius + 5,
                 worldPos.y + dirY * smallRadius + 10
             );
 

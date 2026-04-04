@@ -1145,6 +1145,51 @@ class FireworkGame extends Engine {
         }
     }
 
+    /**
+     * Cheat: Unlock everything.
+     * Grants resources, unlocks all progression nodes, maxes all upgrades, 
+     * unlocks all patterns, and triggers UI updates.
+     */
+    cheatUnlockEverything() {
+        // 1. Resources
+        this.addSparkles(1000000, 'cheat');
+        this.addGold(1000000, 'cheat');
+
+        // 2. Progression nodes (tabs, buildings)
+        this.progression.forceUnlockAll();
+
+        // 3. Upgrades (max level)
+        for (const def of this.progression.getAllUpgradeDefs()) {
+            this.progression.forceSetLevel(def.id, def.maxLevel ?? 1);
+        }
+
+        // 4. Pattern keys
+        this.unlockedPatternKeys = [...patternKeys];
+
+        // 5. Advanced creator
+        this.advancedCreatorUnlocked = true;
+
+        // 6. Apply all (multipliers, etc.)
+        this.progression.applyAll(this);
+
+        // 7. Save and update UI
+        this.saveProgress();
+        this.ui.updateBuildingTypeVisibility();
+        this.ui.renderUpgrades();
+        this.ui.updateBuildingCounts();
+        this.ui.updateBuildingCosts();
+        this.updateRecipeList();
+        this.updateLauncherList();
+        this.ui.initializeUnlockStates(); // Refresh UI tab visibility
+
+        // Ensure all tabs are properly initialized
+        for (const tabId of ['recipes', 'buildings', 'crowd', 'upgrades']) {
+            this.ui.handleUnlock(`${tabId}_tab`);
+        }
+
+        this.showNotification('Everything has been unlocked!');
+    }
+
 
 
     checkUnlockConditions() {

@@ -174,6 +174,16 @@ class ProgressionManager {
         this._unlockedSet = new Set();
     }
 
+    /**
+     * Force-unlock all progression nodes.
+     * Used by cheat / debug helpers.
+     */
+    forceUnlockAll() {
+        for (const id of this._unlockNodes.keys()) {
+            this._unlockedSet.add(id);
+        }
+    }
+
     // ── Recompute ─────────────────────────────────────────────────────────────
 
     /**
