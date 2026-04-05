@@ -157,14 +157,14 @@ body {
     border-color: transparent;
 }
 
-/* Detail state: restore solid glass so the label/numbers are legible */
-.ressource-count.compact {
+/* Expanded state: restore solid glass so the label/numbers are legible */
+.ressource-count.expanded {
     background: var(--glass-bg);
     border-color: transparent;
     box-shadow: var(--shadow-md);
 }
 
-.ressource-count.compact:hover {
+.ressource-count.expanded:hover {
     background: var(--glass-bg-hover);
 }
 
@@ -181,12 +181,12 @@ body {
     display: none;
 }
 
-/* ─ .compact → detail panel visible, pill hidden ─────────────────────── */
-.ressource-count.compact .rc-pill {
+/* ─ .expanded → detail panel visible, pill hidden ──────────────────────── */
+.ressource-count.expanded .rc-pill {
     display: none;
 }
 
-.ressource-count.compact .rc-detail {
+.ressource-count.expanded .rc-detail {
     display: flex;
     flex-direction: column;
     gap: 3px;
@@ -271,14 +271,14 @@ body {
     display: grid;
     grid-template-columns: auto 1fr;
     gap: var(--sp-2);
-    align-items: start;
+    align-items: center;
 }
 
 .collapse-button {
     display: grid;
     place-items: center;
     width: 40px;
-    height: 40px;
+    height: calc(36px + 2 * var(--sp-1));
     border: 1px solid var(--glass-border);
     border-color: transparent;
     border-radius: var(--radius-md);
@@ -286,7 +286,7 @@ body {
     backdrop-filter: blur(var(--glass-blur));
     -webkit-backdrop-filter: blur(var(--glass-blur));
     color: var(--text-accent);
-    font-size: var(--fs-lg);
+    font-size: var(--fs-base);
     cursor: pointer;
     box-shadow: var(--shadow-sm);
     transition: background var(--transition-fast), border-color var(--transition-fast),
@@ -299,9 +299,6 @@ body {
     transform: scale(1.05);
 }
 
-.collapse-button:active {
-    transform: scale(0.96);
-}
 
 
 /* ── Tabs Container ─────────────────────────────────────────────────────── */
@@ -352,8 +349,8 @@ body {
 
 .tab:hover {
     color: var(--text-accent);
-    background: hsla(185, 60%, 50%, 0.1);
-    border-color: hsla(185, 60%, 50%, 0.2);
+    background: var(--glass-bg-hover);
+    border-color: transparent;
 }
 
 .tab:active {
@@ -506,7 +503,7 @@ button:hover:not(:disabled) {
     background: linear-gradient(135deg,
             hsla(215, 50%, 35%, 0.7) 0%,
             hsla(215, 45%, 25%, 0.7) 100%);
-    border-color: var(--turquoise-light);
+    border-color: transparent;
     box-shadow: var(--shadow-md), inset 0 1px 0 hsla(185, 80%, 75%, 0.15);
     transform: translateY(-1px);
 }
@@ -1438,7 +1435,7 @@ legend {
     }
 
     .rc-pill,
-    .ressource-count.compact .rc-detail {
+    .ressource-count.expanded .rc-detail {
         padding: var(--sp-1) var(--sp-2);
     }
 

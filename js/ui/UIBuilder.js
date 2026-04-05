@@ -42,7 +42,7 @@ export function buildChrome() {
                 <div class="tabs collapsed" id="tab-list"></div>
         </div>
         <div class="resource-counter">
-            <div id="ressource-count" class="ressource-count">
+            <div id="ressource-count" class="ressource-count expanded">
                 <div class="rc-pill">
                     <span class="rc-item">
                         ${SPARKLE_SVG}

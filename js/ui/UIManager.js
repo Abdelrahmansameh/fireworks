@@ -819,7 +819,7 @@ class UIManager {
 
     updateUI(sparklesCount, totalSparklesRate, fireworkCount, autoLauncherCount, nextCost) {
         const sparklesElement = document.getElementById('ressource-count');
-        const isDetail = sparklesElement.classList.contains('compact');
+        const isDetail = sparklesElement.classList.contains('expanded');
 
         // Icon provides context — no unit suffix needed
         const formatPill = (num) => {
@@ -855,7 +855,7 @@ class UIManager {
         if (!sparklesElement._hasClickHandler) {
             sparklesElement._hasClickHandler = true;
             sparklesElement.addEventListener('click', () => {
-                sparklesElement.classList.toggle('compact');
+                sparklesElement.classList.toggle('expanded');
             });
         }
 
