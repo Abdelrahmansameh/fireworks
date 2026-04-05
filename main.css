@@ -220,11 +220,17 @@ body {
 
 /* ─ Icons ─────────────────────────────────────────────────────────────── */
 .rc-icon {
-    width: 14px;
-    height: 14px;
+    width: var(--rc-icon-size, 14px);
+    height: var(--rc-icon-size, 14px);
     flex-shrink: 0;
-    display: block;
+    display: inline-block;
+    vertical-align: middle;
 }
+
+/* Allowed icon sizes. Use only these modifier classes to change size. */
+.rc-icon--small { --rc-icon-size: 12px; }
+.rc-icon--medium { --rc-icon-size: 14px; }
+.rc-icon--large { --rc-icon-size: 20px; }
 
 .rc-sparkle-icon {
     color: var(--text-accent);
@@ -278,7 +284,7 @@ body {
     display: grid;
     place-items: center;
     width: 40px;
-    height: calc(36px + 2 * var(--sp-1));
+    height: 36px;
     border: 1px solid var(--glass-border);
     border-color: transparent;
     border-radius: var(--radius-md);
@@ -1098,6 +1104,17 @@ legend {
     font-size: var(--fs-sm);
     font-weight: 700;
     color: var(--text-primary);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4ch;
+    line-height: 1;
+}
+
+/* Ensure icon sizing variables apply inside stats labels and rows */
+.stats-label .rc-icon,
+.stats-source-label .rc-icon {
+    width: var(--rc-icon-size, 14px);
+    height: var(--rc-icon-size, 14px);
 }
 
 .stats-value {

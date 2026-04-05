@@ -26,6 +26,8 @@ const PANEL_RENDERERS = {
     cheats:    renderCheats,
 };
 
+import ICONS from './icons.js';
+
 export function buildChrome() {
     const root = document.getElementById('ui-root');
 
@@ -33,8 +35,7 @@ export function buildChrome() {
     const topBar = document.createElement('div');
     topBar.className = 'top-bar-container';
 
-    const SPARKLE_SVG = `<svg class="rc-icon rc-sparkle-icon" aria-hidden="true" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg"><path d="M8 1L9.7 6.3L15 8L9.7 9.7L8 15L6.3 9.7L1 8L6.3 6.3Z" fill="currentColor"/></svg>`;
-    const GOLD_SVG    = `<svg class="rc-icon rc-gold-icon" aria-hidden="true" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg"><circle cx="8" cy="8" r="6.5" fill="currentColor" fill-opacity="0.18" stroke="currentColor" stroke-width="1.5"/><circle cx="8" cy="8" r="3.5" fill="currentColor"/></svg>`;
+    
 
     topBar.innerHTML = `
         <div class="tab-bar">
@@ -45,23 +46,23 @@ export function buildChrome() {
             <div id="ressource-count" class="ressource-count expanded">
                 <div class="rc-pill">
                     <span class="rc-item">
-                        ${SPARKLE_SVG}
+                        ${ICONS.SPARKLE_SVG}
                         <span class="sparkle-total rc-num"></span>
                     </span>
                     <span class="rc-divider" aria-hidden="true"></span>
                     <span class="rc-item">
-                        ${GOLD_SVG}
+                        ${ICONS.GOLD_SVG}
                         <span class="gold-total rc-num"></span>
                     </span>
                 </div>
                 <div class="rc-detail">
                     <div class="rc-row">
-                        ${SPARKLE_SVG}
+                        ${ICONS.SPARKLE_SVG}
                         <span class="rc-label">Sparkles</span>
                         <span class="sparkle-total rc-num"></span>
                     </div>
                     <div class="rc-row">
-                        ${GOLD_SVG}
+                        ${ICONS.GOLD_SVG}
                         <span class="rc-label">Gold</span>
                         <span class="gold-total rc-num"></span>
                     </div>

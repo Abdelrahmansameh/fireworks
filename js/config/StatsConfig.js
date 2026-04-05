@@ -23,13 +23,15 @@ export const STATS_CONFIG = {
  * All element `id` values must match exactly what updateStatsTab() in
  * UIManager.js writes to.
  */
+import {ICONS} from '../ui/icons.js';
+
 export const STATS_SCHEMA = [
     {
-        section: '⚡ Production Rates',
-        titleHtml: '⚡ Production Rates <span class="stats-note">(5s avg)</span>',
+        section: 'Production Rates',
+        titleHtml: 'Production Rates <span class="stats-note">(5s avg)</span>',
         items: [
             {
-                type: 'group', label: '✨ Sparkles / sec', id: 'stat-sps-total', defaultValue: '0.00',
+                type: 'group', label: ICONS.SPARKLE_SVG + ' Sparkles / sec', id: 'stat-sps-total', defaultValue: '0.00',
                 children: [
                     { label: '› Auto-Launchers',     id: 'stat-sps-auto',        defaultValue: '0.00' },
                     { label: '› Resource Generators', id: 'stat-sps-gen',         defaultValue: '0.00' },
@@ -41,7 +43,7 @@ export const STATS_SCHEMA = [
                 ],
             },
             {
-                type: 'group', label: '🪙 Gold / sec', id: 'stat-gps-total', defaultValue: '0.00',
+                type: 'group', label: ICONS.GOLD_SVG + ' Gold / sec', id: 'stat-gps-total', defaultValue: '0.00',
                 children: [
                     { label: '› Crowd',  id: 'stat-gps-crowd', defaultValue: '0.00' },
                     { label: '› Cheats', id: 'stat-gps-cheat', defaultValue: '0.00',
@@ -49,7 +51,7 @@ export const STATS_SCHEMA = [
                 ],
             },
             {
-                type: 'group', label: '🎆 Fireworks / sec', id: 'stat-fps-total', defaultValue: '0.00',
+                type: 'group', label: ICONS.FIREWORK_SVG + ' Fireworks / sec', id: 'stat-fps-total', defaultValue: '0.00',
                 children: [
                     { label: '› Auto-Launchers', id: 'stat-fps-auto',   defaultValue: '0.00' },
                     { label: '› Manual',         id: 'stat-fps-manual', defaultValue: '0.00' },
@@ -58,7 +60,8 @@ export const STATS_SCHEMA = [
         ],
     },
     {
-        section: '📊 Current State',
+        section: 'Current State',
+        titleHtml: 'Current State',
         items: [
             { type: 'group', label: 'Sparkles Balance', id: 'stat-bal-sparkles', defaultValue: '0' },
             { type: 'group', label: 'Gold Balance',     id: 'stat-bal-gold',     defaultValue: '0' },
@@ -69,7 +72,8 @@ export const STATS_SCHEMA = [
         ],
     },
     {
-        section: '🕑 This Session',
+        section: 'This Session',
+        titleHtml: 'This Session',
         items: [
             { type: 'group', label: 'Time Played',      id: 'stat-session-time',  defaultValue: '0s' },
             {
@@ -100,7 +104,8 @@ export const STATS_SCHEMA = [
         ],
     },
     {
-        section: '🏆 Lifetime Records',
+        section: 'Lifetime Records',
+        titleHtml: 'Lifetime Records',
         items: [
             { type: 'group', label: 'Total Fireworks Launched', id: 'firework-count',     defaultValue: '0' },
             {
