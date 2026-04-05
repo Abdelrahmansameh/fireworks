@@ -1218,21 +1218,28 @@ class UIManager {
     }
 
     updateLauncherList(launchers, selectedBuildingId, onSelect) {
-        // Show global spawn-rate stat once at the top
         const statsDiv = document.getElementById('auto_launcher-stats');
+        const launcherList = document.getElementById('auto_launcher-list');
+        const spreadBtn = document.getElementById('spread-launchers');
+        const randomizeBtn = document.getElementById('randomize-launcher-recipes');
+
+        const hasLaunchers = launchers.length > 0;
+
+        if (statsDiv) statsDiv.style.display = hasLaunchers ? '' : 'none';
+        if (spreadBtn) spreadBtn.style.display = hasLaunchers ? '' : 'none';
+        if (randomizeBtn) randomizeBtn.style.display = hasLaunchers ? '' : 'none';
+
+        if (!launcherList) return;
+        launcherList.style.display = hasLaunchers ? '' : 'none';
+        launcherList.innerHTML = '';
+
+        if (!hasLaunchers) return;
+
+        // Show global spawn-rate stat once at the top
         if (statsDiv) {
             const baseInterval = BUILDING_TYPES.AUTO_LAUNCHER.baseSpawnInterval;
             const spawnInterval = baseInterval * (this.game.launcherStats?.spawnIntervalMultiplier ?? 1);
             statsDiv.innerHTML = `<div class="launcher-details"><p>Spawn Rate: Every ${spawnInterval.toFixed(1)}s</p></div>`;
-        }
-
-        const launcherList = document.getElementById('auto_launcher-list');
-        if (!launcherList) return;
-        launcherList.innerHTML = '';
-
-        if (launchers.length === 0) {
-            launcherList.innerHTML = "<p>No auto-launchers owned yet.</p>";
-            return;
         }
 
         launchers.forEach((launcher, index) => {

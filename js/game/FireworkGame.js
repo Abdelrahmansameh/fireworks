@@ -1,6 +1,6 @@
 import { FIREWORK_CONFIG, GAME_BOUNDS, PROCEDURAL_BACKGROUND_CONFIG, DEFAULT_RECIPE_COMPONENTS, PRE_RECIPE_COMPONENT_DEFAULTS, GENERIC_RECIPE_NAMES, AUTO_LAUNCHER_COST_BASE, AUTO_LAUNCHER_COST_RATIO, COMPONENT_PROPERTY_RANGES, BUILDING_TYPES, DRONE_CONFIG, CROWD_CATCHER_CONFIG, CROWD_CONFIG } from '../config/config.js';
 
-const SAVE_VERSION = '3';
+const SAVE_VERSION = '4';
 import ProgressionManager from '../upgrades/ProgressionManager.js';
 import { PROGRESSION_CONFIG } from '../config/ProgressionConfig.js';
 import InstancedParticleSystem from '../particles/InstancedParticleSystem.js';
@@ -68,6 +68,8 @@ class FireworkGame extends Engine {
             catchingEnabled: false,
             collectionRadiusMultiplier: 1,
             sparklesPerParticleMultiplier: 1,
+            goldRateMultiplier: 1,
+            countBonus: 0,
         };
         this.launcherStats = { spawnIntervalMultiplier: 1 };
         this.generatorStats = { productionRateMultiplier: 1 };
@@ -424,11 +426,12 @@ class FireworkGame extends Engine {
     }
 
     _calculateTargetCrowdCount(fps) {
-        if (fps <= 0) return 0;
         const config = CROWD_CONFIG.scaling;
         const maxCap = CROWD_CONFIG.maxInstances || 1000;
+        const bonus = this.crowdStats?.countBonus ?? 0;
+        if (fps <= 0) return Math.min(bonus, maxCap);
         const target = Math.floor(config.formulaA * Math.sqrt(fps) + config.formulaB);
-        return Math.min(target, maxCap);
+        return Math.min(target + bonus, maxCap);
     }
 
     initBackgroundColor() {
@@ -558,6 +561,8 @@ class FireworkGame extends Engine {
             catchingEnabled: false,
             collectionRadiusMultiplier: 1,
             sparklesPerParticleMultiplier: 1,
+            goldRateMultiplier: 1,
+            countBonus: 0,
         };
         this.launcherStats = { spawnIntervalMultiplier: 1 };
         this.generatorStats = { productionRateMultiplier: 1 };
@@ -1095,6 +1100,7 @@ class FireworkGame extends Engine {
         this.crowd.catchingEnabled = this.crowdStats.catchingEnabled;
         this.crowd.collectionRadius = CROWD_CATCHER_CONFIG.collectionRadius
             * (this.crowdStats.collectionRadiusMultiplier ?? 1);
+        this.crowd.goldPerCoinToss = Math.round(1 * (this.crowdStats.goldRateMultiplier ?? 1));
     }
 
     resetUpgrades() {

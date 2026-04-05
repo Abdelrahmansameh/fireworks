@@ -5,7 +5,7 @@ export const CROWD_CONFIG = {
         minSize: .9,
         maxSize: 1.25,
         seed: 12345,
-        formulaA: 2.0,
+        formulaA: 3.0,   // Increased from 2.0 for better crowd scaling
         formulaB: 0.0,
     },
 
@@ -38,8 +38,7 @@ export const CROWD_CONFIG = {
     pickRadius: 35,                 // world-units — max cursor-to-person dist for grab
     cursorHistorySize: 6,           // samples kept for launch-velocity estimation
     minDtForVelocity: 0.005,       // seconds — ignore tiny dt to avoid div-by-zero
-    maxThrowSpeedX: 1800,            // world-units / s
-    maxThrowSpeedY: 1800,            // world-units / s
+    maxThrowSpeedSquared: 2500 * 2500, // world-units²/s² — cap launch speed to prevent extreme throws
     wallBounce: 0.5,                // velocity retention when bouncing off world edges
     wallBounceBuffer: 500,          // world-units — invisible buffer beyond scroll bounds for wall bounces
 

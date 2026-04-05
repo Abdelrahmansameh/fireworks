@@ -1,48 +1,40 @@
 // ProgressionConfig.js — single source of truth for all unlock nodes and upgrades.
 //
-// Two entry types:
-//   { type: 'unlock', id, requires }
-//       Auto-unlocks when requires conditions are met (no cost, no level).
-//       Replaces the hard-coded thresholds in checkUnlockConditions().
-//
-//   { type: 'upgrade', id, group, name, desc, baseCost, costRatio, currency,
-//       maxLevel, requires?, apply(game, level) }
-//       Purchasable upgrades. `requires` replaces the old isVisible() predicate.
-//       apply() callback is kept verbatim — ProgressionManager calls it.
+// Upgrade groups & rough unlock timeline:
+//   BASE     — Sparkles per firework chain (root of tree, ~0-12 min)
+//   LAUNCHER — Fire-rate upgrades (~2-15 min)
+//   GENERATOR— Sparkle generator output (~4-14 min, costs gold)
+//   DRONE    — Drone hub upgrades (~5-14 min, costs gold)
+//   CROWD    — Crowd count, throw yield, gold income chain (~3-20 min)
 //
 // requires schema (all fields optional):
-//   {
-//     stats?:     { fireworkCount?, sps?, launcherCount? }
-//     buildings?: string[]     — building types that must be unlocked
-//     unlocked?:  string[]     — unlock node IDs that must be in the unlocked set
-//     upgrades?:  { [id]: minLevel }  — other upgrades that must reach minLevel
-//   }
+//   { stats?: { fireworkCount?, sps?, launcherCount?, crowdCount? },
+//     buildings?: string[],
+//     unlocked?:  string[],
+//     upgrades?:  { [id]: minLevel } }
 
 import { DRONE_CONFIG } from './config.js';
 
 export const PROGRESSION_CONFIG = [
 
     // ── Unlock nodes ──────────────────────────────────────────────────────────
-    // These fire automatically when their `requires` conditions are met.
-    // IDs map 1-to-1 to the old game.unlockStates keys (snake_case).
 
-    { type: 'unlock', id: 'sparkle_counter', requires: { stats: { fireworkCount: 1 } } },
-    { type: 'unlock', id: 'tab_menu', requires: { stats: { fireworkCount: 10 } } },
-    { type: 'unlock', id: 'buildings_tab', requires: { stats: { fireworkCount: 20 } } },
-    { type: 'unlock', id: 'upgrades_tab', requires: { stats: { fireworkCount: 30 } } },
-    { type: 'unlock', id: 'crowds_tab', requires: { stats: { sps: 0.4 } } },
+    { type: 'unlock', id: 'sparkle_counter',   requires: { stats: { fireworkCount: 1 } } },
+    { type: 'unlock', id: 'tab_menu',           requires: { stats: { fireworkCount: 5 } } },
+    { type: 'unlock', id: 'buildings_tab',      requires: { stats: { fireworkCount: 10 } } },
+    { type: 'unlock', id: 'upgrades_tab',       requires: { stats: { fireworkCount: 20 } } },
+    { type: 'unlock', id: 'crowds_tab',         requires: { stats: { crowdCount: 1 } } },
     { type: 'unlock', id: 'resource_generator', requires: { stats: { launcherCount: 3 } } },
-    { type: 'unlock', id: 'drone_hub', requires: { stats: { sps: 2.0 } } },
-    { type: 'unlock', id: 'recipes_tab', requires: { stats: { launcherCount: 20 } } },
-
-    // ── Base upgrades ─────────────────────────────────────────────────────────
+    { type: 'unlock', id: 'drone_hub',          requires: { stats: { launcherCount: 5 } } },
+    { type: 'unlock', id: 'recipes_tab',        requires: { stats: { launcherCount: 20 } } },
 
     {
+        //root
         type: 'upgrade',
         id: 'base_mult_1',
         group: 'BASE',
         name: 'Spark Core I',
-        desc: '+2 sparkles per firework',
+        desc: '+2 sparkles per firework per level',
         baseCost: 100,
         costRatio: 1.5,
         currency: 'sparkles',
@@ -51,18 +43,99 @@ export const PROGRESSION_CONFIG = [
     },
     {
         type: 'upgrade',
-        id: 'base_mult_2',
+        id: 'spark_core_2',
         group: 'BASE',
         name: 'Spark Core II',
-        desc: '+5 sparkles per firework',
-        baseCost: 5000,
-        costRatio: 1.5,
-        currency: 'gold',
-        maxLevel: 3,
+        desc: '+5 sparkles per firework per level',
+        baseCost: 800,
+        costRatio: 1.8,
+        currency: 'sparkles',
+        maxLevel: 5,
+        requires: { upgrades: { base_mult_1: 3 } },
         apply: (game, level) => { game.baseSparkleMultiplier += 5 * level; },
     },
+    {
+        type: 'upgrade',
+        id: 'spark_core_3',
+        group: 'BASE',
+        name: 'Spark Core III',
+        desc: '+15 sparkles per firework per level',
+        baseCost: 5000,
+        costRatio: 2.0,
+        currency: 'gold',
+        maxLevel: 3,
+        requires: { upgrades: { spark_core_2: 5 } },
+        apply: (game, level) => { game.baseSparkleMultiplier += 15 * level; },
+    },
+    {
+        type: 'upgrade',
+        id: 'spark_core_4',
+        group: 'BASE',
+        name: 'Spark Core IV',
+        desc: '+50 sparkles per firework per level',
+        baseCost: 300000,
+        costRatio: 2.0,
+        currency: 'gold',
+        maxLevel: 2,
+        requires: { upgrades: { spark_core_3: 3 } },
+        apply: (game, level) => { game.baseSparkleMultiplier += 50 * level; },
+    },
 
-    // ── Drone upgrades ────────────────────────────────────────────────────────
+
+    {
+        type: 'upgrade',
+        id: 'launcher_spawn_rate',
+        group: 'LAUNCHER',
+        name: 'Rapid Fire',
+        desc: '-10% launcher spawn interval per level',
+        baseCost: 300,
+        costRatio: 1.6,
+        currency: 'sparkles',
+        maxLevel: 5,
+        requires: { buildings: ['AUTO_LAUNCHER'] },
+        apply: (game, level) => { game.launcherStats.spawnIntervalMultiplier = Math.pow(0.9, level); },
+    },
+    {
+        type: 'upgrade',
+        id: 'launcher_overclock',
+        group: 'LAUNCHER',
+        name: 'Launcher Overclock',
+        desc: 'Further -20% spawn interval per level (stacks with Rapid Fire)',
+        baseCost: 12000,
+        costRatio: 2.0,
+        currency: 'sparkles',
+        maxLevel: 3,
+        requires: { upgrades: { launcher_spawn_rate: 5 } },
+        apply: (game, level) => { game.launcherStats.spawnIntervalMultiplier *= Math.pow(0.8, level); },
+    },
+
+
+    {
+        type: 'upgrade',
+        id: 'generator_production',
+        group: 'GENERATOR',
+        name: 'Efficient Channels',
+        desc: '+50% generator production rate per level',
+        baseCost: 800,
+        costRatio: 1.6,
+        currency: 'gold',
+        maxLevel: 5,
+        requires: { buildings: ['RESOURCE_GENERATOR'] },
+        apply: (game, level) => { game.generatorStats.productionRateMultiplier = Math.pow(1.5, level); },
+    },
+    {
+        type: 'upgrade',
+        id: 'generator_overclock',
+        group: 'GENERATOR',
+        name: 'Generator Overclock',
+        desc: '×2 generator production rate per level',
+        baseCost: 30000,
+        costRatio: 2.0,
+        currency: 'gold',
+        maxLevel: 3,
+        requires: { upgrades: { generator_production: 5 } },
+        apply: (game, level) => { game.generatorStats.productionRateMultiplier *= Math.pow(2, level); },
+    },
 
     {
         type: 'upgrade',
@@ -70,8 +143,8 @@ export const PROGRESSION_CONFIG = [
         group: 'DRONE',
         name: 'Extended Range',
         desc: '+25% drone lifetime per level',
-        baseCost: 150,
-        costRatio: 1.6,
+        baseCost: 500,
+        costRatio: 1.5,
         currency: 'gold',
         maxLevel: 5,
         requires: { buildings: ['DRONE_HUB'] },
@@ -83,8 +156,8 @@ export const PROGRESSION_CONFIG = [
         group: 'DRONE',
         name: 'Afterburners',
         desc: '+20% drone speed per level',
-        baseCost: 120,
-        costRatio: 1.6,
+        baseCost: 400,
+        costRatio: 1.5,
         currency: 'gold',
         maxLevel: 5,
         requires: { buildings: ['DRONE_HUB'] },
@@ -96,7 +169,7 @@ export const PROGRESSION_CONFIG = [
         group: 'DRONE',
         name: 'Magnetic Field',
         desc: '+20% drone collection radius per level',
-        baseCost: 100,
+        baseCost: 300,
         costRatio: 1.5,
         currency: 'gold',
         maxLevel: 5,
@@ -109,10 +182,10 @@ export const PROGRESSION_CONFIG = [
         group: 'DRONE',
         name: 'Drone Fleet',
         desc: '+5 max drones per level',
-        baseCost: 200,
-        costRatio: 1.8,
+        baseCost: 800,
+        costRatio: 2.0,
         currency: 'gold',
-        maxLevel: 4,
+        maxLevel: 5,
         requires: { buildings: ['DRONE_HUB'] },
         apply: (game, level) => {
             game.droneStats.maxDrones = DRONE_CONFIG.maxDrones + 5 * level;
@@ -125,7 +198,7 @@ export const PROGRESSION_CONFIG = [
         group: 'DRONE',
         name: 'Energy Siphon',
         desc: '+50% sparkles per collected particle per level',
-        baseCost: 300,
+        baseCost: 600,
         costRatio: 1.7,
         currency: 'gold',
         maxLevel: 5,
@@ -137,29 +210,58 @@ export const PROGRESSION_CONFIG = [
         id: 'drone_hub_spawn_rate',
         group: 'DRONE',
         name: 'Scout Protocol',
-        desc: '-12% drone hub spawn interval per level for all Drone Hubs',
-        baseCost: 200,
+        desc: '-12% drone hub spawn interval per level',
+        baseCost: 500,
         costRatio: 1.5,
         currency: 'gold',
         maxLevel: 5,
         requires: { buildings: ['DRONE_HUB'] },
         apply: (game, level) => { game.droneHubStats.spawnIntervalMultiplier = Math.pow(0.88, level); },
     },
+    {
+        type: 'upgrade',
+        id: 'drone_efficiency',
+        group: 'DRONE',
+        name: 'Drone Swarm Protocol',
+        desc: '+10 max drones and -25% hub spawn interval per level',
+        baseCost: 60000,
+        costRatio: 2.0,
+        currency: 'gold',
+        maxLevel: 2,
+        requires: { upgrades: { drone_max: 5, drone_sparkle_yield: 5, drone_hub_spawn_rate: 5 } },
+        apply: (game, level) => {
+            game.droneStats.maxDrones += 10 * level;
+            if (game.droneSystem) game.droneSystem.maxDrones = game.droneStats.maxDrones;
+            game.droneHubStats.spawnIntervalMultiplier *= Math.pow(0.75, level);
+        },
+    },
 
-    // ── Crowd upgrades ────────────────────────────────────────────────────────
 
     {
         type: 'upgrade',
         id: 'crowd_catcher_unlock',
         group: 'CROWD',
         name: 'Crowd Catchers',
-        desc: 'Thrown crowd members collect firework particles while airborne, awarding sparkles.',
+        desc: 'Thrown crowd members collect firework particles, awarding sparkles.',
         baseCost: 500,
         costRatio: 1,
         currency: 'sparkles',
         maxLevel: 1,
-        requires: { unlocked: ['crowds_tab'] },
+        requires: { upgrades: { crowd_gold_3: 1 } },
         apply: (game, _level) => { game.crowdStats.catchingEnabled = true; },
+    },
+    {
+        type: 'upgrade',
+        id: 'crowd_invite_1',
+        group: 'CROWD',
+        name: 'Extra Tickets I',
+        desc: '+5 permanent crowd members',
+        baseCost: 1500,
+        costRatio: 1,
+        currency: 'sparkles',
+        maxLevel: 1,
+        requires: { upgrades: { crowd_gold_1: 1 } },
+        apply: (game, _level) => { game.crowdStats.countBonus += 5; },
     },
     {
         type: 'upgrade',
@@ -167,10 +269,10 @@ export const PROGRESSION_CONFIG = [
         group: 'CROWD',
         name: 'Wide Arms',
         desc: '+25% catching radius per level',
-        baseCost: 300,
-        costRatio: 2.5,
+        baseCost: 200,
+        costRatio: 2.0,
         currency: 'gold',
-        maxLevel: 3,
+        maxLevel: 5,
         requires: { upgrades: { crowd_catcher_unlock: 1 } },
         apply: (game, level) => { game.crowdStats.collectionRadiusMultiplier = 1 + 0.25 * level; },
     },
@@ -180,43 +282,128 @@ export const PROGRESSION_CONFIG = [
         group: 'CROWD',
         name: 'Greedy Hands',
         desc: '+50% sparkles per caught particle per level',
-        baseCost: 400,
+        baseCost: 500,
         costRatio: 2.5,
         currency: 'gold',
-        maxLevel: 3,
+        maxLevel: 5,
         requires: { upgrades: { crowd_catcher_unlock: 1 } },
         apply: (game, level) => { game.crowdStats.sparklesPerParticleMultiplier = 1 + 0.5 * level; },
     },
-
-    // ── Launcher upgrades ─────────────────────────────────────────────────────
-
     {
         type: 'upgrade',
-        id: 'launcher_spawn_rate',
-        group: 'LAUNCHER',
-        name: 'Rapid Fire',
-        desc: '-10% spawn interval per level for all Auto-Launchers',
-        baseCost: 500,
-        costRatio: 1.5,
-        currency: 'sparkles',
-        maxLevel: 5,
-        requires: { buildings: ['AUTO_LAUNCHER'] },
-        apply: (game, level) => { game.launcherStats.spawnIntervalMultiplier = Math.pow(0.9, level); },
-    },
-
-    // ── Generator upgrades ────────────────────────────────────────────────────
-
-    {
-        type: 'upgrade',
-        id: 'generator_production',
-        group: 'GENERATOR',
-        name: 'Efficient Channels',
-        desc: '+50% production rate per level for all Generators',
-        baseCost: 200,
-        costRatio: 1.5,
+        id: 'crowd_throw_power',
+        group: 'CROWD',
+        name: 'Hyper Throw',
+        desc: '+1.0 sparkles per caught particle per level (bonus)',
+        baseCost: 50000,
+        costRatio: 2.0,
         currency: 'gold',
-        maxLevel: 5,
-        requires: { buildings: ['RESOURCE_GENERATOR'] },
-        apply: (game, level) => { game.generatorStats.productionRateMultiplier = Math.pow(1.5, level); },
+        maxLevel: 2,
+        requires: { upgrades: { crowd_catcher_yield: 5 } },
+        apply: (game, level) => { game.crowdStats.sparklesPerParticleMultiplier += 1.0 * level; },
+    },
+    {
+        type: 'upgrade',
+        id: 'crowd_invite_2',
+        group: 'CROWD',
+        name: 'Extra Tickets II',
+        desc: '+8 more crowd members',
+        baseCost: 15000,
+        costRatio: 1,
+        currency: 'sparkles',
+        maxLevel: 1,
+        requires: { upgrades: { crowd_gold_1: 1 } },
+        apply: (game, _level) => { game.crowdStats.countBonus += 8; },
+    },
+    {
+        type: 'upgrade',
+        id: 'crowd_invite_3',
+        group: 'CROWD',
+        name: 'Extra Tickets III',
+        desc: '+10 more crowd members',
+        baseCost: 400000,
+        costRatio: 1,
+        currency: 'gold',
+        maxLevel: 1,
+        requires: { upgrades: { crowd_gold_3: 1 } },
+        apply: (game, _level) => { game.crowdStats.countBonus += 10; },
+    },
+    {
+        type: 'upgrade',
+        id: 'crowd_spark_1',
+        group: 'CROWD',
+        name: 'Crowd Excitement I',
+        desc: '×2 sparkles per firework',
+        baseCost: 10,
+        costRatio: 1,
+        currency: 'gold',
+        maxLevel: 1,
+        requires: { unlocked: ['crowds_tab'] },
+        apply: (game, _level) => { game.baseSparkleMultiplier *= 2; },
+    },
+    {
+        type: 'upgrade',
+        id: 'crowd_gold_1',
+        group: 'CROWD',
+        name: 'Coin Rain I',
+        desc: '×2 gold per crowd member per toss',
+        baseCost: 20,
+        costRatio: 1,
+        currency: 'gold',
+        maxLevel: 1,
+        requires: { upgrades: { crowd_spark_1: 1 } },
+        apply: (game, _level) => { game.crowdStats.goldRateMultiplier *= 2; },
+    },
+    {
+        type: 'upgrade',
+        id: 'crowd_gold_2',
+        group: 'CROWD',
+        name: 'Coin Rain II',
+        desc: '×2 gold per toss (stacks with Coin Rain I)',
+        baseCost: 50,
+        costRatio: 1,
+        currency: 'gold',
+        maxLevel: 1,
+        requires: { upgrades: { crowd_gold_1: 1 } },
+        apply: (game, _level) => { game.crowdStats.goldRateMultiplier *= 2; },
+    },
+    {
+        type: 'upgrade',
+        id: 'crowd_spark_2',
+        group: 'CROWD',
+        name: 'Crowd Excitement II',
+        desc: '×2 sparkles per firework (stacks)',
+        baseCost: 100,
+        costRatio: 1,
+        currency: 'gold',
+        maxLevel: 1,
+        requires: { upgrades: { crowd_gold_2: 1 } },
+        apply: (game, _level) => { game.baseSparkleMultiplier *= 2; },
+    },
+    {
+        type: 'upgrade',
+        id: 'crowd_gold_3',
+        group: 'CROWD',
+        name: 'Coin Rain III',
+        desc: '×2 gold per toss (stacks) — ×8 total gold income',
+        baseCost: 200,
+        costRatio: 1,
+        currency: 'gold',
+        maxLevel: 1,
+        requires: { upgrades: { crowd_spark_2: 1 } },
+        apply: (game, _level) => { game.crowdStats.goldRateMultiplier *= 2; },
+    },
+    {
+        type: 'upgrade',
+        id: 'crowd_gold_4',
+        group: 'CROWD',
+        name: 'Jackpot',
+        desc: '×8 gold per crowd member (stacks) — final gold upgrade',
+        baseCost: 200000,
+        costRatio: 1,
+        currency: 'gold',
+        maxLevel: 1,
+        requires: { upgrades: { crowd_gold_3: 1, crowd_invite_2: 1 } },
+        apply: (game, _level) => { game.crowdStats.goldRateMultiplier *= 8; },
     },
 ];

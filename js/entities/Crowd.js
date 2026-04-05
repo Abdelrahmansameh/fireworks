@@ -32,10 +32,7 @@ class Crowd {
         this.onCatchSparkles = null;
         this._scanFrameCounter = 0;
 
-        this.goldPerSecondPerPerson = 0.1;
-        this.onCoinDrop = null;
-
-        this.goldPerSecondPerPerson = 0.1;
+        this.goldPerCoinToss = 1;
         this.onCoinDrop = null;
         
         this._propCache = new Map();
@@ -194,7 +191,7 @@ class Crowd {
             vx: 0,
             vy: 0,
             instanceBaseIndex: group.instanceCount,
-            goldAccumulator: rng(),
+            coinTossTimer: rng() * 5,
             coinAnimTimer: 0,
             collected: 0,
             bounceCount: 0,
@@ -221,10 +218,8 @@ class Crowd {
         const FRICTION = CROWD_CONFIG.friction;
         const WALK_SPEED = CROWD_CONFIG.walkSpeed;
 
-        const goldRate = this.goldPerSecondPerPerson;
-
         for (let i = 0; i < this.people.length; i++) {
-            this._updatePerson(i, deltaTime, GRAVITY, FRICTION, WALK_SPEED, goldRate);
+            this._updatePerson(i, deltaTime, GRAVITY, FRICTION, WALK_SPEED);
         }
 
         for (let i = 0; i < this.people.length; i++) {
@@ -254,7 +249,7 @@ class Crowd {
         }
     }
 
-    _updatePerson(personIndex, deltaTime, gravity, friction, walkSpeed, goldRate) {
+    _updatePerson(personIndex, deltaTime, gravity, friction, walkSpeed) {
         const person = this.people[personIndex];
 
         switch (person.state) {
@@ -317,12 +312,11 @@ class Crowd {
             }
         }
 
-        person.goldAccumulator += goldRate * deltaTime;
-        if (person.goldAccumulator >= 1.0) {
-            const coins = Math.floor(person.goldAccumulator);
-            person.goldAccumulator -= coins;
+        person.coinTossTimer += deltaTime;
+        if (person.coinTossTimer >= 5) {
+            person.coinTossTimer -= 5;
             if (this.onCoinDrop) {
-                this.onCoinDrop(coins, 'crowd');
+                this.onCoinDrop(this.goldPerCoinToss, 'crowd');
             }
             person.coinAnimTimer = 0.8;
         }
@@ -585,7 +579,7 @@ class Crowd {
         let targetX = wx + this._grabOffsetX;
         const targetY = wy + this._grabOffsetY;
 
-        targetX = Math.max(GAME_BOUNDS.SCROLL_MIN_X, Math.min(GAME_BOUNDS.SCROLL_MAX_X, targetX));
+        targetX = Math.max(GAME_BOUNDS.SCROLL_MIN_X - 1000, Math.min(GAME_BOUNDS.SCROLL_MAX_X, targetX));
 
         const person = this.people[this.grabbedPersonIndex];
         person.x = targetX;
@@ -612,10 +606,14 @@ class Crowd {
             }
         }
 
-        const maxSpeedX = CROWD_CONFIG.maxThrowSpeedX;
-        const maxSpeedY = CROWD_CONFIG.maxThrowSpeedY;
-        vx = Math.max(-maxSpeedX, Math.min(maxSpeedX, vx));
-        vy = Math.max(-maxSpeedY, Math.min(maxSpeedY, vy));
+        const maxSpeed = CROWD_CONFIG.maxThrowSpeedSquared;
+        const speedSquared = vx * vx + vy * vy;
+        if (speedSquared > maxSpeed) {
+            const speed = Math.sqrt(speedSquared);
+            const scale = Math.sqrt(maxSpeed) / speed;
+            vx *= scale;
+            vy *= scale;
+        }
 
         person.vx = vx;
         person.vy = vy;

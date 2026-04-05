@@ -204,6 +204,8 @@ class ProgressionManager {
             catchingEnabled: false,
             collectionRadiusMultiplier: 1,
             sparklesPerParticleMultiplier: 1,
+            goldRateMultiplier: 1,   // multiplied into crowd.goldPerCoinToss (base 1 gold per 5s)
+            countBonus: 0,            // added to the crowd count formula result
         };
         game.launcherStats = { spawnIntervalMultiplier: 1 };
         game.generatorStats = { productionRateMultiplier: 1 };
@@ -259,6 +261,12 @@ class ProgressionManager {
                 const count = game.buildingManager.getBuildingsByType('AUTO_LAUNCHER').length;
                 if (count < s.launcherCount) {
                     return { met: false, reason: `Build ${s.launcherCount} Auto-Launchers` };
+                }
+            }
+            if (s.crowdCount !== undefined) {
+                const count = game.crowd ? game.crowd.people.length : 0;
+                if (count < s.crowdCount) {
+                    return { met: false, reason: `Have ${s.crowdCount} crowd member${s.crowdCount !== 1 ? 's' : ''}` };
                 }
             }
         }
