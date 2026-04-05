@@ -819,28 +819,34 @@ class UIManager {
 
     updateUI(sparklesCount, totalSparklesRate, fireworkCount, autoLauncherCount, nextCost) {
         const sparklesElement = document.getElementById('ressource-count');
-        const isCompact = sparklesElement.classList.contains('compact');
+        const isDetail = sparklesElement.classList.contains('compact');
 
-        const formatCompactNumber = (num) => {
+        // Icon provides context — no unit suffix needed
+        const formatPill = (num) => {
             if (num >= 1e9) return (num / 1e9).toFixed(1) + 'B';
             if (num >= 1e6) return (num / 1e6).toFixed(1) + 'M';
             if (num >= 1e3) return (num / 1e3).toFixed(1) + 'K';
-            return num.toString();
+            return String(num);
+        };
+
+        // Full locale-formatted number, label provides context
+        const formatDetail = (num) => {
+            return Math.floor(num).toLocaleString();
         };
 
         const sparkleTotalElements = sparklesElement.querySelectorAll('.sparkle-total');
         sparkleTotalElements.forEach(el => {
-            const countText = isCompact ?
-                `${formatCompactNumber(sparklesCount)} sp` :
-                `${sparklesCount}`;
-
-            el.textContent = countText;
+            el.textContent = isDetail
+                ? formatDetail(sparklesCount)
+                : formatPill(sparklesCount);
         });
 
         const gold = this.game.resourceManager.resources.gold;
         const goldTotalElements = sparklesElement.querySelectorAll('.gold-total');
         goldTotalElements.forEach(el => {
-            el.textContent = gold.formatAmount();
+            el.textContent = isDetail
+                ? formatDetail(gold.amount)
+                : formatPill(Math.floor(gold.amount));
         });
 
         if (this.skillTree?.isOpen) {

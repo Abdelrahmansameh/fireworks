@@ -32,6 +32,10 @@ export function buildChrome() {
     // ── Top bar (resource counter + collapse button + tab list) ───────────
     const topBar = document.createElement('div');
     topBar.className = 'top-bar-container';
+
+    const SPARKLE_SVG = `<svg class="rc-icon rc-sparkle-icon" aria-hidden="true" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg"><path d="M8 1L9.7 6.3L15 8L9.7 9.7L8 15L6.3 9.7L1 8L6.3 6.3Z" fill="currentColor"/></svg>`;
+    const GOLD_SVG    = `<svg class="rc-icon rc-gold-icon" aria-hidden="true" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg"><circle cx="8" cy="8" r="6.5" fill="currentColor" fill-opacity="0.18" stroke="currentColor" stroke-width="1.5"/><circle cx="8" cy="8" r="3.5" fill="currentColor"/></svg>`;
+
     topBar.innerHTML = `
         <div class="tab-bar">
             <button id="collapse-button" class="collapse-button">☰</button>
@@ -39,16 +43,27 @@ export function buildChrome() {
         </div>
         <div class="resource-counter">
             <div id="ressource-count" class="ressource-count">
-                <div class="ressource-count-compact">
-                    <div class="ressource-total"><span class="sparkle-total"></span></div>
-                    <div class="ressource-total"><span class="gold-total"></span></div>
+                <div class="rc-pill">
+                    <span class="rc-item">
+                        ${SPARKLE_SVG}
+                        <span class="sparkle-total rc-num"></span>
+                    </span>
+                    <span class="rc-divider" aria-hidden="true"></span>
+                    <span class="rc-item">
+                        ${GOLD_SVG}
+                        <span class="gold-total rc-num"></span>
+                    </span>
                 </div>
-                <div class="ressource-count-expanded">
-                    <div class="ressource-count-main">
-                        <div class="ressource-total">Sparkles: <span class="sparkle-total"></span></div>
+                <div class="rc-detail">
+                    <div class="rc-row">
+                        ${SPARKLE_SVG}
+                        <span class="rc-label">Sparkles</span>
+                        <span class="sparkle-total rc-num"></span>
                     </div>
-                    <div class="ressource-count-main">
-                        <div class="ressource-total">Gold: <span class="gold-total"></span></div>
+                    <div class="rc-row">
+                        ${GOLD_SVG}
+                        <span class="rc-label">Gold</span>
+                        <span class="gold-total rc-num"></span>
                     </div>
                 </div>
             </div>

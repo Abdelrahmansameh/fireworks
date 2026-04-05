@@ -136,58 +136,118 @@ body {
     justify-self: end;
 }
 
+/* ── Resource Counter ─────────────────────────────────────────────────── */
 .ressource-count {
-    display: grid;
-    gap: var(--sp-1);
-    padding: var(--sp-2) var(--sp-4);
-    background: var(--glass-bg);
+    /* Pill state: near-transparent, kept readable by the blur */
+    background: hsla(220, 25%, 8%, 0.12);
     backdrop-filter: blur(var(--glass-blur));
     -webkit-backdrop-filter: blur(var(--glass-blur));
-    border: 1px solid var(--glass-border);
+    border: 1px solid hsla(185, 50%, 50%, 0.18);
     border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-md);
+    border-color: transparent;
     cursor: pointer;
-    transition: background var(--transition-fast), box-shadow var(--transition-fast);
+    transition: background var(--transition-fast), box-shadow var(--transition-fast),
+        border-color var(--transition-fast);
     min-width: 0;
+    overflow: hidden;
 }
 
 .ressource-count:hover {
+    background: hsla(220, 25%, 12%, 0.28);
+    border-color: transparent;
+}
+
+/* Detail state: restore solid glass so the label/numbers are legible */
+.ressource-count.compact {
+    background: var(--glass-bg);
+    border-color: transparent;
+    box-shadow: var(--shadow-md);
+}
+
+.ressource-count.compact:hover {
     background: var(--glass-bg-hover);
-    box-shadow: var(--shadow-glow);
 }
 
-.ressource-count-compact {
-    display: grid;
-    grid-auto-flow: column;
-    gap: var(--sp-3);
+/* ─ Pill (default view) ──────────────────────────────────────────────── */
+.rc-pill {
+    display: flex;
     align-items: center;
-}
-
-.ressource-count-expanded {
-    display: none;
-}
-
-.ressource-count.compact .ressource-count-compact {
-    display: none;
-}
-
-.ressource-count.compact .ressource-count-expanded {
-    display: grid;
-    gap: var(--sp-1);
-}
-
-.ressource-count-main {
-    display: grid;
-    grid-auto-flow: column;
     gap: var(--sp-2);
-    align-items: center;
+    padding: var(--sp-2) var(--sp-3);
+    white-space: nowrap;
 }
 
-.ressource-total {
+.rc-detail {
+    display: none;
+}
+
+/* ─ .compact → detail panel visible, pill hidden ─────────────────────── */
+.ressource-count.compact .rc-pill {
+    display: none;
+}
+
+.ressource-count.compact .rc-detail {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    padding: var(--sp-2) var(--sp-3);
+}
+
+/* ─ Pill item ─────────────────────────────────────────────────────────── */
+.rc-item {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+/* ─ Detail row ────────────────────────────────────────────────────────── */
+.rc-row {
+    display: grid;
+    grid-template-columns: 14px 1fr auto;
+    align-items: center;
+    column-gap: var(--sp-2);
+    min-width: 152px;
+}
+
+/* ─ Divider between pill items ───────────────────────────────────────── */
+.rc-divider {
+    width: 1px;
+    height: 13px;
+    background: var(--glass-border);
+    align-self: center;
+    flex-shrink: 0;
+}
+
+/* ─ Icons ─────────────────────────────────────────────────────────────── */
+.rc-icon {
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+    display: block;
+}
+
+.rc-sparkle-icon {
+    color: var(--text-accent);
+}
+
+.rc-gold-icon {
+    color: var(--text-gold);
+}
+
+/* ─ Label (detail view) ──────────────────────────────────────────────── */
+.rc-label {
+    font-size: var(--fs-xs);
+    color: var(--text-secondary);
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    font-weight: 600;
+}
+
+/* ─ Numeric values ───────────────────────────────────────────────────── */
+.rc-num {
     font-size: var(--fs-sm);
     font-weight: 700;
-    color: var(--text-accent);
-    letter-spacing: 0.03em;
+    letter-spacing: 0.02em;
     white-space: nowrap;
 }
 
@@ -197,6 +257,12 @@ body {
 
 .gold-total {
     color: var(--text-gold);
+}
+
+/* Right-align numbers in detail rows */
+.rc-row .rc-num {
+    text-align: right;
+    justify-self: end;
 }
 
 
@@ -214,6 +280,7 @@ body {
     width: 40px;
     height: 40px;
     border: 1px solid var(--glass-border);
+    border-color: transparent;
     border-radius: var(--radius-md);
     background: var(--glass-bg);
     backdrop-filter: blur(var(--glass-blur));
@@ -228,8 +295,7 @@ body {
 
 .collapse-button:hover {
     background: var(--glass-bg-hover);
-    border-color: var(--glass-border-hi);
-    box-shadow: var(--shadow-glow);
+    border-color: transparent;
     transform: scale(1.05);
 }
 
@@ -250,7 +316,7 @@ body {
     -webkit-backdrop-filter: blur(var(--glass-blur));
     border: 1px solid var(--glass-border);
     border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-md);
+    border-color: transparent;
     overflow-x: auto;
     overflow-y: hidden;
     -ms-overflow-style: none;
@@ -1138,8 +1204,8 @@ legend {
 .notification {
     position: fixed;
     bottom: var(--sp-6);
-    left: 50%;
-    transform: translateX(-50%) translateY(calc(100% + var(--sp-6)));
+    right: var(--sp-6);
+    transform: translateY(calc(100% + var(--sp-6)));
     z-index: 10000;
     padding: var(--sp-3) var(--sp-6);
     background: var(--glass-bg);
@@ -1159,7 +1225,7 @@ legend {
 }
 
 .notification.show {
-    transform: translateX(-50%) translateY(0);
+    transform: translateY(0);
     opacity: 1;
 }
 
@@ -1371,8 +1437,9 @@ legend {
         width: auto;
     }
 
-    .ressource-count {
-        padding: var(--sp-1) var(--sp-3);
+    .rc-pill,
+    .ressource-count.compact .rc-detail {
+        padding: var(--sp-1) var(--sp-2);
     }
 
     .tab-bar {
@@ -1430,7 +1497,8 @@ legend {
 
     /* Notification on mobile */
     .notification {
-        width: calc(100vw - var(--sp-8));
+        right: var(--sp-4);
+        left: var(--sp-4);
         white-space: normal;
         text-align: center;
         font-size: var(--fs-xs);
