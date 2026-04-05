@@ -28,7 +28,6 @@ export function render(container) {
             <button id="save-recipe">Save Recipe</button>
             <button id="randomize-recipe">Randomize Recipe</button>
             <button id="erase-recipes" class="danger-button">Erase All Recipes</button>
-            <button id="advanced-creator">Advanced Creator</button>
         </fieldset>
 
         <div class="saved-recipes">

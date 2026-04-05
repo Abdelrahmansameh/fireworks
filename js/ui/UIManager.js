@@ -47,18 +47,16 @@ class UIManager {
         this.skillTree = new SkillTreeScreen(this.game);
 
         const addComponentButtons = [
-            document.getElementById('add-component'),
-            document.getElementById('creator-add-component')
+            document.getElementById('add-component')
         ];
         addComponentButtons.forEach(btn => btn && btn.addEventListener('click', () => {
             const defaultComponent = { ...DEFAULT_RECIPE_COMPONENTS[0] };
             this.game.currentRecipeComponents.push(defaultComponent);
-            this.game.updateComponentsList(btn.id === 'creator-add-component' ? 'creator-components-list' : 'components-list');
+            this.game.updateComponentsList('components-list');
             this.game.saveCurrentRecipeComponents();
         }));
 
         const saveRecipeButtons = [
-            document.getElementById('creator-save-recipe'),
             document.getElementById('save-recipe')
         ];
         saveRecipeButtons.forEach(btn => btn && btn.addEventListener('click', () => {
@@ -66,7 +64,6 @@ class UIManager {
         }));
 
         const randomizeRecipeButtons = [
-            document.getElementById('creator-randomize-recipe'),
             document.getElementById('randomize-recipe')
         ];
         randomizeRecipeButtons.forEach(btn => btn && btn.addEventListener('click', () => {
@@ -74,7 +71,6 @@ class UIManager {
         }));
 
         const eraseRecipeButtons = [
-            document.getElementById('creator-erase-recipes'),
             document.getElementById('erase-recipes')
         ];
         eraseRecipeButtons.forEach(btn => btn && btn.addEventListener('click', () => {
@@ -256,14 +252,7 @@ class UIManager {
             this.game.randomizeLauncherRecipes();
         });
 
-        const advButton = document.getElementById('advanced-creator');
-        if (advButton) {
-            const unlocked = true; //localStorage.getItem('advancedCreatorUnlocked') === 'true';
-            advButton.style.display = unlocked ? 'inline-block' : 'none';
-            advButton.addEventListener('click', () => {
-                if (unlocked) this.game.openAdvancedCreator();
-            });
-        }
+
 
         // Building type sub-tab switching — loop over BUILDING_TYPES
         for (const [key] of Object.entries(BUILDING_TYPES)) {
@@ -273,12 +262,7 @@ class UIManager {
             }
         }
 
-        const backButton = document.getElementById('back-to-game');
-        if (backButton) {
-            backButton.addEventListener('click', () => {
-                this.game.closeAdvancedCreator();
-            });
-        }
+
 
         document.addEventListener('keydown', (e) => {
             if ((e.key === 'P' || e.key === 'p') && e.shiftKey) {
@@ -503,8 +487,8 @@ class UIManager {
             return;
         const worldPos = this.game.screenToWorld(screenX, screenY);
 
-        // Parse color to normalized RGB, fallback to gold
-        let baseR = 1.0, baseG = 0.88, baseB = 0.25;
+        // Parse color to normalized RGB, fallback to turquoise
+        let baseR = 0.4, baseG = 0.9, baseB = 0.9;
         if (color) {
             if (typeof color === 'string' && color.startsWith('#')) {
                 const hex = color.slice(1);

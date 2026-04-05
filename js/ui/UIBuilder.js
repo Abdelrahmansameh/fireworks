@@ -1,7 +1,7 @@
 /**
  * UIBuilder.js
  * Generates the entire UI chrome (top bar, tab bar, tab content slots, and
- * the Advanced Creator singleton) from the TABS schema.
+ * the tab content slots) from the TABS schema.
  *
  * Call buildChrome() once at startup, before UIManager.bindEvents() /
  * bindUIEvents() run.  Each panel's render() is called synchronously so the
@@ -92,33 +92,4 @@ export function buildChrome() {
         root.appendChild(content);
     }
 
-    // ── Advanced Creator (singleton, not a tab) ────────────────────────────
-    const creator = document.createElement('div');
-    creator.id = 'creator-scene';
-    creator.style.display = 'none';
-    creator.innerHTML = `
-        <canvas id="creator-canvas"></canvas>
-        <div id="creator-ui" class="panel scrollable-panel">
-            <h2 class="panel-title">Advanced Creator</h2>
-            <fieldset>
-                <legend>Explosion</legend>
-                <div id="creator-components-list"></div>
-                <button id="creator-add-component">Add Component</button>
-            </fieldset>
-            <fieldset class="recipe-settings">
-                <legend>Name</legend>
-                <div class="recipes-option">
-                    <input type="text" id="creator-recipe-name" placeholder="Enter recipe name">
-                </div>
-            </fieldset>
-            <fieldset class="recipe-actions">
-                <button id="creator-save-recipe">Save Recipe</button>
-                <button id="creator-randomize-recipe">Randomize Recipe</button>
-                <button id="creator-erase-recipes" class="danger-button">Erase All Recipes</button>
-                <br>
-                <button id="back-to-game">Back to Game</button>
-            </fieldset>
-        </div>
-    `;
-    root.appendChild(creator);
 }
