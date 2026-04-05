@@ -52,7 +52,6 @@ export function render(container) {
 
         buySection.innerHTML = `
             <h3>${type.name}s Owned: <span id="${type.id}-count">0</span></h3>
-            ${type.description ? `<p class="building-description">${type.description}</p>` : ''}
             <button id="buy-${type.id}"><span class="btn-cost">${currencyIcon}<span id="${type.id}-cost">${type.baseCost}</span></span>Buy ${type.name}</button>
             ${type.panel.showSpreadButton      ? '<button id="spread-launchers">Spread Launchers Evenly</button>' : ''}
             ${type.panel.showRandomizeButton   ? '<button id="randomize-launcher-recipes">Assign random to all Launchers</button>' : ''}
