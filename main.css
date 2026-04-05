@@ -913,6 +913,24 @@ legend {
     font-size: var(--fs-xs) !important;
 }
 
+.building-buy-section button {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-2);
+}
+
+.btn-cost {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    font-weight: 700;
+    font-size: var(--fs-sm);
+    opacity: 0.9;
+    margin-right: var(--sp-2);
+    border-right: 1px solid var(--glass-border-hi);
+    padding-right: var(--sp-2);
+}
+
 /* ── Launcher Cards ─────────────────────────────────────────────────────── */
 .launcher-card {
     display: grid;

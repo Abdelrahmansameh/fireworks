@@ -10,6 +10,7 @@
  *   list div   : ${type.id}-list          e.g. "auto_launcher-list"
  */
 import { BUILDING_TYPES } from '../../config/BuildingConfig.js';
+import ICONS from '../icons.js';
 
 export function render(container) {
     const panel = document.createElement('div');
@@ -47,11 +48,12 @@ export function render(container) {
         const buySection = document.createElement('div');
         buySection.className = 'building-buy-section';
 
+        const currencyIcon = type.currency === 'sparkles' ? ICONS.SPARKLE_SVG : ICONS.GOLD_SVG;
+
         buySection.innerHTML = `
             <h3>${type.name}s Owned: <span id="${type.id}-count">0</span></h3>
-            <p>Cost: <span id="${type.id}-cost">${type.baseCost}</span> ${type.currency}</p>
             ${type.description ? `<p class="building-description">${type.description}</p>` : ''}
-            <button id="buy-${type.id}">Buy ${type.name}</button>
+            <button id="buy-${type.id}"><span class="btn-cost">${currencyIcon}<span id="${type.id}-cost">${type.baseCost}</span></span>Buy ${type.name}</button>
             ${type.panel.showSpreadButton      ? '<button id="spread-launchers">Spread Launchers Evenly</button>' : ''}
             ${type.panel.showRandomizeButton   ? '<button id="randomize-launcher-recipes">Assign random to all Launchers</button>' : ''}
             <div id="${type.id}-stats"></div>
