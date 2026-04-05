@@ -358,7 +358,7 @@ class FireworkGame extends Engine {
         return this.resourceManager.resources.sparkles.amount;
     }
 
-    getComponentSparkles(component) {
+    getFireworkSparkles() {
         return this.baseSparkleMultiplier;
     }
 
@@ -366,7 +366,10 @@ class FireworkGame extends Engine {
         const totalSparklesPerSec = this.calculateTotalSparklesPerSecond();
         const launcherCount = this.buildingManager.getBuildingsByType('AUTO_LAUNCHER').length;
 
-        this.resourceManager.resources.sparkles.updateFromLevel(totalSparklesPerSec);
+        const passiveSparklesPerSec = this.calculateSparklesPerSecond(
+            this.buildingManager.buildings.filter(b => b.type !== 'AUTO_LAUNCHER')
+        );
+        this.resourceManager.resources.sparkles.updateFromLevel(passiveSparklesPerSec);
 
         this.ui.updateUI(
             Math.floor(this.getSparkles()),

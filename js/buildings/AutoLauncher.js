@@ -67,10 +67,7 @@ class AutoLauncher extends Building {
         this.game.fireworkSystem.launch(spawnX, launchY, components, null);
         this.game.fireworkSystem.fireworkCount++;
 
-        const sparkleAmount = components.reduce(
-            (sum, c) => sum + this.game.getComponentSparkles(c),
-            0
-        );
+        const sparkleAmount = this.game.baseSparkleMultiplier;
         this.game.addSparkles(sparkleAmount, 'auto_launcher');
         this.game.statsTracker.recordFirework('auto_launcher');
     }
@@ -80,31 +77,7 @@ class AutoLauncher extends Building {
     }
 
     getSparklesPerSecond() {
-        let components;
-
-        if (!this.game.progression.isUnlocked('recipes_tab')) {
-            components = this.game.currentRecipeComponents.map(c => ({
-                ...PRE_RECIPE_COMPONENT_DEFAULTS,
-                color: c.color,
-                pattern: c.pattern,
-            }));
-        } else {
-            const recipe = this.game.recipes[this.assignedRecipeIndex];
-            if (recipe) {
-                components = recipe.components;
-            } else if (this.game.recipes.length > 0) {
-                components = this.game.recipes[0].components;
-            } else {
-                components = this.game.currentRecipeComponents;
-            }
-        }
-
-        const sparklePerFirework = components.reduce(
-            (sum, c) => sum + this.game.getComponentSparkles(c),
-            0
-        );
-
-        return sparklePerFirework / this.spawnInterval;
+        return this.game.baseSparkleMultiplier / this.spawnInterval;
     }
 
     serialize() {

@@ -81,7 +81,7 @@ export default class FireworkSystem {
         this.launch(spawnX, spawnY, components, Math.max(targetY, minY));
         this.fireworkCount++;
         
-        const sparkleAmount = components.reduce((sum, c) => sum + this.game.getComponentSparkles(c), 0);
+        const sparkleAmount = this.game.baseSparkleMultiplier;
         this.game.addSparkles(sparkleAmount, 'manual');
         this.game.statsTracker.recordFirework('manual');
         this.game.checkUnlockConditions();
