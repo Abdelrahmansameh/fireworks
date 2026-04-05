@@ -8,7 +8,6 @@ export function render(container) {
     panel.className = 'panel scrollable-panel';
 
     panel.innerHTML = `
-        <h2 class="panel-title">Cheats (Developer)</h2>
 
         <fieldset>
             <legend>Add Resources</legend>

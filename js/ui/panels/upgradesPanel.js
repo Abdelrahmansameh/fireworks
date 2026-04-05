@@ -9,7 +9,6 @@ export function render(container) {
     panel.className = 'panel scrollable-panel';
 
     panel.innerHTML = `
-        <h2 class="panel-title">Upgrades</h2>
         <h3>Available</h3>
         <div id="upgrades-available" class="upgrade-grid"></div>
         <h3>Owned</h3>

@@ -15,7 +15,8 @@ export function render(container) {
     const panel = document.createElement('div');
     panel.className = 'panel scrollable-panel';
 
-    panel.innerHTML = '<h2 class="panel-title">Manage Buildings</h2>';
+    // panel title removed — not useful
+    panel.innerHTML = '';
 
     // ── Building type sub-tab bar ──────────────────────────────────────────
     const tabBar = document.createElement('div');

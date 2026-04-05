@@ -8,7 +8,6 @@ export function render(container) {
     panel.className = 'panel scrollable-panel';
 
     panel.innerHTML = `
-        <h2 class="panel-title">Crowd</h2>
         <div class="crowd-info">
             <h3>Crowd Size: <span id="crowd-count">0</span></h3>
             <p>Current Auto FPS: <span id="current-sps">0</span></p>

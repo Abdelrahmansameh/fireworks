@@ -12,10 +12,7 @@ export function render(container) {
     const panel = document.createElement('div');
     panel.className = 'panel scrollable-panel';
 
-    const title = document.createElement('h2');
-    title.className = 'panel-title';
-    title.textContent = 'Statistics';
-    panel.appendChild(title);
+    // panel title removed — statistics heading handled per-section
 
     for (const section of STATS_SCHEMA) {
         const sectionDiv = document.createElement('div');

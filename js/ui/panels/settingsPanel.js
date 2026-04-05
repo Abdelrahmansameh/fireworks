@@ -8,7 +8,6 @@ export function render(container) {
     panel.className = 'panel scrollable-panel';
 
     panel.innerHTML = `
-        <h2 class="panel-title">Settings</h2>
         <div class="recipes-option">
             <label>Music Volume: <span id="music-volume-value">15</span>%</label>
             <input type="range" id="music-volume" min="0" max="100" value="15" step="1">

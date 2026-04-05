@@ -9,7 +9,6 @@ export function render(container) {
     panel.className = 'panel scrollable-panel';
 
     panel.innerHTML = `
-        <h2 class="panel-title">Recipe Editor</h2>
 
         <fieldset>
             <legend>Explosion</legend>
