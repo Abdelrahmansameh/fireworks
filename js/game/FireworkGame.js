@@ -1270,7 +1270,7 @@ class FireworkGame extends Engine {
 
     isBuildingTypeUnlocked(buildingType) {
         switch (buildingType) {
-            case 'AUTO_LAUNCHER': return this.progression.getUpgradeLevel('buildings_tab') > 0;
+            case 'AUTO_LAUNCHER': return this.progression.getUpgradeLevel('auto_launcher') > 0;
             case 'RESOURCE_GENERATOR': return this.progression.getUpgradeLevel('resource_generator') > 0;
             case 'CATAPULT': return this.progression.getUpgradeLevel('catapult') > 0;
             case 'DRONE_HUB': return this.progression.getUpgradeLevel('drone_hub') > 0;

@@ -1573,7 +1573,7 @@ class UIManager {
             if (!fc.tabMenu) this.addGlimmer('tabMenu');
         }
 
-        if (p.getUpgradeLevel('buildings_tab') > 0) {
+        if (p.getUpgradeLevel('auto_launcher') > 0) {
             this.showBuildingsTab();
             if (!fc.buildingsTab) this.addGlimmer('buildingsTab');
         }
