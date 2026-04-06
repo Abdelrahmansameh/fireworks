@@ -444,7 +444,7 @@ body {
 .panel {
     display: grid;
     gap: var(--sp-4);
-    padding: var(--sp-6) var(--sp-6);
+    padding: var(--sp-6) var(--sp-4);
     font-size: var(--fs-base);
     color: var(--text-primary);
 }
@@ -453,7 +453,7 @@ body {
     max-height: calc(100vh - 100px);
     max-height: calc(100dvh - 100px);
     overflow-y: auto;
-    overflow-x: hidden;
+    overflow-x: auto;
     scrollbar-width: thin;
     scrollbar-color: var(--turquoise-dark) transparent;
 }
@@ -844,9 +844,8 @@ legend {
 
 /* ── Building Type Sub-Tabs ─────────────────────────────────────────────── */
 .building-type-tabs {
-    display: grid;
-    grid-auto-flow: column;
-    grid-auto-columns: 1fr;
+    display: flex;
+    flex-wrap: wrap;
     gap: var(--sp-1);
     padding: var(--sp-1);
     background: hsla(220, 18%, 8%, 0.4);
@@ -855,6 +854,8 @@ legend {
 }
 
 .building-type-tab {
+    flex: 1 0 auto;
+    min-width: calc(50% - var(--sp-1));
     font-size: var(--fs-xs);
     padding: var(--sp-2) var(--sp-2);
     border-radius: var(--radius-sm);
@@ -916,7 +917,11 @@ legend {
 .building-buy-section button {
     display: flex;
     align-items: center;
+    flex-wrap: wrap;
     gap: var(--sp-2);
+    height: auto;
+    padding-top: var(--sp-2);
+    padding-bottom: var(--sp-2);
 }
 
 .btn-cost {
