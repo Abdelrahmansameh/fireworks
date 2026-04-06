@@ -1,4 +1,5 @@
 import { DRONE_CONFIG } from '../config/config.js';
+import { SKILL_TREE_CONFIG } from '../ui/SkillTreeConfig.js';
 
 /**
  * ProgressionManager — centralized state for all upgrades and unlock nodes.
@@ -24,9 +25,12 @@ class ProgressionManager {
         for (const entry of config) {
             if (entry.type === 'unlock') {
                 this._unlockNodes.set(entry.id, entry);
-            } else {
-                this._upgrades.set(entry.id, entry);
             }
+        }
+
+        for (const [id, node] of Object.entries(SKILL_TREE_CONFIG.nodes)) {
+            const upgradeDef = { ...node, id };
+            this._upgrades.set(id, upgradeDef);
         }
 
         /** @type {Object.<string, number>} id → purchased level */
@@ -98,8 +102,14 @@ class ProgressionManager {
         const level = this.getUpgradeLevel(id);
         if (level >= (def.maxLevel ?? 1)) return { ok: false, reason: 'Already maxed' };
 
-        const reqCheck = this._evalRequires(def.requires, game);
-        if (!reqCheck.met) return { ok: false, reason: reqCheck.reason };
+        if (def.treeParent && def.treeParent !== 'ROOT') {
+            const parentLevel = this.getUpgradeLevel(def.treeParent);
+            if (parentLevel < 1) {
+                const parentDef = this._upgrades.get(def.treeParent);
+                const name = parentDef ? parentDef.name : def.treeParent;
+                return { ok: false, reason: `Requires "${name}"` };
+            }
+        }
 
         const cost = this.getUpgradeCost(id);
         const wallet = def.currency === 'gold'
@@ -118,8 +128,14 @@ class ProgressionManager {
      */
     isVisible(id, game) {
         const def = this._upgrades.get(id);
-        if (!def || !def.requires) return { visible: true };
-        return this._evalVisibility(def.requires, game);
+        if (!def) return { visible: true };
+
+        if (def.treeParent && def.treeParent !== 'ROOT') {
+            if (this.getUpgradeLevel(def.treeParent) < 1) {
+                return { visible: false };
+            }
+        }
+        return { visible: true };
     }
 
     // ── Upgrade mutations ─────────────────────────────────────────────────────
@@ -288,8 +304,8 @@ class ProgressionManager {
         }
 
         if (requires.upgrades) {
-            for (const [uid, minLevel] of Object.entries(requires.upgrades)) {
-                if (this.getUpgradeLevel(uid) < minLevel) {
+            for (const [uid, _minLevel] of Object.entries(requires.upgrades)) {
+                if (this.getUpgradeLevel(uid) < 1) {
                     const refDef = this._upgrades.get(uid);
                     const name = refDef ? refDef.name : uid;
                     return { met: false, reason: `Requires "${name}"` };
