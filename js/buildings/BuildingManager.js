@@ -40,6 +40,13 @@ class BuildingManager {
         }
 
         const count = this.getBuildingsByType(buildingType).length;
+
+        // Enforce catapult limit
+        if (buildingType === 'CATAPULT' && count >= (this.game.catapultStats?.maxCatapults ?? 1)) {
+            this.game.showNotification(`Maximum catapults reached (${this.game.catapultStats.maxCatapults})!`);
+            return null;
+        }
+
         const cost = Building.getPurchaseCost(buildingType, count);
         
         const resource = this.game.resourceManager.resources[config.currency];
@@ -63,7 +70,10 @@ class BuildingManager {
         }
         x = Math.max(minX, Math.min(x, maxX));
         
-        const y = GAME_BOUNDS.BUILDING_Y;
+        let y = GAME_BOUNDS.BUILDING_Y;
+        if (buildingType === 'CATAPULT') {
+            y += count * GAME_BOUNDS.CATAPULT_Y_STEP;
+        }
         
         const building = this.createBuilding(buildingType, x, y);
         

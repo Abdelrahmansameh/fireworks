@@ -1573,7 +1573,7 @@ class UIManager {
             if (!fc.tabMenu) this.addGlimmer('tabMenu');
         }
 
-        if (p.isUnlocked('buildings_tab')) {
+        if (p.getUpgradeLevel('buildings_tab') > 0) {
             this.showBuildingsTab();
             if (!fc.buildingsTab) this.addGlimmer('buildingsTab');
         }
@@ -1879,21 +1879,34 @@ class UIManager {
             const btn = document.getElementById(`buy-${type.id}`);
             if (btn) {
                 const balance = this.game.resourceManager.resources[type.currency]?.amount ?? 0;
-                btn.disabled = balance < cost;
+                const unaffordable = balance < cost;
+                
+                let limitReached = false;
+                if (key === 'CATAPULT') {
+                    const count = this.game.buildingManager.getBuildingsByType('CATAPULT').length;
+                    limitReached = count >= (this.game.catapultStats?.maxCatapults ?? 1);
+                    
+                    if (limitReached) {
+                        const costEl = document.getElementById(`${type.id}-cost`);
+                        if (costEl) costEl.textContent = 'MAX';
+                    }
+                }
+
+                btn.disabled = unaffordable || limitReached;
             }
         }
     }
 
     updateBuildingTypeVisibility() {
-        const p = this.game.progression;
         let activeBuildingType = document.querySelector('.building-type-tab.active')?.getAttribute('data-building-type');
 
         for (const [key, type] of Object.entries(BUILDING_TYPES)) {
-            if (!type.unlockId) continue; // always visible if no unlockId
             const tab = document.querySelector(`.building-type-tab[data-building-type="${key}"]`);
             if (!tab) continue;
-            const unlocked = p.isUnlocked(type.unlockId);
+
+            const unlocked = this.game.isBuildingTypeUnlocked(key);
             tab.style.display = unlocked ? 'block' : 'none';
+
             // If the active section belongs to a now-locked type, fall back to AUTO_LAUNCHER
             if (activeBuildingType === key && !unlocked) {
                 this.switchBuildingType('AUTO_LAUNCHER');

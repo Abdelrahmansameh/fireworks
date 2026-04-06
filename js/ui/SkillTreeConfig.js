@@ -30,10 +30,10 @@ export const SKILL_TREE_CONFIG = {
 
     // ── Branch colour themes ─────────────────────────────────────────────────
     branches: {
-        BASE:      { color: '#FFC857', label: 'Core' },
-        DRONE:     { color: '#29B6F6', label: 'Drones' },
-        CROWD:     { color: '#F06292', label: 'Crowd' },
-        LAUNCHER:  { color: '#FF7043', label: 'Launchers' },
+        BASE: { color: '#FFC857', label: 'Core' },
+        DRONE: { color: '#29B6F6', label: 'Drones' },
+        CROWD: { color: '#F06292', label: 'Crowd' },
+        LAUNCHER: { color: '#FF7043', label: 'Launchers' },
         GENERATOR: { color: '#66BB6A', label: 'Generators' },
     },
 
@@ -67,13 +67,22 @@ export const SKILL_TREE_CONFIG = {
             treeParent: 'spark_core_3',
         },
 
+        // -- Building Blueprints --
+        // These act as hubs for their respective branches
+        auto_launcher: {
+            x: 0, y: 120,
+            icon: 'base',
+            branch: 'BASE',
+            treeParent: 'base_mult_1',
+        },
+
         // ── LAUNCHER branch — goes left ───────────────────────────────────
         // Fire-rate reduction chain; both cost sparkles
         launcher_spawn_rate: {
-            x: -320, y: -60,
+            x: -320, y: 120,
             icon: 'launcher',
             branch: 'LAUNCHER',
-            treeParent: 'base_mult_1',
+            treeParent: 'auto_launcher',
         },
         launcher_overclock: {
             x: -520, y: -60,
@@ -84,11 +93,17 @@ export const SKILL_TREE_CONFIG = {
 
         // ── GENERATOR branch — goes lower-left ───────────────────────────
         // Production multipliers; costs gold
-        generator_production: {
-            x: -240, y: 290,
+        resource_generator: {
+            x: -210, y: 240,
             icon: 'base',
             branch: 'GENERATOR',
-            treeParent: 'base_mult_1',
+            treeParent: 'buildings_tab',
+        },
+        generator_production: {
+            x: -400, y: 240,
+            icon: 'base',
+            branch: 'GENERATOR',
+            treeParent: 'resource_generator',
         },
         generator_overclock: {
             x: -400, y: 480,
@@ -99,11 +114,17 @@ export const SKILL_TREE_CONFIG = {
 
         // ── DRONE branch — goes right ─────────────────────────────────────
         // Six core upgrades fanning out, then capstone
-        drone_lifetime: {
-            x: 300, y: -60,
+        drone_hub: {
+            x: 210, y: -60,
             icon: 'drone',
             branch: 'DRONE',
-            treeParent: 'base_mult_1',
+            treeParent: 'buildings_tab',
+        },
+        drone_lifetime: {
+            x: 400, y: -60,
+            icon: 'drone',
+            branch: 'DRONE',
+            treeParent: 'drone_hub',
         },
         drone_speed: {
             x: 480, y: -220,
@@ -152,7 +173,13 @@ export const SKILL_TREE_CONFIG = {
             x: 0, y: 240,
             icon: 'crowd',
             branch: 'CROWD',
-            treeParent: 'ROOT',
+            treeParent: 'buildings_tab',
+        },
+        catapult: {
+            x: -200, y: 440,
+            icon: 'crowd',
+            branch: 'CROWD',
+            treeParent: 'crowd_spark_1',
         },
         crowd_gold_1: {
             x: 200, y: 240,

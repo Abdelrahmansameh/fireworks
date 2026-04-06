@@ -19,15 +19,74 @@ export const PROGRESSION_CONFIG = [
 
     // ── Unlock nodes ──────────────────────────────────────────────────────────
 
-    { type: 'unlock', id: 'sparkle_counter',   requires: { stats: { fireworkCount: 1 } } },
-    { type: 'unlock', id: 'tab_menu',           requires: { stats: { fireworkCount: 5 } } },
-    { type: 'unlock', id: 'buildings_tab',      requires: { stats: { fireworkCount: 10 } } },
-    { type: 'unlock', id: 'upgrades_tab',       requires: { stats: { fireworkCount: 20 } } },
-    { type: 'unlock', id: 'crowds_tab',         requires: { stats: { crowdCount: 1 } } },
-    { type: 'unlock', id: 'resource_generator', requires: { stats: { launcherCount: 3 } } },
-    { type: 'unlock', id: 'catapult',           requires: { stats: { launcherCount: 4 } } },
-    { type: 'unlock', id: 'drone_hub',          requires: { stats: { launcherCount: 5 } } },
-    { type: 'unlock', id: 'recipes_tab',        requires: { stats: { launcherCount: 20 } } },
+    { type: 'unlock', id: 'sparkle_counter', requires: { stats: { fireworkCount: 1 } } },
+    { type: 'unlock', id: 'tab_menu', requires: { stats: { fireworkCount: 5 } } },
+    { type: 'unlock', id: 'upgrades_tab', requires: { stats: { fireworkCount: 10 } } },
+    { type: 'unlock', id: 'crowds_tab', requires: { stats: { crowdCount: 1 } } },
+    { type: 'unlock', id: 'recipes_tab', requires: { stats: { launcherCount: 20 } } },
+
+    // ── Building Unlocks (as Upgrades) ──────────────────────────────────────────
+
+    {
+        type: 'upgrade',
+        id: 'auto_launcher',
+        group: 'BASE',
+        name: 'Auto-Launcher Blueprint',
+        desc: 'Unlocks Firework Auto-Launchers.',
+        baseCost: 100,
+        costRatio: 1,
+        currency: 'sparkles',
+        maxLevel: 1,
+        requires: { unlocked: ['upgrades_tab'] },
+        apply: (game, _level) => {
+            game._handleUnlock('buildings_tab');
+        },
+    },
+    {
+        type: 'upgrade',
+        id: 'resource_generator',
+        group: 'GENERATOR',
+        name: 'Generator Blueprint',
+        desc: 'Unlocks Sparkle Generators to passively generate income.',
+        baseCost: 500,
+        costRatio: 1,
+        currency: 'gold',
+        maxLevel: 1,
+        requires: { upgrades: { auto_launcher: 1 } },
+        apply: (game, _level) => {
+            game._handleUnlock('resource_generator');
+        },
+    },
+    {
+        type: 'upgrade',
+        id: 'catapult',
+        group: 'CROWD',
+        name: 'Catapult Blueprint',
+        desc: 'Unlocks Catapults to launch crowd members into the zone.',
+        baseCost: 1000,
+        costRatio: 1,
+        currency: 'gold',
+        maxLevel: 1,
+        requires: { upgrades: { crowd_spark_1: 1 } },
+        apply: (game, _level) => {
+            game._handleUnlock('catapult');
+        },
+    },
+    {
+        type: 'upgrade',
+        id: 'drone_hub',
+        group: 'DRONE',
+        name: 'Drone Hub Blueprint',
+        desc: 'Unlocks Drone Hubs for automated particle collection.',
+        baseCost: 2000,
+        costRatio: 1,
+        currency: 'gold',
+        maxLevel: 1,
+        requires: { upgrades: { buildings_tab: 1 } },
+        apply: (game, _level) => {
+            game._handleUnlock('drone_hub');
+        },
+    },
 
     {
         //root
@@ -93,7 +152,7 @@ export const PROGRESSION_CONFIG = [
         costRatio: 1.6,
         currency: 'sparkles',
         maxLevel: 5,
-        requires: { buildings: ['AUTO_LAUNCHER'] },
+        requires: { upgrades: { buildings_tab: 1 } },
         apply: (game, level) => { game.launcherStats.spawnIntervalMultiplier = Math.pow(0.9, level); },
     },
     {
@@ -121,7 +180,7 @@ export const PROGRESSION_CONFIG = [
         costRatio: 1.6,
         currency: 'gold',
         maxLevel: 5,
-        requires: { buildings: ['RESOURCE_GENERATOR'] },
+        requires: { upgrades: { resource_generator: 1 } },
         apply: (game, level) => { game.generatorStats.productionRateMultiplier = Math.pow(1.5, level); },
     },
     {
@@ -148,7 +207,7 @@ export const PROGRESSION_CONFIG = [
         costRatio: 1.5,
         currency: 'gold',
         maxLevel: 5,
-        requires: { buildings: ['DRONE_HUB'] },
+        requires: { upgrades: { drone_hub: 1 } },
         apply: (game, level) => { game.droneStats.lifetimeMultiplier = 1 + 0.25 * level; },
     },
     {
@@ -235,6 +294,21 @@ export const PROGRESSION_CONFIG = [
             if (game.droneSystem) game.droneSystem.maxDrones = game.droneStats.maxDrones;
             game.droneHubStats.spawnIntervalMultiplier *= Math.pow(0.75, level);
         },
+    },
+
+
+    {
+        type: 'upgrade',
+        id: 'catapult_max_count',
+        group: 'CATAPULT',
+        name: 'Catapult Capacity',
+        desc: '+1 max catapult per level',
+        baseCost: 500,
+        costRatio: 2.5,
+        currency: 'gold',
+        maxLevel: 3,
+        requires: { buildings: ['CATAPULT'] },
+        apply: (game, level) => { game.catapultStats.maxCatapults = 1 + level; },
     },
 
 
@@ -339,7 +413,7 @@ export const PROGRESSION_CONFIG = [
         costRatio: 1,
         currency: 'gold',
         maxLevel: 1,
-        requires: { unlocked: ['crowds_tab'] },
+        requires: { upgrades: { buildings_tab: 1 }, unlocked: ['crowds_tab'] },
         apply: (game, _level) => { game.baseSparkleMultiplier *= 2; },
     },
     {
