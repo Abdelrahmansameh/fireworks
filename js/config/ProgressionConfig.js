@@ -37,7 +37,6 @@ export const PROGRESSION_CONFIG = [
         costRatio: 1,
         currency: 'sparkles',
         maxLevel: 1,
-        requires: { unlocked: ['upgrades_tab'] },
         apply: (game, _level) => {
             game._handleUnlock('buildings_tab');
         },
@@ -220,7 +219,7 @@ export const PROGRESSION_CONFIG = [
         costRatio: 1.5,
         currency: 'gold',
         maxLevel: 5,
-        requires: { buildings: ['DRONE_HUB'] },
+        requires: { upgrades: { drone_hub: 1 } },
         apply: (game, level) => { game.droneStats.speedMultiplier = 1 + 0.20 * level; },
     },
     {
@@ -233,7 +232,7 @@ export const PROGRESSION_CONFIG = [
         costRatio: 1.5,
         currency: 'gold',
         maxLevel: 5,
-        requires: { buildings: ['DRONE_HUB'] },
+        requires: { upgrades: { drone_hub: 1 } },
         apply: (game, level) => { game.droneStats.collectionRadiusMultiplier = 1 + 0.20 * level; },
     },
     {
@@ -246,7 +245,7 @@ export const PROGRESSION_CONFIG = [
         costRatio: 2.0,
         currency: 'gold',
         maxLevel: 5,
-        requires: { buildings: ['DRONE_HUB'] },
+        requires: { upgrades: { drone_hub: 1 } },
         apply: (game, level) => {
             game.droneStats.maxDrones = DRONE_CONFIG.maxDrones + 5 * level;
             if (game.droneSystem) game.droneSystem.maxDrones = game.droneStats.maxDrones;
@@ -262,7 +261,7 @@ export const PROGRESSION_CONFIG = [
         costRatio: 1.7,
         currency: 'gold',
         maxLevel: 5,
-        requires: { buildings: ['DRONE_HUB'] },
+        requires: { upgrades: { drone_hub: 1 } },
         apply: (game, level) => { game.droneStats.sparklesPerParticleMultiplier = 1 + 0.5 * level; },
     },
     {
@@ -275,7 +274,7 @@ export const PROGRESSION_CONFIG = [
         costRatio: 1.5,
         currency: 'gold',
         maxLevel: 5,
-        requires: { buildings: ['DRONE_HUB'] },
+        requires: { upgrades: { drone_hub: 1 } },
         apply: (game, level) => { game.droneHubStats.spawnIntervalMultiplier = Math.pow(0.88, level); },
     },
     {
@@ -307,7 +306,7 @@ export const PROGRESSION_CONFIG = [
         costRatio: 2.5,
         currency: 'gold',
         maxLevel: 3,
-        requires: { buildings: ['CATAPULT'] },
+        requires: { upgrades: { catapult: 1 } },
         apply: (game, level) => { game.catapultStats.maxCatapults = 1 + level; },
     },
 
@@ -413,7 +412,7 @@ export const PROGRESSION_CONFIG = [
         costRatio: 1,
         currency: 'gold',
         maxLevel: 1,
-        requires: { upgrades: { buildings_tab: 1 }, unlocked: ['crowds_tab'] },
+        requires: { upgrades: { buildings_tab: 1 } },
         apply: (game, _level) => { game.baseSparkleMultiplier *= 2; },
     },
     {

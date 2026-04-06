@@ -163,12 +163,7 @@ export const SKILL_TREE_CONFIG = {
             treeParent: 'drone_hub_spawn_rate',
         },
 
-        // ── CROWD branch — goes lower & lower-right ───────────────────────
-        // spark_1 → gold_1 → gold_2 → spark_2 → gold_3 → gold_4 along Row 1
-        // Row 1 (y=240): spark_1 → gold_1 → gold_2 → spark_2 → gold_3 → gold_4
-        // Row 2 (y=440): invite_1 → invite_2 below gold chain; catcher & invite_3 off gold_3
-        // Row 3 (y=620): catcher sub-upgrades
-        // Row 4 (y=800): throw power
+
         crowd_spark_1: {
             x: 0, y: 240,
             icon: 'crowd',
