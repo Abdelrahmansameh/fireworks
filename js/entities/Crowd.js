@@ -280,7 +280,7 @@ class Crowd {
                     person.vx = -Math.abs(person.vx) * CROWD_CONFIG.wallBounce;
                 }
 
-                if (person.y <= person.spawnY) {
+                if (person.y <= person.spawnY && person.vy <= 0) {
                     person.y = person.spawnY;
 
                     if (person.bounceCount < CROWD_CONFIG.groundBounceCount) {
@@ -481,6 +481,7 @@ class Crowd {
      * @param {number} vy
      */
     launchPersonFromCatapult(personIndex, vx, vy) {
+        console.log(`Launching person ${personIndex} from catapult with velocity (${vx}, ${vy})`);
         const person = this.people[personIndex];
         if (!person) 
             return;

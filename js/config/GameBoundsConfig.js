@@ -14,6 +14,7 @@ export const GAME_BOUNDS = {
     WORLD_LAUNCHER_Y: -535,
     CATAPULT_MIN_X: -1650,
     CATAPULT_MAX_X: -1450,
+    BUILDING_Y: -435,
     IS_ZOOM_LOCKED: true,
     MAX_ZOOM: 5,
     MIN_ZOOM: 0.1

@@ -63,7 +63,7 @@ class BuildingManager {
         }
         x = Math.max(minX, Math.min(x, maxX));
         
-        const y = GAME_BOUNDS.WORLD_LAUNCHER_Y;
+        const y = GAME_BOUNDS.BUILDING_Y;
         
         const building = this.createBuilding(buildingType, x, y);
         

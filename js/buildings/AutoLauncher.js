@@ -31,7 +31,7 @@ class AutoLauncher extends Building {
 
     spawnFirework() {
         const x = this.x;
-        const launchY = GAME_BOUNDS.WORLD_LAUNCHER_Y;
+        const launchY = GAME_BOUNDS.BUILDING_Y;
 
         let components;
 
@@ -65,7 +65,7 @@ class AutoLauncher extends Building {
             return;
         }
 
-        const spawnX = x + (Math.random() * 0.5 - 0.25) * this.config.width;
+        const spawnX = x + (Math.random() * 0.2 - 0.15) * this.config.width;
 
         this.game.fireworkSystem.launch(spawnX, launchY, components, null);
         this.game.fireworkSystem.fireworkCount++;
