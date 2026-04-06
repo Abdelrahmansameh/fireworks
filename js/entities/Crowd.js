@@ -196,6 +196,8 @@ class Crowd {
             collected: 0,
             bounceCount: 0,
             flipX: 1,
+            // Catapult interaction
+            catapultData: null,
         };
 
         this.people.push(person);
@@ -310,10 +312,67 @@ class Crowd {
                 }
                 break;
             }
+
+            case 'catapult_walk': {
+                const catData = person.catapultData;
+                if (!catData || !catData.catapult) {
+                    person.catapultData = null;
+                    this._switchToState(personIndex, 'walking');
+                    break;
+                }
+                const targetX = catData.catapult.approachX;
+                const cdx = targetX - person.x;
+                person.flipX = cdx >= 0 ? 1 : -1;
+                const cDir = Math.sign(cdx);
+                const cDeltaMove = cDir * walkSpeed * deltaTime;
+
+                if (Math.abs(cdx) <= Math.abs(cDeltaMove)) {
+                    person.x = targetX;
+                    this._beginCatapultArc(personIndex);
+                } else {
+                    person.x += cDeltaMove;
+                }
+                break;
+            }
+
+            case 'catapult_arc': {
+                const arcData = person.catapultData;
+                if (!arcData || !arcData.catapult) {
+                    person.catapultData = null;
+                    this._switchToState(personIndex, 'walking');
+                    break;
+                }
+                arcData.arcElapsed += deltaTime;
+                const t = Math.min(arcData.arcElapsed / arcData.arcDuration, 1);
+                person.x = arcData.arcStartX + (arcData.arcEndX - arcData.arcStartX) * t;
+                const linearY = arcData.arcStartY + (arcData.arcEndY - arcData.arcStartY) * t;
+                person.y = linearY + arcData.arcHeight * Math.sin(Math.PI * t);
+
+                if (t >= 1.0) {
+                    person.x = arcData.arcEndX;
+                    person.y = arcData.arcEndY;
+                    this._switchToState(personIndex, 'catapult_riding');
+                    arcData.catapult.onPersonReachedHead();
+                }
+                break;
+            }
+
+            case 'catapult_riding': {
+                const rideData = person.catapultData;
+                if (!rideData || !rideData.catapult) {
+                    person.catapultData = null;
+                    this._switchToState(personIndex, 'falling');
+                    break;
+                }
+                const headPos = rideData.catapult.getHeadWorldPos();
+                person.x = headPos.x;
+                person.y = headPos.y;
+                break;
+            }
         }
 
         person.coinTossTimer += deltaTime;
-        if (person.coinTossTimer >= 5) {
+        if (person.coinTossTimer >= 5 && !person.catapultData) {
             person.coinTossTimer -= 5;
             if (this.onCoinDrop) {
                 this.onCoinDrop(this.goldPerCoinToss, 'crowd');
@@ -334,12 +393,101 @@ class Crowd {
             const clip = this._animData.getClip('toss_coin');
             return { clip, time: clip ? clip.duration - person.coinAnimTimer : 0 };
         }
+
+        if (person.state === 'catapult_walk') {
+            const clip = this._animData.getClip('walking') ?? null;
+            const time = clip ? person.animTimer % clip.duration : 0;
+            return { clip, time };
+        }
+        if (person.state === 'catapult_arc') {
+            const clip = this._animData.getClip('jumping') ?? null;
+            const elapsed = person.catapultData?.arcElapsed ?? 0;
+            const time = clip ? Math.min(elapsed, clip.duration) : 0;
+            return { clip, time };
+        }
+        if (person.state === 'catapult_riding') {
+            const clip = this._animData.getClip('jumping') ?? null;
+            const time = clip ? clip.duration : 0;
+            return { clip, time };
+        }
+
         const name = person.state === 'grabbed' ? 'falling' : person.state;
         const clip = this._animData.getClip(name) ?? null;
         const time = clip
             ? (clip.loop ? person.animTimer % clip.duration : Math.min(person.animTimer, clip.duration))
             : 0;
         return { clip, time };
+    }
+
+    // ── Catapult helpers ──────────────────────────────────────────────────────
+
+    _beginCatapultArc(personIndex) {
+        const person = this.people[personIndex];
+        const catData = person.catapultData;
+        if (!catData || !catData.catapult) return;
+
+        const headPos = catData.catapult.getHeadWorldPos();
+        const jumpClip = this._animData ? this._animData.getClip('jumping') : null;
+        const arcDuration = jumpClip ? jumpClip.duration : 0.6;
+
+        catData.arcStartX = person.x;
+        catData.arcStartY = person.y;
+        catData.arcEndX = headPos.x;
+        catData.arcEndY = headPos.y;
+        catData.arcDuration = arcDuration;
+        catData.arcElapsed = 0;
+        catData.arcHeight = 50; // extra upward arc above the straight line
+
+        person.state = 'catapult_arc';
+        person.animTimer = 0;
+    }
+
+    /**
+     * Ask the crowd for a volunteer to use the catapult.
+     * Finds the nearest cheering person and sends them toward the catapult.
+     * @param {import('../buildings/Catapult.js').default} catapult
+     * @returns {number} person index, or -1 if none available
+     */
+    assignPersonToCatapult(catapult) {
+        let bestIdx = -1;
+        let bestDist = Infinity;
+
+        for (let i = 0; i < this.people.length; i++) {
+            const p = this.people[i];
+            if (p.state !== 'cheering' || p.catapultData) continue;
+            const dx = catapult.approachX - p.x;
+            const dy = catapult.y - p.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            if (dist < bestDist) {
+                bestDist = dist;
+                bestIdx = i;
+            }
+        }
+
+        if (bestIdx < 0) return -1;
+
+        const person = this.people[bestIdx];
+        person.catapultData = { catapult };
+        person.flipX = person.x < catapult.approachX ? 1 : -1;
+        this._switchToState(bestIdx, 'catapult_walk');
+        catapult.onPersonWalking();
+        return bestIdx;
+    }
+
+    /**
+     * Called by Catapult when it fires — launch the attached person into the air.
+     * @param {number} personIndex
+     * @param {number} vx
+     * @param {number} vy
+     */
+    launchPersonFromCatapult(personIndex, vx, vy) {
+        const person = this.people[personIndex];
+        if (!person) 
+            return;
+        person.catapultData = null;
+        person.vx = vx;
+        person.vy = vy;
+        this._switchToState(personIndex, 'falling');
     }
 
     _updateProceduralAnimation(person, deltaTime) {

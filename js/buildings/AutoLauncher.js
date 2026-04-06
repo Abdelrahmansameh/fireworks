@@ -18,9 +18,12 @@ class AutoLauncher extends Building {
 
     update(deltaTime) {
         super.update(deltaTime);
-        this.accumulator += deltaTime;
+        this.accumulator += deltaTime ;
+        if (this.accumulator >= this.config.maxAccumulator) {
+            this.accumulator = this.config.maxAccumulator + Math.random() * 5; 
+        }
 
-        if (this.accumulator >= this.spawnInterval) {
+        if (this.accumulator >= this.spawnInterval + Math.random()) {
             this.spawnFirework();
             this.accumulator -= this.spawnInterval;
         }

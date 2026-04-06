@@ -1266,6 +1266,7 @@ class FireworkGame extends Engine {
         switch (buildingType) {
             case 'AUTO_LAUNCHER': return this.progression.isUnlocked('buildings_tab');
             case 'RESOURCE_GENERATOR': return this.progression.isUnlocked('resource_generator');
+            case 'CATAPULT': return this.progression.isUnlocked('catapult');
             case 'DRONE_HUB': return this.progression.isUnlocked('drone_hub');
             default: return false;
         }

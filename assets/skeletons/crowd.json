@@ -1105,6 +1105,136 @@
           "rotation": 0
         }
       ]
+    },
+    "jumping": {
+      "duration": 0.6,
+      "loop": true,
+      "tracks": {
+        "body": [
+          {
+            "time": 0,
+            "offsetX": 0,
+            "offsetY": 0,
+            "rotation": 0
+          },
+          {
+            "time": 0.15,
+            "rotation": -0.05,
+            "offsetX": 0,
+            "offsetY": 0
+          },
+          {
+            "time": 0.35,
+            "rotation": -0.06,
+            "offsetX": 0,
+            "offsetY": 0
+          },
+          {
+            "time": 0.5,
+            "rotation": -0.03,
+            "offsetX": 0,
+            "offsetY": 0
+          },
+          {
+            "time": 0.6,
+            "offsetX": 0,
+            "offsetY": 0,
+            "rotation": 0
+          }
+        ],
+        "arm_1_l": [
+          {
+            "time": 0,
+            "offsetX": 0,
+            "offsetY": 0,
+            "rotation": 0.02
+          },
+          {
+            "time": 0.25,
+            "offsetX": 0,
+            "offsetY": 0,
+            "rotation": -1.2
+          },
+          {
+            "time": 0.5,
+            "offsetX": 0,
+            "offsetY": 0,
+            "rotation": 0.02
+          }
+        ],
+        "arm_1_r": [
+          {
+            "time": 0,
+            "offsetX": 0,
+            "offsetY": 0,
+            "rotation": -0.02
+          },
+          {
+            "time": 0.25,
+            "offsetX": 0,
+            "offsetY": 0,
+            "rotation": 1.2
+          },
+          {
+            "time": 0.5,
+            "offsetX": 0,
+            "offsetY": 0,
+            "rotation": -0.02
+          }
+        ],
+        "leg_l": [
+          {
+            "time": 0,
+            "offsetX": 0,
+            "offsetY": 0,
+            "rotation": 0
+          },
+          {
+            "time": 0.2,
+            "offsetX": 0,
+            "offsetY": 0.6,
+            "rotation": 0.5
+          },
+          {
+            "time": 0.45,
+            "offsetX": 0,
+            "offsetY": -0.2,
+            "rotation": -0.2
+          },
+          {
+            "time": 0.6,
+            "offsetX": 0,
+            "offsetY": 0,
+            "rotation": 0
+          }
+        ],
+        "leg_r": [
+          {
+            "time": 0,
+            "offsetX": 0,
+            "offsetY": 0,
+            "rotation": 0
+          },
+          {
+            "time": 0.2,
+            "offsetX": 0,
+            "offsetY": 0.6,
+            "rotation": -0.5
+          },
+          {
+            "time": 0.45,
+            "offsetX": 0,
+            "offsetY": -0.2,
+            "rotation": 0.2
+          },
+          {
+            "time": 0.6,
+            "offsetX": 0,
+            "offsetY": 0,
+            "rotation": 0
+          }
+        ]
+      }
     }
   }
 }

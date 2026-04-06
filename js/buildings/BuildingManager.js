@@ -1,6 +1,7 @@
 import AutoLauncher from './AutoLauncher.js';
 import ResourceGenerator from './ResourceGenerator.js';
 import DroneHub from './DroneHub.js';
+import Catapult from './Catapult.js';
 import Building from './Building.js';
 import { BUILDING_TYPES, GAME_BOUNDS } from '../config/config.js';
 
@@ -13,6 +14,7 @@ class BuildingManager {
         this.buildingClasses = {
             'AUTO_LAUNCHER': AutoLauncher,
             'RESOURCE_GENERATOR': ResourceGenerator,
+            'CATAPULT': Catapult,
             'DRONE_HUB': DroneHub,
         };
     }
@@ -49,10 +51,17 @@ class BuildingManager {
         resource.subtract(cost);
         
         let x = this.game.renderer2D.cameraX + (Math.random() * 500 - 250);
-        x = Math.max(
-            GAME_BOUNDS.LAUNCHER_MIN_X + Math.random() * 300, 
-            Math.min(x, GAME_BOUNDS.LAUNCHER_MAX_X - Math.random() * 300)
-        );
+
+        // Use per-type placement bounds; catapult has dedicated GAME_BOUNDS constants
+        let minX, maxX;
+        if (buildingType === 'CATAPULT') {
+            minX = GAME_BOUNDS.CATAPULT_MIN_X;
+            maxX = GAME_BOUNDS.CATAPULT_MAX_X;
+        } else {
+            minX = GAME_BOUNDS.LAUNCHER_MIN_X + Math.random() * 300;
+            maxX = GAME_BOUNDS.LAUNCHER_MAX_X - Math.random() * 300;
+        }
+        x = Math.max(minX, Math.min(x, maxX));
         
         const y = GAME_BOUNDS.WORLD_LAUNCHER_Y;
         

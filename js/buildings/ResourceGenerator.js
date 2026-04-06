@@ -21,6 +21,7 @@ class ResourceGenerator extends Building {
     update(deltaTime) {
         super.update(deltaTime);
         this.accumulator += deltaTime;
+        this.accumulator = Math.min(this.accumulator, this.config.maxAccumulator); 
 
         if (this.accumulator >= 1.0) {
             const resource = this.game.resourceManager.resources[this.resourceType];

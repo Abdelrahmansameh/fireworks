@@ -17,6 +17,7 @@ export const BUILDING_TYPES = {
         texture: null,
         textureKey: null,
         baseSpawnInterval: 5,
+        maxAccumulator: 200,
         unlockId: 'buildings_tab',
         statId: 'stat-bld-auto',
         panel: {
@@ -41,6 +42,42 @@ export const BUILDING_TYPES = {
         resourceType: 'sparkles',
         unlockId: 'resource_generator',
         statId: 'stat-bld-gen',
+        maxAccumulator: 200,
+        panel: {
+            showLauncherList: false,
+            showSpreadButton: false,
+            showRandomizeButton: false,
+        },
+    },
+
+    CATAPULT: {
+        id: 'catapult',
+        name: 'Catapult',
+        description: 'Launches crowd members into the firework zone to catch sparkles',
+        baseCost: 150,
+        costRatio: 1.6,
+        currency: 'gold',
+        // Skeleton-rendered; width/height used for click-bounds only
+        width: 120,
+        height: 80,
+        color: { r: 0.68, g: 0.68, b: 0.68, a: 1 },
+        texture: null,
+        textureKey: null,
+        skeletonUrl: 'assets/skeletons/catapult.json',
+        skeletonScale: 15,
+        baseFireInterval: 5,
+        // Position — to the left of the crowd so launched members arc into the fireworks zone
+        x: -1400,
+        y: -490,           // WORLD_GROUND_Y
+        // Animation timing
+        fireInterval: 6,   // seconds between shots (configurable)
+        firingAnim: 'throwing',
+        idleAnim: 'idle',
+        // Rendering
+        zIndex: 5,
+        maxInstances: 20,  // 7 skeleton parts, but leave headroom
+        unlockId: 'catapult',
+        statId: 'stat-bld-catapult',
         panel: {
             showLauncherList: false,
             showSpreadButton: false,
