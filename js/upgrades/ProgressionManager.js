@@ -69,6 +69,11 @@ class ProgressionManager {
         return this._unlockedSet.has(id);
     }
 
+    /** Explicitly record an unlock (e.g. triggered by a skill-tree node). */
+    recordUnlock(id) {
+        this._unlockedSet.add(id);
+    }
+
     // ── Upgrade queries ───────────────────────────────────────────────────────
 
     getUpgradeLevel(id) {

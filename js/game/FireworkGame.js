@@ -1214,6 +1214,8 @@ class FireworkGame extends Engine {
     }
 
     _handleUnlock(id) {
+        // Persist the unlock so isUnlocked() stays true (e.g. after applyAll on reload)
+        this.progression.recordUnlock(id);
         // Delegate tab/sub-tab DOM reveals to UIManager (data-driven)
         this.ui.handleUnlock(id);
 
@@ -1247,6 +1249,10 @@ class FireworkGame extends Engine {
                 break;
             case 'drone_hub':
                 this.showNotification('New building unlocked: Drone Hub!');
+                this.ui.updateBuildingTypeVisibility();
+                break;
+            case 'catapult':
+                this.showNotification('New building unlocked: Catapult!');
                 this.ui.updateBuildingTypeVisibility();
                 break;
             case 'recipes_tab':
