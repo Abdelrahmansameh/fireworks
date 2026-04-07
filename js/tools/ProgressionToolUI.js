@@ -115,6 +115,7 @@ export function initializeProgressionTool() {
 
     createChartCanvas('chart-sps');
     createChartCanvas('chart-gps');
+    createChartCanvas('chart-upgrades');
     content.appendChild(chartsPanel);
 
     overlay.appendChild(content);
@@ -123,6 +124,7 @@ export function initializeProgressionTool() {
     // Logic
     let chartSpsInstance = null;
     let chartGpsInstance = null;
+    let chartUpgradesInstance = null;
     const simulator = new ProgressionSimulator();
 
     runBtn.onclick = () => {
@@ -142,6 +144,7 @@ export function initializeProgressionTool() {
             const m = Math.floor(e.time / 60).toString().padStart(2, '0');
             const s = (e.time % 60).toString().padStart(2, '0');
             row.innerText = `[${m}:${s}] ${e.label}`;
+            row.dataset.time = e.time;
             
             if (e.type === 'unlock') row.style.color = '#29B6F6';
             else if (e.type === 'upgrade') row.style.color = '#66BB6A';
@@ -181,8 +184,42 @@ export function initializeProgressionTool() {
             return `${m}m`;
         });
 
+        const scrollToTimeline = (targetTime) => {
+            let bestRow = null;
+            let maxTimeBefore = -1;
+            for (let i = 0; i < timelineData.children.length; i++) {
+                const row = timelineData.children[i];
+                if (row.dataset.time !== undefined) {
+                    const time = parseFloat(row.dataset.time);
+                    if (time <= targetTime && time >= maxTimeBefore) {
+                        maxTimeBefore = time;
+                        bestRow = row;
+                    }
+                }
+            }
+            if (bestRow) {
+                bestRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                const oldBg = bestRow.style.backgroundColor;
+                bestRow.style.backgroundColor = 'rgba(255, 255, 255, 0.2)';
+                bestRow.style.transition = 'background-color 0.5s';
+                setTimeout(() => {
+                    bestRow.style.backgroundColor = oldBg || 'transparent';
+                }, 1000);
+            }
+        };
+
+        const chartOnClick = (e, activeElements, chart) => {
+            const elements = chart.getElementsAtEventForMode(e, 'index', { intersect: false }, true);
+            if (elements && elements.length > 0) {
+                const dataIndex = elements[0].index;
+                const targetTime = result.history[dataIndex].time;
+                scrollToTimeline(targetTime);
+            }
+        };
+
         if (chartSpsInstance) chartSpsInstance.destroy();
         if (chartGpsInstance) chartGpsInstance.destroy();
+        if (chartUpgradesInstance) chartUpgradesInstance.destroy();
 
         if (window.Chart) {
             Chart.defaults.color = '#ccc';
@@ -199,6 +236,7 @@ export function initializeProgressionTool() {
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
+                    onClick: chartOnClick,
                     interaction: { mode: 'index', intersect: false },
                     scales: {
                         y1: { type: 'logarithmic', position: 'left', title: { display: true, text: 'Total Sparkles' } },
@@ -219,10 +257,30 @@ export function initializeProgressionTool() {
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
+                    onClick: chartOnClick,
                     interaction: { mode: 'index', intersect: false },
                     scales: {
                         y1: { type: 'logarithmic', position: 'left', title: { display: true, text: 'Total Gold' } },
                         y2: { type: 'linear', position: 'right', title: { display: true, text: 'GPS' } }
+                    }
+                }
+            });
+
+            chartUpgradesInstance = new Chart(document.getElementById('chart-upgrades'), {
+                type: 'line',
+                data: {
+                    labels,
+                    datasets: [
+                        { label: 'Upgrades Purchased', data: result.history.map(h => h.upgrades), yAxisID: 'y1', borderColor: '#4CAF50', pointRadius: 0 }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    onClick: chartOnClick,
+                    interaction: { mode: 'index', intersect: false },
+                    scales: {
+                        y1: { type: 'linear', position: 'left', title: { display: true, text: 'Total Upgrades' } }
                     }
                 }
             });

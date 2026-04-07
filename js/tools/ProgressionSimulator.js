@@ -46,6 +46,7 @@ export class ProgressionSimulator {
 
         this.currentSPS = 0;
         this.currentGPS = 0;
+        this.totalUpgradesPurchased = 0;
     }
 
     isBuildingTypeUnlocked(type) {
@@ -209,6 +210,7 @@ export class ProgressionSimulator {
                             this.progression.purchaseUpgrade(bestOption.id, this.mockGame);
                             const newLvl = this.progression.getUpgradeLevel(bestOption.id);
                             this.events.push({ time: this.time, type: 'upgrade', label: `Upgraded ${bestOption.def.name} to Lvl ${newLvl}` });
+                            this.totalUpgradesPurchased++;
                             purchasedSomething = true;
                         } else if (bestOption.type === 'building') {
                             res.subtract(bestOption.cost);
@@ -233,6 +235,7 @@ export class ProgressionSimulator {
                     gold: this.mockGame.resourceManager.resources.gold.amount,
                     sps: tickSPS,
                     gps: tickGPS,
+                    upgrades: this.totalUpgradesPurchased,
                 });
                 lastReportTime = this.time;
             }
