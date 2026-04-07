@@ -1403,6 +1403,9 @@ class UIManager {
         ownedContainer.innerHTML = '';
 
         const progression = this.game.progression;
+        const availableUpgrades = [];
+        const ownedUpgrades = [];
+
         for (const def of progression.getAllUpgradeDefs()) {
             const { visible } = progression.isVisible(def.id, this.game);
             if (!visible) continue;
@@ -1411,59 +1414,90 @@ class UIManager {
             const maxLevel = def.maxLevel ?? 1;
 
             if (level > 0) {
-                const ownedCard = document.createElement('div');
-                ownedCard.className = 'upgrade-card purchased';
-
-                const oTitle = document.createElement('div');
-                oTitle.textContent = `${def.name} (Lv ${level})`;
-                ownedCard.appendChild(oTitle);
-
-                const oDesc = document.createElement('div');
-                oDesc.textContent = def.desc;
-                ownedCard.appendChild(oDesc);
-
-                ownedContainer.appendChild(ownedCard);
+                ownedUpgrades.push({ def, level });
             }
 
             if (level < maxLevel) {
                 const { ok: canBuy, reason } = progression.canPurchase(def.id, this.game);
-                // Show as locked (no buy button) when a hard prerequisite isn't met — i.e.
-                // the reason isn't just affordability.
                 const isPrereqLocked = !canBuy && reason !== `Not enough ${def.currency}`;
-
-                const availCard = document.createElement('div');
-                availCard.className = `upgrade-card${isPrereqLocked ? ' locked' : ''}`;
-
-                const aTitle = document.createElement('div');
-                aTitle.textContent = `${def.name} (Lv ${level + 1})`;
-                availCard.appendChild(aTitle);
-
-                const aDesc = document.createElement('div');
-                aDesc.textContent = def.desc;
-                availCard.appendChild(aDesc);
-
-                if (isPrereqLocked) {
-                    const aLock = document.createElement('div');
-                    aLock.className = 'upgrade-lock-reason';
-                    aLock.textContent = `🔒 ${reason}`;
-                    availCard.appendChild(aLock);
-                } else {
-                    const nextCost = progression.getUpgradeCost(def.id);
-                    const btn = document.createElement('button');
-                    const currencyIcon = def.currency === 'sparkles' ? ICONS.SPARKLE_SVG : ICONS.GOLD_SVG;
-                    const balance = this.game.resourceManager.resources[def.currency]?.amount ?? 0;
-                    
-                    btn.className = 'upgrade-buy-button';
-                    btn.setAttribute('data-upgrade-id', def.id);
-                    btn.innerHTML = `<span class="btn-cost">${currencyIcon}<span>${nextCost.toLocaleString()}</span></span>Buy`;
-                    btn.disabled = balance < nextCost;
-                    btn.addEventListener('click', () => this.game.buyUpgrade(def.id));
-                    availCard.appendChild(btn);
-                }
-
-                availableContainer.appendChild(availCard);
+                const nextCost = progression.getUpgradeCost(def.id);
+                const balance = this.game.resourceManager.resources[def.currency]?.amount ?? 0;
+                
+                availableUpgrades.push({
+                    def,
+                    level,
+                    canBuy,
+                    reason,
+                    isPrereqLocked,
+                    nextCost,
+                    balance
+                });
             }
         }
+
+        // Sort available upgrades:
+        // 1. Purchasable (can afford + prereqs met) first.
+        // 2. Affordability is the only issue.
+        // 3. Locked by other prerequisites.
+        // Secondary sort by cost (cheaper first).
+        availableUpgrades.sort((a, b) => {
+            if (a.canBuy && !b.canBuy) return -1;
+            if (!a.canBuy && b.canBuy) return 1;
+
+            if (!a.isPrereqLocked && b.isPrereqLocked) return -1;
+            if (a.isPrereqLocked && !b.isPrereqLocked) return 1;
+
+            return a.nextCost - b.nextCost;
+        });
+
+        // Render Owned
+        ownedUpgrades.forEach(({ def, level }) => {
+            const ownedCard = document.createElement('div');
+            ownedCard.className = 'upgrade-card purchased';
+
+            const oTitle = document.createElement('div');
+            oTitle.textContent = `${def.name} (Lv ${level})`;
+            ownedCard.appendChild(oTitle);
+
+            const oDesc = document.createElement('div');
+            oDesc.textContent = def.desc;
+            ownedCard.appendChild(oDesc);
+
+            ownedContainer.appendChild(ownedCard);
+        });
+
+        // Render Available
+        availableUpgrades.forEach(({ def, level, canBuy, reason, isPrereqLocked, nextCost, balance }) => {
+            const availCard = document.createElement('div');
+            availCard.className = `upgrade-card${isPrereqLocked ? ' locked' : ''}`;
+
+            const aTitle = document.createElement('div');
+            aTitle.textContent = `${def.name} (Lv ${level + 1})`;
+            availCard.appendChild(aTitle);
+
+            const aDesc = document.createElement('div');
+            aDesc.textContent = def.desc;
+            availCard.appendChild(aDesc);
+
+            if (isPrereqLocked) {
+                const aLock = document.createElement('div');
+                aLock.className = 'upgrade-lock-reason';
+                aLock.textContent = `🔒 ${reason}`;
+                availCard.appendChild(aLock);
+            } else {
+                const btn = document.createElement('button');
+                const currencyIcon = def.currency === 'sparkles' ? ICONS.SPARKLE_SVG : ICONS.GOLD_SVG;
+                
+                btn.className = 'upgrade-buy-button';
+                btn.setAttribute('data-upgrade-id', def.id);
+                btn.innerHTML = `<span class="btn-cost">${currencyIcon}<span>${nextCost.toLocaleString()}</span></span>Buy`;
+                btn.disabled = balance < nextCost;
+                btn.addEventListener('click', () => this.game.buyUpgrade(def.id));
+                availCard.appendChild(btn);
+            }
+
+            availableContainer.appendChild(availCard);
+        });
     }
 
 
