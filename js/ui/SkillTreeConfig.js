@@ -45,6 +45,7 @@ export const SKILL_TREE_CONFIG = {
         // ── BASE chain — goes straight up ─────────────────────────────────
         // +2/+5/+15/+50 SP per firework → final BSM 177
         base_mult_1: {
+            position: { x: 0, y: 0 },
             offset: { x: 0, y: 0 },
             icon: 'base',
             branch: 'BASE',

@@ -151,6 +151,7 @@ export function initializeProgressionTool() {
             if (e.type === 'unlock') row.style.color = '#29B6F6';
             else if (e.type === 'upgrade') row.style.color = '#66BB6A';
             else if (e.type === 'building') row.style.color = '#FFC857';
+            else if (e.type === 'crowd') row.style.color = '#81D4FA';
 
             row.style.marginBottom = '2px';
             timelineData.appendChild(row);

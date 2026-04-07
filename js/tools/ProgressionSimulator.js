@@ -68,7 +68,15 @@ export class ProgressionSimulator {
             target = Math.floor(config.formulaA * Math.sqrt(fps) + config.formulaB) + bonus;
         }
         
-        this.mockGame.crowd.people.length = Math.min(target, maxCap); 
+        const newCount = Math.min(target, maxCap);
+        const prevCount = this.mockGame.crowd.people.length || 0;
+        this.mockGame.crowd.people.length = newCount;
+
+        // Record gained crowd members as an event for the timeline
+        if (newCount > prevCount) {
+            const gained = newCount - prevCount;
+            this.events.push({ time: this.time, type: 'crowd', label: `Gained ${gained} crowd (Total: ${newCount})` });
+        }
     }
 
     getLauncherFPS() {
