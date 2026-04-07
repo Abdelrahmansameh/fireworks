@@ -151,6 +151,30 @@ export function initializeProgressionTool() {
             timelineData.appendChild(row);
         });
 
+        // Display Unpurchased Upgrades
+        const unpurchasedHeader = document.createElement('div');
+        unpurchasedHeader.style.marginTop = '15px';
+        unpurchasedHeader.style.paddingTop = '10px';
+        unpurchasedHeader.style.borderTop = '1px solid #444';
+        unpurchasedHeader.style.color = '#FF8A65';
+        unpurchasedHeader.innerText = '--- End of Simulation: Unpurchased Upgrades ---';
+        timelineData.appendChild(unpurchasedHeader);
+
+        if (result.unpurchasedUpgrades && result.unpurchasedUpgrades.length > 0) {
+            result.unpurchasedUpgrades.forEach(u => {
+                const row = document.createElement('div');
+                row.innerText = `- ${u.name} (Lvl ${u.level}/${u.maxLevel})${u.visible ? '' : ' [Locked]'}`;
+                row.style.color = u.visible ? '#bbb' : '#666';
+                row.style.marginBottom = '2px';
+                timelineData.appendChild(row);
+            });
+        } else {
+            const row = document.createElement('div');
+            row.innerText = 'All upgrades purchased!';
+            row.style.color = '#aaa';
+            timelineData.appendChild(row);
+        }
+
         // Update Charts
         const labels = result.history.map(h => {
             const m = Math.floor(h.time / 60);

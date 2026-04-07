@@ -238,9 +238,27 @@ export class ProgressionSimulator {
             }
         }
 
+        const unpurchasedUpgrades = [];
+        const defs = this.progression.getAllUpgradeDefs();
+        for (const def of defs) {
+            const currentLvl = this.progression.getUpgradeLevel(def.id);
+            const maxLevel = def.maxLevel || 1;
+            if (currentLvl < maxLevel) {
+                const isVisible = this.progression.isVisible(def.id, this.mockGame).visible;
+                unpurchasedUpgrades.push({
+                    id: def.id,
+                    name: def.name,
+                    level: currentLvl,
+                    maxLevel: maxLevel,
+                    visible: isVisible
+                });
+            }
+        }
+
         return {
             history: this.history,
-            events: this.events
+            events: this.events,
+            unpurchasedUpgrades: unpurchasedUpgrades
         };
     }
 }
