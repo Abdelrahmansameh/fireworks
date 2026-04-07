@@ -234,6 +234,40 @@ export class ProgressionSimulator {
 
             // 4. Record history every 10 seconds or so to avoid huge arrays
             if (this.time - lastReportTime >= 10) {
+                let cheapestSparkle = Infinity;
+                let cheapestGold = Infinity;
+
+                const defs = this.progression.getAllUpgradeDefs();
+                for (const def of defs) {
+                    if (!this.progression.isVisible(def.id, this.mockGame).visible) continue;
+                    const canPurchase = this.progression.canPurchase(def.id, this.mockGame);
+                    if (canPurchase.ok || canPurchase.reason.includes('Not enough')) {
+                        const cost = this.progression.getUpgradeCost(def.id);
+                        if (def.currency === 'gold') {
+                            if (cost < cheapestGold) cheapestGold = cost;
+                        } else {
+                            if (cost < cheapestSparkle) cheapestSparkle = cost;
+                        }
+                    }
+                }
+
+                const buildingKeys = Object.keys(BUILDING_TYPES);
+                for (const bType of buildingKeys) {
+                    if (this.isBuildingTypeUnlocked(bType)) {
+                        const count = this.mockGame.buildingManager.getBuildingsByType(bType).length;
+                        if (bType === 'CATAPULT' && count >= this.mockGame.catapultStats.maxCatapults) continue;
+                        if (bType === 'AUTO_LAUNCHER' && count >= 100) continue; 
+                        
+                        const cfg = BUILDING_TYPES[bType];
+                        const cost = this.getBuildingCost(bType);
+                        if (cfg.currency === 'gold') {
+                            if (cost < cheapestGold) cheapestGold = cost;
+                        } else {
+                            if (cost < cheapestSparkle) cheapestSparkle = cost;
+                        }
+                    }
+                }
+
                 this.history.push({
                     time: this.time,
                     sparkles: this.mockGame.resourceManager.resources.sparkles.amount,
@@ -242,6 +276,8 @@ export class ProgressionSimulator {
                     gps: tickGPS,
                     upgrades: this.totalUpgradesPurchased,
                     crowd: this.mockGame.crowd.people.length,
+                    cheapestSparkle: cheapestSparkle === Infinity ? null : cheapestSparkle,
+                    cheapestGold: cheapestGold === Infinity ? null : cheapestGold,
                 });
                 lastReportTime = this.time;
             }

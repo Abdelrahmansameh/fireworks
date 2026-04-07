@@ -233,7 +233,8 @@ export function initializeProgressionTool() {
                     labels,
                     datasets: [
                         { label: 'Sparkles', data: result.history.map(h => h.sparkles), yAxisID: 'y1', borderColor: '#FFC857', pointRadius: 0 },
-                        { label: 'Sparkles / sec', data: result.history.map(h => h.sps), yAxisID: 'y2', borderColor: '#F06292', pointRadius: 0 }
+                        { label: 'Sparkles / sec', data: result.history.map(h => h.sps), yAxisID: 'y2', borderColor: '#F06292', pointRadius: 0 },
+                        { label: 'Cheapest Cost', data: result.history.map(h => h.cheapestSparkle), yAxisID: 'y1', borderColor: '#81C784', borderDash: [5, 5], pointRadius: 0 }
                     ]
                 },
                 options: {
@@ -254,7 +255,8 @@ export function initializeProgressionTool() {
                     labels,
                     datasets: [
                         { label: 'Gold', data: result.history.map(h => h.gold), yAxisID: 'y1', borderColor: '#FFD700', pointRadius: 0 },
-                        { label: 'Gold / sec', data: result.history.map(h => h.gps), yAxisID: 'y2', borderColor: '#FFA500', pointRadius: 0 }
+                        { label: 'Gold / sec', data: result.history.map(h => h.gps), yAxisID: 'y2', borderColor: '#FFA500', pointRadius: 0 },
+                        { label: 'Cheapest Cost', data: result.history.map(h => h.cheapestGold), yAxisID: 'y1', borderColor: '#90CAF9', borderDash: [5, 5], pointRadius: 0 }
                     ]
                 },
                 options: {
