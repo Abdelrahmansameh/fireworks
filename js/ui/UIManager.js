@@ -1570,22 +1570,18 @@ class UIManager {
         if (p.isUnlocked('tab_menu')) {
             this.showTabMenu();
             this.showCollapseButton();
-            if (!fc.tabMenu) this.addGlimmer('tabMenu');
         }
 
         if (p.getUpgradeLevel('auto_launcher') > 0) {
             this.showBuildingsTab();
-            if (!fc.buildingsTab) this.addGlimmer('buildingsTab');
         }
 
         if (p.isUnlocked('upgrades_tab')) {
             this.showUpgradesTab();
-            if (!fc.upgradesTab) this.addGlimmer('upgradesTab');
         }
 
         if (p.isUnlocked('crowds_tab')) {
             this.showCrowdsTab();
-            if (!fc.crowdsTab) this.addGlimmer('crowdsTab');
         }
 
         if (p.isUnlocked('recipes_tab')) this.showRecipesTab();
@@ -1697,50 +1693,8 @@ class UIManager {
         }
     }
 
-    addGlimmer(elementType) {
-        const elementMap = {
-            sparkleCounter: 'ressource-count',
-            tabMenu: 'stats-tab', // Use stats tab as the first visible tab since recipes might be hidden
-            buildingsTab: 'buildings-tab',
-            upgradesTab: 'upgrades-tab',
-            crowdsTab: 'crowd-tab'
-        };
-
-        const elementId = elementMap[elementType];
-        if (elementId) {
-            const element = document.getElementById(elementId);
-            if (element) {
-                element.classList.add('unlock-glimmer');
-                this.setupFirstClickListener(element, elementType);
-            }
-        }
-    }
-
-    removeGlimmer(elementType) {
-        const elementMap = {
-            sparkleCounter: 'ressource-count',
-            tabMenu: 'stats-tab',
-            buildingsTab: 'buildings-tab',
-            upgradesTab: 'upgrades-tab',
-            crowdsTab: 'crowd-tab'
-        };
-
-        const elementId = elementMap[elementType];
-        if (elementId) {
-            const element = document.getElementById(elementId);
-            if (element) {
-                element.classList.remove('unlock-glimmer');
-            }
-        }
-    }
-
-    setupFirstClickListener(element, elementType) {
-        const clickHandler = () => {
-            this.game.onFirstClick(elementType);
-            element.removeEventListener('click', clickHandler);
-        };
-        element.addEventListener('click', clickHandler);
-    }
+    // Glimmer/shimmer removed: no-op placeholder kept for compatibility
+    // (originally addGlimmer/removeGlimmer/setupFirstClickListener were here)
 
     focusBuildingInUI(building) {
         const tabContent = document.getElementById('buildings-content');

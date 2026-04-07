@@ -1227,21 +1227,21 @@ class FireworkGame extends Engine {
                 this.ui.showTabMenu();
                 this.ui.showCollapseButton();
                 this.ui.expandAllTabs();
-                if (!this.firstClickStates.tabMenu) this.ui.addGlimmer('tabMenu');
+                // shimmer removed: no glimmer added
                 break;
             case 'buildings_tab':
                 this.ui.showBuildingsTab();
                 this.ui.expandAllTabs();
-                if (!this.firstClickStates.buildingsTab) this.ui.addGlimmer('buildingsTab');
+                // shimmer removed: no glimmer added
                 break;
             case 'upgrades_tab':
                 this.ui.showUpgradesTab();
                 this.ui.expandAllTabs();
-                if (!this.firstClickStates.upgradesTab) this.ui.addGlimmer('upgradesTab');
+                // shimmer removed: no glimmer added
                 break;
             case 'crowds_tab':
                 this.ui.showCrowdsTab();
-                if (!this.firstClickStates.crowdsTab) this.ui.addGlimmer('crowdsTab');
+                // shimmer removed: no glimmer added
                 break;
             case 'resource_generator':
                 this.showNotification('New building unlocked: Sparkle Generator!');
@@ -1265,7 +1265,7 @@ class FireworkGame extends Engine {
     onFirstClick(elementType) {
         if (!this.firstClickStates[elementType]) {
             this.firstClickStates[elementType] = true;
-            this.ui.removeGlimmer(elementType);
+            // shimmer removed: nothing to remove on first click
             // saveProgress() runs every game tick, no explicit save needed here
         }
     }
