@@ -45,7 +45,7 @@ export const SKILL_TREE_CONFIG = {
         // ── BASE chain — goes straight up ─────────────────────────────────
         // +2/+5/+15/+50 SP per firework → final BSM 177
         base_mult_1: {
-            x: 0, y: 0,
+            offset: { x: 0, y: 0 },
             icon: 'base',
             branch: 'BASE',
             treeParent: 'ROOT',
@@ -61,7 +61,7 @@ export const SKILL_TREE_CONFIG = {
             apply: (game, level) => { game.baseSparkleMultiplier += level; },
         },
         spark_core_2: {
-            x: 0, y: -220,
+            offset: { x: 0, y: -220 },
             icon: 'base',
             branch: 'BASE',
             treeParent: 'base_mult_1',
@@ -78,7 +78,7 @@ export const SKILL_TREE_CONFIG = {
             apply: (game, level) => { game.baseSparkleMultiplier += 5 * level; },
         },
         spark_core_3: {
-            x: 0, y: -440,
+            offset: { x: 0, y: -440 },
             icon: 'base',
             branch: 'BASE',
             treeParent: 'spark_core_2',
@@ -95,7 +95,7 @@ export const SKILL_TREE_CONFIG = {
             apply: (game, level) => { game.baseSparkleMultiplier += 15 * level; },
         },
         spark_core_4: {
-            x: 0, y: -660,
+            offset: { x: 0, y: -660 },
             icon: 'base',
             branch: 'BASE',
             treeParent: 'spark_core_3',
@@ -115,13 +115,13 @@ export const SKILL_TREE_CONFIG = {
         // -- Building Blueprints --
         // These act as hubs for their respective branches
         auto_launcher: {
-            x: 0, y: 120,
-            icon: 'base',
-            branch: 'BASE',
+            offset: { x: -200, y: 0 },
+            icon: 'launcher',
+            branch: 'LAUNCHER',
             treeParent: 'base_mult_1',
 
             id: 'auto_launcher',
-            group: 'BASE',
+            group: 'LAUNCHER',
             name: 'Auto-Launcher Blueprint',
             desc: 'Unlocks Firework Auto-Launchers',
             baseCost: 25,
@@ -136,7 +136,7 @@ export const SKILL_TREE_CONFIG = {
         // ── LAUNCHER branch — goes left ───────────────────────────────────
         // Fire-rate reduction chain; both cost sparkles
         launcher_spawn_rate: {
-            x: -320, y: 120,
+            offset: { x: -400, y: 0 },
             icon: 'launcher',
             branch: 'LAUNCHER',
             treeParent: 'auto_launcher',
@@ -153,7 +153,7 @@ export const SKILL_TREE_CONFIG = {
             apply: (game, level) => { game.launcherStats.spawnIntervalMultiplier = Math.pow(0.9, level); },
         },
         launcher_overclock: {
-            x: -520, y: -60,
+            offset: { x: -400, y: -200 },
             icon: 'launcher',
             branch: 'LAUNCHER',
             treeParent: 'launcher_spawn_rate',
@@ -173,7 +173,7 @@ export const SKILL_TREE_CONFIG = {
         // ── GENERATOR branch — goes lower-left ───────────────────────────
         // Production multipliers; costs gold
         resource_generator: {
-            x: -210, y: 240,
+            offset: { x: -210, y: 240 },
             icon: 'base',
             branch: 'GENERATOR',
             treeParent: 'auto_launcher',
@@ -192,7 +192,7 @@ export const SKILL_TREE_CONFIG = {
             },
         },
         generator_production: {
-            x: -400, y: 240,
+            offset: { x: -400, y: 240 },
             icon: 'base',
             branch: 'GENERATOR',
             treeParent: 'resource_generator',
@@ -209,7 +209,7 @@ export const SKILL_TREE_CONFIG = {
             apply: (game, level) => { game.generatorStats.productionRateMultiplier = Math.pow(1.5, level); },
         },
         generator_overclock: {
-            x: -400, y: 480,
+            offset: { x: -600, y: 240 },
             icon: 'base',
             branch: 'GENERATOR',
             treeParent: 'generator_production',
@@ -229,10 +229,10 @@ export const SKILL_TREE_CONFIG = {
         // ── DRONE branch — goes right ─────────────────────────────────────
         // Six core upgrades fanning out, then capstone
         drone_hub: {
-            x: 210, y: -60,
+            offset: { x: -210, y: 440 },
             icon: 'drone',
             branch: 'DRONE',
-            treeParent: 'auto_launcher',
+            treeParent: 'resource_generator',
 
             id: 'drone_hub',
             group: 'DRONE',
@@ -242,13 +242,13 @@ export const SKILL_TREE_CONFIG = {
             costRatio: 1,
             currency: 'gold',
             maxLevel: 1,
-            requires: { upgrades: { auto_launcher: 1 } },
+            requires: { upgrades: { resource_generator: 1 } },
             apply: (game, _level) => {
                 game._handleUnlock('drone_hub');
             },
         },
         drone_lifetime: {
-            x: 400, y: -60,
+            offset: { x: -210, y: 440 },
             icon: 'drone',
             branch: 'DRONE',
             treeParent: 'drone_hub',
@@ -265,7 +265,7 @@ export const SKILL_TREE_CONFIG = {
             apply: (game, level) => { game.droneStats.lifetimeMultiplier = 1 + 0.25 * level; },
         },
         drone_speed: {
-            x: 480, y: -220,
+            offset: { x: 480, y: -220 },
             icon: 'drone',
             branch: 'DRONE',
             treeParent: 'drone_lifetime',
@@ -282,7 +282,7 @@ export const SKILL_TREE_CONFIG = {
             apply: (game, level) => { game.droneStats.speedMultiplier = 1 + 0.20 * level; },
         },
         drone_radius: {
-            x: 480, y: -400,
+            offset: { x: 480, y: -400 },
             icon: 'drone',
             branch: 'DRONE',
             treeParent: 'drone_speed',
@@ -299,7 +299,7 @@ export const SKILL_TREE_CONFIG = {
             apply: (game, level) => { game.droneStats.collectionRadiusMultiplier = 1 + 0.20 * level; },
         },
         drone_max: {
-            x: 480, y: 100,
+            offset: { x: 480, y: 100 },
             icon: 'drone',
             branch: 'DRONE',
             treeParent: 'drone_lifetime',
@@ -319,7 +319,7 @@ export const SKILL_TREE_CONFIG = {
             },
         },
         drone_sparkle_yield: {
-            x: 660, y: -220,
+            offset: { x: 660, y: -220 },
             icon: 'drone',
             branch: 'DRONE',
             treeParent: 'drone_speed',
@@ -336,7 +336,7 @@ export const SKILL_TREE_CONFIG = {
             apply: (game, level) => { game.droneStats.sparklesPerParticleMultiplier = 1 + 0.5 * level; },
         },
         drone_hub_spawn_rate: {
-            x: 660, y: 100,
+            offset: { x: 660, y: 100 },
             icon: 'drone',
             branch: 'DRONE',
             treeParent: 'drone_max',
@@ -353,7 +353,7 @@ export const SKILL_TREE_CONFIG = {
             apply: (game, level) => { game.droneHubStats.spawnIntervalMultiplier = Math.pow(0.88, level); },
         },
         drone_efficiency: {
-            x: 840, y: -60,
+            offset: { x: 840, y: -60 },
             icon: 'drone',
             branch: 'DRONE',
             treeParent: 'drone_hub_spawn_rate',
@@ -374,45 +374,8 @@ export const SKILL_TREE_CONFIG = {
             },
         },
 
-
-        crowd_spark_1: {
-            x: 0, y: 240,
-            icon: 'crowd',
-            branch: 'CROWD',
-            treeParent: 'auto_launcher',
-
-            id: 'crowd_spark_1',
-            group: 'CROWD',
-            name: 'Crowd Excitement I',
-            desc: '×2 sparkles per firework',
-            baseCost: 10,
-            costRatio: 1,
-            currency: 'gold',
-            maxLevel: 1,
-            requires: { upgrades: { auto_launcher: 1 } },
-            apply: (game, _level) => { game.baseSparkleMultiplier *= 2; },
-        },
-        catapult: {
-            x: -200, y: 440,
-            icon: 'crowd',
-            branch: 'CROWD',
-            treeParent: 'auto_launcher',
-
-            id: 'catapult',
-            group: 'CROWD',
-            name: 'Catapult Blueprint',
-            desc: 'Unlocks Catapults',
-            baseCost: 1000,
-            costRatio: 1,
-            currency: 'gold',
-            maxLevel: 1,
-            requires: { upgrades: { crowd_spark_1: 1 } },
-            apply: (game, _level) => {
-                game._handleUnlock('catapult');
-            },
-        },
         crowd_gold_1: {
-            x: 200, y: 240,
+            offset: { x: 0, y: 240 },
             icon: 'crowd',
             branch: 'CROWD',
             treeParent: 'auto_launcher',
@@ -428,11 +391,28 @@ export const SKILL_TREE_CONFIG = {
             requires: { upgrades: { crowd_spark_1: 1 } },
             apply: (game, _level) => { game.crowdStats.goldRateMultiplier *= 2; },
         },
-        crowd_invite_1: {
-            x: 200, y: 440,
+        crowd_spark_1: {
+            offset: { x: 200, y: 240 },
             icon: 'crowd',
             branch: 'CROWD',
             treeParent: 'crowd_gold_1',
+
+            id: 'crowd_spark_1',
+            group: 'CROWD',
+            name: 'Crowd Excitement I',
+            desc: '×2 sparkles per firework',
+            baseCost: 10,
+            costRatio: 1,
+            currency: 'gold',
+            maxLevel: 1,
+            requires: { upgrades: { auto_launcher: 1 } },
+            apply: (game, _level) => { game.baseSparkleMultiplier *= 2; },
+        },
+        crowd_invite_1: {
+            offset: { x: 200, y: 440 },
+            icon: 'crowd',
+            branch: 'CROWD',
+            treeParent: 'crowd_spark_1',
 
             id: 'crowd_invite_1',
             group: 'CROWD',
@@ -446,7 +426,7 @@ export const SKILL_TREE_CONFIG = {
             apply: (game, _level) => { game.crowdStats.countBonus += 5; },
         },
         crowd_invite_2: {
-            x: 400, y: 440,
+            offset: { x: 200, y: 640 },
             icon: 'crowd',
             branch: 'CROWD',
             treeParent: 'crowd_invite_1',
@@ -463,7 +443,7 @@ export const SKILL_TREE_CONFIG = {
             apply: (game, _level) => { game.crowdStats.countBonus += 8; },
         },
         crowd_gold_2: {
-            x: 400, y: 240,
+            offset: { x: 400, y: 240 },
             icon: 'crowd',
             branch: 'CROWD',
             treeParent: 'crowd_gold_1',
@@ -480,7 +460,7 @@ export const SKILL_TREE_CONFIG = {
             apply: (game, _level) => { game.crowdStats.goldRateMultiplier *= 2; },
         },
         crowd_spark_2: {
-            x: 600, y: 240,
+            offset: { x: 600, y: 240 },
             icon: 'crowd',
             branch: 'CROWD',
             treeParent: 'crowd_gold_2',
@@ -497,7 +477,7 @@ export const SKILL_TREE_CONFIG = {
             apply: (game, _level) => { game.baseSparkleMultiplier *= 2; },
         },
         crowd_gold_3: {
-            x: 800, y: 240,
+            offset: { x: 800, y: 240 },
             icon: 'crowd',
             branch: 'CROWD',
             treeParent: 'crowd_spark_2',
@@ -514,7 +494,7 @@ export const SKILL_TREE_CONFIG = {
             apply: (game, _level) => { game.crowdStats.goldRateMultiplier *= 2; },
         },
         crowd_catcher_unlock: {
-            x: 800, y: 440,
+            offset: { x: 800, y: 440 },
             icon: 'crowd',
             branch: 'CROWD',
             treeParent: 'crowd_gold_3',
@@ -530,25 +510,27 @@ export const SKILL_TREE_CONFIG = {
             requires: { upgrades: { crowd_gold_3: 1 } },
             apply: (game, _level) => { game.crowdStats.catchingEnabled = true; },
         },
-        crowd_catcher_radius: {
-            x: 600, y: 620,
+        catapult: {
+            offset: { x: 600, y: 440 },
             icon: 'crowd',
             branch: 'CROWD',
             treeParent: 'crowd_catcher_unlock',
 
-            id: 'crowd_catcher_radius',
+            id: 'catapult',
             group: 'CROWD',
-            name: 'Wide Arms',
-            desc: '+25% catching radius',
-            baseCost: 200,
-            costRatio: 2.0,
+            name: 'Catapult Blueprint',
+            desc: 'Unlocks Catapults',
+            baseCost: 1000,
+            costRatio: 1,
             currency: 'gold',
-            maxLevel: 5,
-            requires: { upgrades: { crowd_catcher_unlock: 1 } },
-            apply: (game, level) => { game.crowdStats.collectionRadiusMultiplier = 1 + 0.25 * level; },
+            maxLevel: 1,
+            requires: { upgrades: { crowd_spark_1: 1 } },
+            apply: (game, _level) => {
+                game._handleUnlock('catapult');
+            },
         },
         crowd_catcher_yield: {
-            x: 800, y: 620,
+            offset: { x: 800, y: 620 },
             icon: 'crowd',
             branch: 'CROWD',
             treeParent: 'crowd_catcher_unlock',
@@ -564,8 +546,25 @@ export const SKILL_TREE_CONFIG = {
             requires: { upgrades: { crowd_catcher_unlock: 1 } },
             apply: (game, level) => { game.crowdStats.sparklesPerParticleMultiplier = 1 + 0.5 * level; },
         },
+        crowd_catcher_radius: {
+            offset: { x: 600, y: 620 },
+            icon: 'crowd',
+            branch: 'CROWD',
+            treeParent: 'crowd_catcher_yield',
+
+            id: 'crowd_catcher_radius',
+            group: 'CROWD',
+            name: 'Wide Arms',
+            desc: '+25% catching radius',
+            baseCost: 200,
+            costRatio: 2.0,
+            currency: 'gold',
+            maxLevel: 5,
+            requires: { upgrades: { crowd_catcher_unlock: 1 } },
+            apply: (game, level) => { game.crowdStats.collectionRadiusMultiplier = 1 + 0.25 * level; },
+        },
         crowd_throw_power: {
-            x: 800, y: 800,
+            offset: { x: 800, y: 800 },
             icon: 'crowd',
             branch: 'CROWD',
             treeParent: 'crowd_catcher_yield',
@@ -582,7 +581,8 @@ export const SKILL_TREE_CONFIG = {
             apply: (game, level) => { game.crowdStats.sparklesPerParticleMultiplier += 1.0 * level; },
         },
         crowd_invite_3: {
-            x: 1000, y: 440,
+            offset: { x: 1000, y: 240 },
+
             icon: 'crowd',
             branch: 'CROWD',
             treeParent: 'crowd_gold_3',
@@ -599,10 +599,11 @@ export const SKILL_TREE_CONFIG = {
             apply: (game, _level) => { game.crowdStats.countBonus += 10; },
         },
         crowd_gold_4: {
-            x: 1000, y: 240,
+            offset: { x: 1000, y: 440 },
+
             icon: 'crowd',
             branch: 'CROWD',
-            treeParent: 'crowd_gold_3',
+            treeParent: 'crowd_invite_3',
 
             id: 'crowd_gold_4',
             group: 'CROWD',

@@ -293,6 +293,9 @@ export class SkillTreeScreen {
         ctx.clearRect(0, 0, W, H);
 
         this._drawBackground(ctx, W, H);
+        // Recompute resolved node positions (supports parent-relative offsets)
+        this._resolveNodePositions();
+
         this._drawEdges(ctx, W, H);
         this._drawNodes(ctx, W, H);
     }
@@ -360,13 +363,13 @@ export class SkillTreeScreen {
 
             const parentId = node.treeParent;
             if (parentId === 'ROOT') continue;
-
-            const parentPos = cfg.nodes[parentId];
-            if (!parentPos) continue;
+            const parentPos = this._nodePositions[parentId];
+            const childPos = this._nodePositions[id];
+            if (!parentPos || !childPos) continue;
 
             const parentState = this._getNodeState(parentId);
             const from = this._toScreen(parentPos.x, parentPos.y, W, H);
-            const to = this._toScreen(node.x, node.y, W, H);
+            const to = this._toScreen(childPos.x, childPos.y, W, H);
             const branchColor = cfg.branches[node.branch]?.color ?? '#888';
 
             const alpha = (childState === 'locked' || childState === 'insufficient') ? 0.25
@@ -411,7 +414,9 @@ export class SkillTreeScreen {
         for (const [id, node] of Object.entries(SKILL_TREE_CONFIG.nodes)) {
             const state = this._getNodeState(id);
             if (state === 'hidden') continue;
-            const s = this._toScreen(node.x, node.y, W, H);
+            const pos = this._nodePositions[id];
+            if (!pos) continue;
+            const s = this._toScreen(pos.x, pos.y, W, H);
             this._drawUpgradeNode(ctx, id, node, state, s.x, s.y, t);
         }
     }
@@ -579,13 +584,70 @@ export class SkillTreeScreen {
 
         for (const [id, node] of Object.entries(SKILL_TREE_CONFIG.nodes)) {
             if (this._getNodeState(id) === 'hidden') continue;
-            const s = this._toScreen(node.x, node.y, W, H);
+            const pos = this._nodePositions[id];
+            if (!pos) continue;
+            const s = this._toScreen(pos.x, pos.y, W, H);
             const r = NODE_RADIUS * this.zoom;
             const dx = screenX - s.x;
             const dy = screenY - s.y;
             if (dx * dx + dy * dy <= r * r) return id;
         }
         return null;
+    }
+
+    // ── Position resolving (parent-relative support) ─────────────────────
+
+    /**
+     * Populate `this._nodePositions` with absolute {x,y} tree-space positions.
+     * Supports two ways to specify parent-relative coordinates in the config:
+     *  - `offset: { x, y }` on a node — treated as an offset from `treeParent`.
+     *  - `relative: true` on a node — treats the node's `x,y` as an offset.
+     * Existing absolute `x,y` remain supported when neither is present.
+     */
+    _resolveNodePositions() {
+        const cfg = SKILL_TREE_CONFIG;
+        const nodes = cfg.nodes;
+        this._nodePositions = {};
+
+        const resolve = (id, stack = new Set()) => {
+            if (this._nodePositions[id]) return this._nodePositions[id];
+            const node = nodes[id];
+            if (!node) return null;
+
+            if (stack.has(id)) {
+                // cyclic reference — bail
+                return null;
+            }
+            stack.add(id);
+
+            if (node.offset || node.relative === true) {
+                const parentId = node.treeParent;
+                if (parentId === 'ROOT') {
+                    // relative to origin
+                    const ox = node.offset ? node.offset.x : node.x ?? 0;
+                    const oy = node.offset ? node.offset.y : node.y ?? 0;
+                    this._nodePositions[id] = { x: ox, y: oy };
+                } else {
+                    const parentPos = resolve(parentId, stack);
+                    if (!parentPos) {
+                        // Parent missing or unresolved
+                        this._nodePositions[id] = null;
+                    } else {
+                        const ox = node.offset ? node.offset.x : node.x ?? 0;
+                        const oy = node.offset ? node.offset.y : node.y ?? 0;
+                        this._nodePositions[id] = { x: parentPos.x + ox, y: parentPos.y + oy };
+                    }
+                }
+            } else {
+                // absolute coordinates
+                this._nodePositions[id] = { x: node.x ?? 0, y: node.y ?? 0 };
+            }
+
+            stack.delete(id);
+            return this._nodePositions[id];
+        };
+
+        for (const id of Object.keys(nodes)) resolve(id);
     }
 
     // ── Hover / tooltip ──────────────────────────────────────────────────────

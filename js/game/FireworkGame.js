@@ -1249,10 +1249,6 @@ class FireworkGame extends Engine {
                 this.showNotification('New building unlocked: Drone Hub!');
                 this.ui.updateBuildingTypeVisibility();
                 break;
-            case 'catapult':
-                this.showNotification('New building unlocked: Catapult!');
-                this.ui.updateBuildingTypeVisibility();
-                break;
             case 'recipes_tab':
                 this.ui.showRecipesTab();
                 this.showNotification('Recipe system unlocked! You can now create and assign custom recipes.');
@@ -1270,10 +1266,10 @@ class FireworkGame extends Engine {
 
     isBuildingTypeUnlocked(buildingType) {
         switch (buildingType) {
-            case 'AUTO_LAUNCHER': return this.progression.getUpgradeLevel('auto_launcher') > 0;
-            case 'RESOURCE_GENERATOR': return this.progression.getUpgradeLevel('resource_generator') > 0;
-            case 'CATAPULT': return this.progression.getUpgradeLevel('catapult') > 0;
-            case 'DRONE_HUB': return this.progression.getUpgradeLevel('drone_hub') > 0;
+            case 'AUTO_LAUNCHER': return this.progression.isUnlocked('buildings_tab');
+            case 'RESOURCE_GENERATOR': return this.progression.isUnlocked('resource_generator');
+            case 'CATAPULT': return this.progression.isUnlocked('catapult');
+            case 'DRONE_HUB': return this.progression.isUnlocked('drone_hub');
             default: return false;
         }
     }
