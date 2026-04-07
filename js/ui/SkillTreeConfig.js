@@ -443,10 +443,10 @@ export const SKILL_TREE_CONFIG = {
             apply: (game, _level) => { game.crowdStats.countBonus += 8; },
         },
         crowd_gold_2: {
-            offset: { x: 220, y: 0 },
+            offset: { x: 200, y: 0 },
             icon: 'crowd',
             branch: 'CROWD',
-            treeParent: 'crowd_gold_1',
+            treeParent: 'crowd_spark_1',
 
             id: 'crowd_gold_2',
             group: 'CROWD',
