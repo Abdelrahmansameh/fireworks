@@ -236,6 +236,7 @@ export class ProgressionSimulator {
                     sps: tickSPS,
                     gps: tickGPS,
                     upgrades: this.totalUpgradesPurchased,
+                    crowd: this.mockGame.crowd.people.length,
                 });
                 lastReportTime = this.time;
             }

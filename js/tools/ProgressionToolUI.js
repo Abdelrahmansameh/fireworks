@@ -116,6 +116,7 @@ export function initializeProgressionTool() {
     createChartCanvas('chart-sps');
     createChartCanvas('chart-gps');
     createChartCanvas('chart-upgrades');
+    createChartCanvas('chart-crowd');
     content.appendChild(chartsPanel);
 
     overlay.appendChild(content);
@@ -125,6 +126,7 @@ export function initializeProgressionTool() {
     let chartSpsInstance = null;
     let chartGpsInstance = null;
     let chartUpgradesInstance = null;
+    let chartCrowdInstance = null;
     const simulator = new ProgressionSimulator();
 
     runBtn.onclick = () => {
@@ -220,6 +222,7 @@ export function initializeProgressionTool() {
         if (chartSpsInstance) chartSpsInstance.destroy();
         if (chartGpsInstance) chartGpsInstance.destroy();
         if (chartUpgradesInstance) chartUpgradesInstance.destroy();
+        if (chartCrowdInstance) chartCrowdInstance.destroy();
 
         if (window.Chart) {
             Chart.defaults.color = '#ccc';
@@ -281,6 +284,25 @@ export function initializeProgressionTool() {
                     interaction: { mode: 'index', intersect: false },
                     scales: {
                         y1: { type: 'linear', position: 'left', title: { display: true, text: 'Total Upgrades' } }
+                    }
+                }
+            });
+
+            chartCrowdInstance = new Chart(document.getElementById('chart-crowd'), {
+                type: 'line',
+                data: {
+                    labels,
+                    datasets: [
+                        { label: 'Crowd Size', data: result.history.map(h => h.crowd), yAxisID: 'y1', borderColor: '#29B6F6', pointRadius: 0 }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    onClick: chartOnClick,
+                    interaction: { mode: 'index', intersect: false },
+                    scales: {
+                        y1: { type: 'linear', position: 'left', title: { display: true, text: 'Crowd Count' } }
                     }
                 }
             });
