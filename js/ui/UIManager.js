@@ -809,6 +809,7 @@ class UIManager {
             // If the upgrades tab is being opened, open embedded skill-tree
             if (tab === 'upgrades' && this.skillTree) {
                 this.skillTree.open();
+                this.renderUpgrades();
             }
         }
     }
@@ -1359,10 +1360,13 @@ class UIManager {
     }
 
     renderUpgrades() {
-        // When the skill tree is open, refresh it and skip the legacy panel
+        // When the skill tree is open, refresh it.
         if (this.skillTree?.isOpen) {
             this.skillTree.refresh();
-            return;
+            // If NOT in embedded mode (i.e. full-screen mode), we skip the list view.
+            if (!this.skillTree._isEmbedded) {
+                return;
+            }
         }
 
         const availableContainer = document.getElementById('upgrades-available');
