@@ -228,7 +228,7 @@ class ProgressionManager {
             goldRateMultiplier: 1,   // multiplied into crowd.goldPerCoinToss (base 1 gold per 5s)
             countBonus: 0,            // added to the crowd count formula result
         };
-        game.launcherStats = { spawnIntervalMultiplier: 1 };
+        game.launcherStats = { spawnIntervalMultiplier: 1, sparkleYieldMultiplier: 1 };
         game.generatorStats = { productionRateMultiplier: 1 };
         game.droneHubStats = { spawnIntervalMultiplier: 1 };
 

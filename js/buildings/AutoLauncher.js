@@ -70,7 +70,8 @@ class AutoLauncher extends Building {
         this.game.fireworkSystem.launch(spawnX, launchY, components, null);
         this.game.fireworkSystem.fireworkCount++;
 
-        const sparkleAmount = this.game.baseSparkleMultiplier;
+        const yieldMulti = this.game.launcherStats?.sparkleYieldMultiplier ?? 1;
+        const sparkleAmount = this.game.baseSparkleMultiplier * yieldMulti;
         this.game.addSparkles(sparkleAmount, 'auto_launcher');
         this.game.statsTracker.recordFirework('auto_launcher');
     }
@@ -80,7 +81,8 @@ class AutoLauncher extends Building {
     }
 
     getSparklesPerSecond() {
-        return this.game.baseSparkleMultiplier / this.spawnInterval;
+        const yieldMulti = this.game.launcherStats?.sparkleYieldMultiplier ?? 1;
+        return (this.game.baseSparkleMultiplier * yieldMulti) / this.spawnInterval;
     }
 
     serialize() {

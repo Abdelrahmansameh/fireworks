@@ -170,6 +170,40 @@ export const SKILL_TREE_CONFIG = {
             requires: { upgrades: { launcher_spawn_rate: 5 } },
             apply: (game, level) => { game.launcherStats.spawnIntervalMultiplier *= Math.pow(0.8, level); },
         },
+        launcher_sparkle_1: {
+            offset: { x: -200, y: 0 },
+            icon: 'launcher',
+            branch: 'LAUNCHER',
+            treeParent: 'launcher_spawn_rate',
+
+            id: 'launcher_sparkle_1',
+            group: 'LAUNCHER',
+            name: 'Sparkle Payload',
+            desc: '+50% sparkles per launcher firework',
+            baseCost: 400,
+            costRatio: 1.5,
+            currency: 'sparkles',
+            maxLevel: 5,
+            requires: { upgrades: { launcher_spawn_rate: 1 } },
+            apply: (game, level) => { game.launcherStats.sparkleYieldMultiplier = 1 + 0.5 * level; },
+        },
+        launcher_sparkle_2: {
+            offset: { x: -200, y: 0 },
+            icon: 'launcher',
+            branch: 'LAUNCHER',
+            treeParent: 'launcher_sparkle_1',
+
+            id: 'launcher_sparkle_2',
+            group: 'LAUNCHER',
+            name: 'Dense Packing',
+            desc: '+100% sparkles per launcher firework',
+            baseCost: 8000,
+            costRatio: 2.0,
+            currency: 'sparkles',
+            maxLevel: 3,
+            requires: { upgrades: { launcher_sparkle_1: 5 } },
+            apply: (game, level) => { game.launcherStats.sparkleYieldMultiplier += 1.0 * level; },
+        },
 
         // ── GENERATOR branch — goes lower-left ───────────────────────────
         // Production multipliers; costs gold

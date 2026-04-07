@@ -71,7 +71,7 @@ class FireworkGame extends Engine {
             goldRateMultiplier: 1,
             countBonus: 0,
         };
-        this.launcherStats = { spawnIntervalMultiplier: 1 };
+        this.launcherStats = { spawnIntervalMultiplier: 1, sparkleYieldMultiplier: 1 };
         this.generatorStats = { productionRateMultiplier: 1 };
         this.droneHubStats = { spawnIntervalMultiplier: 1 };
         this.catapultStats = { maxCatapults: 1 };
@@ -565,7 +565,7 @@ class FireworkGame extends Engine {
             goldRateMultiplier: 1,
             countBonus: 0,
         };
-        this.launcherStats = { spawnIntervalMultiplier: 1 };
+        this.launcherStats = { spawnIntervalMultiplier: 1, sparkleYieldMultiplier: 1 };
         this.generatorStats = { productionRateMultiplier: 1 };
         this.droneHubStats = { spawnIntervalMultiplier: 1 };
         this.catapultStats = { maxCatapults: 1 };

@@ -22,7 +22,7 @@ export class ProgressionSimulator {
             baseSparkleMultiplier: 1,
             droneStats: { lifetimeMultiplier: 1, speedMultiplier: 1, collectionRadiusMultiplier: 1, maxDrones: 0, sparklesPerParticleMultiplier: 1 },
             crowdStats: { catchingEnabled: false, collectionRadiusMultiplier: 1, sparklesPerParticleMultiplier: 1, goldRateMultiplier: 1, countBonus: 0 },
-            launcherStats: { spawnIntervalMultiplier: 1 },
+            launcherStats: { spawnIntervalMultiplier: 1, sparkleYieldMultiplier: 1 },
             generatorStats: { productionRateMultiplier: 1 },
             droneHubStats: { spawnIntervalMultiplier: 1 },
             catapultStats: { maxCatapults: 1 },
@@ -119,7 +119,7 @@ export class ProgressionSimulator {
 
             // Launchers (roughly assuming each firework gives baseSparkleMultiplier immediately for simplicity)
             const fps = this.getLauncherFPS();
-            tickSPS += fps * this.mockGame.baseSparkleMultiplier;
+            tickSPS += fps * this.mockGame.baseSparkleMultiplier * this.mockGame.launcherStats.sparkleYieldMultiplier;
             this.mockGame.fireworkSystem.fireworkCount += fps * tickSize; // Simulate firework count going up
 
             // Generators
