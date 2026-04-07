@@ -1000,6 +1000,16 @@ legend {
     background: hsla(220, 18%, 14%, 0.4);
 }
 
+.upgrade-buy-button {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: var(--sp-2);
+    height: auto;
+    padding-top: var(--sp-2);
+    padding-bottom: var(--sp-2);
+}
+
 .upgrade-card.purchased {
     border-color: hsla(120, 30%, 40%, 0.35);
     background: hsla(120, 15%, 12%, 0.25);

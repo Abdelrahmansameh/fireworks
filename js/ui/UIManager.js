@@ -1,5 +1,6 @@
 import { GAME_BOUNDS, DEFAULT_RECIPE_COMPONENTS, COMPONENT_PROPERTY_RANGES, PARTICLE_TYPES, STATS_CONFIG, LAUNCHER_WORLD_HIGHLIGHT_DURATION, BUILDING_TYPES } from '../config/config.js';
 import { TABS } from './uiSchema.js';
+import ICONS from './icons.js';
 import { SkillTreeScreen } from './SkillTreeScreen.js';
 import { patternDefinitions, patternDisplayNames } from '../entities/patterns/index.js';
 import * as Renderer2D from '../rendering/Renderer.js';
@@ -877,6 +878,31 @@ class UIManager {
             this._lastStatsUpdate = now;
             this.updateStatsTab();
         }
+
+        // Real-time update for upgrade buttons if the tab is active
+        if (this.game.progression.isUnlocked('upgrades_tab')) {
+            const upgradesTab = document.getElementById('upgrades-content');
+            if (upgradesTab && upgradesTab.classList.contains('active')) {
+                this.updateUpgradeBuyButtons();
+            }
+        }
+    }
+
+    updateUpgradeBuyButtons() {
+        const availableContainer = document.getElementById('upgrades-available');
+        if (!availableContainer) return;
+        const buyButtons = availableContainer.querySelectorAll('.upgrade-buy-button');
+        const progression = this.game.progression;
+        
+        buyButtons.forEach(btn => {
+            const upgradeId = btn.getAttribute('data-upgrade-id');
+            if (upgradeId) {
+                const cost = progression.getUpgradeCost(upgradeId);
+                const def = progression.getUpgradeDef(upgradeId);
+                const balance = this.game.resourceManager.resources[def.currency]?.amount ?? 0;
+                btn.disabled = balance < cost;
+            }
+        });
     }
 
     updateStatsTab() {
@@ -1423,12 +1449,14 @@ class UIManager {
                     availCard.appendChild(aLock);
                 } else {
                     const nextCost = progression.getUpgradeCost(def.id);
-                    const aCost = document.createElement('div');
-                    aCost.textContent = `Cost: ${nextCost.toLocaleString()} ${def.currency}`;
-                    availCard.appendChild(aCost);
-
                     const btn = document.createElement('button');
-                    btn.textContent = 'Buy';
+                    const currencyIcon = def.currency === 'sparkles' ? ICONS.SPARKLE_SVG : ICONS.GOLD_SVG;
+                    const balance = this.game.resourceManager.resources[def.currency]?.amount ?? 0;
+                    
+                    btn.className = 'upgrade-buy-button';
+                    btn.setAttribute('data-upgrade-id', def.id);
+                    btn.innerHTML = `<span class="btn-cost">${currencyIcon}<span>${nextCost.toLocaleString()}</span></span>Buy`;
+                    btn.disabled = balance < nextCost;
                     btn.addEventListener('click', () => this.game.buyUpgrade(def.id));
                     availCard.appendChild(btn);
                 }
