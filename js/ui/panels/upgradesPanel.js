@@ -9,6 +9,7 @@ export function render(container) {
     panel.className = 'panel scrollable-panel';
 
     panel.innerHTML = `
+        <div id="skill-tree-panel-mount" class="skill-tree-panel-mount"></div>
         <h3>Available</h3>
         <div id="upgrades-available" class="upgrade-grid"></div>
         <h3>Owned</h3>

@@ -35,8 +35,9 @@ const DEFAULT_ZOOM = 0.82;
 
 export class SkillTreeScreen {
 
-    constructor(game) {
+    constructor(game, mountElement = null) {
         this.game = game;
+        this.mountElement = mountElement;
         this.isOpen = false;
 
         // View state
@@ -67,6 +68,8 @@ export class SkillTreeScreen {
         // Main overlay -------------------------------------------------------
         this.container = document.createElement('div');
         this.container.id = 'skill-tree-screen';
+        // If a mountElement was provided we render embedded (panel) mode.
+        this._isEmbedded = Boolean(this.mountElement);
 
         // Canvas (fills the entire overlay) ----------------------------------
         this.canvas = document.createElement('canvas');
@@ -78,9 +81,16 @@ export class SkillTreeScreen {
         this.backBtn.id = 'skill-tree-back';
         this.backBtn.textContent = '← Back to Game';
 
-        // Resource display ---------------------------------------------------
-        this.resourceDisplay = document.createElement('div');
-        this.resourceDisplay.id = 'skill-tree-resources';
+        if (this.mountElement) {
+            // In embedded/panel mode we don't need the full-screen back button
+            this.backBtn.style.display = 'none';
+        }
+
+        // Resource display (only for full-screen mode)
+        if (!this.mountElement) {
+            this.resourceDisplay = document.createElement('div');
+            this.resourceDisplay.id = 'skill-tree-resources';
+        }
 
         // Tooltip (DOM, position:fixed so it always floats above canvas) -----
         this.tooltip = document.createElement('div');
@@ -88,12 +98,22 @@ export class SkillTreeScreen {
 
 
         // Assemble -----------------------------------------------------------
+
         this.container.appendChild(this.canvas);
         this.container.appendChild(this.backBtn);
-        this.container.appendChild(this.resourceDisplay);
+        if (this.resourceDisplay) this.container.appendChild(this.resourceDisplay);
+
         // Tooltip is appended to body so position:fixed works without stacking issues
         document.body.appendChild(this.tooltip);
-        document.body.appendChild(this.container);
+
+        // If a mountElement exists, append into it (embedded panel mode),
+        // otherwise append to body and behave as the full-screen overlay.
+        if (this.mountElement) {
+            this.container.classList.add('skill-tree-embedded');
+            this.mountElement.appendChild(this.container);
+        } else {
+            document.body.appendChild(this.container);
+        }
     }
 
 
@@ -208,19 +228,29 @@ export class SkillTreeScreen {
 
     open() {
         this.isOpen = true;
+        // Ensure the container is visible before measuring
         this.container.style.display = 'block';
         this.tooltip.style.display = 'none';
         this._hoveredId = null;
 
-        // Isolate from game layer
-        const gameContainer = document.getElementById('game-container');
-        if (gameContainer) gameContainer.style.display = 'none';
-        document.querySelectorAll('.top-bar-container')
-            .forEach(el => el.style.display = 'none');
+        // If embedded into a panel we do NOT hide the game layer/top-bar;
+        // otherwise we keep full-screen isolation behavior.
+        if (!this.mountElement) {
+            const gameContainer = document.getElementById('game-container');
+            if (gameContainer) gameContainer.style.display = 'none';
+            document.querySelectorAll('.top-bar-container')
+                .forEach(el => el.style.display = 'none');
+        }
 
-        this._resize();
-        this._updateResourceDisplay();
-        this._startLoop();
+        // Use requestAnimationFrame to ensure the DOM has laid out the panel
+        // so clientWidth/Height are accurate.
+        requestAnimationFrame(() => {
+            if (this.isOpen) {
+                this._resize();
+                this._updateResourceDisplay();
+                this._startLoop();
+            }
+        });
     }
 
     close() {
@@ -230,11 +260,13 @@ export class SkillTreeScreen {
         this._hoveredId = null;
         this._stopLoop();
 
-        // Restore game layer
-        const gameContainer = document.getElementById('game-container');
-        if (gameContainer) gameContainer.style.display = 'block';
-        document.querySelectorAll('.top-bar-container')
-            .forEach(el => el.style.display = '');
+        // Restore game layer only in full-screen mode
+        if (!this.mountElement) {
+            const gameContainer = document.getElementById('game-container');
+            if (gameContainer) gameContainer.style.display = 'block';
+            document.querySelectorAll('.top-bar-container')
+                .forEach(el => el.style.display = '');
+        }
     }
 
     /** Called by UIManager.renderUpgrades() when the tree is open. */
@@ -255,10 +287,24 @@ export class SkillTreeScreen {
 
     _resize() {
         const dpr = this._dpr();
-        this.canvas.width = window.innerWidth * dpr;
-        this.canvas.height = window.innerHeight * dpr;
-        this.canvas.style.width = window.innerWidth + 'px';
-        this.canvas.style.height = window.innerHeight + 'px';
+        let width = window.innerWidth;
+        let height = window.innerHeight;
+
+        if (this.mountElement) {
+            // Use mount element's inner size when embedded in a panel
+            // We use clientWidth/Height of the mount element.  
+            // If the element is hidden (display:none), these are 0.
+            width = this.mountElement.clientWidth || width;
+            height = this.mountElement.clientHeight || height;
+
+            // Optional: fallback if the mount is effectively empty
+            if (height < 50) height = 400; 
+        }
+
+        this.canvas.width = width * dpr;
+        this.canvas.height = height * dpr;
+        this.canvas.style.width = width + 'px';
+        this.canvas.style.height = height + 'px';
     }
 
     // ── Render loop ──────────────────────────────────────────────────────────
@@ -734,6 +780,8 @@ export class SkillTreeScreen {
     // ── Resource display ─────────────────────────────────────────────────────
 
     _updateResourceDisplay() {
+        // Only update if the element exists (skipped in embedded mode)
+        if (!this.resourceDisplay) return;
         try {
             const sparkles = this.game.resourceManager.resources.sparkles;
             const gold = this.game.resourceManager.resources.gold;

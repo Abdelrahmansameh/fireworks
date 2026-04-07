@@ -43,8 +43,10 @@ class UIManager {
     }
 
     bindUIEvents() {
-        // Initialise the skill-tree screen once the full DOM is available
-        this.skillTree = new SkillTreeScreen(this.game);
+        // Initialise the skill-tree screen once the full DOM is available.
+        // If the upgrades panel exposes a mount node we render embedded.
+        const upgradesMount = document.getElementById('skill-tree-panel-mount');
+        this.skillTree = new SkillTreeScreen(this.game, upgradesMount);
 
         const addComponentButtons = [
             document.getElementById('add-component')
@@ -127,11 +129,6 @@ class UIManager {
             const btn = document.getElementById(`${tab.id}-tab`);
             if (!btn) continue;
             btn.addEventListener('click', () => {
-                // Upgrades tab opens the full-screen skill tree instead of a panel
-                if (tab.id === 'upgrades') {
-                    this.skillTree.open();
-                    return;
-                }
                 this.toggleTab(tab.id);
                 if (tab.id === 'buildings') {
                     this.game.updateLauncherList();
@@ -801,10 +798,18 @@ class UIManager {
 
         if (isActive) {
             tabContent.classList.remove('active');
+            // If the upgrades tab is being closed, also close embedded skill-tree
+            if (tab === 'upgrades' && this.skillTree) {
+                this.skillTree.close();
+            }
         } else {
             const tabContents = document.querySelectorAll('.tab-content');
             tabContents.forEach(content => content.classList.remove('active'));
             tabContent.classList.add('active');
+            // If the upgrades tab is being opened, open embedded skill-tree
+            if (tab === 'upgrades' && this.skillTree) {
+                this.skillTree.open();
+            }
         }
     }
 

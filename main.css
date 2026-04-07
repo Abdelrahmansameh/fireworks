@@ -1360,10 +1360,34 @@ legend {
     background: #020408;
 }
 
+/* When embedded in a panel, don't take over the full screen */
+#skill-tree-screen.skill-tree-embedded {
+    position: relative;
+    inset: auto;
+    width: 100%;
+    height: 100%;
+    min-height: 300px;
+    z-index: 1;
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    border: 1px solid var(--glass-border);
+    margin-bottom: var(--sp-4);
+}
+
 #skill-tree-canvas {
     position: absolute;
     inset: 0;
+    width: 100% !important;
+    height: 100% !important;
     cursor: grab;
+}
+
+.skill-tree-panel-mount {
+    width: 100%;
+    height: 400px; /* Base height for the skill tree in the panel */
+    position: relative;
+    background: #020408;
+    border-radius: var(--radius-lg);
 }
 
 #skill-tree-back {

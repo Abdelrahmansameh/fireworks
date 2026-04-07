@@ -6,10 +6,11 @@
 
 export const TABS = [
     {
-        id: 'recipes',
-        label: 'Recipes',
-        unlockId: 'recipes_tab',
-        panelModule: () => import('./panels/recipesPanel.js'),
+        id: 'upgrades',
+        label: 'Upgrades',
+        unlockId: 'upgrades_tab',
+
+        panelModule: () => import('./panels/upgradesPanel.js'),
     },
     {
         id: 'buildings',
@@ -26,11 +27,10 @@ export const TABS = [
         panelModule: () => import('./panels/crowdPanel.js'),
     },
     {
-        id: 'upgrades',
-        label: 'Upgrades',
-        unlockId: 'upgrades_tab',
-
-        panelModule: () => import('./panels/upgradesPanel.js'),
+        id: 'recipes',
+        label: 'Recipes',
+        unlockId: 'recipes_tab',
+        panelModule: () => import('./panels/recipesPanel.js'),
     },
     {
         id: 'stats',
