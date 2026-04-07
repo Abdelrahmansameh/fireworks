@@ -58,7 +58,7 @@ export const SKILL_TREE_CONFIG = {
             baseCost: 20,
             costRatio: 5,
             currency: 'sparkles',
-            maxLevel: 3,
+            maxLevel: 4,
             apply: (game, level) => { game.baseSparkleMultiplier += level; },
         },
         spark_core_2: {
@@ -163,7 +163,7 @@ export const SKILL_TREE_CONFIG = {
             group: 'LAUNCHER',
             name: 'Launcher Overclock',
             desc: '-20% launcher spawn interval',
-            baseCost: 12000,
+            baseCost: 4000,
             costRatio: 2.0,
             currency: 'sparkles',
             maxLevel: 3,
@@ -375,28 +375,11 @@ export const SKILL_TREE_CONFIG = {
             },
         },
 
-        crowd_gold_1: {
-            offset: { x: 0, y: 200 },
-            icon: 'crowd',
-            branch: 'CROWD',
-            treeParent: 'base_mult_1',
-
-            id: 'crowd_gold_1',
-            group: 'CROWD',
-            name: 'Coin Rain I',
-            desc: '×2 gold per crowd member',
-            baseCost: 20,
-            costRatio: 1,
-            currency: 'gold',
-            maxLevel: 1,
-            requires: { upgrades: { crowd_spark_1: 1 } },
-            apply: (game, _level) => { game.crowdStats.goldRateMultiplier *= 2; },
-        },
         crowd_spark_1: {
             offset: { x: 200, y: 0 },
             icon: 'crowd',
             branch: 'CROWD',
-            treeParent: 'crowd_gold_1',
+            treeParent: 'base_mult_1',
 
             id: 'crowd_spark_1',
             group: 'CROWD',
@@ -409,11 +392,29 @@ export const SKILL_TREE_CONFIG = {
             requires: { upgrades: { auto_launcher: 1 } },
             apply: (game, _level) => { game.baseSparkleMultiplier *= 2; },
         },
-        crowd_invite_1: {
+        crowd_gold_1: {
             offset: { x: 0, y: 200 },
             icon: 'crowd',
             branch: 'CROWD',
             treeParent: 'crowd_spark_1',
+
+            id: 'crowd_gold_1',
+            group: 'CROWD',
+            name: 'Coin Rain I',
+            desc: '×2 gold per crowd member',
+            baseCost: 20,
+            costRatio: 1,
+            currency: 'gold',
+            maxLevel: 1,
+            requires: { upgrades: { crowd_spark_1: 1 } },
+            apply: (game, _level) => { game.crowdStats.goldRateMultiplier *= 2; },
+        },
+
+        crowd_invite_1: {
+            offset: { x: 0, y: 200 },
+            icon: 'crowd',
+            branch: 'CROWD',
+            treeParent: 'crowd_gold_1',
 
             id: 'crowd_invite_1',
             group: 'CROWD',
