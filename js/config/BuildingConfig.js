@@ -1,5 +1,5 @@
 export const AUTO_LAUNCHER_COST_BASE = 50;
-export const AUTO_LAUNCHER_COST_RATIO = 1.45;
+export const AUTO_LAUNCHER_COST_RATIO = 1.7;
 
 export const LAUNCHER_WORLD_HIGHLIGHT_DURATION = 2.5;
 
@@ -8,8 +8,8 @@ export const BUILDING_TYPES = {
         id: 'auto_launcher',
         name: 'Auto Launcher',
         description: 'Automatically launches fireworks',
-        baseCost: 50,
-        costRatio: 1.45,
+        baseCost: AUTO_LAUNCHER_COST_BASE,
+        costRatio: AUTO_LAUNCHER_COST_RATIO,
         currency: 'sparkles',
         width: 25,
         height: 40,
@@ -31,7 +31,7 @@ export const BUILDING_TYPES = {
         name: 'Sparkle Generator',
         description: 'Passively generates sparkles over time',
         baseCost: 100,
-        costRatio: 1.3,
+        costRatio: 1.35,
         currency: 'gold',
         width: 25,
         height: 30,

@@ -5,7 +5,7 @@ export const CROWD_CONFIG = {
         minSize: .9,
         maxSize: 1.25,
         seed: 12345,
-        formulaA: 3.0,   // Increased from 2.0 for better crowd scaling
+        formulaA: 0.6,   // tune crowd scaling so first crowd appears around ~4 minutes
         formulaB: 0.0,
     },
 

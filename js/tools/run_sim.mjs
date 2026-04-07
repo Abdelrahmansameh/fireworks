@@ -1,5 +1,5 @@
 
-import { ProgressionSimulator } from './js/tools/ProgressionSimulator.js';
+import { ProgressionSimulator } from './ProgressionSimulator.js';
 const simulator = new ProgressionSimulator();
 const result = simulator.simulate(30, { clicksPerSec: 4, baseDroneYieldPerSec: 10, baseCatchYieldPerSec: 5 });
 result.events.forEach(e => {

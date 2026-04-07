@@ -163,7 +163,9 @@ export class ProgressionSimulator {
 
             // 3. Purchase Strategy (Greedy: Quickest to Afford of [Upgrades, Buildings])
             let purchasedSomething = true;
-            while(purchasedSomething) {
+            let purchaseCount = 0;
+            const maxPurchasesPerTick = 1; // throttle purchases per tick to smooth bursts
+            while(purchasedSomething && purchaseCount < maxPurchasesPerTick) {
                 purchasedSomething = false;
 
                 let bestOption = null;
@@ -225,6 +227,7 @@ export class ProgressionSimulator {
                             this.events.push({ time: this.time, type: 'upgrade', label: `Upgraded ${bestOption.def.name} to Lvl ${newLvl}` });
                             this.totalUpgradesPurchased++;
                             purchasedSomething = true;
+                            purchaseCount++;
                         } else if (bestOption.type === 'building') {
                             res.subtract(bestOption.cost);
                             this.mockGame.buildingManager.buildings.push({ type: bestOption.id });
@@ -235,6 +238,7 @@ export class ProgressionSimulator {
                             }
                             this.syncCrowd(); // crowd scales with fps, fps scales with buildings
                             purchasedSomething = true;
+                            purchaseCount++;
                         }
                     }
                 }
