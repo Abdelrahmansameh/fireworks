@@ -1,6 +1,6 @@
 import ProgressionManager from '../upgrades/ProgressionManager.js';
 import { PROGRESSION_CONFIG } from '../config/ProgressionConfig.js';
-import { BUILDING_TYPES } from '../config/config.js';
+import { BUILDING_TYPES, CROWD_CONFIG } from '../config/config.js';
 
 export class ProgressionSimulator {
     constructor() {
@@ -58,12 +58,17 @@ export class ProgressionSimulator {
     }
 
     syncCrowd() {
-        // Mock crowd size scaling
         const fps = this.getLauncherFPS();
-        // A rough approximation of crowd scaling from FireworkGame.js `_calculateTargetCrowdCount`
-        // formulaA = 15, formulaB = 5 (using default config scaling roughly)
-        const target = fps <= 0 ? (this.mockGame.crowdStats.countBonus || 0) : Math.floor(15 * Math.sqrt(fps) + 5) + (this.mockGame.crowdStats.countBonus || 0);
-        this.mockGame.crowd.people.length = target; 
+        const config = CROWD_CONFIG.scaling;
+        const maxCap = CROWD_CONFIG.maxInstances || 1000;
+        const bonus = this.mockGame.crowdStats.countBonus || 0;
+        
+        let target = bonus;
+        if (fps > 0) {
+            target = Math.floor(config.formulaA * Math.sqrt(fps) + config.formulaB) + bonus;
+        }
+        
+        this.mockGame.crowd.people.length = Math.min(target, maxCap); 
     }
 
     getLauncherFPS() {
