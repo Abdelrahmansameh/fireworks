@@ -1,6 +1,10 @@
 import Building from './Building.js';
 import Firework from '../entities/Firework.js';
 import { GAME_BOUNDS, PRE_RECIPE_COMPONENT_DEFAULTS } from '../config/config.js';
+import { SkeletonData, hexToRgb } from '../animation/SkeletonData.js';
+import { AnimationData } from '../animation/AnimationData.js';
+import { computePose, applyPoseToInstances } from '../animation/SkeletonAnimator.js';
+import * as Renderer2D from '../rendering/Renderer.js';
 
 class AutoLauncher extends Building {
     constructor(game, x, y, data = {}) {
@@ -10,6 +14,114 @@ class AutoLauncher extends Building {
         this.assignedRecipeIndex = data.assignedRecipeIndex ?? null;
         this.colorOverride = data.colorOverride || AutoLauncher._randomColor();
         this.patternOverride = data.patternOverride || null;
+
+        this._skeleton = null;
+        this._animData = null;
+        this._instancedGroup = null;
+        this._animTimer = 0;
+        this._clipName = 'idle';
+        this._lastResolvedColor = null;
+
+        this._loadSkeleton();
+    }
+
+    async _loadSkeleton() {
+        try {
+            const url = this.config.skeletonUrl;
+            const { skeleton, rawAnimations } = await SkeletonData.load(url);
+            this._skeleton = skeleton;
+            this._animData = new AnimationData(rawAnimations);
+
+            // Force initial color resolve and apply
+            const color = this._resolveCurrentColor();
+            this._updateSkeletonColors(color);
+        } catch (e) {
+            console.error('AutoLauncher: failed to load skeleton', e);
+            return;
+        }
+
+        try {
+            const geometry = Renderer2D.buildTexturedSquare(1, 1);
+            this._instancedGroup = this.game.renderer2D.createInstancedGroup({
+                vertices: geometry.vertices,
+                indices: geometry.indices,
+                texCoords: geometry.texCoords,
+                texture: null,
+                maxInstances: this._skeleton.partCount,
+                zIndex: this.config.zIndex || 5,
+                blendMode: Renderer2D.BlendMode.NORMAL,
+            });
+
+            for (let i = 0; i < this._skeleton.partCount; i++) {
+                this._instancedGroup.addInstanceRaw(this.x, this.y, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0);
+            }
+
+            this._renderFrame();
+        } catch (e) {
+            console.error('AutoLauncher: failed to create instanced group', e);
+        }
+    }
+
+    _renderFrame() {
+        if (!this._skeleton || !this._instancedGroup) return;
+
+        const clip = this._animData ? this._animData.getClip(this._clipName) : null;
+        const time = clip
+            ? (clip.loop ? this._animTimer % clip.duration : Math.min(this._animTimer, clip.duration))
+            : 0;
+
+        // If a non-looping animation (like firing) is finished, go back to idle
+        if (clip && !clip.loop && this._animTimer >= clip.duration) {
+            this._playClip('idle');
+        }
+
+        const pose = computePose(this._skeleton, clip, time);
+        applyPoseToInstances(
+            this._skeleton, pose, this._instancedGroup,
+            0,
+            this.x, this.y,
+            this.config.skeletonScale,
+            1
+        );
+    }
+
+    _playClip(name) {
+        if (this._clipName !== name) {
+            this._clipName = name;
+            this._animTimer = 0;
+        }
+    }
+
+    _resolveCurrentColor() {
+        if (this.game.progression.isUnlocked('recipes_tab')) {
+            const recipe = this.game.recipes[this.assignedRecipeIndex];
+            if (recipe && recipe.components.length > 0) {
+                return recipe.components[0].color;
+            } else if (this.game.recipes.length > 0) {
+                // If random recipe mode is technically active but no recipe assigned yet, 
+                // just use the first recipe color or the current list color.
+                return this.game.recipes[0].components[0].color;
+            } else if (this.game.currentRecipeComponents.length > 0) {
+                return this.game.currentRecipeComponents[0].color;
+            }
+        }
+
+        return this.colorOverride || '#ffffff';
+    }
+
+    _updateSkeletonColors(hex) {
+        if (!this._skeleton) return;
+
+        const rgb = hexToRgb(hex);
+        this._lastResolvedColor = hex;
+
+        for (let i = 0; i < this._skeleton.parts.length; i++) {
+            const part = this._skeleton.parts[i];
+            // We color the tube and base with the recipe/override color
+            if (part.id === 'tube' || part.id === 'base') {
+                this._skeleton.partColors[i] = rgb;
+            }
+        }
     }
 
     get spawnInterval() {
@@ -18,6 +130,8 @@ class AutoLauncher extends Building {
 
     update(deltaTime) {
         super.update(deltaTime);
+        this._animTimer += deltaTime;
+
         this.accumulator += deltaTime;
         if (this.accumulator >= this.config.maxAccumulator) {
             this.accumulator = this.config.maxAccumulator + Math.random() * this.spawnInterval;
@@ -27,9 +141,19 @@ class AutoLauncher extends Building {
             this.spawnFirework();
             this.accumulator -= this.spawnInterval;
         }
+
+        // Handle dynamic color changes
+        const currentColor = this._resolveCurrentColor();
+        if (currentColor !== this._lastResolvedColor) {
+            this._updateSkeletonColors(currentColor);
+        }
+
+        this._renderFrame();
     }
 
     spawnFirework() {
+        this._playClip('firing');
+
         const x = this.x;
         const launchY = GAME_BOUNDS.BUILDING_Y;
 
@@ -109,6 +233,13 @@ class AutoLauncher extends Building {
             return Math.round(255 * color).toString(16).padStart(2, '0');
         };
         return `#${f(0)}${f(8)}${f(4)}`;
+    }
+
+    destroy() {
+        if (this._instancedGroup) {
+            this.game.renderer2D.removeInstancedGroup(this._instancedGroup);
+            this._instancedGroup = null;
+        }
     }
 }
 

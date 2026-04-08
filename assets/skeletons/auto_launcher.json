@@ -1,0 +1,100 @@
+{
+  "parts": [
+    {
+      "id": "base",
+      "parentId": null,
+      "width": 3,
+      "height": 1,
+      "anchorX": 0,
+      "anchorY": 0,
+      "relX": 0,
+      "relY": 0,
+      "color": "777777"
+    },
+    {
+      "id": "stand",
+      "parentId": "base",
+      "width": 0.6,
+      "height": 1.5,
+      "anchorX": 0,
+      "anchorY": 0,
+      "relX": 0,
+      "relY": 0.5,
+      "color": "555555"
+    },
+    {
+      "id": "tube",
+      "parentId": "stand",
+      "width": 1,
+      "height": 4,
+      "anchorX": 0,
+      "anchorY": -0.4,
+      "relX": 0,
+      "relY": 0.3,
+      "color": "adadad"
+    },
+    {
+      "id": "tip",
+      "parentId": "tube",
+      "width": 1.4,
+      "height": 0.6,
+      "anchorX": 0,
+      "anchorY": 0,
+      "relX": 0,
+      "relY": 0.5,
+      "color": "555555"
+    }
+  ],
+  "animations": {
+    "idle": {
+      "duration": 3,
+      "loop": true,
+      "tracks": {
+        "base": [
+          { "time": 0, "rotation": 0, "offsetX": 0, "offsetY": 0 },
+          { "time": 3, "rotation": 0, "offsetX": 0, "offsetY": 0 }
+        ],
+        "stand": [
+          { "time": 0, "rotation": 0, "offsetX": 0, "offsetY": 0 },
+          { "time": 3, "rotation": 0, "offsetX": 0, "offsetY": 0 }
+        ],
+        "tube": [
+          { "time": 0, "rotation": 0, "offsetX": 0, "offsetY": 0 },
+          { "time": 1.5, "rotation": 0.03, "offsetX": 0, "offsetY": 0 },
+          { "time": 3, "rotation": 0, "offsetX": 0, "offsetY": 0 }
+        ],
+        "tip": [
+          { "time": 0, "rotation": 0, "offsetX": 0, "offsetY": 0 },
+          { "time": 1.5, "rotation": 0.03, "offsetX": 0, "offsetY": 0 },
+          { "time": 3, "rotation": 0, "offsetX": 0, "offsetY": 0 }
+        ]
+      }
+    },
+    "firing": {
+      "duration": 0.4,
+      "loop": false,
+      "tracks": {
+        "base": [
+          { "time": 0, "rotation": 0, "offsetX": 0, "offsetY": 0 },
+          { "time": 0.05, "rotation": 0.01, "offsetX": 0, "offsetY": -0.1 },
+          { "time": 0.4, "rotation": 0, "offsetX": 0, "offsetY": 0 }
+        ],
+        "stand": [
+          { "time": 0, "rotation": 0, "offsetX": 0, "offsetY": 0 },
+          { "time": 0.4, "rotation": 0, "offsetX": 0, "offsetY": 0 }
+        ],
+        "tube": [
+          { "time": 0, "rotation": 0, "offsetX": 0, "offsetY": 0 },
+          { "time": 0.05, "rotation": 0, "offsetX": 0, "offsetY": -0.8 },
+          { "time": 0.15, "rotation": 0, "offsetX": 0, "offsetY": -0.6 },
+          { "time": 0.4, "rotation": 0, "offsetX": 0, "offsetY": 0 }
+        ],
+        "tip": [
+          { "time": 0, "rotation": 0, "offsetX": 0, "offsetY": 0 },
+          { "time": 0.05, "rotation": 0, "offsetX": 0, "offsetY": -0.3 },
+          { "time": 0.4, "rotation": 0, "offsetX": 0, "offsetY": 0 }
+        ]
+      }
+    }
+  }
+}
