@@ -30,6 +30,9 @@ class UIManager {
         this.handleWheelScroll = this.handleWheelScroll.bind(this);
         this.handlePointerDown = this.handlePointerDown.bind(this);
         this.handlePointerClick = this.handlePointerClick.bind(this);
+        
+        this._lastNotificationCheck = 0;
+        this._notificationCheckInterval = 500; // ms
 
         const storedFS = localStorage.getItem('showFloatingSparkle');
         this.showFloatingSparkleEnabled = storedFS === null ? true : (storedFS === 'true');
@@ -885,6 +888,64 @@ class UIManager {
             if (upgradesTab && upgradesTab.classList.contains('active')) {
                 this.updateUpgradeBuyButtons();
             }
+        }
+
+        // Throttled notification check
+        if (now - this._lastNotificationCheck > this._notificationCheckInterval) {
+            this._lastNotificationCheck = now;
+            this.updateTabNotifications();
+        }
+    }
+
+    updateTabNotifications() {
+        const progression = this.game.progression;
+        
+        // 1. Check Upgrades
+        let upgradesAvailable = false;
+        if (progression.isUnlocked('upgrades_tab')) {
+            for (const def of progression.getAllUpgradeDefs()) {
+                const { visible } = progression.isVisible(def.id, this.game);
+                if (visible) {
+                    const { ok: canBuy } = progression.canPurchase(def.id, this.game);
+                    if (canBuy) {
+                        upgradesAvailable = true;
+                        break;
+                    }
+                }
+            }
+        }
+        
+        // 2. Check Buildings
+        let buildingsAvailable = false;
+        if (progression.isUnlocked('buildings_tab')) {
+            for (const [key, type] of Object.entries(BUILDING_TYPES)) {
+                // Skip if building type isn't unlocked yet
+                if (type.unlockId && !progression.isUnlocked(type.unlockId)) continue;
+                
+                // Special check for catapult limit
+                if (key === 'CATAPULT') {
+                    const count = this.game.buildingManager.getBuildingsByType('CATAPULT').length;
+                    if (count >= (this.game.catapultStats?.maxCatapults ?? 1)) continue;
+                }
+
+                const cost = this.game.buildingManager.getBuyCost(key);
+                const balance = this.game.resourceManager.resources[type.currency]?.amount ?? 0;
+                if (balance >= cost) {
+                    buildingsAvailable = true;
+                    break;
+                }
+            }
+        }
+
+        // Apply visual feedback
+        const upgradesTabBtn = document.getElementById('upgrades-tab');
+        if (upgradesTabBtn) {
+            upgradesTabBtn.classList.toggle('has-purchaseable', upgradesAvailable);
+        }
+
+        const buildingsTabBtn = document.getElementById('buildings-tab');
+        if (buildingsTabBtn) {
+            buildingsTabBtn.classList.toggle('has-purchaseable', buildingsAvailable);
         }
     }
 
