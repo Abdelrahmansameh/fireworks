@@ -1,5 +1,5 @@
 export const AUTO_LAUNCHER_COST_BASE = 50;
-export const AUTO_LAUNCHER_COST_RATIO = 1.7;
+export const AUTO_LAUNCHER_COST_RATIO = 1.6;
 
 export const LAUNCHER_WORLD_HIGHLIGHT_DURATION = 2.5;
 
@@ -38,7 +38,7 @@ export const BUILDING_TYPES = {
         color: { r: 1, g: 0.84, b: 0, a: 1 },
         texture: null,
         textureKey: null,
-        baseProductionRate: 0.5,
+        baseProductionRate: 3.0,
         resourceType: 'sparkles',
         unlockId: 'resource_generator',
         statId: 'stat-bld-gen',
