@@ -8,6 +8,7 @@ import InstancedDroneSystem from '../entities/InstancedDroneSystem.js';
 import Crowd from '../entities/Crowd.js';
 import Firework from '../entities/Firework.js';
 import { patternKeys } from '../entities/patterns/index.js';
+import CinematicManager from './CinematicManager.js';
 import UIManager from '../ui/UIManager.js';
 import ResourceManager from '../resources/ResourceManager.js';
 import GameProfiler from '../profiling/GameProfiler.js';
@@ -50,6 +51,10 @@ class FireworkGame extends Engine {
         this.profiler = new GameProfiler();
         this.audioManager = new AudioManager();
         this.statsTracker = new GameMetrics();
+        this.cinematicManager = new CinematicManager(this);
+        this.hasSeenFirstCrowdCinematic = JSON.parse(localStorage.getItem('hasSeenFirstCrowdCinematic') || 'false');
+        this.isInputDisabled = false;
+        this.hideFloatingSparkles = false;
 
         this.currentState = 'game';
         this.advancedCreatorUnlocked = JSON.parse(localStorage.getItem('advancedCreatorUnlocked') || 'false');
@@ -163,6 +168,12 @@ class FireworkGame extends Engine {
             const multiplied = amount * (this.crowdStats.sparklesPerParticleMultiplier ?? 1);
             this.addSparkles(multiplied, 'crowd_catch');
             this.statsTracker.recordCrowdCatchParticle();
+        };
+        this.crowd.onFirstPersonArrival = (person) => {
+            if (this.cinematicManager.isPlaying) {
+                person.coinTossTimer = 5; // force immediate toss
+                this.cinematicManager.resumeEvent('firstCrowdCoinToss');
+            }
         };
 
         const initialCrowd = this._calculateTargetCrowdCount(this.buildingManager.getTheoreticalAutoLauncherFPS());
@@ -400,7 +411,16 @@ class FireworkGame extends Engine {
 
 
         const targetCrowdSize = this._calculateTargetCrowdCount(this.buildingManager.getTheoreticalAutoLauncherFPS());
-        this.crowd.setCount(targetCrowdSize);
+        
+        if (targetCrowdSize > 0 && this.crowd.people.length === 0 && !this.hasSeenFirstCrowdCinematic && !this.cinematicManager.isPlaying) {
+            this.hasSeenFirstCrowdCinematic = true;
+            this.saveProgress();
+            this.playFirstCrowdCinematic();
+        } else if (!this.cinematicManager.isPlaying) {
+            this.crowd.setCount(targetCrowdSize);
+        }
+
+        this.cinematicManager.update(deltaTime);
 
         this.resourceManager.update();
 
@@ -458,6 +478,7 @@ class FireworkGame extends Engine {
             firstClicks: this.firstClickStates,
         };
         localStorage.setItem('progressionState', JSON.stringify(progressionState));
+        localStorage.setItem('hasSeenFirstCrowdCinematic', JSON.stringify(this.hasSeenFirstCrowdCinematic));
         localStorage.setItem('unlockedPatternKeys', JSON.stringify(this.unlockedPatternKeys));
         this.statsTracker.save();
     }
@@ -571,6 +592,7 @@ class FireworkGame extends Engine {
         this.progression.resetUnlockState();
 
         this.unlockedPatternKeys = [patternKeys[0]];
+        this.hasSeenFirstCrowdCinematic = false;
 
         this.firstClickStates = {
             tabMenu: false,
@@ -596,6 +618,12 @@ class FireworkGame extends Engine {
                 const multiplied = amount * (this.crowdStats.sparklesPerParticleMultiplier ?? 1);
                 this.addSparkles(multiplied, 'crowd_catch');
                 this.statsTracker.recordCrowdCatchParticle();
+            };
+            this.crowd.onFirstPersonArrival = (person) => {
+                if (this.cinematicManager.isPlaying) {
+                    person.coinTossTimer = 5; // force immediate toss
+                    this.cinematicManager.resumeEvent('firstCrowdCoinToss');
+                }
             };
         }
 
@@ -829,7 +857,8 @@ class FireworkGame extends Engine {
                 ...this.progression.getState(),
                 firstClicks: this.firstClickStates,
             },
-            unlockedPatternKeys: this.unlockedPatternKeys
+            unlockedPatternKeys: this.unlockedPatternKeys,
+            hasSeenFirstCrowdCinematic: this.hasSeenFirstCrowdCinematic
         };
         return JSON.stringify(data);
     }
@@ -881,6 +910,8 @@ class FireworkGame extends Engine {
                 this.firstClickStates = { ...this.firstClickStates, ...data.progression.firstClicks };
             }
         }
+
+        this.hasSeenFirstCrowdCinematic = !!data.hasSeenFirstCrowdCinematic;
 
         this.ui.initializeUnlockStates();
         this.progression.applyAll(this);
@@ -1277,6 +1308,30 @@ class FireworkGame extends Engine {
 
     getLauncherAt(x, y) {
         return this.buildingManager.getBuildingAt(x, y);
+    }
+
+    playFirstCrowdCinematic() {
+        this.cinematicManager.play(async (game, cm) => {
+            // "the camera scrolls all the way to the left of the screen"
+            await cm.panCameraTo(GAME_BOUNDS.SCROLL_MIN_X, 3000);
+
+            // "once the camera is in place, the crowd member spawns"
+            game.crowd.setCount(1);
+            const person = game.crowd.people[0];
+
+            // Give it a tiny sleep to let state visually settle
+            await cm.wait(100);
+
+            // "the camera then follows the crowd member as he walks to his spawnX"
+            cm.followEntity(person);
+
+            // "once he reaches, he tosses a coin"
+            await cm.waitForEvent('firstCrowdCoinToss');
+
+            // "then the cinematic is over and the player loses control" (regains control)
+            cm.stopFollowing();
+            await cm.wait(1000); 
+        });
     }
 }
 

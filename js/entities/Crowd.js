@@ -307,6 +307,9 @@ class Crowd {
                 if (dx < 0 && dx >= deltaMove || dx > 0 && dx <= deltaMove) {
                     person.x = person.spawnX;
                     this._switchToState(personIndex, 'cheering');
+                    if (personIndex === 0 && this.onFirstPersonArrival) {
+                        this.onFirstPersonArrival(person);
+                    }
                 } else {
                     person.x += deltaMove;
                 }

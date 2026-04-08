@@ -323,6 +323,7 @@ class UIManager {
     }
 
     handlePointerDown(e) {
+        if (this.game.isInputDisabled) return;
         if (!this.game.isClickInsideUI(e)) {
             e.preventDefault();
             const worldPos = this.game.screenToWorld(e.clientX, e.clientY);
@@ -661,6 +662,7 @@ class UIManager {
     }
 
     handleWheelScroll(event) {
+        if (this.game.isInputDisabled) return;
         if (GAME_BOUNDS.IS_ZOOM_LOCKED) {
             return;
         }
@@ -718,6 +720,16 @@ class UIManager {
         tabs.classList.remove('collapsed');
     }
 
+    collapseForCinematic(isCinematicActive) {
+        const tabs = document.querySelector('.tabs');
+        if (isCinematicActive) {
+            tabs.classList.add('collapsed');
+            this.hideActiveTab();
+            // Could add black bars or letterbox effect to body here in the future
+        } else {
+            tabs.classList.remove('collapsed');
+        }
+    }
 
     showConfirmation(title, message, onConfirm) {
         const confirmationDialog = document.getElementById('confirmation-dialog');
@@ -796,6 +808,7 @@ class UIManager {
     }
 
     toggleTab(tab) {
+        if (this.game.isInputDisabled) return;
         const tabs = document.querySelector('.tabs');
         const tabContent = document.getElementById(`${tab}-content`);
         const isActive = tabContent.classList.contains('active');
