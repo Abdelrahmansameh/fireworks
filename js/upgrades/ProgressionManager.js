@@ -140,6 +140,14 @@ class ProgressionManager {
                 return { visible: false };
             }
         }
+
+        if (def.requires?.stats?.crowdCount !== undefined) {
+            const currentCrowd = game.crowd ? game.crowd.people.length : 0;
+            if (currentCrowd < def.requires.stats.crowdCount) {
+                return { visible: false };
+            }
+        }
+
         return { visible: true };
     }
 

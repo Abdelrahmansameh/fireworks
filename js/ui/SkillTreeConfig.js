@@ -423,7 +423,7 @@ export const SKILL_TREE_CONFIG = {
             costRatio: 1,
             currency: 'gold',
             maxLevel: 1,
-            requires: { upgrades: { auto_launcher: 1 } },
+            requires: { upgrades: { auto_launcher: 1 }, stats: { crowdCount: 1 } },
             apply: (game, _level) => { game.baseSparkleMultiplier *= 2; },
         },
         crowd_gold_1: {
