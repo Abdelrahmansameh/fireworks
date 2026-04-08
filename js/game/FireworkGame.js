@@ -291,11 +291,6 @@ class FireworkGame extends Engine {
 
     onWindowResize() {
         this.renderer2D._updateProjectionMatrix();
-        const yPos = GAME_BOUNDS.WORLD_LAUNCHER_Y;
-
-        for (const building of this.buildingManager.buildings) {
-            building.setPosition(building.x, yPos);
-        }
     }
 
     bindEvents() {
