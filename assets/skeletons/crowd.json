@@ -1235,6 +1235,107 @@
           }
         ]
       }
+    },
+    "cinematic_intro": {
+      "duration": 2,
+      "loop": true,
+      "tracks": {
+        "arm_1_l": [
+          {
+            "time": 0,
+            "rotation": 1.1,
+            "offsetX": 0,
+            "offsetY": 0
+          },
+          {
+            "time": 0.27859375,
+            "rotation": 0.82,
+            "offsetX": 0,
+            "offsetY": 0
+          }
+        ],
+        "arm_1_r": [
+          {
+            "time": 0,
+            "rotation": -0.98,
+            "offsetX": 0,
+            "offsetY": 0
+          },
+          {
+            "time": 0.27859375,
+            "rotation": -0.73,
+            "offsetX": 0,
+            "offsetY": 0
+          },
+          {
+            "time": 0.56359375,
+            "rotation": -0.85,
+            "offsetX": 0,
+            "offsetY": 0
+          },
+          {
+            "time": 0.86859375,
+            "rotation": -1.22,
+            "offsetX": 0,
+            "offsetY": 0
+          },
+          {
+            "time": 1.14859375,
+            "rotation": -0.84,
+            "offsetX": 0,
+            "offsetY": 0
+          },
+          {
+            "time": 1.52859375,
+            "rotation": -1.08,
+            "offsetX": 0,
+            "offsetY": 0
+          },
+          {
+            "time": 1.87359375,
+            "rotation": -0.83,
+            "offsetX": 0,
+            "offsetY": 0
+          }
+        ],
+        "foot_l": [
+          {
+            "time": 0,
+            "rotation": 3.14,
+            "offsetX": 0.39,
+            "offsetY": 0
+          }
+        ],
+        "pupil_l": [
+          {
+            "time": 0,
+            "rotation": 0,
+            "offsetX": 0.23,
+            "offsetY": -0.38
+          },
+          {
+            "time": 2,
+            "rotation": 0,
+            "offsetX": 0.43,
+            "offsetY": 0.33
+          }
+        ],
+        "pupil_r": [
+          {
+            "time": 0,
+            "rotation": 0,
+            "offsetX": 0.44,
+            "offsetY": -0.33
+          },
+          {
+            "time": 2,
+            "rotation": 0,
+            "offsetX": 0.39,
+            "offsetY": 0.41
+          }
+        ]
+      },
+      "props": []
     }
   }
 }
