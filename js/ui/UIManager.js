@@ -886,7 +886,9 @@ class UIManager {
         if (this.game.progression.isUnlocked('upgrades_tab')) {
             const upgradesTab = document.getElementById('upgrades-content');
             if (upgradesTab && upgradesTab.classList.contains('active')) {
-                this.updateUpgradeBuyButtons();
+                if (this.updateUpgradeBuyButtons()) {
+                    this.renderUpgrades();
+                }
             }
         }
 
@@ -951,9 +953,10 @@ class UIManager {
 
     updateUpgradeBuyButtons() {
         const availableContainer = document.getElementById('upgrades-available');
-        if (!availableContainer) return;
+        if (!availableContainer) return false;
         const buyButtons = availableContainer.querySelectorAll('.upgrade-buy-button');
         const progression = this.game.progression;
+        let anyStateChanged = false;
         
         buyButtons.forEach(btn => {
             const upgradeId = btn.getAttribute('data-upgrade-id');
@@ -961,9 +964,15 @@ class UIManager {
                 const cost = progression.getUpgradeCost(upgradeId);
                 const def = progression.getUpgradeDef(upgradeId);
                 const balance = this.game.resourceManager.resources[def.currency]?.amount ?? 0;
-                btn.disabled = balance < cost;
+                const canAfford = balance >= cost;
+                
+                if (btn.disabled && canAfford) {
+                    anyStateChanged = true;
+                }
+                btn.disabled = !canAfford;
             }
         });
+        return anyStateChanged;
     }
 
     updateStatsTab() {
@@ -1460,6 +1469,10 @@ class UIManager {
         const ownedContainer = document.getElementById('upgrades-owned');
         if (!availableContainer || !ownedContainer) return;
 
+        // Save scroll positions
+        const availableScroll = availableContainer.scrollTop;
+        const ownedScroll = ownedContainer.scrollTop;
+
         availableContainer.innerHTML = '';
         ownedContainer.innerHTML = '';
 
@@ -1559,6 +1572,10 @@ class UIManager {
 
             availableContainer.appendChild(availCard);
         });
+
+        // Restore scroll positions
+        availableContainer.scrollTop = availableScroll;
+        ownedContainer.scrollTop = ownedScroll;
     }
 
 
