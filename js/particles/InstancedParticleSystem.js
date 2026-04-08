@@ -61,7 +61,7 @@ class InstancedParticleSystem {
                 indices: g.indices,
                 maxInstances: this.maxParticles,
                 blendMode: BlendMode.ADDITIVE,
-                zIndex: 10,
+                zIndex: -20,
             });
             this.activeCounts[shape] = 0;
             this.instanceData[shape] = new Float32Array(this.maxParticles * this.strideFloats).fill(0);

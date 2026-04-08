@@ -83,7 +83,7 @@ class Firework {
             position: new Renderer2D.Vector2(x, y),
             rotation: 0,
             scale: new Renderer2D.Vector2(FIREWORK_CONFIG.rocketSize, FIREWORK_CONFIG.rocketSize),
-            zIndex: -1,
+            zIndex: -20,
             blendMode: Renderer2D.BlendMode.ADDITIVE,
             isStroke: false
         });

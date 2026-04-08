@@ -11,9 +11,9 @@
       "file": "catapult.json"
     },
     {
-      "id": "launcher",
-      "name": "Launcher",
-      "file": "launcher.json"
+      "id": "auto_launcher",
+      "name": "Auto Launcher",
+      "file": "auto_launcher.json"
     },
     {
       "id": "coin",

@@ -84,7 +84,7 @@ export function computePose(skeletonData, clip, time, overrides = null) {
  * @param {number} scale — entity scale
  * @param {number} flipX — 1 or -1
  */
-export function applyPoseToInstances(skeletonData, pose, instancedGroup, baseInstanceIndex, worldX, worldY, scale, flipX) {
+export function applyPoseToInstances(skeletonData, pose, instancedGroup, baseInstanceIndex, worldX, worldY, scale, flipX, tint = null) {
     const parts = skeletonData.parts;
     const colors = skeletonData.partColors;
 
@@ -110,11 +110,19 @@ export function applyPoseToInstances(skeletonData, pose, instancedGroup, baseIns
         const wy = worldY + meshDrawY * scale;
 
         const c = colors[i];
+        let cr = c.r, cg = c.g, cb = c.b;
+        if (tint) {
+            // blend with tint.a as factor
+            cr = cr + (tint.r - cr) * tint.a;
+            cg = cg + (tint.g - cg) * tint.a;
+            cb = cb + (tint.b - cb) * tint.a;
+        }
+
         const drawOffset = drawIndexMap ? (drawIndexMap.get(part.id) || 0) : i;
         const idx = baseInstanceIndex + drawOffset;
         instancedGroup.updateInstancePosition(idx, wx, wy);
         instancedGroup.updateInstanceScale(idx, part.width * scale, part.height * scale);
         instancedGroup.updateInstanceRotation(idx, tf.rotation * flipX);
-        instancedGroup.updateInstanceColor(idx, c.r, c.g, c.b, 1);
+        instancedGroup.updateInstanceColor(idx, cr, cg, cb, 1);
     }
 }

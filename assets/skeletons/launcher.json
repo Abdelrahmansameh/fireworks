@@ -4,7 +4,7 @@
       "id": "Base",
       "parentId": null,
       "width": 3,
-      "height": 1.000158750432866,
+      "height": 2,
       "color": "aaaaaa",
       "anchorX": 0,
       "anchorY": 0.5,
@@ -20,9 +20,9 @@
       "color": "aaaaaa",
       "anchorX": 0.5,
       "anchorY": 0.5,
-      "relX": 0.17,
-      "relY": 3,
-      "baseRotation": 0
+      "relX": 0.15,
+      "relY": 1.5,
+      "baseRotation": 1.9858059119110558
     }
   ],
   "animations": {}

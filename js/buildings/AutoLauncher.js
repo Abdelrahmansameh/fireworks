@@ -25,6 +25,31 @@ class AutoLauncher extends Building {
         this._loadSkeleton();
     }
 
+    createMesh() {
+        // legacy mesh removed, skeleton only
+    }
+
+    highlight(duration = 2.0) {
+        this.highlightTimer = duration;
+    }
+
+    isPointInside(x, y) {
+        // Use configured values with skeleton scale
+        const scale = this.config.skeletonScale || 1.0;
+        const width = this.config.width * scale;
+        const height = this.config.height * scale;
+
+        const halfWidth = width / 2;
+
+        // Skeleton is centered at x and bottom-aligned at y
+        return (
+            x >= this.x - halfWidth &&
+            x <= this.x + halfWidth &&
+            y >= this.y &&
+            y <= this.y + height
+        );
+    }
+
     async _loadSkeleton() {
         try {
             const url = this.config.skeletonUrl;
@@ -76,12 +101,20 @@ class AutoLauncher extends Building {
         }
 
         const pose = computePose(this._skeleton, clip, time);
+
+        let tint = null;
+        if (this.highlightTimer > 0) {
+            const pulse = (Math.sin(this.highlightTimer * 10) + 1) / 2;
+            tint = { r: 1, g: 1, b: 0.5, a: pulse * 0.5 }; // blend with yellow-white
+        }
+
         applyPoseToInstances(
             this._skeleton, pose, this._instancedGroup,
             0,
             this.x, this.y,
             this.config.skeletonScale,
-            1
+            1,
+            tint
         );
     }
 
@@ -117,8 +150,8 @@ class AutoLauncher extends Building {
 
         for (let i = 0; i < this._skeleton.parts.length; i++) {
             const part = this._skeleton.parts[i];
-            // We color the tube and base with the recipe/override color
-            if (part.id === 'tube' || part.id === 'base') {
+            // We color only the tube with the recipe/override color
+            if (part.id === 'tube') {
                 this._skeleton.partColors[i] = rgb;
             }
         }
@@ -129,7 +162,11 @@ class AutoLauncher extends Building {
     }
 
     update(deltaTime) {
-        super.update(deltaTime);
+        // We do not call super.update() as it relies on this.mesh
+        if (this.highlightTimer > 0) {
+            this.highlightTimer -= deltaTime;
+        }
+
         this._animTimer += deltaTime;
 
         this.accumulator += deltaTime;
