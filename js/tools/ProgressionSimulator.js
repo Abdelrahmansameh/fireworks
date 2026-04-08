@@ -12,6 +12,19 @@ export class ProgressionSimulator {
         this.history = [];
         this.events = [];
 
+        this.productionBreakdown = {
+            sparkles: {
+                clicks: 0,
+                launchers: 0,
+                generators: 0,
+                drones: 0,
+                crowdCatching: 0
+            },
+            gold: {
+                crowd: 0
+            }
+        };
+
         this.mockGame = {
             resourceManager: {
                 resources: {
@@ -115,17 +128,23 @@ export class ProgressionSimulator {
             let tickGPS = 0;
 
             // Clicks
-            tickSPS += ClicksPerSec * this.mockGame.baseSparkleMultiplier;
+            const clickVal = ClicksPerSec * this.mockGame.baseSparkleMultiplier;
+            tickSPS += clickVal;
+            this.productionBreakdown.sparkles.clicks += clickVal * tickSize;
 
             // Launchers (roughly assuming each firework gives baseSparkleMultiplier immediately for simplicity)
             const fps = this.getLauncherFPS();
-            tickSPS += fps * this.mockGame.baseSparkleMultiplier * this.mockGame.launcherStats.sparkleYieldMultiplier;
+            const launcherVal = fps * this.mockGame.baseSparkleMultiplier * this.mockGame.launcherStats.sparkleYieldMultiplier;
+            tickSPS += launcherVal;
+            this.productionBreakdown.sparkles.launchers += launcherVal * tickSize;
             this.mockGame.fireworkSystem.fireworkCount += fps * tickSize; // Simulate firework count going up
 
             // Generators
             const gens = this.mockGame.buildingManager.getBuildingsByType('RESOURCE_GENERATOR').length;
             const genBase = BUILDING_TYPES.RESOURCE_GENERATOR.baseProductionRate;
-            tickSPS += gens * genBase * this.mockGame.generatorStats.productionRateMultiplier;
+            const genVal = gens * genBase * this.mockGame.generatorStats.productionRateMultiplier;
+            tickSPS += genVal;
+            this.productionBreakdown.sparkles.generators += genVal * tickSize;
 
             // Drones
             const droneHubs = this.mockGame.buildingManager.getBuildingsByType('DRONE_HUB').length;
@@ -134,7 +153,9 @@ export class ProgressionSimulator {
                     this.mockGame.droneStats.maxDrones, 
                     droneHubs * (12 / (this.mockGame.droneHubStats.spawnIntervalMultiplier * 12)) * (10 * this.mockGame.droneStats.lifetimeMultiplier) // rough Little's law
                 );
-                tickSPS += maxActiveDrones * BaseDroneYieldPerSec * this.mockGame.droneStats.sparklesPerParticleMultiplier;
+                const droneVal = maxActiveDrones * BaseDroneYieldPerSec * this.mockGame.droneStats.sparklesPerParticleMultiplier;
+                tickSPS += droneVal;
+                this.productionBreakdown.sparkles.drones += droneVal * tickSize;
             }
 
             // Crowd Catching
@@ -142,12 +163,16 @@ export class ProgressionSimulator {
             if (this.mockGame.crowdStats.catchingEnabled && catapults > 0) {
                 // Rough estimate based on people flying
                 const activeCatchers = Math.min(this.mockGame.crowd.people.length, catapults * 2); 
-                tickSPS += activeCatchers * BaseCatchYieldPerSec * this.mockGame.crowdStats.sparklesPerParticleMultiplier * this.mockGame.crowdStats.collectionRadiusMultiplier;
+                const catchVal = activeCatchers * BaseCatchYieldPerSec * this.mockGame.crowdStats.sparklesPerParticleMultiplier * this.mockGame.crowdStats.collectionRadiusMultiplier;
+                tickSPS += catchVal;
+                this.productionBreakdown.sparkles.crowdCatching += catchVal * tickSize;
             }
 
             // Gold
             const crowdCount = this.mockGame.crowd.people.length;
-            tickGPS += crowdCount * BaseGoldDropsPerSecPerPerson * this.mockGame.crowdStats.goldRateMultiplier;
+            const goldVal = crowdCount * BaseGoldDropsPerSecPerPerson * this.mockGame.crowdStats.goldRateMultiplier;
+            tickGPS += goldVal;
+            this.productionBreakdown.gold.crowd += goldVal * tickSize;
 
             this.currentSPS = tickSPS;
             this.currentGPS = tickGPS;
@@ -315,7 +340,8 @@ export class ProgressionSimulator {
         return {
             history: this.history,
             events: this.events,
-            unpurchasedUpgrades: unpurchasedUpgrades
+            unpurchasedUpgrades: unpurchasedUpgrades,
+            productionBreakdown: this.productionBreakdown
         };
     }
 }

@@ -181,6 +181,43 @@ export function initializeProgressionTool() {
             timelineData.appendChild(row);
         }
 
+        // Display Production Breakdown
+        const breakdownHeader = document.createElement('div');
+        breakdownHeader.style.marginTop = '15px';
+        breakdownHeader.style.paddingTop = '10px';
+        breakdownHeader.style.borderTop = '1px solid #444';
+        breakdownHeader.style.color = '#FFD54F';
+        breakdownHeader.innerText = '--- Resource Generation Breakdown ---';
+        timelineData.appendChild(breakdownHeader);
+
+        if (result.productionBreakdown) {
+            const sparkles = result.productionBreakdown.sparkles;
+            const gold = result.productionBreakdown.gold;
+            const b_sparklesTotal = Object.values(sparkles).reduce((a, b) => a + b, 0);
+            
+            const makeRow = (text, pad = false) => {
+                const r = document.createElement('div');
+                r.innerText = (pad ? '    - ' : '- ') + text;
+                r.style.color = '#ddd';
+                r.style.marginBottom = '2px';
+                timelineData.appendChild(r);
+            };
+
+            const fmt = v => Math.floor(v).toLocaleString();
+
+            makeRow(`Sparkles Generated: ${fmt(b_sparklesTotal)}`);
+            if (b_sparklesTotal > 0) {
+                makeRow(`Launchers: ${fmt(sparkles.launchers)} (${(sparkles.launchers/b_sparklesTotal*100).toFixed(1)}%)`, true);
+                makeRow(`Generators: ${fmt(sparkles.generators)} (${(sparkles.generators/b_sparklesTotal*100).toFixed(1)}%)`, true);
+                makeRow(`Drones: ${fmt(sparkles.drones)} (${(sparkles.drones/b_sparklesTotal*100).toFixed(1)}%)`, true);
+                makeRow(`Crowd Catching: ${fmt(sparkles.crowdCatching)} (${(sparkles.crowdCatching/b_sparklesTotal*100).toFixed(1)}%)`, true);
+                makeRow(`Clicks: ${fmt(sparkles.clicks)} (${(sparkles.clicks/b_sparklesTotal*100).toFixed(1)}%)`, true);
+            }
+            
+            makeRow(`Gold Generated: ${fmt(gold.crowd)}`);
+            makeRow(`Crowd Drops: ${fmt(gold.crowd)} (100.0%)`, true);
+        }
+
         // Update Charts
         const labels = result.history.map(h => {
             const m = Math.floor(h.time / 60);
