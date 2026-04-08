@@ -34,7 +34,7 @@ class Crowd {
 
         this.goldPerCoinToss = 1;
         this.onCoinDrop = null;
-        
+
         this._propCache = new Map();
         this.maxPropParts = 0;
         this.totalPartsPerPerson = 1;
@@ -180,12 +180,12 @@ class Crowd {
         const group = this.instancedGroup;
 
         const person = {
-            x: x,
+            x: GAME_BOUNDS.SCROLL_MIN_X - 1000 - (rng() * 400),
             y: y,
             scale: scale,
             animTimer: rng() * Math.PI * 2,
             animSpeed: 0.85 + rng() * 0.3,
-            state: 'cheering',
+            state: 'walking',
             spawnX: x,
             spawnY: y,
             vx: 0,
@@ -483,7 +483,7 @@ class Crowd {
     launchPersonFromCatapult(personIndex, vx, vy) {
         console.log(`Launching person ${personIndex} from catapult with velocity (${vx}, ${vy})`);
         const person = this.people[personIndex];
-        if (!person) 
+        if (!person)
             return;
         person.catapultData = null;
         person.vx = vx;
@@ -538,8 +538,8 @@ class Crowd {
                     if (!pTf) continue;
 
                     const anchorRot = pTf.rotation;
-                    const propRootX = pTf.x + ((prop.offsetX||0) * Math.cos(anchorRot) - (prop.offsetY||0) * Math.sin(anchorRot));
-                    const propRootY = pTf.y + ((prop.offsetX||0) * Math.sin(anchorRot) + (prop.offsetY||0) * Math.cos(anchorRot));
+                    const propRootX = pTf.x + ((prop.offsetX || 0) * Math.cos(anchorRot) - (prop.offsetY || 0) * Math.sin(anchorRot));
+                    const propRootY = pTf.y + ((prop.offsetX || 0) * Math.sin(anchorRot) + (prop.offsetY || 0) * Math.cos(anchorRot));
                     const propRootRot = anchorRot + (prop.rotation || 0);
 
                     const propClip = prop.animation ? cached.animData.getClip(prop.animation) : null;
@@ -547,7 +547,7 @@ class Crowd {
                     const propTime = propClip && propClip.loop ? (propLocalTime % propClip.duration) : Math.min(propLocalTime, propClip ? propClip.duration : 0);
 
                     const propPose = computePose(cached.skeleton, propClip, propTime);
-                    
+
                     const finalPropPose = new Map();
                     for (const [pid, ptf] of propPose.entries()) {
                         const finalX = propRootX + (ptf.x * Math.cos(propRootRot) - ptf.y * Math.sin(propRootRot));
