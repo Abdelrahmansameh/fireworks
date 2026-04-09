@@ -18,7 +18,7 @@ class AutoLauncher extends Building {
         this._skeleton = null;
         this._animData = null;
         this._instancedGroup = null;
-        this._animTimer = 0;
+        this._animTimer = Math.random() * 3;
         this._clipName = 'idle';
         this._lastResolvedColor = null;
 

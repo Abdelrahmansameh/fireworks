@@ -27,7 +27,7 @@
       "id": "tube",
       "parentId": "stand",
       "width": 1.5,
-      "height": 3,
+      "height": 2.5,
       "anchorX": 0,
       "anchorY": -0.4,
       "relX": -0.02315987788636694,
@@ -74,19 +74,6 @@
       "z": 2
     },
     {
-      "id": "tube_outline",
-      "parentId": "tube",
-      "width": 1.9,
-      "height": 3.4,
-      "color": "000000",
-      "anchorX": 0,
-      "anchorY": -0.3529411764705883,
-      "relX": 0,
-      "relY": 0,
-      "baseRotation": 0,
-      "z": -100
-    },
-    {
       "id": "tip_outline",
       "parentId": "tip",
       "width": 2,
@@ -98,6 +85,19 @@
       "relY": 0,
       "baseRotation": 0,
       "z": 12
+    },
+    {
+      "id": "tube_outline",
+      "parentId": "tube",
+      "width": 1.9,
+      "height": 2.9,
+      "color": "000000",
+      "anchorX": 0,
+      "anchorY": -0.3448275862068966,
+      "relX": 0,
+      "relY": 0,
+      "baseRotation": 0,
+      "z": -90
     }
   ],
   "animations": {
