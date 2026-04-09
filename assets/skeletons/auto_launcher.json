@@ -20,7 +20,8 @@
       "anchorY": 0,
       "relX": 0,
       "relY": 0.5,
-      "color": "0f102e"
+      "color": "0f102e",
+      "z": 5
     },
     {
       "id": "tube",
@@ -31,7 +32,8 @@
       "anchorY": -0.4,
       "relX": -0.02315987788636694,
       "relY": 0.6149743392545907,
-      "color": "adadad"
+      "color": "adadad",
+      "z": 10
     },
     {
       "id": "tip",
@@ -42,7 +44,8 @@
       "anchorY": 0,
       "relX": 0,
       "relY": 0.5,
-      "color": "0f102e"
+      "color": "0f102e",
+      "z": 15
     },
     {
       "id": "base_outline",
@@ -68,7 +71,7 @@
       "relX": 0,
       "relY": 0,
       "baseRotation": 0,
-      "z": -100
+      "z": 2
     },
     {
       "id": "tube_outline",
@@ -94,12 +97,12 @@
       "relX": 0,
       "relY": 0,
       "baseRotation": 0,
-      "z": -100
+      "z": 12
     }
   ],
   "animations": {
     "idle": {
-      "duration": 3,
+      "duration": 6,
       "loop": true,
       "tracks": {
         "base": [
@@ -110,7 +113,7 @@
             "offsetY": 0
           },
           {
-            "time": 3,
+            "time": 6,
             "rotation": 0,
             "offsetX": 0,
             "offsetY": 0
@@ -124,7 +127,7 @@
             "offsetY": 0
           },
           {
-            "time": 3,
+            "time": 6,
             "rotation": 0,
             "offsetX": 0,
             "offsetY": 0
@@ -138,13 +141,19 @@
             "offsetY": 0
           },
           {
-            "time": 1.5,
-            "rotation": 0.03,
+            "time": 1.51484375,
+            "rotation": 0.1,
             "offsetX": 0,
             "offsetY": 0
           },
           {
-            "time": 3,
+            "time": 4.11984375,
+            "rotation": -0.1,
+            "offsetX": 0,
+            "offsetY": 0
+          },
+          {
+            "time": 6,
             "rotation": 0,
             "offsetX": 0,
             "offsetY": 0
@@ -153,18 +162,6 @@
         "tip": [
           {
             "time": 0,
-            "rotation": 0,
-            "offsetX": 0,
-            "offsetY": 0
-          },
-          {
-            "time": 1.5,
-            "rotation": 0.03,
-            "offsetX": 0,
-            "offsetY": 0
-          },
-          {
-            "time": 3,
             "rotation": 0,
             "offsetX": 0,
             "offsetY": 0
