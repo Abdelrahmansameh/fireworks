@@ -71,7 +71,6 @@ export const FIREWORK_CONFIG = {
     // Rocket tilt / jitter while ascending. Angle values are degrees relative to vertical.
     rocketTilt: {
         enabled: true,
-        maxAngleDeg: 4, // maximum tilt angle left/right from vertical
-        maxJitterChangeDegPerSecond: 20 // how fast the tilt can change (deg/sec)
+        maxAngleDeg: 10, // maximum tilt angle left/right from vertical
     }
 };

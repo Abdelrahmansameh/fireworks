@@ -17,21 +17,17 @@ class Firework {
             this.particles[shape] = new Set();
         });
 
-        this.rocket = this.createRocket(x, y);
-
         // Initialize per-rocket tilt/jitter configuration
         if (FIREWORK_CONFIG.rocketTilt && FIREWORK_CONFIG.rocketTilt.enabled) {
             const maxTiltDeg = FIREWORK_CONFIG.rocketTilt.maxAngleDeg || 0;
-            const maxJitterDegPerSec = FIREWORK_CONFIG.rocketTilt.maxJitterChangeDegPerSecond || 0;
             this._maxTiltRad = (maxTiltDeg * Math.PI) / 180.0;
-            this._maxJitterRadPerSec = (maxJitterDegPerSec * Math.PI) / 180.0;
             this.currentTiltRad = (Math.random() * 2 - 1) * this._maxTiltRad;
-            if (this.rocket) this.rocket.rotation = this.currentTiltRad;
         } else {
             this._maxTiltRad = 0;
-            this._maxJitterRadPerSec = 0;
             this.currentTiltRad = 0;
         }
+
+        this.rocket = this.createRocket(x, y);
 
         const minY = GAME_BOUNDS.WORLD_MIN_EXPLOSION_Y;
         const maxY = GAME_BOUNDS.WORLD_MAX_EXPLOSION_Y;
@@ -88,20 +84,14 @@ class Firework {
             isStroke: false
         });
 
+        rocket.rotation = -this.currentTiltRad
+
         return rocket;
     }
 
     update(delta) {
         if (!this.exploded) {
-            // Update tilt jitter
-            if (this._maxTiltRad > 0 && this._maxJitterRadPerSec > 0) {
-                const maxChange = this._maxJitterRadPerSec * delta;
-                this.currentTiltRad += (Math.random() * 2 - 1) * maxChange;
-                // clamp
-                if (this.currentTiltRad > this._maxTiltRad) this.currentTiltRad = this._maxTiltRad;
-                if (this.currentTiltRad < -this._maxTiltRad) this.currentTiltRad = -this._maxTiltRad;
-                if (this.rocket) this.rocket.rotation = this.currentTiltRad;
-            }
+
 
             // Move rocket along its tilt angle (angle is relative to vertical)
             const ascent = FIREWORK_CONFIG.ascentSpeed * delta;
@@ -128,7 +118,7 @@ class Firework {
                         const spread = FIREWORK_CONFIG.rocketTrails.velocitySpread;
                         const randomVelX = (Math.random() - 0.5) * 2 * spread;
                         const randomVelY = (Math.random() - 0.5) * 2 * spread;
-                        const randomXOffset = (Math.random() - 0.5) * 10; 
+                        const randomXOffset = (Math.random() - 0.5) * 10;
                         this.particleSystem.addParticle(
                             this.rocket.position.clone().add(new Renderer2D.Vector2(randomXOffset, 0)),
                             new Renderer2D.Vector2(randomVelX, randomVelY),
