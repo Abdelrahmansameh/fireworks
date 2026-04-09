@@ -198,6 +198,9 @@ class Crowd {
             flipX: 1,
             // Catapult interaction
             catapultData: null,
+            // Overlay animation (e.g. coin toss on top of base state)
+            overlayClipName: null,
+            overlayTimer: 0,
         };
 
         this.people.push(person);
@@ -380,6 +383,10 @@ class Crowd {
             if (this.onCoinDrop) {
                 this.onCoinDrop(this.goldPerCoinToss, 'crowd');
             }
+            // Start the coin-toss as an override overlay on arms + pupils
+            person.overlayClipName = 'toss_coin';
+            person.overlayTimer = 0;
+            // Keep coinAnimTimer for backwards-compat (props may use it)
             person.coinAnimTimer = 0.8;
         }
 
@@ -392,10 +399,8 @@ class Crowd {
     }
 
     _getAnimForState(person) {
-        if (person.coinAnimTimer > 0) {
-            const clip = this._animData.getClip('toss_coin');
-            return { clip, time: clip ? clip.duration - person.coinAnimTimer : 0 };
-        }
+        // Note: coin-toss is now handled as a bone-mask overlay, not a full-clip switch.
+        // We keep coinAnimTimer check only for prop visibility.
 
         if (person.state === 'catapult_walk') {
             const clip = this._animData.getClip('walking') ?? null;
@@ -497,6 +502,16 @@ class Crowd {
     _updateProceduralAnimation(person, deltaTime) {
         person.animTimer += deltaTime * person.animSpeed;
 
+        // Advance coin-toss overlay timer
+        if (person.overlayClipName !== null) {
+            person.overlayTimer += deltaTime * person.animSpeed;
+            const overlayClip = this._animData ? this._animData.getClip(person.overlayClipName) : null;
+            if (!overlayClip || person.overlayTimer >= overlayClip.duration) {
+                person.overlayClipName = null;
+                person.overlayTimer = 0;
+            }
+        }
+
         if (!this._skeleton) return;
 
         const scale = person.scale;
@@ -504,8 +519,22 @@ class Crowd {
 
         const { clip, time } = this._getAnimForState(person);
 
-        // Use the generic pose solver
-        const pose = computePose(this._skeleton, clip, time);
+        // Build coin-toss overlay (override on arms + pupils only)
+        let overlay = null;
+        if (person.overlayClipName !== null) {
+            const overlayClip = this._animData ? this._animData.getClip(person.overlayClipName) : null;
+            if (overlayClip) {
+                overlay = {
+                    clip: overlayClip,
+                    time: person.overlayTimer,
+                    mode: 'override',
+                    boneMask: new Set(['arm_1_r', 'arm_1_l', 'pupil_l', 'pupil_r']),
+                };
+            }
+        }
+
+        // Use the generic pose solver with optional overlay
+        const pose = computePose(this._skeleton, clip, time, null, overlay);
 
         const minY = GAME_BOUNDS.CROWD_Y;
         const maxY = GAME_BOUNDS.CROWD_Y + (CROWD_CONFIG.ySpread || 0);
@@ -530,7 +559,7 @@ class Crowd {
 
         let propInstanceOffset = this._skeleton.partCount;
 
-        // Render props
+        // Render props from the base clip
         if (clip && clip.props) {
             for (const prop of clip.props) {
                 if (time >= prop.startTime && time <= prop.endTime) {
@@ -547,6 +576,48 @@ class Crowd {
 
                     const propClip = prop.animation ? cached.animData.getClip(prop.animation) : null;
                     const propLocalTime = time - prop.startTime;
+                    const propTime = propClip && propClip.loop ? (propLocalTime % propClip.duration) : Math.min(propLocalTime, propClip ? propClip.duration : 0);
+
+                    const propPose = computePose(cached.skeleton, propClip, propTime);
+
+                    const finalPropPose = new Map();
+                    for (const [pid, ptf] of propPose.entries()) {
+                        const finalX = propRootX + (ptf.x * Math.cos(propRootRot) - ptf.y * Math.sin(propRootRot));
+                        const finalY = propRootY + (ptf.x * Math.sin(propRootRot) + ptf.y * Math.cos(propRootRot));
+                        const finalRot = propRootRot + ptf.rotation;
+                        finalPropPose.set(pid, { x: finalX, y: finalY, rotation: finalRot });
+                    }
+
+                    applyPoseToInstances(
+                        cached.skeleton, finalPropPose, this.instancedGroup,
+                        person.instanceBaseIndex + propInstanceOffset,
+                        person.x, person.y,
+                        finalScale, flipX
+                    );
+
+                    propInstanceOffset += cached.skeleton.partCount;
+                }
+            }
+        }
+
+        // Also render props from an overlay clip (so overlays like toss_coin spawn their props)
+        if (overlay && overlay.clip && overlay.clip.props) {
+            const oTime = overlay.time;
+            for (const prop of overlay.clip.props) {
+                if (oTime >= prop.startTime && oTime <= prop.endTime) {
+                    const cached = this._propCache.get(prop.skeletonUrl);
+                    if (!cached) continue;
+
+                    const pTf = pose.get(prop.parentPartId);
+                    if (!pTf) continue;
+
+                    const anchorRot = pTf.rotation;
+                    const propRootX = pTf.x + ((prop.offsetX || 0) * Math.cos(anchorRot) - (prop.offsetY || 0) * Math.sin(anchorRot));
+                    const propRootY = pTf.y + ((prop.offsetX || 0) * Math.sin(anchorRot) + (prop.offsetY || 0) * Math.cos(anchorRot));
+                    const propRootRot = anchorRot + (prop.rotation || 0);
+
+                    const propClip = prop.animation ? cached.animData.getClip(prop.animation) : null;
+                    const propLocalTime = oTime - prop.startTime;
                     const propTime = propClip && propClip.loop ? (propLocalTime % propClip.duration) : Math.min(propLocalTime, propClip ? propClip.duration : 0);
 
                     const propPose = computePose(cached.skeleton, propClip, propTime);

@@ -1100,8 +1100,8 @@
           "startTime": 0,
           "endTime": 1,
           "parentPartId": "arm_3_r",
-          "offsetX": 0,
-          "offsetY": 0,
+          "offsetX": 0.6,
+          "offsetY": -0.9,
           "rotation": 0
         }
       ]

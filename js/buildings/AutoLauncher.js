@@ -22,6 +22,10 @@ class AutoLauncher extends Building {
         this._clipName = 'idle';
         this._lastResolvedColor = null;
 
+        // Overlay state — additive firing animation played on top of idle
+        this._overlayClip = null;
+        this._overlayTimer = 0;
+
         this._loadSkeleton();
     }
 
@@ -34,14 +38,80 @@ class AutoLauncher extends Building {
     }
 
     isPointInside(x, y) {
-        // Use configured values with skeleton scale
         const scale = this.config.skeletonScale || 1.0;
+
+        // If we have a loaded skeleton, compute a tight AABB from the current pose
+        if (this._skeleton && this._animData) {
+            const clip = this._animData ? this._animData.getClip(this._clipName) : null;
+            const time = clip
+                ? (clip.loop ? this._animTimer % clip.duration : Math.min(this._animTimer, clip.duration))
+                : 0;
+
+            let overlay = null;
+            if (this._overlayClip) {
+                if (this._overlayTimer < this._overlayClip.duration) {
+                    overlay = {
+                        clip: this._overlayClip,
+                        time: this._overlayTimer,
+                        mode: 'additive',
+                        boneMask: null,
+                    };
+                }
+            }
+
+            const pose = computePose(this._skeleton, clip, time, null, overlay);
+
+            let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+
+            for (let i = 0; i < this._skeleton.parts.length; i++) {
+                const part = this._skeleton.parts[i];
+                const tf = pose.get(part.id);
+                if (!tf) continue;
+
+                const anchorOffX = part.anchorX * part.width;
+                const anchorOffY = part.anchorY * part.height;
+                const cosR = Math.cos(tf.rotation);
+                const sinR = Math.sin(tf.rotation);
+
+                const meshDrawX = tf.x - (anchorOffX * cosR - anchorOffY * sinR);
+                const meshDrawY = tf.y - (anchorOffX * sinR + anchorOffY * cosR);
+
+                const centerX = this.x + meshDrawX * scale;
+                const centerY = this.y + meshDrawY * scale;
+
+                const halfW = (part.width * scale) / 2;
+                const halfH = (part.height * scale) / 2;
+
+                const corners = [
+                    [halfW, halfH],
+                    [halfW, -halfH],
+                    [-halfW, halfH],
+                    [-halfW, -halfH],
+                ];
+
+                for (const c of corners) {
+                    const dx = c[0], dy = c[1];
+                    const rx = dx * Math.cos(tf.rotation) - dy * Math.sin(tf.rotation);
+                    const ry = dx * Math.sin(tf.rotation) + dy * Math.cos(tf.rotation);
+                    const cx = centerX + rx;
+                    const cy = centerY + ry;
+                    if (cx < minX) minX = cx;
+                    if (cx > maxX) maxX = cx;
+                    if (cy < minY) minY = cy;
+                    if (cy > maxY) maxY = cy;
+                }
+            }
+
+            if (minX === Infinity) return false;
+            return x >= minX && x <= maxX && y >= minY && y <= maxY;
+        }
+
+        // Fallback — legacy box based on configured width/height
         const width = this.config.width * scale;
         const height = this.config.height * scale;
-
         const halfWidth = width / 2;
 
-        // Skeleton is centered at x and bottom-aligned at y
+        // Skeleton was previously centered at x and bottom-aligned at y
         return (
             x >= this.x - halfWidth &&
             x <= this.x + halfWidth &&
@@ -90,17 +160,30 @@ class AutoLauncher extends Building {
     _renderFrame() {
         if (!this._skeleton || !this._instancedGroup) return;
 
+        // Base clip always plays (idle loops continuously)
         const clip = this._animData ? this._animData.getClip(this._clipName) : null;
         const time = clip
             ? (clip.loop ? this._animTimer % clip.duration : Math.min(this._animTimer, clip.duration))
             : 0;
 
-        // If a non-looping animation (like firing) is finished, go back to idle
-        if (clip && !clip.loop && this._animTimer >= clip.duration) {
-            this._playClip('idle');
+        // Build overlay descriptor if a firing overlay is active
+        let overlay = null;
+        if (this._overlayClip) {
+            if (this._overlayTimer >= this._overlayClip.duration) {
+                // Overlay finished — clear it
+                this._overlayClip = null;
+                this._overlayTimer = 0;
+            } else {
+                overlay = {
+                    clip: this._overlayClip,
+                    time: this._overlayTimer,
+                    mode: 'additive',
+                    boneMask: null, // all bones
+                };
+            }
         }
 
-        const pose = computePose(this._skeleton, clip, time);
+        const pose = computePose(this._skeleton, clip, time, null, overlay);
 
         let tint = null;
         if (this.highlightTimer > 0) {
@@ -123,6 +206,18 @@ class AutoLauncher extends Building {
             this._clipName = name;
             this._animTimer = 0;
         }
+    }
+
+    /**
+     * Start an additive overlay animation (e.g. firing recoil).
+     * The base clip keeps playing uninterrupted.
+     * @param {string} clipName
+     */
+    _startOverlay(clipName) {
+        const clip = this._animData ? this._animData.getClip(clipName) : null;
+        if (!clip) return;
+        this._overlayClip = clip;
+        this._overlayTimer = 0;
     }
 
     _resolveCurrentColor() {
@@ -169,6 +264,11 @@ class AutoLauncher extends Building {
 
         this._animTimer += deltaTime;
 
+        // Advance overlay timer
+        if (this._overlayClip) {
+            this._overlayTimer += deltaTime;
+        }
+
         this.accumulator += deltaTime;
         if (this.accumulator >= this.config.maxAccumulator) {
             this.accumulator = this.config.maxAccumulator + Math.random() * this.spawnInterval;
@@ -189,7 +289,8 @@ class AutoLauncher extends Building {
     }
 
     spawnFirework() {
-        this._playClip('firing');
+        // Fire the recoil as an additive overlay so idle keeps playing
+        this._startOverlay('firing');
 
         const x = this.x;
         const launchY = GAME_BOUNDS.BUILDING_Y;

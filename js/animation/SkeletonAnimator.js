@@ -2,23 +2,54 @@
  * SkeletonAnimator — Computes world-space transforms (pose) for a skeleton
  * given an animation clip and time.
  *
- * This is the pose-solver extracted from Crowd.js _updateProceduralAnimation.
+ * Supports optional animation overlays with bone masking (hierarchy-aware)
+ * and two blend modes:
+ *   - 'additive'  : overlay deltas are ADDED on top of the base pose
+ *   - 'override'  : overlay replaces the base pose on masked bones
  */
 
 import { evalTrack } from './AnimationData.js';
 
 /**
+ * Expand a set of root bone ids to include ALL descendant bone ids,
+ * given the skeleton parts array (must be parent-before-child order).
+ *
+ * @param {Array<Object>} parts
+ * @param {Set<string>|null} rootMask — if null, returns null (means "all bones")
+ * @returns {Set<string>|null}
+ */
+function expandBoneMask(parts, rootMask) {
+    if (!rootMask) return null; // null = all bones affected
+
+    const expanded = new Set(rootMask);
+    for (let i = 0; i < parts.length; i++) {
+        const part = parts[i];
+        if (part.parentId && expanded.has(part.parentId)) {
+            expanded.add(part.id);
+        }
+    }
+    return expanded;
+}
+
+/**
  * Compute the world-space pose for every part of a skeleton.
  *
  * @param {import('./SkeletonData.js').SkeletonData} skeletonData
- * @param {import('./AnimationData.js').AnimationClip|null} clip — current animation clip (may be null for bind pose)
- * @param {number} time — current playback time within the clip
- * @param {Map<string, {rotation?:number, offsetX?:number, offsetY?:number}>} [overrides] — optional overrides for specific parts
+ * @param {import('./AnimationData.js').AnimationClip|null} clip — base animation clip (may be null for bind pose)
+ * @param {number} time — current playback time within the base clip
+ * @param {Map<string, {rotation?:number, offsetX?:number, offsetY?:number}>|null} [overrides] — optional per-part overrides
+ * @param {{clip: import('./AnimationData.js').AnimationClip, time: number, mode: 'additive'|'override', boneMask: Set<string>|null}|null} [overlay]
+ *        Optional animation overlay. boneMask lists the ROOT bones to affect (children are included automatically).
  * @returns {Map<string, {x:number, y:number, rotation:number}>} partId → world transform of pivot
  */
-export function computePose(skeletonData, clip, time, overrides = null) {
+export function computePose(skeletonData, clip, time, overrides = null, overlay = null) {
     const parts = skeletonData.parts;
     const pivotMap = new Map();
+
+    // Pre-expand the overlay bone mask once (includes all hierarchy children).
+    // expandedMask === null means "all bones".
+    const expandedMask = overlay ? expandBoneMask(parts, overlay.boneMask) : null;
+    const hasOverlay = overlay !== null;
 
     for (let i = 0; i < parts.length; i++) {
         const part = parts[i];
@@ -35,7 +66,7 @@ export function computePose(skeletonData, clip, time, overrides = null) {
             parentH = pPart.height;
         }
 
-        // Evaluate animation keyframes for this part
+        // ── Base clip evaluation ──────────────────────────────────────────────
         let localRot = 0, localOffX = 0, localOffY = 0;
         if (clip && clip.tracks[part.id]) {
             const kf = evalTrack(clip.tracks[part.id], time);
@@ -44,7 +75,7 @@ export function computePose(skeletonData, clip, time, overrides = null) {
             localOffY = kf.offsetY;
         }
 
-        // Apply overrides if any
+        // Apply manual overrides if any
         if (overrides && overrides.has(part.id)) {
             const o = overrides.get(part.id);
             if (o.rotation !== undefined) localRot = o.rotation;
@@ -52,6 +83,25 @@ export function computePose(skeletonData, clip, time, overrides = null) {
             if (o.offsetY !== undefined) localOffY = o.offsetY;
         }
 
+        // ── Overlay blending ──────────────────────────────────────────────────
+        if (hasOverlay) {
+            const inMask = expandedMask === null || expandedMask.has(part.id);
+            if (inMask && overlay.clip && overlay.clip.tracks[part.id]) {
+                const okf = evalTrack(overlay.clip.tracks[part.id], overlay.time);
+                if (overlay.mode === 'override') {
+                    localRot  = okf.rotation;
+                    localOffX = okf.offsetX;
+                    localOffY = okf.offsetY;
+                } else {
+                    // additive: add overlay deltas on top of base
+                    localRot  += okf.rotation;
+                    localOffX += okf.offsetX;
+                    localOffY += okf.offsetY;
+                }
+            }
+        }
+
+        // ── World-space accumulation ──────────────────────────────────────────
         const cosP = Math.cos(parentRot);
         const sinP = Math.sin(parentRot);
         const pivotLocalX = part.relX * parentW;
