@@ -218,14 +218,7 @@ class FireworkGame extends Engine {
         for (let i = 0; i < launchers.length; i++) {
             const launcher = launchers[i];
             if (launcher.assignedRecipeIndex == null) {
-                // For the first 20 auto-launchers, enforce recipe indices 0..19 in order.
-                // If there are fewer than 20 recipes available, fall back to modulo wrapping
-                // so the assigned index remains a valid recipe index.
-                if (i < 20) {
-                    launcher.assignedRecipeIndex = (i < this.recipes.length) ? i : (i % this.recipes.length);
-                } else {
-                    launcher.assignedRecipeIndex = i % this.recipes.length;
-                }
+                launcher.assignedRecipeIndex = i % this.recipes.length;
             }
         }
     }
@@ -482,30 +475,18 @@ class FireworkGame extends Engine {
             if (!this.progression.isUnlocked('recipes_tab')) {
                 // Unlock the next pattern in sequence (if any remain)
                 const nextIndex = this.unlockedPatternKeys.length;
-                let assignedPattern;
+                let patternToAssign;
                 if (nextIndex < patternKeys.length) {
-                    assignedPattern = patternKeys[nextIndex];
-                    this.unlockedPatternKeys.push(assignedPattern);
+                    patternToAssign = patternKeys[nextIndex];
+                    this.unlockedPatternKeys.push(patternToAssign);
                 } else {
                     // All patterns already unlocked – assign a random one
-                    assignedPattern = patternKeys[Math.floor(Math.random() * patternKeys.length)];
+                    patternToAssign = patternKeys[Math.floor(Math.random() * patternKeys.length)];
                 }
-                // Create a new recipe for this launcher using the unlocked/assigned pattern
-                const _defaultComp = DEFAULT_RECIPE_COMPONENTS[0] || {};
-                const newRecipe = {
-                    name: `Launcher ${this.buildingManager.getBuildingsByType('AUTO_LAUNCHER').length + 1}`,
-                    components: [{
-                        pattern: assignedPattern,
-                        color: (this.currentRecipeComponents[0]?.color) || _defaultComp.color || '#ffffff',
-                        secondaryColor: (this.currentRecipeComponents[0]?.secondaryColor) || _defaultComp.secondaryColor || '#ffffff',
-                        size: (this.currentRecipeComponents[0]?.size) || _defaultComp.size || 0.3,
-                        lifetime: (this.currentRecipeComponents[0]?.lifetime) || _defaultComp.lifetime || 3.0,
-                        shape: (this.currentRecipeComponents[0]?.shape) || _defaultComp.shape || 'sphere',
-                        spread: (this.currentRecipeComponents[0]?.spread) || _defaultComp.spread || 1.0,
-                    }]
-                };
-                this.recipes.push(newRecipe);
-                building.assignedRecipeIndex = this.recipes.length - 1;
+                // Update the assigned recipe's pattern to reflect the unlocked pattern
+                if (typeof building.assignedRecipeIndex === 'number' && this.recipes[building.assignedRecipeIndex]) {
+                    this.recipes[building.assignedRecipeIndex].components[0].pattern = patternToAssign;
+                }
                 this.saveProgress();
             }
             this.updateLauncherList();
@@ -614,13 +595,12 @@ class FireworkGame extends Engine {
         this.autoLauncherCost = AUTO_LAUNCHER_COST_BASE;
 
         localStorage.clear();
+        this.loadRecipes();
         this.statsTracker.reset();
 
         this.ui.initializeUnlockStates();
 
         this.updateComponentsList();
-        this.updateRecipeList();
-        this.updateLauncherList();
         this.showNotification("Game has been reset.");
 
         this.initBackgroundColor();
@@ -757,96 +737,59 @@ class FireworkGame extends Engine {
     }
 
     loadRecipes() {
-        // Try to fetch predefined recipes first, but merge any saved recipes from localStorage
+        const normalizeRecipes = (recipes) => {
+            recipes.forEach((recipe, index) => {
+                if (!recipe.name || typeof recipe.name !== 'string' || recipe.name.trim() === '') {
+                    recipe.name = `Recipe ${index + 1}`;
+                }
+                recipe.components.forEach(component => {
+                    if (!component.shape || !FIREWORK_CONFIG.supportedShapes.includes(component.shape)) {
+                        component.shape = 'sphere';
+                    }
+                    if (typeof component.spread !== 'number') {
+                        component.spread = 1.0;
+                    }
+                    if (!('secondaryColor' in component)) {
+                        component.secondaryColor = '#00ff00';
+                    }
+                });
+            });
+        };
+
+        // If user already has saved recipes, use them synchronously (no fetch needed)
         const savedRaw = localStorage.getItem('fireworkRecipes');
-        let savedRecipes = null;
         if (savedRaw) {
             try {
-                savedRecipes = JSON.parse(savedRaw);
+                const savedRecipes = JSON.parse(savedRaw);
+                if (Array.isArray(savedRecipes) && savedRecipes.length > 0) {
+                    this.recipes = savedRecipes;
+                    normalizeRecipes(this.recipes);
+                    this.updateRecipeList();
+                    this.assignSequentialRecipesToLaunchers();
+                    this.updateLauncherList();
+                    return;
+                }
             } catch (e) {
-                savedRecipes = null;
+                // fall through to fetch
             }
         }
 
+        // First launch or post-reset: fetch predefined recipes and persist them
         fetch('js/config/predefinedRecipes.json')
             .then(resp => {
                 if (!resp.ok) throw new Error('Failed to fetch predefined recipes');
                 return resp.json();
             })
             .then(predef => {
-                const predefArr = Array.isArray(predef) ? predef : [];
-
-                // Start with a copy of predefined recipes
-                this.recipes = predefArr.map(r => ({ ...r }));
-
-                // If user has saved recipes, merge them: replace by name or append
-                if (Array.isArray(savedRecipes) && savedRecipes.length > 0) {
-                    const nameToIndex = {};
-                    this.recipes.forEach((r, i) => {
-                        if (r.name && typeof r.name === 'string') nameToIndex[r.name.toLowerCase()] = i;
-                    });
-
-                    savedRecipes.forEach(saved => {
-                        if (!saved.name || typeof saved.name !== 'string' || saved.name.trim() === '') {
-                            saved.name = `Recipe ${this.recipes.length + 1}`;
-                        }
-                        const key = saved.name.toLowerCase();
-                        if (nameToIndex.hasOwnProperty(key)) {
-                            // override predefined recipe with saved one
-                            this.recipes[nameToIndex[key]] = saved;
-                        } else {
-                            this.recipes.push(saved);
-                        }
-                    });
-                }
-
-                // Normalize each recipe's components
-                this.recipes.forEach((recipe, index) => {
-                    if (!recipe.name || typeof recipe.name !== 'string' || recipe.name.trim() === '') {
-                        recipe.name = `Recipe ${index + 1}`;
-                    }
-                    recipe.components.forEach(component => {
-                        if (!component.shape || !FIREWORK_CONFIG.supportedShapes.includes(component.shape)) {
-                            component.shape = 'sphere';
-                        }
-                        if (typeof component.spread !== 'number') {
-                            component.spread = 1.0;
-                        }
-                        if (!('secondaryColor' in component)) {
-                            component.secondaryColor = '#00ff00';
-                        }
-                    });
-                });
-
+                this.recipes = (Array.isArray(predef) ? predef : []).map(r => ({ ...r }));
+                normalizeRecipes(this.recipes);
+                localStorage.setItem('fireworkRecipes', JSON.stringify(this.recipes));
                 this.updateRecipeList();
                 this.assignSequentialRecipesToLaunchers();
                 this.updateLauncherList();
             })
             .catch(err => {
                 console.error('Failed to load predefined recipes:', err);
-                // Fallback to saved recipes if fetch fails
-                if (Array.isArray(savedRecipes) && savedRecipes.length > 0) {
-                    this.recipes = savedRecipes;
-                    this.recipes.forEach((recipe, index) => {
-                        if (!recipe.name || typeof recipe.name !== 'string' || recipe.name.trim() === '') {
-                            recipe.name = `Recipe ${index + 1}`;
-                        }
-                        recipe.components.forEach(component => {
-                            if (!component.shape || !FIREWORK_CONFIG.supportedShapes.includes(component.shape)) {
-                                component.shape = 'sphere';
-                            }
-                            if (typeof component.spread !== 'number') {
-                                component.spread = 1.0;
-                            }
-                            if (!('secondaryColor' in component)) {
-                                component.secondaryColor = '#00ff00';
-                            }
-                        });
-                    });
-                    this.updateRecipeList();
-                    this.assignSequentialRecipesToLaunchers();
-                    this.updateLauncherList();
-                }
             });
     }
 

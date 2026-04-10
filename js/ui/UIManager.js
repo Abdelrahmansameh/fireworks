@@ -1369,10 +1369,10 @@ class UIManager {
             // Determine the color and pattern to show:
             // prefer assigned recipe's value, then building override, then current recipe defaults
             const assignedRecipeColor = this.game.recipes[launcher.assignedRecipeIndex] ? this.game.recipes[launcher.assignedRecipeIndex].components[0].color : null;
-            const colorValue = assignedRecipeColor;
+            const colorValue = assignedRecipeColor ?? '#ffffff';
 
             const assignedRecipePattern = (typeof launcher.assignedRecipeIndex === 'number' && this.game.recipes[launcher.assignedRecipeIndex]) ? this.game.recipes[launcher.assignedRecipeIndex].components[0].pattern : null;
-            const patternValue = assignedRecipePattern ?? (launcher.patternOverride ?? (this.game.currentRecipeComponents && this.game.currentRecipeComponents[0] ? this.game.currentRecipeComponents[0].pattern : (DEFAULT_RECIPE_COMPONENTS[0]?.pattern || '')));
+            const patternValue = assignedRecipePattern ?? '';
 
             launcherDiv.innerHTML = `
                 <h3>Auto-Launcher ${index + 1}</h3>
@@ -1469,8 +1469,6 @@ class UIManager {
                             if (typeof building.assignedRecipeIndex === 'number' && this.game.recipes[building.assignedRecipeIndex]) {
                                 this.game.recipes[building.assignedRecipeIndex].components.forEach(c => c.pattern = newPattern);
                                 this.game.updateRecipeList();
-                            } else {
-                                building.patternOverride = newPattern;
                             }
                             this.game.saveProgress();
                         }

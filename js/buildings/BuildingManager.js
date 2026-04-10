@@ -35,15 +35,8 @@ class BuildingManager {
             try {
                 const launchers = this.getBuildingsByType('AUTO_LAUNCHER');
                 const idx = launchers.indexOf(building);
-                // Only assign a sequential recipe if none was provided in `data`.
                 if (idx >= 0 && this.game && Array.isArray(this.game.recipes) && this.game.recipes.length > 0 && (building.assignedRecipeIndex == null)) {
-                    if (idx < 20) {
-                        // Prefer direct mapping for first 20 launchers. If there are fewer than 20 recipes,
-                        // wrap using modulo so the index remains valid.
-                        building.assignedRecipeIndex = (idx < this.game.recipes.length) ? idx : (idx % this.game.recipes.length);
-                    } else {
-                        building.assignedRecipeIndex = idx % this.game.recipes.length;
-                    }
+                    building.assignedRecipeIndex = idx % this.game.recipes.length;
                 }
             } catch (e) {
                 // ignore assignment errors
