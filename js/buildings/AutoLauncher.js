@@ -329,7 +329,41 @@ class AutoLauncher extends Building {
 
         const spawnX = x + (Math.random() * 0.2 - 0.15) * this.config.width;
 
-        this.game.fireworkSystem.launch(spawnX, launchY, components, null);
+        // Determine current tube rotation from skeleton pose so rockets ascend along tube
+        let initialTilt = 0;
+        if (this._skeleton && this._animData) {
+            const clip = this._animData ? this._animData.getClip(this._clipName) : null;
+            const time = clip
+                ? (clip.loop ? this._animTimer % clip.duration : Math.min(this._animTimer, clip.duration))
+                : 0;
+
+            let overlay = null;
+            if (this._overlayClip) {
+                if (this._overlayTimer < this._overlayClip.duration) {
+                    overlay = {
+                        clip: this._overlayClip,
+                        time: this._overlayTimer,
+                        mode: 'additive',
+                        boneMask: null,
+                    };
+                }
+            }
+
+            const pose = computePose(this._skeleton, clip, time, null, overlay);
+            for (let i = 0; i < this._skeleton.parts.length; i++) {
+                const part = this._skeleton.parts[i];
+                if (part.id === 'tube') {
+                    const tf = pose.get(part.id);
+                    if (tf && typeof tf.rotation === 'number') {
+                        // Tube rotation is in radians; use as tilt relative to vertical
+                        initialTilt = -tf.rotation || 0;
+                    }
+                    break;
+                }
+            }
+        }
+
+        this.game.fireworkSystem.launch(spawnX, launchY, components, null, initialTilt);
         this.game.fireworkSystem.fireworkCount++;
 
         const yieldMulti = this.game.launcherStats?.sparkleYieldMultiplier ?? 1;

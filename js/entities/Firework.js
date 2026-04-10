@@ -4,7 +4,7 @@ import * as Renderer2D from '../rendering/Renderer.js';
 import { recipeMap } from './patterns/index.js';
 
 class Firework {
-    constructor(x, y, components, renderer, particleSystem, targetY = null, audioManager = null) {
+    constructor(x, y, components, renderer, particleSystem, targetY = null, audioManager = null, initialTiltRad = null) {
         this.components = components;
         this.renderer = renderer;
         this.particleSystem = particleSystem;
@@ -21,7 +21,12 @@ class Firework {
         if (FIREWORK_CONFIG.rocketTilt && FIREWORK_CONFIG.rocketTilt.enabled) {
             const maxTiltDeg = FIREWORK_CONFIG.rocketTilt.maxAngleDeg || 0;
             this._maxTiltRad = (maxTiltDeg * Math.PI) / 180.0;
-            this.currentTiltRad = (Math.random() * 2 - 1) * this._maxTiltRad;
+            if (typeof initialTiltRad === 'number') {
+                // Use provided initial tilt (clamped to configured max)
+                this.currentTiltRad = Math.max(-this._maxTiltRad, Math.min(this._maxTiltRad, initialTiltRad));
+            } else {
+                this.currentTiltRad = (Math.random() * 2 - 1) * this._maxTiltRad;
+            }
         } else {
             this._maxTiltRad = 0;
             this.currentTiltRad = 0;

@@ -30,13 +30,14 @@ export default class FireworkSystem {
         this.fireworks = [];
     }
 
-    launch(x, y, components, targetY = null) {
+    launch(x, y, components, targetY = null, initialTilt = null) {
         const firework = new Firework(
-            x, y, components, 
-            this.game.renderer2D, 
-            this.game.particleSystem, 
-            targetY, 
-            this.game.audioManager
+            x, y, components,
+            this.game.renderer2D,
+            this.game.particleSystem,
+            targetY,
+            this.game.audioManager,
+            initialTilt
         );
         this.fireworks.push(firework);
     }
@@ -78,7 +79,7 @@ export default class FireworkSystem {
         const spawnX = x + (Math.random() * 6 - 3) * FIREWORK_CONFIG.autoLauncherMeshWidth;
         const spawnY = y + FIREWORK_CONFIG.autoLauncherMeshHeight / 2;
 
-        this.launch(spawnX, spawnY, components, Math.max(targetY, minY));
+        this.launch(spawnX, spawnY, components, Math.max(targetY, minY), null);
         this.fireworkCount++;
         
         const sparkleAmount = this.game.baseSparkleMultiplier;
