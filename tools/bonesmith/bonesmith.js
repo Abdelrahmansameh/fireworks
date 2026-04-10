@@ -94,7 +94,11 @@ function setupUI() {
     document.getElementById('btn-mode-skeleton').onclick = () => setEditorMode('skeleton');
     document.getElementById('btn-mode-animation').onclick = () => setEditorMode('animation');
 
-    document.getElementById('btn-add-outline').onclick = () => addSkeletonOutline();
+    document.getElementById('btn-add-outline').onclick = () => {
+        const thicknessEl = document.getElementById('outline-thickness');
+        const thickness = thicknessEl ? parseFloat(thicknessEl.value) || 0.4 : 0.4;
+        addSkeletonOutline(thickness);
+    };
     document.getElementById('btn-tool-attach').style.display = '';
 
     const tools = ['select', 'move', 'attach', 'rotate', 'scale'];
@@ -133,6 +137,10 @@ function setupUI() {
                 const colorEl = document.getElementById('prop-color');
                 if (colorEl) colorEl.value = '#' + raw;
             }
+        }
+        if (e.target.id === 'prop-alpha') {
+            const val = parseFloat(e.target.value);
+            part.alpha = isNaN(val) ? 1 : Math.max(0, Math.min(1, val));
         }
         if (e.target.id === 'prop-ax') part.anchorX = parseFloat(e.target.value);
         if (e.target.id === 'prop-ay') part.anchorY = parseFloat(e.target.value);
@@ -173,6 +181,21 @@ function setupUI() {
         });
     }
 
+    // Keep the keyframe tint color picker and text in sync
+    const kfColor = document.getElementById('prop-kf-color');
+    const kfColorText = document.getElementById('prop-kf-color-text');
+    if (kfColor && kfColorText) {
+        kfColor.addEventListener('input', (ev) => {
+            kfColorText.value = (ev.target.value || '#ffffff').toUpperCase();
+        });
+        kfColorText.addEventListener('input', (ev) => {
+            const val = (ev.target.value || '').trim().replace(/^#/, '');
+            if (/^[0-9a-fA-F]{6}$/.test(val)) {
+                kfColor.value = '#' + val.toLowerCase();
+            }
+        });
+    }
+
     document.getElementById('btn-keyframe').onclick = () => {
         if (!state.selectedPartId) return;
         saveState();
@@ -186,12 +209,25 @@ function setupUI() {
         let rot = parseFloat(document.getElementById('prop-rot').value) || 0;
         let ox = parseFloat(document.getElementById('prop-offx').value) || 0;
         let oy = parseFloat(document.getElementById('prop-offy').value) || 0;
+        let sx = parseFloat(document.getElementById('prop-kf-scalex').value);
+        if (isNaN(sx)) sx = 1;
+        let sy = parseFloat(document.getElementById('prop-kf-scaley').value);
+        if (isNaN(sy)) sy = 1;
+        const kfAlpha = parseFloat(document.getElementById('prop-kf-alpha').value);
+        const kfColorHex = (document.getElementById('prop-kf-color').value || '#ffffff').replace('#', '');
+        const kr = parseInt(kfColorHex.slice(0, 2), 16) / 255;
+        const kg = parseInt(kfColorHex.slice(2, 4), 16) / 255;
+        const kb = parseInt(kfColorHex.slice(4, 6), 16) / 255;
+        const ka = isNaN(kfAlpha) ? 1 : Math.max(0, Math.min(1, kfAlpha));
+
+        const kfData = { time: state.currentTime, rotation: rot, offsetX: ox, offsetY: oy,
+            scaleX: sx, scaleY: sy, r: kr, g: kg, b: kb, a: ka };
 
         const existingIdx = track.findIndex(k => Math.abs(k.time - state.currentTime) < 0.01);
         if (existingIdx >= 0) {
-            track[existingIdx] = { time: state.currentTime, rotation: rot, offsetX: ox, offsetY: oy };
+            track[existingIdx] = kfData;
         } else {
-            track.push({ time: state.currentTime, rotation: rot, offsetX: ox, offsetY: oy });
+            track.push(kfData);
             track.sort((a, b) => a.time - b.time);
         }
         state.selectedKeyframe = { partId: state.selectedPartId, time: state.currentTime };

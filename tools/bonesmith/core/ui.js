@@ -74,6 +74,8 @@ export function selectPart(id) {
     document.getElementById('prop-ry').value = part.relY;
     document.getElementById('prop-base-rot').value = (part.baseRotation || 0).toFixed(2);
     document.getElementById('prop-z').value = (part.z || 0);
+    const alphaEl = document.getElementById('prop-alpha');
+    if (alphaEl) alphaEl.value = (part.alpha !== undefined ? part.alpha : 1);
 
     updateAnimPropsUI();
 }
@@ -82,16 +84,35 @@ export function updateAnimPropsUI() {
     if (!state.selectedPartId) return;
     const anim = state.meshData.animations[state.currentAnimId];
     let localRot = 0, localOffX = 0, localOffY = 0;
+    let localScaleX = 1, localScaleY = 1;
+    let localR = 1, localG = 1, localB = 1, localA = 1;
     if (anim && anim.tracks && anim.tracks[state.selectedPartId]) {
         const vals = evalTrack(anim.tracks[state.selectedPartId], state.currentTime);
-        localRot = vals.rotation || 0;
-        localOffX = vals.offsetX || 0;
-        localOffY = vals.offsetY || 0;
+        localRot    = vals.rotation  ?? 0;
+        localOffX   = vals.offsetX   ?? 0;
+        localOffY   = vals.offsetY   ?? 0;
+        localScaleX = vals.scaleX    ?? 1;
+        localScaleY = vals.scaleY    ?? 1;
+        localR = vals.r ?? 1; localG = vals.g ?? 1; localB = vals.b ?? 1; localA = vals.a ?? 1;
     }
 
     document.getElementById('prop-offx').value = localOffX.toFixed(2);
     document.getElementById('prop-offy').value = localOffY.toFixed(2);
-    document.getElementById('prop-rot').value = localRot.toFixed(2);
+    document.getElementById('prop-rot').value  = localRot.toFixed(2);
+
+    const kfScaleX = document.getElementById('prop-kf-scalex');
+    const kfScaleY = document.getElementById('prop-kf-scaley');
+    if (kfScaleX) kfScaleX.value = localScaleX.toFixed(3);
+    if (kfScaleY) kfScaleY.value = localScaleY.toFixed(3);
+
+    const toHex2 = v => Math.round(Math.max(0, Math.min(1, v)) * 255).toString(16).padStart(2, '0');
+    const hexColor = '#' + toHex2(localR) + toHex2(localG) + toHex2(localB);
+    const kfColorEl = document.getElementById('prop-kf-color');
+    const kfColorText = document.getElementById('prop-kf-color-text');
+    const kfAlphaEl = document.getElementById('prop-kf-alpha');
+    if (kfColorEl) kfColorEl.value = hexColor;
+    if (kfColorText) kfColorText.value = hexColor.toUpperCase();
+    if (kfAlphaEl) kfAlphaEl.value = localA.toFixed(2);
 }
 
 export function updateTimelineUI() {

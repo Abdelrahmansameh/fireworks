@@ -19,6 +19,11 @@
       "id": "coin",
       "name": "Coin",
       "file": "coin.json"
+    },
+    {
+      "id": "sparkle_generator",
+      "name": "Sparkle Generator",
+      "file": "sparkle_generator.json"
     }
   ]
 }

@@ -37,7 +37,9 @@ export class SkeletonData {
 
         for (const p of parts) {
             this.partLookup.set(p.id, p);
-            this.partColors.push(hexToRgb(p.color));
+            const rgb = hexToRgb(p.color);
+            rgb.a = (p.alpha !== undefined ? p.alpha : 1);
+            this.partColors.push(rgb);
         }
 
         const indexed = parts.map((p, idx) => ({ idx, z: (p.z || 0) }));

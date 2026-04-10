@@ -1,0 +1,90 @@
+{
+  "parts": [
+    {
+      "id": "core",
+      "parentId": null,
+      "width": 1,
+      "height": 1,
+      "anchorX": 0,
+      "anchorY": 0,
+      "relX": 0,
+      "relY": 0,
+      "color": "cc88ff",
+      "z": 15
+    },
+    {
+      "id": "Gradient",
+      "parentId": "core",
+      "width": 1,
+      "height": 0.0001,
+      "color": "a57fc3",
+      "anchorX": 0,
+      "anchorY": 0,
+      "relX": 0,
+      "relY": 0,
+      "z": 0,
+      "baseRotation": 0
+    },
+    {
+      "id": "core_outline",
+      "parentId": "core",
+      "width": 1.2,
+      "height": 1.2,
+      "color": "000000",
+      "anchorX": 0,
+      "anchorY": 0,
+      "relX": 0,
+      "relY": 0,
+      "baseRotation": 0,
+      "z": -85
+    }
+  ],
+  "animations": {
+    "idle": {
+      "duration": 1,
+      "loop": true,
+      "tracks": {
+        "core": [
+          {
+            "time": 0,
+            "rotation": 0,
+            "offsetX": 0,
+            "offsetY": 0,
+            "scaleX": 1,
+            "scaleY": 1,
+            "r": 0.7,
+            "g": 0.6,
+            "b": 1,
+            "a": 0.7
+          }
+        ],
+        "Gradient": [
+          {
+            "time": 0,
+            "rotation": 0,
+            "offsetX": 0,
+            "offsetY": -0.5,
+            "scaleX": 1,
+            "scaleY": 1,
+            "r": 1,
+            "g": 1,
+            "b": 1,
+            "a": 1
+          },
+          {
+            "time": 1,
+            "rotation": 0,
+            "offsetX": 0,
+            "offsetY": 0,
+            "scaleX": 1,
+            "scaleY": 10000,
+            "r": 1,
+            "g": 1,
+            "b": 1,
+            "a": 1
+          }
+        ]
+      }
+    }
+  }
+}

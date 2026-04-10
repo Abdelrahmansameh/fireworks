@@ -13,12 +13,13 @@ export function getParentTransform(partId, time) {
             x: tf.x,
             y: tf.y,
             rotation: tf.rotation,
-            scaleX: 1,
-            scaleY: 1
+            scaleX: tf.scaleX ?? 1,
+            scaleY: tf.scaleY ?? 1,
+            r: tf.r ?? 1, g: tf.g ?? 1, b: tf.b ?? 1, a: tf.a ?? 1,
         };
     }
 
-    return { x: 0, y: 0, rotation: 0, scaleX: 1, scaleY: 1 };
+    return { x: 0, y: 0, rotation: 0, scaleX: 1, scaleY: 1, r: 1, g: 1, b: 1, a: 1 };
 }
 
 

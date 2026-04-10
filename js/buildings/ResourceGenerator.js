@@ -1,6 +1,9 @@
 import Building from './Building.js';
 import * as Renderer2D from '../rendering/Renderer.js';
 import { PARTICLE_TYPES } from '../config/config.js';
+import { SkeletonData } from '../animation/SkeletonData.js';
+import { AnimationData } from '../animation/AnimationData.js';
+import { computePose, applyPoseToInstances } from '../animation/SkeletonAnimator.js';
 
 class ResourceGenerator extends Building {
     constructor(game, x, y, data = {}) {
@@ -8,6 +11,16 @@ class ResourceGenerator extends Building {
 
         this.resourceType = data.resourceType || this.config.resourceType;
         this.accumulator = data.accumulator || 0;
+
+        this._skeleton = null;
+        this._animData = null;
+        this._instancedGroup = null;
+        this._animTimer = Math.random() * 3;
+
+        this._loadSkeleton();
+    }
+
+    createMesh() {
     }
 
     get productionRate() {
@@ -20,6 +33,12 @@ class ResourceGenerator extends Building {
 
     update(deltaTime) {
         super.update(deltaTime);
+
+        this._animTimer += deltaTime;
+        if (this._skeleton && this._instancedGroup) {
+            this._renderFrame();
+        }
+
         this.accumulator += deltaTime;
         this.accumulator = Math.min(this.accumulator, this.config.maxAccumulator); 
 
@@ -44,6 +63,61 @@ class ResourceGenerator extends Building {
         }
     }
 
+    async _loadSkeleton() {
+        try {
+            const url = this.config.skeletonUrl;
+            if (!url) return;
+            const { skeleton, rawAnimations } = await SkeletonData.load(url);
+            this._skeleton = skeleton;
+            this._animData = new AnimationData(rawAnimations);
+        } catch (e) {
+            console.error('ResourceGenerator: failed to load skeleton', e);
+            return;
+        }
+
+        try {
+            const geometry = Renderer2D.buildTexturedSquare(1, 1);
+            this._instancedGroup = this.game.renderer2D.createInstancedGroup({
+                vertices: geometry.vertices,
+                indices: geometry.indices,
+                texCoords: geometry.texCoords,
+                texture: null,
+                maxInstances: this._skeleton.partCount,
+                zIndex: this.config.zIndex || 5,
+                blendMode: Renderer2D.BlendMode.NORMAL,
+            });
+
+            for (let i = 0; i < this._skeleton.partCount; i++) {
+                this._instancedGroup.addInstanceRaw(this.x, this.y, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0);
+            }
+
+            this._renderFrame();
+        } catch (e) {
+            console.error('ResourceGenerator: failed to create instanced group', e);
+        }
+    }
+
+    _renderFrame() {
+        if (!this._skeleton || !this._instancedGroup) return;
+
+        const clip = this._animData ? this._animData.getClip('idle') : null;
+
+
+        const time = clip
+            ? (clip.loop ? this.accumulator % clip.duration : Math.min(this.accumulator, clip.duration))
+            : 0;
+
+        const pose = computePose(this._skeleton, clip, time);
+
+        applyPoseToInstances(
+            this._skeleton, pose, this._instancedGroup,
+            0,
+            this.x, this.y,
+            this.config.skeletonScale,
+            1
+        );
+    }
+
     emitSparkleTrailBurst() {
         if (!this.game.particleSystem) return;
 
@@ -52,8 +126,9 @@ class ResourceGenerator extends Building {
         const particleSize = 1.5;
         const velocitySpread = 100;
 
+
         const centerX = this.x;
-        const centerY = this.y;
+        const centerY = this.y + (this.config.skeletonScale);
 
         for (let i = 0; i < burstCount; i++) {
             const randomColor = new Renderer2D.Color(
@@ -73,7 +148,7 @@ class ResourceGenerator extends Building {
 
             const position = new Renderer2D.Vector2(
                 centerX + (Math.random() - 0.5) * 10,
-                centerY + this.config.height / 2
+                centerY
             );
 
             this.game.particleSystem.addParticle(

@@ -33,10 +33,28 @@ export function loop(now) {
     // Compute current pose
     const overrides = new Map();
     if (state.editorMode === 'animation' && state.selectedPartId && !state.isPlaying) {
-        const localRot = parseFloat(document.getElementById('prop-rot').value) || 0;
+        const localRot  = parseFloat(document.getElementById('prop-rot').value)  || 0;
         const localOffX = parseFloat(document.getElementById('prop-offx').value) || 0;
         const localOffY = parseFloat(document.getElementById('prop-offy').value) || 0;
-        overrides.set(state.selectedPartId, { rotation: localRot, offsetX: localOffX, offsetY: localOffY });
+        const kfSXEl = document.getElementById('prop-kf-scalex');
+        const kfSYEl = document.getElementById('prop-kf-scaley');
+        const localSX = kfSXEl ? (parseFloat(kfSXEl.value) || 1) : 1;
+        const localSY = kfSYEl ? (parseFloat(kfSYEl.value) || 1) : 1;
+        const kfColorEl = document.getElementById('prop-kf-color');
+        const kfAlphaEl = document.getElementById('prop-kf-alpha');
+        let localR = 1, localG = 1, localB = 1, localA = 1;
+        if (kfColorEl) {
+            const hex = (kfColorEl.value || '#ffffff').replace('#', '');
+            localR = parseInt(hex.slice(0, 2), 16) / 255;
+            localG = parseInt(hex.slice(2, 4), 16) / 255;
+            localB = parseInt(hex.slice(4, 6), 16) / 255;
+        }
+        if (kfAlphaEl) localA = parseFloat(kfAlphaEl.value) || 1;
+        overrides.set(state.selectedPartId, {
+            rotation: localRot, offsetX: localOffX, offsetY: localOffY,
+            scaleX: localSX, scaleY: localSY,
+            r: localR, g: localG, b: localB, a: localA,
+        });
     }
 
     state.currentPose = computePose(state.skeletonData, anim, state.currentTime, overrides);
@@ -63,20 +81,23 @@ export function loop(now) {
         const drawY = tf.y - (anchorOffX * sinR + anchorOffY * cosR);
 
         const c = hexToRgb(part.color || 'FFFFFF');
-
-        let finalR = c.r, finalG = c.g, finalB = c.b;
+        // Apply animated tint (multiplicative, same as in the game renderer)
+        let finalR = c.r * (tf.r ?? 1);
+        let finalG = c.g * (tf.g ?? 1);
+        let finalB = c.b * (tf.b ?? 1);
+        let finalA = (part.alpha !== undefined ? part.alpha : 1.0) * (tf.a ?? 1);
         if (part.id === state.selectedPartId) {
             const highlight = 0.12;
-            finalR = c.r + (1 - c.r) * highlight;
-            finalG = c.g + (1 - c.g) * highlight;
-            finalB = c.b + (1 - c.b) * highlight;
+            finalR = finalR + (1 - finalR) * highlight;
+            finalG = finalG + (1 - finalG) * highlight;
+            finalB = finalB + (1 - finalB) * highlight;
         }
 
         state.instancedGroup.addInstanceRaw(
             drawX, drawY,
             tf.rotation,
             part.width * tf.scaleX, part.height * tf.scaleY,
-            finalR, finalG, finalB, 1.0
+            finalR, finalG, finalB, finalA
         );
 
         if (part.id === state.selectedPartId) {
@@ -154,7 +175,7 @@ export function loop(now) {
                         finalX, finalY,
                         finalRot,
                         pPart.width, pPart.height,
-                        c.r, c.g, c.b, 1.0
+                        c.r, c.g, c.b, pPart.alpha !== undefined ? pPart.alpha : 1.0
                     );
                 }
             }

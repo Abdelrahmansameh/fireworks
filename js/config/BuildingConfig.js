@@ -40,6 +40,8 @@ export const BUILDING_TYPES = {
         color: { r: 1, g: 0.84, b: 0, a: 1 },
         texture: null,
         textureKey: null,
+        skeletonUrl: 'assets/skeletons/sparkle_generator.json',
+        skeletonScale: 20,
         baseProductionRate: 3.0,
         resourceType: 'sparkles',
         unlockId: 'resource_generator',

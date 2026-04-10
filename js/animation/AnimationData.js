@@ -8,28 +8,56 @@
 /**
  * Evaluate a single track (array of keyframes) at the given time via linear interpolation.
  *
- * @param {Array<{time:number, rotation:number, offsetX:number, offsetY:number}>} track
+ * Keyframe fields: time, rotation, offsetX, offsetY,
+ *                  scaleX, scaleY (default 1 = no change),
+ *                  r, g, b, a (color tint multiplier, default 1 = full base color)
+ *
+ * @param {Array<{time:number, rotation:number, offsetX:number, offsetY:number, scaleX?:number, scaleY?:number, r?:number, g?:number, b?:number, a?:number}>} track
  * @param {number} time
- * @returns {{rotation:number, offsetX:number, offsetY:number}}
+ * @returns {{rotation:number, offsetX:number, offsetY:number, scaleX:number, scaleY:number, r:number, g:number, b:number, a:number}}
  */
 export function evalTrack(track, time) {
-    if (!track || track.length === 0) return { rotation: 0, offsetX: 0, offsetY: 0 };
-    if (time <= track[0].time) return track[0];
+    const DEFAULTS = { rotation: 0, offsetX: 0, offsetY: 0, scaleX: 1, scaleY: 1, r: 1, g: 1, b: 1, a: 1 };
+    if (!track || track.length === 0) return { ...DEFAULTS };
+
+    function kfWithDefaults(kf) {
+        return {
+            rotation: kf.rotation ?? 0,
+            offsetX: kf.offsetX ?? 0,
+            offsetY: kf.offsetY ?? 0,
+            scaleX: kf.scaleX ?? 1,
+            scaleY: kf.scaleY ?? 1,
+            r: kf.r ?? 1,
+            g: kf.g ?? 1,
+            b: kf.b ?? 1,
+            a: kf.a ?? 1,
+        };
+    }
+
+    if (time <= track[0].time) return kfWithDefaults(track[0]);
     const last = track[track.length - 1];
-    if (time >= last.time) return last;
+    if (time >= last.time) return kfWithDefaults(last);
 
     for (let i = 0; i < track.length - 1; i++) {
         if (time >= track[i].time && time <= track[i + 1].time) {
             const t0 = track[i], t1 = track[i + 1];
             const ratio = (time - t0.time) / (t1.time - t0.time);
+            const lerp = (a, b) => a + (b - a) * ratio;
+            const d0 = kfWithDefaults(t0), d1 = kfWithDefaults(t1);
             return {
-                rotation: t0.rotation + (t1.rotation - t0.rotation) * ratio,
-                offsetX: t0.offsetX + (t1.offsetX - t0.offsetX) * ratio,
-                offsetY: t0.offsetY + (t1.offsetY - t0.offsetY) * ratio,
+                rotation: lerp(d0.rotation, d1.rotation),
+                offsetX:  lerp(d0.offsetX,  d1.offsetX),
+                offsetY:  lerp(d0.offsetY,  d1.offsetY),
+                scaleX:   lerp(d0.scaleX,   d1.scaleX),
+                scaleY:   lerp(d0.scaleY,   d1.scaleY),
+                r:        lerp(d0.r, d1.r),
+                g:        lerp(d0.g, d1.g),
+                b:        lerp(d0.b, d1.b),
+                a:        lerp(d0.a, d1.a),
             };
         }
     }
-    return last;
+    return kfWithDefaults(last);
 }
 
 /**
@@ -55,7 +83,7 @@ export class AnimationClip {
      * Evaluate a part's track at a given time.
      * @param {string} partId
      * @param {number} time
-     * @returns {{rotation:number, offsetX:number, offsetY:number}}
+     * @returns {{rotation:number, offsetX:number, offsetY:number, scaleX:number, scaleY:number, r:number, g:number, b:number, a:number}}
      */
     evaluate(partId, time) {
         return evalTrack(this.tracks[partId], time);

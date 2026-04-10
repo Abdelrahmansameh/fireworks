@@ -3,8 +3,8 @@
     {
       "id": "base",
       "parentId": null,
-      "width": 4,
-      "height": 2,
+      "width": 3.5,
+      "height": 1.6,
       "anchorX": 0,
       "anchorY": 0,
       "relX": -0.0013895926731820828,
@@ -14,12 +14,12 @@
     {
       "id": "stand",
       "parentId": "base",
-      "width": 0.6,
-      "height": 1.5,
+      "width": 0.6126264895611458,
+      "height": 0.9978217704753944,
       "anchorX": 0,
       "anchorY": 0,
-      "relX": 0,
-      "relY": 0.5,
+      "relX": -0.002990083744473848,
+      "relY": 0.5777421773563227,
       "color": "0f102e",
       "z": 5
     },
@@ -48,32 +48,6 @@
       "z": 15
     },
     {
-      "id": "base_outline",
-      "parentId": "base",
-      "width": 4.4,
-      "height": 2.4,
-      "color": "000000",
-      "anchorX": 0,
-      "anchorY": 0,
-      "relX": 0,
-      "relY": 0,
-      "baseRotation": 0,
-      "z": -100
-    },
-    {
-      "id": "stand_outline",
-      "parentId": "stand",
-      "width": 1,
-      "height": 1.9,
-      "color": "000000",
-      "anchorX": 0,
-      "anchorY": 0,
-      "relX": 0,
-      "relY": 0,
-      "baseRotation": 0,
-      "z": 2
-    },
-    {
       "id": "tip_outline",
       "parentId": "tip",
       "width": 2,
@@ -98,6 +72,32 @@
       "relY": 0,
       "baseRotation": 0,
       "z": -90
+    },
+    {
+      "id": "stand_outline",
+      "parentId": "stand",
+      "width": 1.0126264895611459,
+      "height": 1.3978217704753946,
+      "color": "000000",
+      "anchorX": 0,
+      "anchorY": 0,
+      "relX": 0,
+      "relY": 0,
+      "baseRotation": 0,
+      "z": 2
+    },
+    {
+      "id": "base_outline",
+      "parentId": "base",
+      "width": 3.9,
+      "height": 2,
+      "color": "000000",
+      "anchorX": 0,
+      "anchorY": 0,
+      "relX": 0,
+      "relY": 0,
+      "baseRotation": 0,
+      "z": -100
     }
   ],
   "animations": {

@@ -95,11 +95,11 @@ export function mirrorSkeleton(fromSuffix, toSuffix) {
     if (state.selectedPartId) selectPart(state.selectedPartId);
 }
 
-export function addSkeletonOutline() {
+export function addSkeletonOutline(thickness = 0.4) {
     saveState();
     const outlineSuffix = "_outline";
     const newParts = [];
-    const sizeIncrease = 0.4;
+    const sizeIncrease = thickness;
     
     for (const part of state.meshData.parts) {
         if (part.id.endsWith(outlineSuffix)) continue;

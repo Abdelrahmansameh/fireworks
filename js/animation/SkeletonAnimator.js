@@ -40,7 +40,7 @@ function expandBoneMask(parts, rootMask) {
  * @param {Map<string, {rotation?:number, offsetX?:number, offsetY?:number}>|null} [overrides] — optional per-part overrides
  * @param {{clip: import('./AnimationData.js').AnimationClip, time: number, mode: 'additive'|'override', boneMask: Set<string>|null}|null} [overlay]
  *        Optional animation overlay. boneMask lists the ROOT bones to affect (children are included automatically).
- * @returns {Map<string, {x:number, y:number, rotation:number}>} partId → world transform of pivot
+ * @returns {Map<string, {x:number, y:number, rotation:number, scaleX:number, scaleY:number, r:number, g:number, b:number, a:number}>} partId → world transform of pivot
  */
 export function computePose(skeletonData, clip, time, overrides = null, overlay = null) {
     const parts = skeletonData.parts;
@@ -68,11 +68,16 @@ export function computePose(skeletonData, clip, time, overrides = null, overlay 
 
         // ── Base clip evaluation ──────────────────────────────────────────────
         let localRot = 0, localOffX = 0, localOffY = 0;
+        let localScaleX = 1, localScaleY = 1;
+        let localR = 1, localG = 1, localB = 1, localA = 1;
         if (clip && clip.tracks[part.id]) {
             const kf = evalTrack(clip.tracks[part.id], time);
-            localRot = kf.rotation;
-            localOffX = kf.offsetX;
-            localOffY = kf.offsetY;
+            localRot    = kf.rotation;
+            localOffX   = kf.offsetX;
+            localOffY   = kf.offsetY;
+            localScaleX = kf.scaleX;
+            localScaleY = kf.scaleY;
+            localR = kf.r; localG = kf.g; localB = kf.b; localA = kf.a;
         }
 
         // Apply manual overrides if any
@@ -81,6 +86,12 @@ export function computePose(skeletonData, clip, time, overrides = null, overlay 
             if (o.rotation !== undefined) localRot = o.rotation;
             if (o.offsetX !== undefined) localOffX = o.offsetX;
             if (o.offsetY !== undefined) localOffY = o.offsetY;
+            if (o.scaleX  !== undefined) localScaleX = o.scaleX;
+            if (o.scaleY  !== undefined) localScaleY = o.scaleY;
+            if (o.r !== undefined) localR = o.r;
+            if (o.g !== undefined) localG = o.g;
+            if (o.b !== undefined) localB = o.b;
+            if (o.a !== undefined) localA = o.a;
         }
 
         // ── Overlay blending ──────────────────────────────────────────────────
@@ -89,14 +100,20 @@ export function computePose(skeletonData, clip, time, overrides = null, overlay 
             if (inMask && overlay.clip && overlay.clip.tracks[part.id]) {
                 const okf = evalTrack(overlay.clip.tracks[part.id], overlay.time);
                 if (overlay.mode === 'override') {
-                    localRot  = okf.rotation;
-                    localOffX = okf.offsetX;
-                    localOffY = okf.offsetY;
+                    localRot    = okf.rotation;
+                    localOffX   = okf.offsetX;
+                    localOffY   = okf.offsetY;
+                    localScaleX = okf.scaleX;
+                    localScaleY = okf.scaleY;
+                    localR = okf.r; localG = okf.g; localB = okf.b; localA = okf.a;
                 } else {
                     // additive: add overlay deltas on top of base
-                    localRot  += okf.rotation;
-                    localOffX += okf.offsetX;
-                    localOffY += okf.offsetY;
+                    localRot    += okf.rotation;
+                    localOffX   += okf.offsetX;
+                    localOffY   += okf.offsetY;
+                    localScaleX *= okf.scaleX;
+                    localScaleY *= okf.scaleY;
+                    localR *= okf.r; localG *= okf.g; localB *= okf.b; localA *= okf.a;
                 }
             }
         }
@@ -116,6 +133,9 @@ export function computePose(skeletonData, clip, time, overrides = null, overlay 
             x: pivotWorldX,
             y: pivotWorldY,
             rotation: parentRot + (part.baseRotation || 0) + localRot,
+            scaleX: localScaleX,
+            scaleY: localScaleY,
+            r: localR, g: localG, b: localB, a: localA,
         });
     }
 
@@ -160,7 +180,12 @@ export function applyPoseToInstances(skeletonData, pose, instancedGroup, baseIns
         const wy = worldY + meshDrawY * scale;
 
         const c = colors[i];
-        let cr = c.r, cg = c.g, cb = c.b;
+        // Bone animation tint (multiplicative on top of base color)
+        const boneR = tf.r ?? 1, boneG = tf.g ?? 1, boneB = tf.b ?? 1, boneA = tf.a ?? 1;
+        let cr = c.r * boneR;
+        let cg = c.g * boneG;
+        let cb = c.b * boneB;
+        let ca = (c.a !== undefined ? c.a : 1) * boneA;
         if (tint) {
             // blend with tint.a as factor
             cr = cr + (tint.r - cr) * tint.a;
@@ -168,11 +193,15 @@ export function applyPoseToInstances(skeletonData, pose, instancedGroup, baseIns
             cb = cb + (tint.b - cb) * tint.a;
         }
 
+        // Bone animation scale (multiplicative on top of entity scale)
+        const boneScaleX = tf.scaleX ?? 1;
+        const boneScaleY = tf.scaleY ?? 1;
+
         const drawOffset = drawIndexMap ? (drawIndexMap.get(part.id) || 0) : i;
         const idx = baseInstanceIndex + drawOffset;
         instancedGroup.updateInstancePosition(idx, wx, wy);
-        instancedGroup.updateInstanceScale(idx, part.width * scale, part.height * scale);
+        instancedGroup.updateInstanceScale(idx, part.width * scale * boneScaleX, part.height * scale * boneScaleY);
         instancedGroup.updateInstanceRotation(idx, tf.rotation * flipX);
-        instancedGroup.updateInstanceColor(idx, cr, cg, cb, 1);
+        instancedGroup.updateInstanceColor(idx, cr, cg, cb, ca);
     }
 }
