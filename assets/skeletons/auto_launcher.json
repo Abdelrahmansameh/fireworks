@@ -102,7 +102,7 @@
   ],
   "animations": {
     "idle": {
-      "duration": 6,
+      "duration": 4,
       "loop": true,
       "tracks": {
         "base": [
@@ -113,7 +113,7 @@
             "offsetY": 0
           },
           {
-            "time": 6,
+            "time": 4,
             "rotation": 0,
             "offsetX": 0,
             "offsetY": 0
@@ -127,7 +127,7 @@
             "offsetY": 0
           },
           {
-            "time": 6,
+            "time": 4,
             "rotation": 0,
             "offsetX": 0,
             "offsetY": 0
@@ -141,19 +141,31 @@
             "offsetY": 0
           },
           {
-            "time": 1.51484375,
-            "rotation": 0.1,
+            "time": 1.0098958333333332,
+            "rotation": 0.14,
             "offsetX": 0,
-            "offsetY": 0
+            "offsetY": 0,
+            "scaleX": 1,
+            "scaleY": 1,
+            "r": 1,
+            "g": 1,
+            "b": 1,
+            "a": 1
           },
           {
-            "time": 4.11984375,
-            "rotation": -0.1,
+            "time": 2.7465625,
+            "rotation": -0.09,
             "offsetX": 0,
-            "offsetY": 0
+            "offsetY": 0,
+            "scaleX": 1,
+            "scaleY": 1,
+            "r": 1,
+            "g": 1,
+            "b": 1,
+            "a": 1
           },
           {
-            "time": 6,
+            "time": 4,
             "rotation": 0,
             "offsetX": 0,
             "offsetY": 0
