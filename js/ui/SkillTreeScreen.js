@@ -29,7 +29,7 @@ import { SKILL_TREE_CONFIG } from './SkillTreeConfig.js';
 const NODE_RADIUS = 23;   // tree-space pixels — scale with zoom (reduced)
 const MIN_ZOOM = 0.3;
 const MAX_ZOOM = 2.5;
-const DEFAULT_ZOOM = 0.82;
+const DEFAULT_ZOOM = 0.5;
 
 // ── SkillTreeScreen ──────────────────────────────────────────────────────────
 

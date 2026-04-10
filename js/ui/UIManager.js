@@ -1366,6 +1366,14 @@ class UIManager {
                 launcherDiv.classList.add('selected');
             }
 
+            // Determine the color and pattern to show:
+            // prefer assigned recipe's value, then building override, then current recipe defaults
+            const assignedRecipeColor = this.game.recipes[launcher.assignedRecipeIndex] ? this.game.recipes[launcher.assignedRecipeIndex].components[0].color : null;
+            const colorValue = assignedRecipeColor;
+
+            const assignedRecipePattern = (typeof launcher.assignedRecipeIndex === 'number' && this.game.recipes[launcher.assignedRecipeIndex]) ? this.game.recipes[launcher.assignedRecipeIndex].components[0].pattern : null;
+            const patternValue = assignedRecipePattern ?? (launcher.patternOverride ?? (this.game.currentRecipeComponents && this.game.currentRecipeComponents[0] ? this.game.currentRecipeComponents[0].pattern : (DEFAULT_RECIPE_COMPONENTS[0]?.pattern || '')));
+
             launcherDiv.innerHTML = `
                 <h3>Auto-Launcher ${index + 1}</h3>
                 ${this.game.progression.isUnlocked('recipes_tab') ? `
@@ -1380,18 +1388,18 @@ class UIManager {
                     </div>
                     <div class="recipes-option">
                         <label>Color:</label>
-                        <input type="color" class="launcher-color-input" data-building-id="${launcher.id}" value="${(typeof launcher.assignedRecipeIndex === 'number' && this.game.recipes[launcher.assignedRecipeIndex]) ? this.game.recipes[launcher.assignedRecipeIndex].components[0].color : (launcher.colorOverride || '#ffffff')}">
+                        <input type="color" class="launcher-color-input" data-building-id="${launcher.id}" value="${colorValue}">
                     </div>
                     ` : `
                 <div class="recipes-option">
                     <label>Color:</label>
-                    <input type="color" class="launcher-color-input" data-building-id="${launcher.id}" value="${launcher.colorOverride || '#ffffff'}">
+                    <input type="color" class="launcher-color-input" data-building-id="${launcher.id}" value="${colorValue}">
                 </div>
                 <div class="recipes-option">
                     <label>Pattern:</label>
                     <select class="launcher-pattern-select" data-building-id="${launcher.id}">
                         ${(this.game.unlockedPatternKeys || []).map(key => `
-                            <option value="${key}" ${launcher.patternOverride === key ? 'selected' : ''}>${patternDisplayNames[key] || key}</option>
+                            <option value="${key}" ${patternValue === key ? 'selected' : ''}>${patternDisplayNames[key] || key}</option>
                         `).join('')}
                     </select>
                 </div>
@@ -1420,18 +1428,15 @@ class UIManager {
 
                 const colorInput = launcherDiv.querySelector('.launcher-color-input');
                 if (colorInput) {
-                    colorInput.addEventListener('input', (e) => {
+                    colorInput.addEventListener('change', (e) => {
                         const buildingId = e.target.getAttribute('data-building-id');
                         const building = this.game.buildingManager.getBuildingById(buildingId);
                         const newColor = e.target.value;
                         if (building) {
                             if (typeof building.assignedRecipeIndex === 'number' && this.game.recipes[building.assignedRecipeIndex]) {
-                                // Update all components' color for the assigned recipe
                                 this.game.recipes[building.assignedRecipeIndex].components.forEach(c => c.color = newColor);
                                 this.game.updateRecipeList();
-                            } else {
-                                building.colorOverride = newColor;
-                            }
+                            } 
                             this.game.saveProgress();
                         }
                     });
@@ -1439,7 +1444,7 @@ class UIManager {
             } else {
                 const colorInput = launcherDiv.querySelector('.launcher-color-input');
                 if (colorInput) {
-                    colorInput.addEventListener('input', (e) => {
+                    colorInput.addEventListener('change', (e) => {
                         const buildingId = e.target.getAttribute('data-building-id');
                         const building = this.game.buildingManager.getBuildingById(buildingId);
                         const newColor = e.target.value;
@@ -1448,9 +1453,7 @@ class UIManager {
                                 // If an assigned recipe exists already, update that recipe's color
                                 this.game.recipes[building.assignedRecipeIndex].components.forEach(c => c.color = newColor);
                                 this.game.updateRecipeList();
-                            } else {
-                                building.colorOverride = newColor;
-                            }
+                            } 
                             this.game.saveProgress();
                         }
                     });
@@ -1473,7 +1476,7 @@ class UIManager {
                         }
                     });
                 }
-            }
+            } 
 
             launcherDiv.addEventListener('click', () => {
                 onSelect(launcher.id);

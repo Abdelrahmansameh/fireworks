@@ -10,17 +10,15 @@ class AutoLauncher extends Building {
     constructor(game, x, y, data = {}) {
         super(game, 'AUTO_LAUNCHER', x, y, data);
 
-        this.accumulator = data.accumulator || Math.random() * 5;
+        this.accumulator =  Math.random() * 5;
         this.assignedRecipeIndex = data.assignedRecipeIndex ?? null;
-        this.colorOverride = data.colorOverride || AutoLauncher._randomColor();
-        this.patternOverride = data.patternOverride || null;
 
         this._skeleton = null;
         this._animData = null;
         this._instancedGroup = null;
         this._animTimer = Math.random() * 3;
         this._clipName = 'idle';
-        this._lastResolvedColor = null;
+        
 
         // Overlay state — additive firing animation played on top of idle
         this._overlayClip = null;
@@ -127,9 +125,6 @@ class AutoLauncher extends Building {
             this._skeleton = skeleton;
             this._animData = new AnimationData(rawAnimations);
 
-            // Force initial color resolve and apply
-            const color = this._resolveCurrentColor();
-            this._updateSkeletonColors(color);
         } catch (e) {
             console.error('AutoLauncher: failed to load skeleton', e);
             return;
@@ -220,27 +215,11 @@ class AutoLauncher extends Building {
         this._overlayTimer = 0;
     }
 
-    _resolveCurrentColor() {
-        // Prefer the assigned recipe color if available, otherwise fall back to
-        // the first predefined recipe, then the current editor recipe, then colorOverride.
-        const recipe = (typeof this.assignedRecipeIndex === 'number') ? this.game.recipes[this.assignedRecipeIndex] : null;
-        if (recipe && recipe.components && recipe.components.length > 0) {
-            return recipe.components[0].color;
-        }
-        if (this.game.recipes && this.game.recipes.length > 0) {
-            return this.game.recipes[0].components[0].color;
-        }
-        if (this.game.currentRecipeComponents && this.game.currentRecipeComponents.length > 0) {
-            return this.game.currentRecipeComponents[0].color;
-        }
-        return this.colorOverride || '#ffffff';
-    }
 
     _updateSkeletonColors(hex) {
         if (!this._skeleton) return;
 
         const rgb = hexToRgb(hex);
-        this._lastResolvedColor = hex;
 
         for (let i = 0; i < this._skeleton.parts.length; i++) {
             const part = this._skeleton.parts[i];
@@ -273,16 +252,16 @@ class AutoLauncher extends Building {
             this.accumulator = this.config.maxAccumulator + Math.random() * this.spawnInterval;
         }
 
-        if (this.accumulator >= this.spawnInterval + Math.random()) {
+        if (this.accumulator >= 0.5 *( this.spawnInterval + Math.random() * this.spawnInterval)) {
             this.spawnFirework();
             this.accumulator -= this.spawnInterval;
         }
 
-        // Handle dynamic color changes
-        const currentColor = this._resolveCurrentColor();
-        if (currentColor !== this._lastResolvedColor) {
-            this._updateSkeletonColors(currentColor);
-        }
+        // Always apply the recipe color (no last-resolved fallback)
+        let currentColor = null;
+        const recipe = (typeof this.assignedRecipeIndex === 'number') ? this.game.recipes[this.assignedRecipeIndex] : null;
+        currentColor = recipe ? recipe.components[0]?.color : null;
+        this._updateSkeletonColors(currentColor);
 
         this._renderFrame();
     }
@@ -302,17 +281,8 @@ class AutoLauncher extends Building {
         const recipe = (typeof this.assignedRecipeIndex === 'number') ? this.game.recipes[this.assignedRecipeIndex] : null;
         if (recipe) {
             components = recipe.components.map(c => ({ ...c }));
-            if (this.patternOverride) {
-                components = components.map(c => ({ ...c, pattern: this.patternOverride }));
-            }
-        } else if (this.game.recipes && this.game.recipes.length > 0) {
-            const randomRecipe = this.game.recipes[Math.floor(Math.random() * this.game.recipes.length)];
-            components = randomRecipe.components.map(c => ({ ...c }));
-        } else {
-            components = this.game.currentRecipeComponents || [];
-        }
-
-        if (components.length === 0) {
+        } 
+        else {
             return;
         }
 
@@ -375,25 +345,7 @@ class AutoLauncher extends Building {
             ...super.serialize(),
             accumulator: this.accumulator,
             assignedRecipeIndex: this.assignedRecipeIndex,
-            colorOverride: this.colorOverride,
-            patternOverride: this.patternOverride,
         };
-    }
-
-    static _randomColor() {
-        const hue = Math.floor(Math.random() * 360);
-        const saturation = 80 + Math.floor(Math.random() * 20); // 80–100%
-        const lightness = 50 + Math.floor(Math.random() * 15);  // 50–65%
-        // Convert HSL to hex
-        const s = saturation / 100;
-        const l = lightness / 100;
-        const a = s * Math.min(l, 1 - l);
-        const f = n => {
-            const k = (n + hue / 30) % 12;
-            const color = l - a * Math.max(Math.min(k - 3, 9 - k, 1), -1);
-            return Math.round(255 * color).toString(16).padStart(2, '0');
-        };
-        return `#${f(0)}${f(8)}${f(4)}`;
     }
 
     destroy() {

@@ -29,14 +29,21 @@ class BuildingManager {
         const building = new BuildingClass(this.game, x, y, data);
         this.buildings.push(building);
 
-        // If this is an AutoLauncher and recipes are available, assign a sequential recipe index
+        // If this is an AutoLauncher and recipes are available, assign a sequential recipe index.
+        // Requirement: the first 20 auto-launchers should be assigned recipes 0..19 in order.
         if (buildingType === 'AUTO_LAUNCHER') {
             try {
                 const launchers = this.getBuildingsByType('AUTO_LAUNCHER');
                 const idx = launchers.indexOf(building);
                 // Only assign a sequential recipe if none was provided in `data`.
                 if (idx >= 0 && this.game && Array.isArray(this.game.recipes) && this.game.recipes.length > 0 && (building.assignedRecipeIndex == null)) {
-                    building.assignedRecipeIndex = idx % this.game.recipes.length;
+                    if (idx < 20) {
+                        // Prefer direct mapping for first 20 launchers. If there are fewer than 20 recipes,
+                        // wrap using modulo so the index remains valid.
+                        building.assignedRecipeIndex = (idx < this.game.recipes.length) ? idx : (idx % this.game.recipes.length);
+                    } else {
+                        building.assignedRecipeIndex = idx % this.game.recipes.length;
+                    }
                 }
             } catch (e) {
                 // ignore assignment errors
@@ -71,18 +78,27 @@ class BuildingManager {
 
         resource.subtract(cost);
         
-        let x = this.game.renderer2D.cameraX + (Math.random() * 500 - 250);
+        let x;
 
-        // Use per-type placement bounds; catapult has dedicated GAME_BOUNDS constants
-        let minX, maxX;
+        // Place catapults near the camera (within their dedicated bounds).
+        // For other buildings (e.g. auto launchers) place them sequentially
+        // from left to right across the world, ignoring the current camera.
         if (buildingType === 'CATAPULT') {
-            minX = GAME_BOUNDS.CATAPULT_MIN_X;
-            maxX = GAME_BOUNDS.CATAPULT_MAX_X;
+            x = this.game.renderer2D.cameraX + (Math.random() * 500 - 250);
+            const minX = GAME_BOUNDS.CATAPULT_MIN_X;
+            const maxX = GAME_BOUNDS.CATAPULT_MAX_X;
+            x = Math.max(minX, Math.min(x, maxX));
         } else {
-            minX = GAME_BOUNDS.LAUNCHER_MIN_X + Math.random() * 300;
-            maxX = GAME_BOUNDS.LAUNCHER_MAX_X - Math.random() * 300;
+            const existing = this.getBuildingsByType(buildingType);
+            const spacing = 150;
+            const startX = GAME_BOUNDS.LAUNCHER_MIN_X + spacing;
+            x = startX + existing.length * spacing;
+
+            // Keep new building inside launcher world bounds
+            const halfWidth = config.width / 2;
+            if (x - halfWidth < GAME_BOUNDS.LAUNCHER_MIN_X) x = GAME_BOUNDS.LAUNCHER_MIN_X + halfWidth;
+            if (x + halfWidth > GAME_BOUNDS.LAUNCHER_MAX_X) x = GAME_BOUNDS.LAUNCHER_MAX_X - halfWidth;
         }
-        x = Math.max(minX, Math.min(x, maxX));
         
         let y = GAME_BOUNDS.BUILDING_Y;
         if (buildingType === 'CATAPULT') {

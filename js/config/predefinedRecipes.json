@@ -1,7 +1,7 @@
 [
-  { "name": "Crimson Bloom", "components": [ { "pattern": "spherical", "color": "#ff4d4d", "secondaryColor": "#ffd24d", "size": 0.35, "lifetime": 3.0, "shape": "sphere", "spread": 0.9 } ] },
-  { "name": "Azure Burst",  "components": [ { "pattern": "spherical", "color": "#4ba0d1", "secondaryColor": "#9be8ff", "size": 0.32, "lifetime": 3.2, "shape": "sphere", "spread": 0.8 } ] },
-  { "name": "Verdant Spark", "components": [ { "pattern": "spherical", "color": "#4cd97b", "secondaryColor": "#d2ffd8", "size": 0.28, "lifetime": 2.8, "shape": "sphere", "spread": 0.85 } ] },
+  { "name": "Crimson Bloom", "components": [ { "pattern": "burst", "color": "#d15641", "secondaryColor": "#ffd24d", "size": 0.35, "lifetime": 3.0, "shape": "sphere", "spread": 0.9 } ] },
+  { "name": "Azure Burst",  "components": [ { "pattern": "ring", "color": "#4ba0d1", "secondaryColor": "#9be8ff", "size": 0.32, "lifetime": 3.2, "shape": "sphere", "spread": 0.8 } ] },
+  { "name": "Verdant Spark", "components": [ { "pattern": "palm", "color": "#4cd97b", "secondaryColor": "#d2ffd8", "size": 0.28, "lifetime": 2.8, "shape": "sphere", "spread": 0.85 } ] },
   { "name": "Golden Ring",  "components": [ { "pattern": "ring",      "color": "#ffd24d", "secondaryColor": "#ffffff", "size": 0.4,  "lifetime": 3.5, "shape": "ring",  "spread": 0.7 } ] },
   { "name": "Violet Helix", "components": [ { "pattern": "helix",     "color": "#b14dff", "secondaryColor": "#ffd2ff", "size": 0.3,  "lifetime": 3.1, "shape": "star",  "spread": 0.9 } ] },
   { "name": "Coral Star",   "components": [ { "pattern": "star",      "color": "#ff7f6b", "secondaryColor": "#ffcab2", "size": 0.33, "lifetime": 3.0, "shape": "star",  "spread": 0.8 } ] },
@@ -17,5 +17,7 @@
   { "name": "Crimson Core", "components": [ { "pattern": "burst",     "color": "#ff3333", "secondaryColor": "#ff9999", "size": 0.37, "lifetime": 3.4, "shape": "star",  "spread": 0.95 } ] },
   { "name": "Sea Mist",     "components": [ { "pattern": "spherical", "color": "#6fe3c2", "secondaryColor": "#d7fff0", "size": 0.3,  "lifetime": 3.0, "shape": "sphere", "spread": 0.8 } ] },
   { "name": "Fuchsia Spin", "components": [ { "pattern": "spinner",   "color": "#ff4dc7", "secondaryColor": "#ffc4f0", "size": 0.32, "lifetime": 3.1, "shape": "star",  "spread": 0.85 } ] },
-  { "name": "Polar White",  "components": [ { "pattern": "spherical", "color": "#ffffff", "secondaryColor": "#cfe8ff", "size": 0.34, "lifetime": 3.5, "shape": "sphere", "spread": 0.8 } ] }
+  { "name": "Polar White",  "components": [ { "pattern": "spherical", "color": "#ffffff", "secondaryColor": "#cfe8ff", "size": 0.34, "lifetime": 3.5, "shape": "sphere", "spread": 0.8 } ] },
+  { "name": "Crimson Bloom", "components": [ { "pattern": "burst", "color": "#d15641", "secondaryColor": "#ffd24d", "size": 0.35, "lifetime": 3.0, "shape": "sphere", "spread": 0.9 } ] },
+  { "name": "Crimson Bloom", "components": [ { "pattern": "burst", "color": "#d15641", "secondaryColor": "#ffd24d", "size": 0.35, "lifetime": 3.0, "shape": "sphere", "spread": 0.9 } ] }
 ]
