@@ -1369,16 +1369,20 @@ class UIManager {
             launcherDiv.innerHTML = `
                 <h3>Auto-Launcher ${index + 1}</h3>
                 ${this.game.progression.isUnlocked('recipes_tab') ? `
-                <div class="recipes-option">
-                    <label>Assign Recipe:</label>
-                    <select class="recipe-select" data-building-id="${launcher.id}">
-                        <option value="">-- Shoot a random recipe --</option>
-                        ${this.game.recipes.map((recipe, rIndex) => `
-                            <option value="${rIndex}" ${launcher.assignedRecipeIndex === rIndex ? 'selected' : ''}>${recipe.name}</option>
-                        `).join('')}
-                    </select>
-                </div>
-                ` : `
+                    <div class="recipes-option">
+                        <label>Assign Recipe:</label>
+                        <select class="recipe-select" data-building-id="${launcher.id}">
+                            <option value="">-- Shoot a random recipe --</option>
+                            ${this.game.recipes.map((recipe, rIndex) => `
+                                <option value="${rIndex}" ${launcher.assignedRecipeIndex === rIndex ? 'selected' : ''}>${recipe.name}</option>
+                            `).join('')}
+                        </select>
+                    </div>
+                    <div class="recipes-option">
+                        <label>Color:</label>
+                        <input type="color" class="launcher-color-input" data-building-id="${launcher.id}" value="${(typeof launcher.assignedRecipeIndex === 'number' && this.game.recipes[launcher.assignedRecipeIndex]) ? this.game.recipes[launcher.assignedRecipeIndex].components[0].color : (launcher.colorOverride || '#ffffff')}">
+                    </div>
+                    ` : `
                 <div class="recipes-option">
                     <label>Color:</label>
                     <input type="color" class="launcher-color-input" data-building-id="${launcher.id}" value="${launcher.colorOverride || '#ffffff'}">
@@ -1409,6 +1413,26 @@ class UIManager {
                                 building.assignedRecipeIndex = null;
                             }
                             this.game.saveProgress();
+                            this.game.updateLauncherList();
+                        }
+                    });
+                }
+
+                const colorInput = launcherDiv.querySelector('.launcher-color-input');
+                if (colorInput) {
+                    colorInput.addEventListener('input', (e) => {
+                        const buildingId = e.target.getAttribute('data-building-id');
+                        const building = this.game.buildingManager.getBuildingById(buildingId);
+                        const newColor = e.target.value;
+                        if (building) {
+                            if (typeof building.assignedRecipeIndex === 'number' && this.game.recipes[building.assignedRecipeIndex]) {
+                                // Update all components' color for the assigned recipe
+                                this.game.recipes[building.assignedRecipeIndex].components.forEach(c => c.color = newColor);
+                                this.game.updateRecipeList();
+                            } else {
+                                building.colorOverride = newColor;
+                            }
+                            this.game.saveProgress();
                         }
                     });
                 }
@@ -1418,8 +1442,15 @@ class UIManager {
                     colorInput.addEventListener('input', (e) => {
                         const buildingId = e.target.getAttribute('data-building-id');
                         const building = this.game.buildingManager.getBuildingById(buildingId);
+                        const newColor = e.target.value;
                         if (building) {
-                            building.colorOverride = e.target.value;
+                            if (typeof building.assignedRecipeIndex === 'number' && this.game.recipes[building.assignedRecipeIndex]) {
+                                // If an assigned recipe exists already, update that recipe's color
+                                this.game.recipes[building.assignedRecipeIndex].components.forEach(c => c.color = newColor);
+                                this.game.updateRecipeList();
+                            } else {
+                                building.colorOverride = newColor;
+                            }
                             this.game.saveProgress();
                         }
                     });
@@ -1431,7 +1462,13 @@ class UIManager {
                         const buildingId = e.target.getAttribute('data-building-id');
                         const building = this.game.buildingManager.getBuildingById(buildingId);
                         if (building) {
-                            building.patternOverride = e.target.value;
+                            const newPattern = e.target.value;
+                            if (typeof building.assignedRecipeIndex === 'number' && this.game.recipes[building.assignedRecipeIndex]) {
+                                this.game.recipes[building.assignedRecipeIndex].components.forEach(c => c.pattern = newPattern);
+                                this.game.updateRecipeList();
+                            } else {
+                                building.patternOverride = newPattern;
+                            }
                             this.game.saveProgress();
                         }
                     });

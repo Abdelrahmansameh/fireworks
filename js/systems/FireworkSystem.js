@@ -1,5 +1,5 @@
 import Firework from '../entities/Firework.js';
-import { FIREWORK_CONFIG, GAME_BOUNDS, DEFAULT_RECIPE_COMPONENTS, PRE_RECIPE_COMPONENT_DEFAULTS } from '../config/config.js';
+import { FIREWORK_CONFIG, GAME_BOUNDS } from '../config/config.js';
 
 export default class FireworkSystem {
     constructor(game) {
@@ -44,31 +44,6 @@ export default class FireworkSystem {
 
     launchFireworkAt(x, targetY = null, minY = null, recipeComponents = null) {
         let components = recipeComponents || this.game.currentRecipeComponents;
-
-        if (!this.game.progression.isUnlocked('recipes_tab')) {
-            const launchers = this.game.buildingManager.getBuildingsByType('AUTO_LAUNCHER');
-            // Cycle: slot 0 = base defaults, slots 1..N = each launcher's patternOverride variant
-            const cycleCount = launchers.length + 1;
-            const cycleIndex = this.fireworkCount % cycleCount;
-            
-            // Base component: fixed defaults + color/pattern from DEFAULT_RECIPE_COMPONENTS
-            const baseComponents = DEFAULT_RECIPE_COMPONENTS.map(c => ({
-                ...PRE_RECIPE_COMPONENT_DEFAULTS,
-                color: c.color,
-                pattern: c.pattern,
-            }));
-            
-            if (cycleIndex === 0) {
-                components = baseComponents;
-            } else {
-                const launcher = launchers[cycleIndex - 1];
-                if (launcher && launcher.patternOverride) {
-                    components = baseComponents.map(c => ({ ...c, pattern: launcher.patternOverride, color: launcher.colorOverride || c.color }));
-                } else {
-                    components = baseComponents;
-                }
-            }
-        }
 
         if (components.length === 0) {
             this.game.showNotification("Add at least one component to launch a firework!");

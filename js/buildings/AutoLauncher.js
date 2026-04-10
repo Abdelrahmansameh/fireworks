@@ -1,6 +1,6 @@
 import Building from './Building.js';
 import Firework from '../entities/Firework.js';
-import { GAME_BOUNDS, PRE_RECIPE_COMPONENT_DEFAULTS } from '../config/config.js';
+import { GAME_BOUNDS } from '../config/config.js';
 import { SkeletonData, hexToRgb } from '../animation/SkeletonData.js';
 import { AnimationData } from '../animation/AnimationData.js';
 import { computePose, applyPoseToInstances } from '../animation/SkeletonAnimator.js';
@@ -221,19 +221,18 @@ class AutoLauncher extends Building {
     }
 
     _resolveCurrentColor() {
-        if (this.game.progression.isUnlocked('recipes_tab')) {
-            const recipe = this.game.recipes[this.assignedRecipeIndex];
-            if (recipe && recipe.components.length > 0) {
-                return recipe.components[0].color;
-            } else if (this.game.recipes.length > 0) {
-                // If random recipe mode is technically active but no recipe assigned yet, 
-                // just use the first recipe color or the current list color.
-                return this.game.recipes[0].components[0].color;
-            } else if (this.game.currentRecipeComponents.length > 0) {
-                return this.game.currentRecipeComponents[0].color;
-            }
+        // Prefer the assigned recipe color if available, otherwise fall back to
+        // the first predefined recipe, then the current editor recipe, then colorOverride.
+        const recipe = (typeof this.assignedRecipeIndex === 'number') ? this.game.recipes[this.assignedRecipeIndex] : null;
+        if (recipe && recipe.components && recipe.components.length > 0) {
+            return recipe.components[0].color;
         }
-
+        if (this.game.recipes && this.game.recipes.length > 0) {
+            return this.game.recipes[0].components[0].color;
+        }
+        if (this.game.currentRecipeComponents && this.game.currentRecipeComponents.length > 0) {
+            return this.game.currentRecipeComponents[0].color;
+        }
         return this.colorOverride || '#ffffff';
     }
 
@@ -297,30 +296,20 @@ class AutoLauncher extends Building {
 
         let components;
 
-        if (!this.game.progression.isUnlocked('recipes_tab')) {
-            // Pre-recipe-tab: apply fixed defaults for all properties except color and pattern,
-            // then apply colorOverride / patternOverride as usual.
-            components = this.game.currentRecipeComponents.map(c => ({
-                ...PRE_RECIPE_COMPONENT_DEFAULTS,
-                color: c.color,
-                pattern: c.pattern,
-            }));
+        // Prefer assigned recipe. If none assigned, pick a recipe from the list (sequential assignment
+        // happens during game init or building creation). Fall back to currentRecipeComponents only
+        // as a last resort to keep manual creator functionality working.
+        const recipe = (typeof this.assignedRecipeIndex === 'number') ? this.game.recipes[this.assignedRecipeIndex] : null;
+        if (recipe) {
+            components = recipe.components.map(c => ({ ...c }));
             if (this.patternOverride) {
                 components = components.map(c => ({ ...c, pattern: this.patternOverride }));
             }
-            if (this.colorOverride) {
-                components = components.map(c => ({ ...c, color: this.colorOverride }));
-            }
+        } else if (this.game.recipes && this.game.recipes.length > 0) {
+            const randomRecipe = this.game.recipes[Math.floor(Math.random() * this.game.recipes.length)];
+            components = randomRecipe.components.map(c => ({ ...c }));
         } else {
-            const recipe = this.game.recipes[this.assignedRecipeIndex];
-            if (recipe) {
-                components = recipe.components;
-            } else if (this.game.recipes.length > 0) {
-                const randomRecipe = this.game.recipes[Math.floor(Math.random() * this.game.recipes.length)];
-                components = randomRecipe.components;
-            } else {
-                components = this.game.currentRecipeComponents;
-            }
+            components = this.game.currentRecipeComponents || [];
         }
 
         if (components.length === 0) {

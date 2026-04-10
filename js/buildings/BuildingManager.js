@@ -28,6 +28,20 @@ class BuildingManager {
 
         const building = new BuildingClass(this.game, x, y, data);
         this.buildings.push(building);
+
+        // If this is an AutoLauncher and recipes are available, assign a sequential recipe index
+        if (buildingType === 'AUTO_LAUNCHER') {
+            try {
+                const launchers = this.getBuildingsByType('AUTO_LAUNCHER');
+                const idx = launchers.indexOf(building);
+                // Only assign a sequential recipe if none was provided in `data`.
+                if (idx >= 0 && this.game && Array.isArray(this.game.recipes) && this.game.recipes.length > 0 && (building.assignedRecipeIndex == null)) {
+                    building.assignedRecipeIndex = idx % this.game.recipes.length;
+                }
+            } catch (e) {
+                // ignore assignment errors
+            }
+        }
         
         return building;
     }

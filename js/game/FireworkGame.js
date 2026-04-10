@@ -1,4 +1,4 @@
-import { FIREWORK_CONFIG, GAME_BOUNDS, PROCEDURAL_BACKGROUND_CONFIG, DEFAULT_RECIPE_COMPONENTS, PRE_RECIPE_COMPONENT_DEFAULTS, GENERIC_RECIPE_NAMES, AUTO_LAUNCHER_COST_BASE, AUTO_LAUNCHER_COST_RATIO, COMPONENT_PROPERTY_RANGES, BUILDING_TYPES, DRONE_CONFIG, CROWD_CATCHER_CONFIG, CROWD_CONFIG } from '../config/config.js';
+import { FIREWORK_CONFIG, GAME_BOUNDS, PROCEDURAL_BACKGROUND_CONFIG, DEFAULT_RECIPE_COMPONENTS, GENERIC_RECIPE_NAMES, AUTO_LAUNCHER_COST_BASE, AUTO_LAUNCHER_COST_RATIO, COMPONENT_PROPERTY_RANGES, BUILDING_TYPES, DRONE_CONFIG, CROWD_CATCHER_CONFIG, CROWD_CONFIG } from '../config/config.js';
 
 const SAVE_VERSION = '4';
 import ProgressionManager from '../upgrades/ProgressionManager.js';
@@ -199,8 +199,6 @@ class FireworkGame extends Engine {
 
         this.ui.initializeUnlockStates();
 
-        this.generatePredefinedRecipes();
-
         this.audioManager.init();
 
         this.start();
@@ -210,64 +208,19 @@ class FireworkGame extends Engine {
         this.progression.applyAll(this);
     }
 
-    generatePredefinedRecipes() {
-        if (this.recipes.length >= 20) return;
-
-        const needed = 20 - this.recipes.length;
-        for (let i = 0; i < needed; i++) {
-            const recipeComponents = [];
-            const numComponents = 1; //Math.floor(Math.random() * 3) + 1; // 1 to 3 components
-
-            for (let j = 0; j < numComponents; j++) {
-                const possibleShapes = ['sphere', 'star'];
-                const randomHex = `#${Math.floor(Math.random() * 0xFFFFFF).toString(16).padStart(6, '0')}`;
-                const randomSecondaryHex = `#${Math.floor(Math.random() * 0xFFFFFF).toString(16).padStart(6, '0')}`;
-
-                const randomValue = (prop) => {
-                    const range = COMPONENT_PROPERTY_RANGES[prop];
-                    if (range) {
-                        return Math.random() * (range.max - range.min) + range.min;
-                    }
-                    return 1.0;
-                };
-
-                recipeComponents.push({
-                    pattern: patternKeys[Math.floor(Math.random() * patternKeys.length)],
-                    color: randomHex,
-                    secondaryColor: randomSecondaryHex,
-                    size: randomValue('size'),
-                    lifetime: randomValue('lifetime'),
-                    shape: possibleShapes[Math.floor(Math.random() * possibleShapes.length)],
-                    spread: randomValue('spread'),
-                });
+    /**
+     * Assign sequential recipes to any unassigned auto-launchers.
+     * Launchers with an existing `assignedRecipeIndex` are left alone.
+     */
+    assignSequentialRecipesToLaunchers() {
+        if (!Array.isArray(this.recipes) || this.recipes.length === 0) return;
+        const launchers = this.buildingManager.getBuildingsByType('AUTO_LAUNCHER');
+        for (let i = 0; i < launchers.length; i++) {
+            const launcher = launchers[i];
+            if (launcher.assignedRecipeIndex == null) {
+                launcher.assignedRecipeIndex = i % this.recipes.length;
             }
-
-            let recipeName = GENERIC_RECIPE_NAMES[Math.floor(Math.random() * GENERIC_RECIPE_NAMES.length)];
-            let existingIndex = this.recipes.findIndex(recipe => recipe.name.toLowerCase() === recipeName.toLowerCase());
-            let attempts = 0;
-            while (existingIndex !== -1 && attempts < 10) {
-                recipeName = GENERIC_RECIPE_NAMES[Math.floor(Math.random() * GENERIC_RECIPE_NAMES.length)];
-                existingIndex = this.recipes.findIndex(recipe => recipe.name.toLowerCase() === recipeName.toLowerCase());
-                attempts++;
-            }
-            if (existingIndex !== -1) {
-                recipeName += ` (${this.recipes.length + 1})`;
-            }
-
-            this.recipes.push({
-                name: recipeName,
-                components: recipeComponents
-            });
         }
-
-        // Ensure the current recipe matches the first one if not explicitly set
-        if (!this.progression.isUnlocked('recipes_tab') && this.recipes.length > 0) {
-            this.currentRecipeComponents = this.recipes[0].components.map(component => ({ ...component }));
-            this.saveCurrentRecipeComponents();
-        }
-
-        this.updateRecipeList();
-        localStorage.setItem('fireworkRecipes', JSON.stringify(this.recipes));
     }
 
     initRenderer2D() {
@@ -802,7 +755,44 @@ class FireworkGame extends Engine {
                 });
             });
             this.updateRecipeList();
+            // Ensure any unassigned launchers get a sequential recipe
+            this.assignSequentialRecipesToLaunchers();
+            this.updateLauncherList();
+            return;
         }
+
+        // No saved recipes — load predefined list from JSON file
+        fetch('js/config/predefinedRecipes.json')
+            .then(resp => {
+                if (!resp.ok) throw new Error('Failed to fetch predefined recipes');
+                return resp.json();
+            })
+            .then(json => {
+                this.recipes = Array.isArray(json) ? json : [];
+                this.recipes.forEach((recipe, index) => {
+                    if (!recipe.name || typeof recipe.name !== 'string' || recipe.name.trim() === '') {
+                        recipe.name = `Recipe ${index + 1}`;
+                    }
+                    recipe.components.forEach(component => {
+                        if (!component.shape || !FIREWORK_CONFIG.supportedShapes.includes(component.shape)) {
+                            component.shape = 'sphere';
+                        }
+                        if (typeof component.spread !== 'number') {
+                            component.spread = 1.0;
+                        }
+                        if (!('secondaryColor' in component)) {
+                            component.secondaryColor = '#00ff00';
+                        }
+                    });
+                });
+
+                this.updateRecipeList();
+                this.assignSequentialRecipesToLaunchers();
+                this.updateLauncherList();
+            })
+            .catch(err => {
+                console.error('Failed to load predefined recipes:', err);
+            });
     }
 
     updateRecipeList() {
