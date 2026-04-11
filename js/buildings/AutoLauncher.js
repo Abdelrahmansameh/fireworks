@@ -293,7 +293,7 @@ class AutoLauncher extends Building {
         this._startOverlay('firing');
 
         const x = this.x;
-        const launchY = GAME_BOUNDS.BUILDING_Y;
+        const launchY = this.y;
 
         let components;
 

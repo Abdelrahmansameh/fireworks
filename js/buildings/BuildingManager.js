@@ -10,7 +10,7 @@ class BuildingManager {
         this.game = game;
         this.buildings = [];
         this.selectedBuildingId = null;
-        
+
         this.buildingClasses = {
             'AUTO_LAUNCHER': AutoLauncher,
             'RESOURCE_GENERATOR': ResourceGenerator,
@@ -42,7 +42,7 @@ class BuildingManager {
                 // ignore assignment errors
             }
         }
-        
+
         return building;
     }
 
@@ -62,7 +62,7 @@ class BuildingManager {
         }
 
         const cost = Building.getPurchaseCost(buildingType, count);
-        
+
         const resource = this.game.resourceManager.resources[config.currency];
         if (!resource || resource.amount < cost) {
             this.game.showNotification(`Not enough ${config.currency} to buy ${config.name}!`);
@@ -70,7 +70,7 @@ class BuildingManager {
         }
 
         resource.subtract(cost);
-        
+
         let x;
 
         // Place catapults near the camera (within their dedicated bounds).
@@ -92,18 +92,18 @@ class BuildingManager {
             if (x - halfWidth < GAME_BOUNDS.LAUNCHER_MIN_X) x = GAME_BOUNDS.LAUNCHER_MIN_X + halfWidth;
             if (x + halfWidth > GAME_BOUNDS.LAUNCHER_MAX_X) x = GAME_BOUNDS.LAUNCHER_MAX_X - halfWidth;
         }
-        
-        let y = GAME_BOUNDS.BUILDING_Y;
+
+        let y = BUILDING_TYPES[buildingType].y;
         if (buildingType === 'CATAPULT') {
             y += count * GAME_BOUNDS.CATAPULT_Y_STEP;
         }
-        
+
         const building = this.createBuilding(buildingType, x, y);
-        
+
         if (building) {
             this.game.showNotification(`${config.name} purchased!`);
         }
-        
+
         return building;
     }
 
@@ -112,7 +112,7 @@ class BuildingManager {
         if (index > -1) {
             building.destroy();
             this.buildings.splice(index, 1);
-            
+
             if (this.selectedBuildingId === building.id) {
                 this.selectedBuildingId = null;
             }
@@ -127,7 +127,7 @@ class BuildingManager {
 
     getTheoreticalAutoLauncherFPS() {
         const launchers = this.getBuildingsByType('AUTO_LAUNCHER');
-        
+
         let totalFPS = 0;
         for (const launcher of launchers) {
             totalFPS += 1 / launcher.spawnInterval;
@@ -166,8 +166,8 @@ class BuildingManager {
     }
 
     spreadBuildings(buildingType = null) {
-        let buildingsToSpread = buildingType ? 
-            this.getBuildingsByType(buildingType) : 
+        let buildingsToSpread = buildingType ?
+            this.getBuildingsByType(buildingType) :
             this.buildings;
 
         if (buildingsToSpread.length === 0) {
@@ -192,10 +192,10 @@ class BuildingManager {
 
         for (let i = buildings.length - 1; i >= 0; i--) {
             const building = buildings[i];
-            
+
             const purchaseCost = Building.getPurchaseCost(buildingType, 0);
             refundAmount += purchaseCost;
-            
+
             this.removeBuilding(building);
         }
 
@@ -213,20 +213,20 @@ class BuildingManager {
         if (!config) return false;
 
         const halfWidth = config.width / 2;
-        if (x - halfWidth < GAME_BOUNDS.LAUNCHER_MIN_X || 
+        if (x - halfWidth < GAME_BOUNDS.LAUNCHER_MIN_X ||
             x + halfWidth > GAME_BOUNDS.LAUNCHER_MAX_X) {
             return false;
         }
 
         const minSpacing = 20;
-        
+
         for (const building of this.buildings) {
             if (building === excludeBuilding) continue;
-            
+
             const dx = Math.abs(building.x - x);
             const dy = Math.abs(building.y - y);
             const minDist = (building.config.width + config.width) / 2 + minSpacing;
-            
+
             if (dx < minDist && dy < building.config.height / 2 + config.height / 2) {
                 return false;
             }
