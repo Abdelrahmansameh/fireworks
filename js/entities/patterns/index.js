@@ -18,16 +18,16 @@ export const patternDefinitions = [
     { key: 'ring', displayName: 'Ring', recipe: ring },
     { key: 'palm', displayName: 'Palm', recipe: palm },
     { key: 'star', displayName: 'Star', recipe: star },
-    { key: 'snowflake', displayName: 'Snowflake', recipe: snowflake },
-    { key: 'brocade', displayName: 'Brocade', recipe: brocade },
     { key: 'willow', displayName: 'Willow', recipe: willow },
+    { key: 'solidsphere', displayName: 'Solid Sphere', recipe: solidsphere },
+    { key: 'brocade', displayName: 'Brocade', recipe: brocade },
     { key: 'heart', displayName: 'Heart', recipe: heart },
     { key: 'brokenHeart', displayName: 'Broken Heart', recipe: brokenHeart },
     { key: 'spinner', displayName: 'Spinner', recipe: spinner },
     { key: 'helix', displayName: 'Helix', recipe: helix },
     { key: 'christmasTree', displayName: 'Christmas Tree', recipe: christmasTree },
-    { key: 'solidsphere', displayName: 'Solid Sphere', recipe: solidsphere },
     { key: 'dragonsBreath', displayName: "Dragon's Breath", recipe: dragonsBreath },
+    { key: 'snowflake', displayName: 'Snowflake', recipe: snowflake },
 ];
 
 export const patternKeys = patternDefinitions.map(({ key }) => key);

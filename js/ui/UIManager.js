@@ -852,9 +852,41 @@ class UIManager {
             return String(num);
         };
 
-        // Full locale-formatted number, label provides context
+        // Full compact-formatted number with suffix and max 5 significant digits
         const formatDetail = (num) => {
-            return Math.floor(num).toLocaleString();
+            if (num == null || isNaN(num)) return '0';
+            const n = Number(num);
+            const sign = n < 0 ? '-' : '';
+            const abs = Math.abs(n);
+
+            const units = [
+                { value: 1e12, symbol: 'T' },
+                { value: 1e9, symbol: 'B' },
+                { value: 1e6, symbol: 'M' },
+                { value: 1e3, symbol: 'K' },
+            ];
+
+            for (const unit of units) {
+                if (abs >= unit.value) {
+                    let v = abs / unit.value;
+                    let s = v.toPrecision(5);
+                    if (s.indexOf('.') !== -1) {
+                        s = s.replace(/(?:\.0+|(\.\d+?)0+)$/, '$1');
+                    }
+                    return sign + s + unit.symbol;
+                }
+            }
+
+            // Small numbers: show up to 5 significant digits without suffix
+            let s = abs.toPrecision(5);
+            if (s.indexOf('e') !== -1) {
+                s = Math.floor(abs).toLocaleString();
+            } else {
+                if (s.indexOf('.') !== -1) {
+                    s = s.replace(/(?:\.0+|(\.\d+?)0+)$/, '$1');
+                }
+            }
+            return sign + s;
         };
 
         const sparkleTotalElements = sparklesElement.querySelectorAll('.sparkle-total');

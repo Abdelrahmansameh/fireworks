@@ -711,47 +711,6 @@ class FireworkGame extends Engine {
         this.updateRecipeList();
     }
 
-    randomizeRecipe() {
-        for (let i = 0; i < this.currentRecipeComponents.length; i++) {
-            const possibleShapes = ['sphere', 'star'];
-            const randomHex = `#${Math.floor(Math.random() * 0xFFFFFF)
-                .toString(16)
-                .padStart(6, '0')}`;
-            const randomSecondaryHex = `#${Math.floor(Math.random() * 0xFFFFFF)
-                .toString(16)
-                .padStart(6, '0')}`;
-
-            const randomValue = (prop) => {
-                const range = COMPONENT_PROPERTY_RANGES[prop];
-                if (range) {
-                    return Math.random() * (range.max - range.min) + range.min;
-                }
-                return 1.0;
-            };
-
-            const randomIntValue = (prop) => {
-                const range = COMPONENT_PROPERTY_RANGES[prop];
-                if (range) {
-                    return Math.floor(Math.random() * (range.max - range.min + 1)) + range.min;
-                }
-                return 1;
-            }
-
-            this.currentRecipeComponents[i] = {
-                pattern: patternKeys[Math.floor(Math.random() * patternKeys.length)],
-                color: randomHex,
-                secondaryColor: randomSecondaryHex,
-                size: randomValue('size'),
-                lifetime: randomValue('lifetime'),
-                shape: possibleShapes[Math.floor(Math.random() * possibleShapes.length)],
-                spread: randomValue('spread'),
-            };
-        }
-        this.updateComponentsList();
-        this.saveCurrentRecipeComponents();
-        this.showNotification("Recipe randomized!");
-    }
-
     loadRecipes() {
         const normalizeRecipes = (recipes) => {
             recipes.forEach((recipe, index) => {

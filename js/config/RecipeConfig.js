@@ -1,13 +1,3 @@
-// Fixed component properties used by AutoLaunchers before the recipes tab is unlocked.
-// colorOverride and patternOverride are NOT affected by these defaults.
-export const PRE_RECIPE_COMPONENT_DEFAULTS = {
-    size: 0.3,
-    lifetime: 3,
-    spread: .8,
-    shape: 'ring',
-    secondaryColor: '#00ff00',
-};
-
 export const DEFAULT_RECIPE_COMPONENTS = [{
     pattern: 'spherical',
     color: '#4ba0d1',
