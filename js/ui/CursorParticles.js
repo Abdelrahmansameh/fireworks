@@ -8,7 +8,7 @@ class CursorParticles {
         this._renderer = renderer;
         this._group = null;
 
-        this.mouseX = cfg.OFFSCREEN_CLIENT_NEG; // CSS clientX / clientY
+        this.mouseX = cfg.OFFSCREEN_CLIENT_NEG;
         this.mouseY = cfg.OFFSCREEN_CLIENT_NEG;
         this._prevX = cfg.OFFSCREEN_CLIENT_NEG;
         this._prevY = cfg.OFFSCREEN_CLIENT_NEG;
@@ -16,24 +16,20 @@ class CursorParticles {
         this._idleTimer = 0;
         this._overUI = false;
 
-        // Grab / skeleton outline mode
-        this._grabOutlinePoints = null;  // {x,y}[] hull when grabbing, null otherwise
+        this._grabOutlinePoints = null;
         this._outlinePerimLength = 0;
         this._outlineSpawnAccum = 0;
 
-        // Start with hidden cursor; will restore when over UI elements
         document.documentElement.classList.add('cursor-hidden');
 
-        // Use pointermove so position updates reliably even when a mouse button is held
         window.addEventListener('pointermove', (e) => {
             this.mouseX = e.clientX;
             this.mouseY = e.clientY;
 
-            // Detect if the pointer is over a UI element (anything outside the game canvas)
             const overUI = !!e.target.closest('#ui-root, #overlay, #confirmation-dialog, #notification');
             if (overUI && !this._overUI) {
-                this.prevX = null;
-                this.prevY = null;
+                this._prevX = null;
+                this._prevY = null;
             }
             if (overUI !== this._overUI) {
                 this._overUI = overUI;
@@ -43,8 +39,6 @@ class CursorParticles {
 
         this._init();
 
-        // Debug overlay — 2D canvas drawn over the WebGL canvas
-        // Enable from the browser console: window.debugSkeletonOutline = true
         this._debugCanvas = null;
         this._debugCtx = null;
         this._initDebugCanvas();
@@ -75,15 +69,9 @@ class CursorParticles {
         this._debugCanvas.style.height = rect.height + 'px';
     }
 
-    // -----------------------------------------------------------------------
 
-    /**
-     * Set (or clear) the skeleton outline to use for grab-mode particle spawning.
-     * @param {{x:number,y:number}[]|null} points — convex hull vertices, or null to disable
-     */
     setGrabOutline(points) {
         const newPoints = (points && points.length >= 2) ? points : null;
-        // Only reset the accumulator when switching between grab/no-grab, not every frame
         const wasGrabbing = this._grabOutlinePoints !== null;
         const isGrabbing = newPoints !== null;
         if (!wasGrabbing && isGrabbing) {
@@ -91,7 +79,6 @@ class CursorParticles {
         }
         this._grabOutlinePoints = newPoints;
         if (!this._grabOutlinePoints) {
-            // If we're clearing outline mode, remove any pending outline markers
             for (const p of this._particles) {
                 if (p._outlinePending) {
                     delete p._outlinePending;
@@ -102,7 +89,8 @@ class CursorParticles {
             this._outlinePerimLength = 0;
             return;
         }
-        // Cache total perimeter length for uniform sampling
+        this._prevX = null;
+        this._prevY = null;
         let len = 0;
         const pts = this._grabOutlinePoints;
         for (let i = 0; i < pts.length; i++) {
@@ -113,13 +101,11 @@ class CursorParticles {
             len += Math.sqrt(dx * dx + dy * dy);
         }
         this._outlinePerimLength = len;
-        // Repurpose existing free particles to become outline-approachers when entering grab mode
         if (!wasGrabbing && isGrabbing) {
             const pts = this._grabOutlinePoints;
             const n = pts.length;
             for (let pi = 0; pi < this._particles.length; pi++) {
                 const p = this._particles[pi];
-                // Find nearest point on the perimeter and the outward normal there
                 let bestDist2 = Infinity;
                 let tgtX = 0, tgtY = 0, nx = 0, ny = 1;
                 for (let j = 0; j < n; j++) {
@@ -156,7 +142,6 @@ class CursorParticles {
                 p._outlineNormalX = nx;
                 p._outlineNormalY = ny;
                 p._outlinePending = true;
-                // Give it an initial velocity pointing toward the target (speed scales with distance)
                 const dx = tgtX - p.x;
                 const dy = tgtY - p.y;
                 const dist = Math.sqrt(dx * dx + dy * dy);
@@ -169,7 +154,6 @@ class CursorParticles {
         }
     }
 
-    // -----------------------------------------------------------------------
 
     async _init() {
         const r = this._renderer;
@@ -219,7 +203,6 @@ class CursorParticles {
         }
     }
 
-    // -----------------------------------------------------------------------
 
     update(dt) {
         if (!this._group) return;
@@ -229,6 +212,11 @@ class CursorParticles {
         const offscreen = mx < cfg.OFFSCREEN_X_THRESHOLD;
 
         if (!offscreen && !this._grabOutlinePoints) {
+            if (!this._prevX || !this._prevY) {
+                this._prevX = mx;
+                this._prevY = my;
+            }
+            
             // Initialise prev position on first valid frame
             if (this._prevX < cfg.PREV_INIT_THRESHOLD) {
                 this._prevX = mx;
@@ -255,7 +243,7 @@ class CursorParticles {
                 this._prevY = my;
             }
 
-            
+
             this._idleTimer += dt;
             if (this._idleTimer > cfg.IDLE_SPAWN_INTERVAL) {
                 this._idleTimer = 0;
@@ -264,7 +252,6 @@ class CursorParticles {
             }
         }
 
-        // ---- Skeleton outline grab spawning ----
         if (this._grabOutlinePoints && this._outlinePerimLength > 0) {
             this._outlineSpawnAccum += dt;
             const spawnCount = Math.floor(this._outlineSpawnAccum * cfg.OUTLINE_SPAWN_RATE);
@@ -315,14 +302,12 @@ class CursorParticles {
         for (let i = this._particles.length - 1; i >= 0; i--) {
             const p = this._particles[i];
 
-            // If this particle was repurposed to approach the outline, handle approach/arrival
             if (this._grabOutlinePoints && p._outlinePending) {
                 const dxT = p._outlineTargetX - p.x;
                 const dyT = p._outlineTargetY - p.y;
                 const dist2T = dxT * dxT + dyT * dyT;
                 const arrivalDist = cfg.OUTLINE_ARRIVAL_DIST;
                 if (dist2T <= arrivalDist * arrivalDist) {
-                    // Snap to outline and convert into an outline particle (outward velocity)
                     const nx = p._outlineNormalX ?? 0;
                     const ny = p._outlineNormalY ?? 1;
                     const speed = cfg.OUTLINE_PARTICLE_SPEED + Math.random() * cfg.OUTLINE_PARTICLE_SPEED_VAR;
@@ -349,37 +334,37 @@ class CursorParticles {
                 }
             }
 
-            // Integrate & age
             p.x += p.vx * dt;
             p.y += p.vy * dt;
-            p.vy -= cfg.GRAVITY * dt;                         // gravity pulls down (world Y-up)
-            const f = Math.pow(cfg.FRICTION_BASE, dt * cfg.FRICTION_FPS);       // velocity friction
+            p.vy -= cfg.GRAVITY * dt;
+            const f = Math.pow(cfg.FRICTION_BASE, dt * cfg.FRICTION_FPS);
             p.vx *= f;
             p.vy *= f;
             p.life -= p.decay * dt;
             if (p.life <= 0) this._particles.splice(i, 1);
         }
 
-        // ---- Fill instanced group ----
         this._group.clear();
 
         for (const p of this._particles) {
-            const alpha = p.life * p.life; // ease-out
+            const alpha = p.life * p.life;
             if (alpha <= 0) continue;
             const s = p.size * (cfg.SIZE_LIFE_MIN + p.life * cfg.SIZE_LIFE_MAX) * cfg.SIZE_SCALE;
             this._group.addInstanceRaw(p.x, p.y, 0, s, s, p.r, p.g, p.b, alpha);
         }
 
-        // ---- Cursor glow dot (hidden in outline/grab mode) ----
-        if (!offscreen && !this._overUI && !this._grabOutlinePoints) {
+        if (!offscreen && !this._overUI ) {
             const wp = this._toWorld(mx, my);
-            // Soft outer halo (slightly whitened)
+            let sizeMult = 1;
+            if (this._grabOutlinePoints) {
+                sizeMult = cfg.GLOW_MULITPLIER_OUTLINE;
+            }
             this._group.addInstanceRaw(
                 wp.x,
                 wp.y,
                 0,
-                cfg.GLOW_OUTER_SIZE,
-                cfg.GLOW_OUTER_SIZE,
+                cfg.GLOW_OUTER_SIZE * sizeMult,
+                cfg.GLOW_OUTER_SIZE * sizeMult,
                 cfg.GLOW_OUTER_COLOR[0],
                 cfg.GLOW_OUTER_COLOR[1],
                 cfg.GLOW_OUTER_COLOR[2],
@@ -390,8 +375,8 @@ class CursorParticles {
                 wp.x,
                 wp.y,
                 0,
-                cfg.GLOW_CORE_SIZE,
-                cfg.GLOW_CORE_SIZE,
+                cfg.GLOW_CORE_SIZE * sizeMult,
+                cfg.GLOW_CORE_SIZE * sizeMult,
                 cfg.GLOW_CORE_COLOR[0],
                 cfg.GLOW_CORE_COLOR[1],
                 cfg.GLOW_CORE_COLOR[2],

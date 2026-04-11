@@ -23,7 +23,7 @@ export const PROGRESSION_CONFIG = [
     { type: 'unlock', id: 'tab_menu', requires: { stats: { fireworkCount: 5 } } },
     { type: 'unlock', id: 'upgrades_tab', requires: { stats: { fireworkCount: 10 } } },
     { type: 'unlock', id: 'crowds_tab', requires: { stats: { crowdCount: 1 } } },
-    { type: 'unlock', id: 'recipes_tab', requires: { stats: { launcherCount: 20 } } },
+    // Recipes tab is now unlocked via a skill-tree upgrade (see SkillTreeConfig)
 
     // ── Building Unlocks (as Upgrades) ──────────────────────────────────────────
 ];

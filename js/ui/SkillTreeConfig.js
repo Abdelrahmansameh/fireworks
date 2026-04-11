@@ -95,6 +95,22 @@ export const SKILL_TREE_CONFIG = {
             requires: { upgrades: { spark_core_2: 5 } },
             apply: (game, level) => { game.baseSparkleMultiplier *= 10; },
         },
+        unlock_recipes_tab: {
+            offset: { x: 0, y: -200 },
+            icon: 'base',
+            branch: 'BASE',
+            treeParent: 'spark_core_3',
+
+            id: 'unlock_recipes_tab',
+            group: 'BASE',
+            name: 'Recipe System',
+            desc: 'Unlocks the Firework Recipes tab',
+            baseCost: 2000,
+            costRatio: 1,
+            currency: 'gold',
+            maxLevel: 1,
+            apply: (game, _level) => { game._handleUnlock('recipes_tab'); },
+        },
 
         auto_launcher: {
             offset: { x: -200, y: 0 },
@@ -635,10 +651,10 @@ export const SKILL_TREE_CONFIG = {
         },
         // Pattern unlocks — sprinkled across branches
         unlock_brokenHeart: {
-            offset: { x: -300, y: -100 },
+            offset: { x: -200, y: 0 },
             icon: 'launcher',
             branch: 'LAUNCHER',
-            treeParent: 'launcher_sparkle_1',
+            treeParent: 'unlock_recipes_tab',
 
             id: 'unlock_brokenHeart',
             group: 'LAUNCHER',
@@ -651,10 +667,10 @@ export const SKILL_TREE_CONFIG = {
             apply: (game, _level) => { game._handleUnlock('pattern_brokenHeart'); },
         },
         unlock_spinner: {
-            offset: { x: 300, y: -200 },
+            offset: { x: -162, y: -118 },
             icon: 'drone',
             branch: 'DRONE',
-            treeParent: 'drone_speed',
+            treeParent: 'unlock_recipes_tab',
 
             id: 'unlock_spinner',
             group: 'DRONE',
@@ -667,10 +683,10 @@ export const SKILL_TREE_CONFIG = {
             apply: (game, _level) => { game._handleUnlock('pattern_spinner'); },
         },
         unlock_helix: {
-            offset: { x: -200, y: 300 },
+            offset: { x: -62, y: -190 },
             icon: 'base',
             branch: 'GENERATOR',
-            treeParent: 'generator_production',
+            treeParent: 'unlock_recipes_tab',
 
             id: 'unlock_helix',
             group: 'GENERATOR',
@@ -683,10 +699,10 @@ export const SKILL_TREE_CONFIG = {
             apply: (game, _level) => { game._handleUnlock('pattern_helix'); },
         },
         unlock_christmasTree: {
-            offset: { x: 200, y: 120 },
+            offset: { x: 62, y: -190 },
             icon: 'crowd',
             branch: 'CROWD',
-            treeParent: 'crowd_gold_1',
+            treeParent: 'unlock_recipes_tab',
 
             id: 'unlock_christmasTree',
             group: 'CROWD',
@@ -699,10 +715,10 @@ export const SKILL_TREE_CONFIG = {
             apply: (game, _level) => { game._handleUnlock('pattern_christmasTree'); },
         },
         unlock_dragonsBreath: {
-            offset: { x: -100, y: -300 },
+            offset: { x: 162, y: -118 },
             icon: 'launcher',
             branch: 'LAUNCHER',
-            treeParent: 'launcher_overclock',
+            treeParent: 'unlock_recipes_tab',
 
             id: 'unlock_dragonsBreath',
             group: 'LAUNCHER',
@@ -715,10 +731,10 @@ export const SKILL_TREE_CONFIG = {
             apply: (game, _level) => { game._handleUnlock('pattern_dragonsBreath'); },
         },
         unlock_snowflake: {
-            offset: { x: 0, y: 400 },
+            offset: { x: 220, y: 0 },
             icon: 'drone',
             branch: 'DRONE',
-            treeParent: 'drone_efficiency',
+            treeParent: 'unlock_recipes_tab',
 
             id: 'unlock_snowflake',
             group: 'DRONE',

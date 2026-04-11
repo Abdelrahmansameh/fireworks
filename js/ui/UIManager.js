@@ -358,7 +358,6 @@ class UIManager {
             this.draggingLauncher = intersectedBuilding;
             this.game.selectLauncher(intersectedBuilding.id);
             this.game.updateLauncherList();
-            this.emitGrabModeBurst(worldPos.x, worldPos.y);
 
             if (intersectedBuilding.type === 'AUTO_LAUNCHER') {
                 this.focusBuildingInUI(intersectedBuilding);
@@ -448,20 +447,7 @@ class UIManager {
 
             const spinSpeed = spinDirection * (20 + Math.random() * 14);
             const updateFn = (state, delta) => {
-                //state.rotation += spinSpeed * delta;
-
-                const toCursorX = this.grabCursorWorldX - state.position.x;
-                const toCursorY = this.grabCursorWorldY - state.position.y;
-                const distSq = toCursorX * toCursorX + toCursorY * toCursorY;
-                const minAttractDistance = 100;
-
-                if (distSq > minAttractDistance * minAttractDistance) {
-                    const dist = Math.sqrt(distSq);
-                    const invDist = 1 / dist;
-                    const attractAccel = 10000;
-
-                    state.velocity.x += toCursorX * invDist * attractAccel * delta;
-                }
+ 
             };
 
             this.game.particleSystem.addParticle(

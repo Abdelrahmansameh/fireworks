@@ -55,6 +55,7 @@ export default {
     GLOW_CORE_SIZE: 8,
     GLOW_CORE_COLOR: [1.0, 1.0, 1.0],
     GLOW_CORE_ALPHA: 1.0,
+    GLOW_MULITPLIER_OUTLINE: 0.75,
 
     // Grab / skeleton outline mode
     OUTLINE_SPAWN_RATE: 10,          // particles per second distributed along the outline
