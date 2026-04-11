@@ -36,6 +36,18 @@ export default {
 
     // Idle / click
     IDLE_SPAWN_INTERVAL: 0.09,
+    // Click feedback (tuned down — subtle)
+    SPAWN_CLICK_COUNT: 6,
+    CLICK_PARTICLE_SPEED_BOOST: 60,
+    CLICK_PARTICLE_SPEED_VAR: 30,
+    CLICK_PARTICLE_SIZE_MULT: 1.12,
+    CLICK_PARTICLE_LIFE: 0.55,
+    CLICK_PARTICLE_DECAY: 3.0,
+    CLICK_GLOW_MULTIPLIER: 1.08,
+    CLICK_PULSE_DURATION: 0.10,
+    CLICK_GLOW_SIZE: 35,
+    CLICK_GLOW_ALPHA: 0.35,
+    CLICK_GLOW_COLOR: [1.0, 0.95, 0.85],
     
 
     // Physics

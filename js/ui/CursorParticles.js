@@ -20,6 +20,9 @@ class CursorParticles {
         this._outlinePerimLength = 0;
         this._outlineSpawnAccum = 0;
 
+        // Click pulse state (visual feedback on pointerdown)
+        this._clickPulseTimer = 0; // seconds remaining for the click pulse
+
         document.documentElement.classList.add('cursor-hidden');
 
         window.addEventListener('pointermove', (e) => {
@@ -35,6 +38,15 @@ class CursorParticles {
                 this._overUI = overUI;
                 document.documentElement.classList.toggle('cursor-hidden', !overUI);
             }
+        });
+
+        // Pointer down: create a small burst and trigger a pulse
+        window.addEventListener('pointerdown', (e) => {
+            const overUI = !!e.target.closest('#ui-root, #overlay, #confirmation-dialog, #notification');
+            if (overUI) return;
+            const wp = this._toWorld(e.clientX, e.clientY);
+            this._spawnClick(wp.x, wp.y);
+            this._clickPulseTimer = cfg.CLICK_PULSE_DURATION;
         });
 
         this._init();
@@ -203,6 +215,31 @@ class CursorParticles {
         }
     }
 
+    /** Spawn a click burst: larger, faster particles for immediate feedback. */
+    _spawnClick(wx, wy) {
+        if (this._overUI) return;
+        const count = cfg.SPAWN_CLICK_COUNT || 12;
+        for (let i = 0; i < count; i++) {
+            if (this._particles.length >= cfg.MAX_PARTICLES) break;
+            const angle = Math.random() * Math.PI * 2;
+            const speed = (cfg.PARTICLE_SPEED_BASE + (cfg.CLICK_PARTICLE_SPEED_BOOST || 120)) + Math.random() * (cfg.PARTICLE_SPEED_VAR + (cfg.CLICK_PARTICLE_SPEED_VAR || 80));
+            const isGold = Math.random() < cfg.GOLD_PROBABILITY;
+            const color = isGold ? cfg.COLOR_GOLD : cfg.COLOR_DEFAULT;
+            this._particles.push({
+                x: wx,
+                y: wy,
+                vx: Math.cos(angle) * speed,
+                vy: Math.sin(angle) * speed,
+                life: cfg.CLICK_PARTICLE_LIFE || (cfg.PARTICLE_LIFE_BASE + 0.2),
+                decay: cfg.CLICK_PARTICLE_DECAY || cfg.PARTICLE_DECAY_BASE,
+                size: (cfg.PARTICLE_SIZE_BASE + Math.random() * cfg.PARTICLE_SIZE_VAR) * (cfg.CLICK_PARTICLE_SIZE_MULT || 1.6),
+                r: color[0],
+                g: color[1],
+                b: color[2],
+            });
+        }
+    }
+
 
     update(dt) {
         if (!this._group) return;
@@ -210,6 +247,12 @@ class CursorParticles {
         const mx = this.mouseX;
         const my = this.mouseY;
         const offscreen = mx < cfg.OFFSCREEN_X_THRESHOLD;
+
+        // Update click pulse timer
+        if (this._clickPulseTimer > 0) {
+            this._clickPulseTimer -= dt;
+            if (this._clickPulseTimer < 0) this._clickPulseTimer = 0;
+        }
 
         if (!offscreen && !this._grabOutlinePoints) {
             if (!this._prevX || !this._prevY) {
@@ -355,9 +398,27 @@ class CursorParticles {
 
         if (!offscreen && !this._overUI ) {
             const wp = this._toWorld(mx, my);
-            let sizeMult = 1;
-            if (this._grabOutlinePoints) {
-                sizeMult = cfg.GLOW_MULITPLIER_OUTLINE;
+            let sizeMult = this._grabOutlinePoints ? cfg.GLOW_MULITPLIER_OUTLINE : 1;
+            // Expand glow briefly on click
+            if (this._clickPulseTimer > 0) {
+                const t = this._clickPulseTimer / cfg.CLICK_PULSE_DURATION;
+                const clickMul = 1 + (cfg.CLICK_GLOW_MULTIPLIER || 1.2) * t;
+                sizeMult = Math.max(sizeMult, clickMul);
+            }
+            // Optional pulse ring instance for visual feedback
+            if (this._clickPulseTimer > 0) {
+                const t = this._clickPulseTimer / cfg.CLICK_PULSE_DURATION;
+                const pulseSize = (cfg.CLICK_GLOW_SIZE || 80) * t;
+                const pulseAlpha = (cfg.CLICK_GLOW_ALPHA || 0.7) * t;
+                this._group.addInstanceRaw(
+                    wp.x,
+                    wp.y,
+                    0,
+                    pulseSize,
+                    pulseSize,
+                    ...(cfg.CLICK_GLOW_COLOR || cfg.GLOW_OUTER_COLOR),
+                    pulseAlpha,
+                );
             }
             this._group.addInstanceRaw(
                 wp.x,
