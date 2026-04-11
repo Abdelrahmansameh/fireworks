@@ -25,7 +25,7 @@ export default {
     PARTICLE_SIZE_BASE: 4,
     PARTICLE_SIZE_VAR: 10,
     COLOR_GOLD: [1.0, 0.856, 0.264],
-    COLOR_DEFAULT: [0.24, 0.92, 0.904],
+    COLOR_DEFAULT: [1.0, 1.0, 1.0],
     SPAWN_BIAS_SCALE: 0.25,
 
     // Movement / trail
@@ -50,14 +50,14 @@ export default {
 
     // Glow / ring
     GLOW_OUTER_SIZE: 30,
-    GLOW_OUTER_COLOR: [0.5, 0.92, 0.96],
+    GLOW_OUTER_COLOR: [1.0, 1.0, 1.0],
     GLOW_OUTER_ALPHA: 0.55,
     GLOW_CORE_SIZE: 8,
     GLOW_CORE_COLOR: [1.0, 1.0, 1.0],
     GLOW_CORE_ALPHA: 1.0,
 
     // Grab / skeleton outline mode
-    OUTLINE_SPAWN_RATE: 80,          // particles per second distributed along the outline
+    OUTLINE_SPAWN_RATE: 10,          // particles per second distributed along the outline
     OUTLINE_PARTICLE_SPEED: 30,      // base outward speed (world units/s)
     OUTLINE_PARTICLE_SPEED_VAR: 50,  // extra random speed
     // life must start at 1.0 — alpha = life², so starting below 1 makes particles dim from birth
@@ -65,7 +65,7 @@ export default {
     OUTLINE_PARTICLE_DECAY: 3.5,     // dies in ~0.28s (1.0 / 3.5)
     OUTLINE_PARTICLE_SIZE: 4,
     OUTLINE_PARTICLE_SIZE_VAR: 6,
-    OUTLINE_COLOR_CYAN: [0.28, 0.94, 1.0],
+    OUTLINE_COLOR_CYAN: [1.0, 1.0, 1.0],
     OUTLINE_COLOR_WHITE: [1.0, 1.0, 1.0],
     OUTLINE_COLOR_WHITE_PROB: 0.2,
     

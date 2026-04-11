@@ -222,8 +222,8 @@ class CursorParticles {
                             // Outward normal: right-perpendicular of CCW edge (y-up)
                             const nx = edgeLen > 0 ?  edgeDy / edgeLen : 0;
                             const ny = edgeLen > 0 ? -edgeDx / edgeLen : 1;
-                            const isWhite = Math.random() < cfg.OUTLINE_COLOR_WHITE_PROB;
-                            const col = isWhite ? cfg.OUTLINE_COLOR_WHITE : cfg.OUTLINE_COLOR_CYAN;
+                            const isGold = Math.random() < cfg.GOLD_PROBABILITY;
+                            const col = isGold ? cfg.COLOR_GOLD : cfg.COLOR_DEFAULT;
                             const speed = cfg.OUTLINE_PARTICLE_SPEED + Math.random() * cfg.OUTLINE_PARTICLE_SPEED_VAR;
                             this._particles.push({
                                 x: spawnX,
@@ -310,7 +310,7 @@ class CursorParticles {
         if (!this._grabOutlinePoints || this._grabOutlinePoints.length < 2) return;
 
         ctx.save();
-        ctx.strokeStyle = 'rgba(0, 255, 200, 0.9)';
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)';
         ctx.lineWidth = 2;
         ctx.setLineDash([5, 4]);
         ctx.beginPath();
