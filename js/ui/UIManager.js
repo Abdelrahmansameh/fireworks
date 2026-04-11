@@ -1136,9 +1136,12 @@ class UIManager {
 
     updateComponentsList(components, onUpdate, containerId = 'components-list') {
         const componentsList = document.getElementById(containerId);
-        const patternOptions = patternDefinitions.map(({ key, displayName }) => (
-            `<option value="${key}">${displayName}</option>`
-        )).join('');
+        const patternOptions = patternDefinitions.filter(p => {
+            if (!p.unlockId) return true;
+            if (this.game.progression && this.game.progression.isUnlocked(p.unlockId)) return true;
+            if (this.game.unlockedPatternKeys && this.game.unlockedPatternKeys.includes(p.key)) return true;
+            return false;
+        }).map(({ key, displayName }) => (`<option value="${key}">${displayName}</option>`)).join('');
         componentsList.innerHTML = '';
 
         components.forEach((component, index) => {

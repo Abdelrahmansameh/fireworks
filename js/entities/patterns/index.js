@@ -22,12 +22,12 @@ export const patternDefinitions = [
     { key: 'solidsphere', displayName: 'Solid Sphere', recipe: solidsphere },
     { key: 'brocade', displayName: 'Brocade', recipe: brocade },
     { key: 'heart', displayName: 'Heart', recipe: heart },
-    { key: 'brokenHeart', displayName: 'Broken Heart', recipe: brokenHeart },
-    { key: 'spinner', displayName: 'Spinner', recipe: spinner },
-    { key: 'helix', displayName: 'Helix', recipe: helix },
-    { key: 'christmasTree', displayName: 'Christmas Tree', recipe: christmasTree },
-    { key: 'dragonsBreath', displayName: "Dragon's Breath", recipe: dragonsBreath },
-    { key: 'snowflake', displayName: 'Snowflake', recipe: snowflake },
+    { key: 'brokenHeart', displayName: 'Broken Heart', recipe: brokenHeart, unlockId: 'pattern_brokenHeart' },
+    { key: 'spinner', displayName: 'Spinner', recipe: spinner, unlockId: 'pattern_spinner' },
+    { key: 'helix', displayName: 'Helix', recipe: helix, unlockId: 'pattern_helix' },
+    { key: 'christmasTree', displayName: 'Christmas Tree', recipe: christmasTree, unlockId: 'pattern_christmasTree' },
+    { key: 'dragonsBreath', displayName: "Dragon's Breath", recipe: dragonsBreath, unlockId: 'pattern_dragonsBreath' },
+    { key: 'snowflake', displayName: 'Snowflake', recipe: snowflake, unlockId: 'pattern_snowflake' },
 ];
 
 export const patternKeys = patternDefinitions.map(({ key }) => key);

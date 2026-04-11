@@ -31,6 +31,10 @@ class CursorParticles {
 
             // Detect if the pointer is over a UI element (anything outside the game canvas)
             const overUI = !!e.target.closest('#ui-root, #overlay, #confirmation-dialog, #notification');
+            if (overUI && !this._overUI) {
+                this.prevX = null;
+                this.prevY = null;
+            }
             if (overUI !== this._overUI) {
                 this._overUI = overUI;
                 document.documentElement.classList.toggle('cursor-hidden', !overUI);
@@ -65,9 +69,9 @@ class CursorParticles {
         if (!this._debugCanvas) return;
         const glCanvas = this._renderer.canvas;
         const rect = glCanvas.getBoundingClientRect();
-        this._debugCanvas.width  = rect.width;
+        this._debugCanvas.width = rect.width;
         this._debugCanvas.height = rect.height;
-        this._debugCanvas.style.width  = rect.width  + 'px';
+        this._debugCanvas.style.width = rect.width + 'px';
         this._debugCanvas.style.height = rect.height + 'px';
     }
 
@@ -81,7 +85,7 @@ class CursorParticles {
         const newPoints = (points && points.length >= 2) ? points : null;
         // Only reset the accumulator when switching between grab/no-grab, not every frame
         const wasGrabbing = this._grabOutlinePoints !== null;
-        const isGrabbing  = newPoints !== null;
+        const isGrabbing = newPoints !== null;
         if (!wasGrabbing && isGrabbing) {
             this._outlineSpawnAccum = 0;
         }
@@ -193,6 +197,7 @@ class CursorParticles {
      * vxBias / vyBias are in world units (Y-up).
      */
     _spawnAt(wx, wy, vxBias = 0, vyBias = 0, count = cfg.DEFAULT_SPAWN_COUNT) {
+        if (this._overUI) return;
         for (let i = 0; i < count; i++) {
             if (this._particles.length >= cfg.MAX_PARTICLES) break;
             const angle = Math.random() * Math.PI * 2;
@@ -223,7 +228,7 @@ class CursorParticles {
         const my = this.mouseY;
         const offscreen = mx < cfg.OFFSCREEN_X_THRESHOLD;
 
-        if (!offscreen && !this._overUI && !this._grabOutlinePoints) {
+        if (!offscreen && !this._grabOutlinePoints) {
             // Initialise prev position on first valid frame
             if (this._prevX < cfg.PREV_INIT_THRESHOLD) {
                 this._prevX = mx;
@@ -250,6 +255,7 @@ class CursorParticles {
                 this._prevY = my;
             }
 
+            
             this._idleTimer += dt;
             if (this._idleTimer > cfg.IDLE_SPAWN_INTERVAL) {
                 this._idleTimer = 0;
@@ -282,7 +288,7 @@ class CursorParticles {
                             const spawnX = a.x + edgeDx * t;
                             const spawnY = a.y + edgeDy * t;
                             // Outward normal: right-perpendicular of CCW edge (y-up)
-                            const nx = edgeLen > 0 ?  edgeDy / edgeLen : 0;
+                            const nx = edgeLen > 0 ? edgeDy / edgeLen : 0;
                             const ny = edgeLen > 0 ? -edgeDx / edgeLen : 1;
                             const isGold = Math.random() < cfg.GOLD_PROBABILITY;
                             const col = isGold ? cfg.COLOR_GOLD : cfg.COLOR_DEFAULT;
@@ -391,7 +397,7 @@ class CursorParticles {
                 cfg.GLOW_CORE_COLOR[2],
                 cfg.GLOW_CORE_ALPHA,
             );
-            
+
         }
     }
 
@@ -420,7 +426,7 @@ class CursorParticles {
             const sx = s.x - rect.left;
             const sy = s.y - rect.top;
             if (i === 0) ctx.moveTo(sx, sy);
-            else         ctx.lineTo(sx, sy);
+            else ctx.lineTo(sx, sy);
         }
         ctx.closePath();
         ctx.stroke();

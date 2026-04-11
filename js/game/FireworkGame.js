@@ -7,7 +7,7 @@ import InstancedParticleSystem from '../particles/InstancedParticleSystem.js';
 import InstancedDroneSystem from '../entities/InstancedDroneSystem.js';
 import Crowd from '../entities/Crowd.js';
 import Firework from '../entities/Firework.js';
-import { patternKeys } from '../entities/patterns/index.js';
+import { patternKeys, patternDefinitions, patternDisplayNames } from '../entities/patterns/index.js';
 import CinematicManager from './CinematicManager.js';
 import UIManager from '../ui/UIManager.js';
 import ResourceManager from '../resources/ResourceManager.js';
@@ -35,7 +35,8 @@ class FireworkGame extends Engine {
         this.selectedLauncherIndex = null;
 
         // Patterns unlocked progressively via AutoLauncher purchases (separate from progression system)
-        this.unlockedPatternKeys = [patternKeys[0]];
+        const firstAuto = (patternDefinitions.find(p => !p.unlockId) || patternDefinitions[0]).key;
+        this.unlockedPatternKeys = [firstAuto];
 
         this.firstClickStates = {
             tabMenu: false,
@@ -489,15 +490,20 @@ class FireworkGame extends Engine {
         const building = this.buildingManager.buyBuilding('AUTO_LAUNCHER');
         if (building) {
             if (!this.progression.isUnlocked('recipes_tab')) {
-                // Unlock the next pattern in sequence (if any remain)
-                const nextIndex = this.unlockedPatternKeys.length;
+                // Unlock the next auto-unlockable pattern (skip patterns gated behind upgrades)
+                const autoUnlockable = patternDefinitions.filter(p => !p.unlockId).map(p => p.key);
+                const remaining = autoUnlockable.filter(k => !this.unlockedPatternKeys.includes(k));
                 let patternToAssign;
-                if (nextIndex < patternKeys.length) {
-                    patternToAssign = patternKeys[nextIndex];
+                if (remaining.length > 0) {
+                    patternToAssign = remaining[0];
                     this.unlockedPatternKeys.push(patternToAssign);
                 } else {
-                    // All patterns already unlocked – assign a random one
-                    patternToAssign = patternKeys[Math.floor(Math.random() * patternKeys.length)];
+                    // Fall back to a random already-unlocked pattern
+                    if (this.unlockedPatternKeys.length > 0) {
+                        patternToAssign = this.unlockedPatternKeys[Math.floor(Math.random() * this.unlockedPatternKeys.length)];
+                    } else {
+                        patternToAssign = patternKeys[0];
+                    }
                 }
                 // Update the assigned recipe's pattern to reflect the unlocked pattern
                 if (typeof building.assignedRecipeIndex === 'number' && this.recipes[building.assignedRecipeIndex]) {
@@ -1248,6 +1254,16 @@ class FireworkGame extends Engine {
                 this.ui.showRecipesTab();
                 this.showNotification('Recipe system unlocked! You can now create and assign custom recipes.');
                 break;
+        }
+        // Pattern unlocks (from skill-tree upgrades) — id format 'pattern_<key>'
+        if (typeof id === 'string' && id.startsWith('pattern_')) {
+            const key = id.replace(/^pattern_/, '');
+            if (!this.unlockedPatternKeys.includes(key)) {
+                this.unlockedPatternKeys.push(key);
+                const name = patternDisplayNames[key] || key;
+                this.showNotification(`Pattern unlocked: ${name}`);
+                this.saveProgress();
+            }
         }
     }
 

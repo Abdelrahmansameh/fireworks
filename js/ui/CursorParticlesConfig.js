@@ -29,7 +29,7 @@ export default {
     SPAWN_BIAS_SCALE: 0.25,
 
     // Movement / trail
-    MOVEMENT_DIST_THRESHOLD: 5,
+    MOVEMENT_DIST_THRESHOLD: 20,
     MOVEMENT_STEP_DIV: 8,
     MOVEMENT_MAX_STEPS: 6,
     MOVEMENT_BIAS_SCALE: 8,
