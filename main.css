@@ -81,6 +81,11 @@ html {
     -moz-osx-font-smoothing: grayscale;
 }
 
+html.cursor-hidden,
+html.cursor-hidden * {
+    cursor: none !important;
+}
+
 body {
     font-family: 'Merriweather', Georgia, 'Times New Roman', serif;
     font-weight: 400;

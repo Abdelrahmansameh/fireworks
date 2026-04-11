@@ -19,6 +19,7 @@ import AudioManager from '../audio/AudioManager.js';
 import GameMetrics from '../metrics/GameMetrics.js';
 import ProcduralBackground from '../entities/ProcduralBackground.js';
 import FireworkSystem from '../systems/FireworkSystem.js';
+import CursorParticles from '../ui/CursorParticles.js';
 
 class FireworkGame extends Engine {
     constructor() {
@@ -239,6 +240,8 @@ class FireworkGame extends Engine {
 
         this.ui.initializeRendererEvents();
         this.bindEvents();
+
+        this.cursorParticles = new CursorParticles(this.renderer2D);
     }
 
 
@@ -453,6 +456,7 @@ class FireworkGame extends Engine {
         } else if (this.currentState === 'creator') {
             this.updateCreator(delta);
         }
+        this.cursorParticles?.update(delta);
     }
 
     render() {
@@ -463,6 +467,7 @@ class FireworkGame extends Engine {
             if (this.previewRenderer) this.previewRenderer.drawFrame();
         }
         this.profiler.endFunction('drawFrame');
+        this.cursorParticles?.render();
     }
 
     getLauncherAt(x, y) {
