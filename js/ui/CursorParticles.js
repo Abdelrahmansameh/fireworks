@@ -16,6 +16,11 @@ class CursorParticles {
         this._idleTimer = 0;
         this._overUI = false;
 
+        // Grab / skeleton outline mode
+        this._grabOutlinePoints = null;  // {x,y}[] hull when grabbing, null otherwise
+        this._outlinePerimLength = 0;
+        this._outlineSpawnAccum = 0;
+
         // Start with hidden cursor; will restore when over UI elements
         document.documentElement.classList.add('cursor-hidden');
 
@@ -33,6 +38,69 @@ class CursorParticles {
         });
 
         this._init();
+
+        // Debug overlay — 2D canvas drawn over the WebGL canvas
+        // Enable from the browser console: window.debugSkeletonOutline = true
+        this._debugCanvas = null;
+        this._debugCtx = null;
+        this._initDebugCanvas();
+    }
+
+    _initDebugCanvas() {
+        const glCanvas = this._renderer.canvas;
+        const dbg = document.createElement('canvas');
+        dbg.style.position = 'absolute';
+        dbg.style.top = '0';
+        dbg.style.left = '0';
+        dbg.style.pointerEvents = 'none';
+        dbg.style.zIndex = '9998';
+        glCanvas.parentElement?.appendChild(dbg);
+        this._debugCanvas = dbg;
+        this._debugCtx = dbg.getContext('2d');
+        this._resizeDebugCanvas();
+        window.addEventListener('resize', () => this._resizeDebugCanvas());
+    }
+
+    _resizeDebugCanvas() {
+        if (!this._debugCanvas) return;
+        const glCanvas = this._renderer.canvas;
+        const rect = glCanvas.getBoundingClientRect();
+        this._debugCanvas.width  = rect.width;
+        this._debugCanvas.height = rect.height;
+        this._debugCanvas.style.width  = rect.width  + 'px';
+        this._debugCanvas.style.height = rect.height + 'px';
+    }
+
+    // -----------------------------------------------------------------------
+
+    /**
+     * Set (or clear) the skeleton outline to use for grab-mode particle spawning.
+     * @param {{x:number,y:number}[]|null} points — convex hull vertices, or null to disable
+     */
+    setGrabOutline(points) {
+        const newPoints = (points && points.length >= 2) ? points : null;
+        // Only reset the accumulator when switching between grab/no-grab, not every frame
+        const wasGrabbing = this._grabOutlinePoints !== null;
+        const isGrabbing  = newPoints !== null;
+        if (!wasGrabbing && isGrabbing) {
+            this._outlineSpawnAccum = 0;
+        }
+        this._grabOutlinePoints = newPoints;
+        if (!this._grabOutlinePoints) {
+            this._outlinePerimLength = 0;
+            return;
+        }
+        // Cache total perimeter length for uniform sampling
+        let len = 0;
+        const pts = this._grabOutlinePoints;
+        for (let i = 0; i < pts.length; i++) {
+            const a = pts[i];
+            const b = pts[(i + 1) % pts.length];
+            const dx = b.x - a.x;
+            const dy = b.y - a.y;
+            len += Math.sqrt(dx * dx + dy * dy);
+        }
+        this._outlinePerimLength = len;
     }
 
     // -----------------------------------------------------------------------
@@ -93,7 +161,7 @@ class CursorParticles {
         const my = this.mouseY;
         const offscreen = mx < cfg.OFFSCREEN_X_THRESHOLD;
 
-        if (!offscreen && !this._overUI) {
+        if (!offscreen && !this._overUI && !this._grabOutlinePoints) {
             // Initialise prev position on first valid frame
             if (this._prevX < cfg.PREV_INIT_THRESHOLD) {
                 this._prevX = mx;
@@ -128,7 +196,52 @@ class CursorParticles {
             }
         }
 
-        
+        // ---- Skeleton outline grab spawning ----
+        if (this._grabOutlinePoints && this._outlinePerimLength > 0) {
+            this._outlineSpawnAccum += dt;
+            const spawnCount = Math.floor(this._outlineSpawnAccum * cfg.OUTLINE_SPAWN_RATE);
+            if (spawnCount > 0) {
+                this._outlineSpawnAccum -= spawnCount / cfg.OUTLINE_SPAWN_RATE;
+                const pts = this._grabOutlinePoints;
+                const n = pts.length;
+                for (let s = 0; s < spawnCount; s++) {
+                    if (this._particles.length >= cfg.MAX_PARTICLES) break;
+                    // Pick a random distance along the perimeter
+                    let target = Math.random() * this._outlinePerimLength;
+                    let traveled = 0;
+                    for (let i = 0; i < n; i++) {
+                        const a = pts[i];
+                        const b = pts[(i + 1) % n];
+                        const edgeDx = b.x - a.x;
+                        const edgeDy = b.y - a.y;
+                        const edgeLen = Math.sqrt(edgeDx * edgeDx + edgeDy * edgeDy);
+                        if (traveled + edgeLen >= target || i === n - 1) {
+                            const t = edgeLen > 0 ? (target - traveled) / edgeLen : 0;
+                            const spawnX = a.x + edgeDx * t;
+                            const spawnY = a.y + edgeDy * t;
+                            // Outward normal: right-perpendicular of CCW edge (y-up)
+                            const nx = edgeLen > 0 ?  edgeDy / edgeLen : 0;
+                            const ny = edgeLen > 0 ? -edgeDx / edgeLen : 1;
+                            const isWhite = Math.random() < cfg.OUTLINE_COLOR_WHITE_PROB;
+                            const col = isWhite ? cfg.OUTLINE_COLOR_WHITE : cfg.OUTLINE_COLOR_CYAN;
+                            const speed = cfg.OUTLINE_PARTICLE_SPEED + Math.random() * cfg.OUTLINE_PARTICLE_SPEED_VAR;
+                            this._particles.push({
+                                x: spawnX,
+                                y: spawnY,
+                                vx: nx * speed,
+                                vy: ny * speed,
+                                life: cfg.OUTLINE_PARTICLE_LIFE,
+                                decay: cfg.OUTLINE_PARTICLE_DECAY,
+                                size: cfg.OUTLINE_PARTICLE_SIZE + Math.random() * cfg.OUTLINE_PARTICLE_SIZE_VAR,
+                                r: col[0], g: col[1], b: col[2],
+                            });
+                            break;
+                        }
+                        traveled += edgeLen;
+                    }
+                }
+            }
+        }
 
         // ---- Integrate & age particles ----
         for (let i = this._particles.length - 1; i >= 0; i--) {
@@ -153,8 +266,8 @@ class CursorParticles {
             this._group.addInstanceRaw(p.x, p.y, 0, s, s, p.r, p.g, p.b, alpha);
         }
 
-        // ---- Cursor glow dot ----
-        if (!offscreen && !this._overUI) {
+        // ---- Cursor glow dot (hidden in outline/grab mode) ----
+        if (!offscreen && !this._overUI && !this._grabOutlinePoints) {
             const wp = this._toWorld(mx, my);
             // Soft outer halo (slightly whitened)
             this._group.addInstanceRaw(
@@ -187,6 +300,44 @@ class CursorParticles {
     render() {
         // Rendering is handled automatically by renderer2D.drawFrame()
         // via the registered instanced group.
+
+        // ---- Debug: draw convex hull outline (enable with: window.debugSkeletonOutline = true) ----
+        const ctx = this._debugCtx;
+        if (!ctx) return;
+        ctx.clearRect(0, 0, this._debugCanvas.width, this._debugCanvas.height);
+
+        if (!window.debugSkeletonOutline) return;
+        if (!this._grabOutlinePoints || this._grabOutlinePoints.length < 2) return;
+
+        ctx.save();
+        ctx.strokeStyle = 'rgba(0, 255, 200, 0.9)';
+        ctx.lineWidth = 2;
+        ctx.setLineDash([5, 4]);
+        ctx.beginPath();
+        for (let i = 0; i < this._grabOutlinePoints.length; i++) {
+            const p = this._grabOutlinePoints[i];
+            const s = this._renderer.worldToScreen(p.x, p.y);
+            // worldToScreen returns client coords; offset by canvas rect
+            const rect = this._renderer.canvas.getBoundingClientRect();
+            const sx = s.x - rect.left;
+            const sy = s.y - rect.top;
+            if (i === 0) ctx.moveTo(sx, sy);
+            else         ctx.lineTo(sx, sy);
+        }
+        ctx.closePath();
+        ctx.stroke();
+
+        // Draw a small dot at each hull vertex
+        ctx.setLineDash([]);
+        ctx.fillStyle = 'rgba(255, 80, 255, 0.95)';
+        for (const p of this._grabOutlinePoints) {
+            const s = this._renderer.worldToScreen(p.x, p.y);
+            const rect = this._renderer.canvas.getBoundingClientRect();
+            ctx.beginPath();
+            ctx.arc(s.x - rect.left, s.y - rect.top, 4, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        ctx.restore();
     }
 }
 

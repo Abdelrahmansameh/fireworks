@@ -3,7 +3,7 @@ import * as Renderer2D from '../rendering/Renderer.js';
 import { createRng } from '../utils/random.js';
 import { SkeletonData } from '../animation/SkeletonData.js';
 import { AnimationData } from '../animation/AnimationData.js';
-import { computePose, applyPoseToInstances } from '../animation/SkeletonAnimator.js';
+import { computePose, applyPoseToInstances, computeSkeletonOutlinePoints } from '../animation/SkeletonAnimator.js';
 
 class Crowd {
     constructor(renderer2D) {
@@ -761,6 +761,46 @@ class Crowd {
 
     get isGrabbing() {
         return this.grabbedPersonIndex >= 0;
+    }
+
+    /**
+     * Return the world-space convex hull outline of the currently grabbed person's skeleton.
+     * Mirrors the scale/flip logic from _updateProceduralAnimation.
+     * Returns null if nobody is grabbed or the skeleton isn't loaded yet.
+     * @returns {{x:number,y:number}[]|null}
+     */
+    getGrabbedPersonOutlinePoints() {
+        if (this.grabbedPersonIndex < 0 || !this._skeleton || !this._animData) return null;
+
+        const person = this.people[this.grabbedPersonIndex];
+        const { clip, time } = this._getAnimForState(person);
+
+        let overlay = null;
+        if (person.overlayClipName !== null) {
+            const overlayClip = this._animData.getClip(person.overlayClipName);
+            if (overlayClip) {
+                overlay = {
+                    clip: overlayClip,
+                    time: person.overlayTimer,
+                    mode: 'override',
+                    boneMask: new Set(['arm_1_r', 'arm_1_l', 'pupil_l', 'pupil_r']),
+                };
+            }
+        }
+
+        const pose = computePose(this._skeleton, clip, time, null, overlay);
+
+        // Replicate the y-depth size factor from _updateProceduralAnimation
+        const scalingCfg = CROWD_CONFIG.scaling;
+        const minY = GAME_BOUNDS.CROWD_Y;
+        const maxY = GAME_BOUNDS.CROWD_Y + (CROWD_CONFIG.ySpread || 0);
+        let t = (maxY !== minY) ? (person.spawnY - minY) / (maxY - minY) : 0;
+        t = 1 - Math.max(0, Math.min(1, t));
+        const ySizeFactor = scalingCfg.minSize + (scalingCfg.maxSize - scalingCfg.minSize) * t;
+        const finalScale = person.scale * ySizeFactor;
+
+        const flipX = person.flipX;
+        return computeSkeletonOutlinePoints(this._skeleton, pose, person.x, person.y, finalScale, flipX);
     }
 
     tryGrab(wx, wy) {

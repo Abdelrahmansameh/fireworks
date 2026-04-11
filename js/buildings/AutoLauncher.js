@@ -3,7 +3,7 @@ import Firework from '../entities/Firework.js';
 import { GAME_BOUNDS } from '../config/config.js';
 import { SkeletonData, hexToRgb } from '../animation/SkeletonData.js';
 import { AnimationData } from '../animation/AnimationData.js';
-import { computePose, applyPoseToInstances } from '../animation/SkeletonAnimator.js';
+import { computePose, applyPoseToInstances, computeSkeletonOutlinePoints } from '../animation/SkeletonAnimator.js';
 import * as Renderer2D from '../rendering/Renderer.js';
 
 class AutoLauncher extends Building {
@@ -232,6 +232,28 @@ class AutoLauncher extends Building {
 
     get spawnInterval() {
         return this.config.baseSpawnInterval * (this.game.launcherStats?.spawnIntervalMultiplier ?? 1);
+    }
+
+    /**
+     * Return the world-space convex hull outline of this building's skeleton at its current pose.
+     * Returns null if the skeleton is not yet loaded.
+     * @returns {{x:number,y:number}[]|null}
+     */
+    getSkeletonOutlinePoints() {
+        if (!this._skeleton || !this._animData) return null;
+
+        const clip = this._animData.getClip(this._clipName) ?? null;
+        const time = clip
+            ? (clip.loop ? this._animTimer % clip.duration : Math.min(this._animTimer, clip.duration))
+            : 0;
+
+        let overlay = null;
+        if (this._overlayClip && this._overlayTimer < this._overlayClip.duration) {
+            overlay = { clip: this._overlayClip, time: this._overlayTimer, mode: 'additive', boneMask: null };
+        }
+
+        const pose = computePose(this._skeleton, clip, time, null, overlay);
+        return computeSkeletonOutlinePoints(this._skeleton, pose, this.x, this.y, this.config.skeletonScale ?? 1, 1);
     }
 
     update(deltaTime) {

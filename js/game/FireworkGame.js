@@ -456,6 +456,17 @@ class FireworkGame extends Engine {
         } else if (this.currentState === 'creator') {
             this.updateCreator(delta);
         }
+        // Update skeleton outline for cursor particles (crowd grab or building drag)
+        if (this.cursorParticles) {
+            let outline = null;
+            if (this.crowd?.isGrabbing) {
+                outline = this.crowd.getGrabbedPersonOutlinePoints();
+            } else if (this.ui?.isDragging && this.ui.draggingLauncher?.getSkeletonOutlinePoints) {
+                outline = this.ui.draggingLauncher.getSkeletonOutlinePoints();
+            }
+            this.cursorParticles.setGrabOutline(outline);
+        }
+
         this.cursorParticles?.update(delta);
     }
 

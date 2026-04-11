@@ -205,3 +205,93 @@ export function applyPoseToInstances(skeletonData, pose, instancedGroup, baseIns
         instancedGroup.updateInstanceColor(idx, cr, cg, cb, ca);
     }
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Skeleton outline helpers
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Convex hull of a set of 2D points via Andrew's Monotone Chain.
+ * Returns hull vertices in counter-clockwise order (y-up math convention).
+ * @param {{x:number,y:number}[]} pts
+ * @returns {{x:number,y:number}[]}
+ */
+function convexHull(pts) {
+    if (pts.length < 3) return pts.slice();
+    const sorted = pts.slice().sort((a, b) => a.x !== b.x ? a.x - b.x : a.y - b.y);
+    const cross = (O, A, B) => (A.x - O.x) * (B.y - O.y) - (A.y - O.y) * (B.x - O.x);
+
+    const lower = [];
+    for (const p of sorted) {
+        while (lower.length >= 2 && cross(lower[lower.length - 2], lower[lower.length - 1], p) <= 0)
+            lower.pop();
+        lower.push(p);
+    }
+    const upper = [];
+    for (let i = sorted.length - 1; i >= 0; i--) {
+        const p = sorted[i];
+        while (upper.length >= 2 && cross(upper[upper.length - 2], upper[upper.length - 1], p) <= 0)
+            upper.pop();
+        upper.push(p);
+    }
+    lower.pop();
+    upper.pop();
+    return lower.concat(upper);
+}
+
+/**
+ * Compute the world-space convex hull outline of all skeleton rectangle corners,
+ * using the same transform as applyPoseToInstances.
+ *
+ * @param {import('./SkeletonData.js').SkeletonData} skeletonData
+ * @param {Map<string,{x:number,y:number,rotation:number,scaleX:number,scaleY:number}>} pose — from computePose()
+ * @param {number} worldX — entity world X
+ * @param {number} worldY — entity world Y
+ * @param {number} scale  — entity scale
+ * @param {number} flipX  — 1 or -1
+ * @returns {{x:number,y:number}[]} convex hull vertices (empty if no parts)
+ */
+export function computeSkeletonOutlinePoints(skeletonData, pose, worldX, worldY, scale, flipX) {
+    const parts = skeletonData.parts;
+    const allCorners = [];
+
+    for (let i = 0; i < parts.length; i++) {
+        const part = parts[i];
+        const tf = pose.get(part.id);
+        if (!tf) continue;
+
+        const boneScaleX = tf.scaleX ?? 1;
+        const boneScaleY = tf.scaleY ?? 1;
+
+        const anchorOffX = part.anchorX * part.width;
+        const anchorOffY = part.anchorY * part.height;
+        const cosR = Math.cos(tf.rotation);
+        const sinR = Math.sin(tf.rotation);
+
+        // Mesh-space draw centre (matches applyPoseToInstances)
+        const meshDrawX = tf.x - (anchorOffX * cosR - anchorOffY * sinR);
+        const meshDrawY = tf.y - (anchorOffX * sinR + anchorOffY * cosR);
+
+        const cx = worldX + meshDrawX * flipX * scale;
+        const cy = worldY + meshDrawY * scale;
+
+        const hw = (part.width  * scale * boneScaleX) / 2;
+        const hh = (part.height * scale * boneScaleY) / 2;
+
+        // Rotation applied to draw — flipX mirrors the rotation sign (matches render)
+        const rot = tf.rotation * flipX;
+        const cosF = Math.cos(rot);
+        const sinF = Math.sin(rot);
+
+        // 4 corners of the rectangle
+        for (const [dx, dy] of [[hw, hh], [hw, -hh], [-hw, hh], [-hw, -hh]]) {
+            allCorners.push({
+                x: cx + dx * cosF - dy * sinF,
+                y: cy + dx * sinF + dy * cosF,
+            });
+        }
+    }
+
+    if (allCorners.length === 0) return [];
+    return convexHull(allCorners);
+}

@@ -55,5 +55,18 @@ export default {
     GLOW_CORE_SIZE: 8,
     GLOW_CORE_COLOR: [1.0, 1.0, 1.0],
     GLOW_CORE_ALPHA: 1.0,
+
+    // Grab / skeleton outline mode
+    OUTLINE_SPAWN_RATE: 80,          // particles per second distributed along the outline
+    OUTLINE_PARTICLE_SPEED: 30,      // base outward speed (world units/s)
+    OUTLINE_PARTICLE_SPEED_VAR: 50,  // extra random speed
+    // life must start at 1.0 — alpha = life², so starting below 1 makes particles dim from birth
+    OUTLINE_PARTICLE_LIFE: 1.0,
+    OUTLINE_PARTICLE_DECAY: 3.5,     // dies in ~0.28s (1.0 / 3.5)
+    OUTLINE_PARTICLE_SIZE: 4,
+    OUTLINE_PARTICLE_SIZE_VAR: 6,
+    OUTLINE_COLOR_CYAN: [0.28, 0.94, 1.0],
+    OUTLINE_COLOR_WHITE: [1.0, 1.0, 1.0],
+    OUTLINE_COLOR_WHITE_PROB: 0.2,
     
 };
