@@ -87,6 +87,14 @@ class CursorParticles {
         }
         this._grabOutlinePoints = newPoints;
         if (!this._grabOutlinePoints) {
+            // If we're clearing outline mode, remove any pending outline markers
+            for (const p of this._particles) {
+                if (p._outlinePending) {
+                    delete p._outlinePending;
+                    delete p._outlineTargetX; delete p._outlineTargetY;
+                    delete p._outlineNormalX; delete p._outlineNormalY;
+                }
+            }
             this._outlinePerimLength = 0;
             return;
         }
@@ -101,6 +109,60 @@ class CursorParticles {
             len += Math.sqrt(dx * dx + dy * dy);
         }
         this._outlinePerimLength = len;
+        // Repurpose existing free particles to become outline-approachers when entering grab mode
+        if (!wasGrabbing && isGrabbing) {
+            const pts = this._grabOutlinePoints;
+            const n = pts.length;
+            for (let pi = 0; pi < this._particles.length; pi++) {
+                const p = this._particles[pi];
+                // Find nearest point on the perimeter and the outward normal there
+                let bestDist2 = Infinity;
+                let tgtX = 0, tgtY = 0, nx = 0, ny = 1;
+                for (let j = 0; j < n; j++) {
+                    const a = pts[j];
+                    const b = pts[(j + 1) % n];
+                    const ex = b.x - a.x;
+                    const ey = b.y - a.y;
+                    const el2 = ex * ex + ey * ey;
+                    let t = 0;
+                    if (el2 > 0) {
+                        t = ((p.x - a.x) * ex + (p.y - a.y) * ey) / el2;
+                        if (t < 0) t = 0;
+                        else if (t > 1) t = 1;
+                    }
+                    const projX = a.x + ex * t;
+                    const projY = a.y + ey * t;
+                    const dx = p.x - projX;
+                    const dy = p.y - projY;
+                    const d2 = dx * dx + dy * dy;
+                    if (d2 < bestDist2) {
+                        bestDist2 = d2;
+                        tgtX = projX; tgtY = projY;
+                        const el = Math.sqrt(el2);
+                        if (el > 0) {
+                            nx = ey / el;
+                            ny = -ex / el;
+                        } else {
+                            nx = 0; ny = 1;
+                        }
+                    }
+                }
+                p._outlineTargetX = tgtX;
+                p._outlineTargetY = tgtY;
+                p._outlineNormalX = nx;
+                p._outlineNormalY = ny;
+                p._outlinePending = true;
+                // Give it an initial velocity pointing toward the target (speed scales with distance)
+                const dx = tgtX - p.x;
+                const dy = tgtY - p.y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                if (dist > 0) {
+                    const approachSpeed = Math.min(cfg.OUTLINE_PARTICLE_SPEED * 0.8, dist * cfg.OUTLINE_APPROACH_SPEED_FACTOR);
+                    p.vx = (dx / dist) * approachSpeed;
+                    p.vy = (dy / dist) * approachSpeed;
+                }
+            }
+        }
     }
 
     // -----------------------------------------------------------------------
@@ -246,6 +308,42 @@ class CursorParticles {
         // ---- Integrate & age particles ----
         for (let i = this._particles.length - 1; i >= 0; i--) {
             const p = this._particles[i];
+
+            // If this particle was repurposed to approach the outline, handle approach/arrival
+            if (this._grabOutlinePoints && p._outlinePending) {
+                const dxT = p._outlineTargetX - p.x;
+                const dyT = p._outlineTargetY - p.y;
+                const dist2T = dxT * dxT + dyT * dyT;
+                const arrivalDist = cfg.OUTLINE_ARRIVAL_DIST;
+                if (dist2T <= arrivalDist * arrivalDist) {
+                    // Snap to outline and convert into an outline particle (outward velocity)
+                    const nx = p._outlineNormalX ?? 0;
+                    const ny = p._outlineNormalY ?? 1;
+                    const speed = cfg.OUTLINE_PARTICLE_SPEED + Math.random() * cfg.OUTLINE_PARTICLE_SPEED_VAR;
+                    p.x = p._outlineTargetX;
+                    p.y = p._outlineTargetY;
+                    p.vx = nx * speed;
+                    p.vy = ny * speed;
+                    p.life = cfg.OUTLINE_PARTICLE_LIFE;
+                    p.decay = cfg.OUTLINE_PARTICLE_DECAY;
+                    p.size = cfg.OUTLINE_PARTICLE_SIZE + Math.random() * cfg.OUTLINE_PARTICLE_SIZE_VAR;
+                    const isGold = Math.random() < cfg.GOLD_PROBABILITY;
+                    const col = isGold ? cfg.COLOR_GOLD : cfg.COLOR_DEFAULT;
+                    p.r = col[0]; p.g = col[1]; p.b = col[2];
+                    // Clear outline pending markers
+                    delete p._outlinePending;
+                    delete p._outlineTargetX; delete p._outlineTargetY;
+                    delete p._outlineNormalX; delete p._outlineNormalY;
+                } else {
+                    // Continue approaching the target (speed scales with remaining distance, capped)
+                    const dist = Math.sqrt(dist2T);
+                    const approachSpeed = Math.min(cfg.OUTLINE_PARTICLE_SPEED * 0.8, dist * cfg.OUTLINE_APPROACH_SPEED_FACTOR);
+                    p.vx = (dxT / dist) * approachSpeed;
+                    p.vy = (dyT / dist) * approachSpeed;
+                }
+            }
+
+            // Integrate & age
             p.x += p.vx * dt;
             p.y += p.vy * dt;
             p.vy -= cfg.GRAVITY * dt;                         // gravity pulls down (world Y-up)

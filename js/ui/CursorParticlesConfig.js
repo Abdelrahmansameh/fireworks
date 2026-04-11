@@ -68,5 +68,10 @@ export default {
     OUTLINE_COLOR_CYAN: [1.0, 1.0, 1.0],
     OUTLINE_COLOR_WHITE: [1.0, 1.0, 1.0],
     OUTLINE_COLOR_WHITE_PROB: 0.2,
+    // When converting existing particles to outline particles:
+    // approach speed factor scales with distance when moving particles toward the outline
+    OUTLINE_APPROACH_SPEED_FACTOR: 8,
+    // Distance (world units) within which a particle snaps to the outline and converts
+    OUTLINE_ARRIVAL_DIST: 6,
     
 };
