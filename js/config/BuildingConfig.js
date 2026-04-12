@@ -79,7 +79,7 @@ export const BUILDING_TYPES = {
         baseFireInterval: 5,
         // Position — to the left of the crowd so launched members arc into the fireworks zone
         x: -1400,
-        y: -490,           // WORLD_GROUND_Y
+        y: -435,
         // Animation timing
         fireInterval: 6,   // seconds between shots (configurable)
         firingAnim: 'throwing',

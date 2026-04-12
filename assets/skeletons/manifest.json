@@ -29,6 +29,11 @@
       "id": "drone_hub",
       "name": "Drone Hub",
       "file": "drone_hub.json"
+    },
+    {
+      "id": "gold_ore",
+      "name": "Gold Ore",
+      "file": "gold_ore.json"
     }
   ]
 }

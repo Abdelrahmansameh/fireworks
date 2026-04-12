@@ -1,0 +1,18 @@
+{
+  "parts": [
+    {
+      "id": "RockBase",
+      "parentId": null,
+      "width": 3,
+      "height": 4,
+      "color": "323055",
+      "anchorX": 0.5,
+      "anchorY": 0.5,
+      "relX": 0,
+      "relY": 0,
+      "z": 0,
+      "baseRotation": 0
+    }
+  ],
+  "animations": {}
+}

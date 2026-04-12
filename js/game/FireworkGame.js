@@ -82,7 +82,7 @@ class FireworkGame extends Engine {
         this.launcherStats = { spawnIntervalMultiplier: 1, sparkleYieldMultiplier: 1 };
         this.generatorStats = { productionRateMultiplier: 1 };
         this.droneHubStats = { spawnIntervalMultiplier: 1 };
-        this.catapultStats = { maxCatapults: 1 };
+        this.catapultStats = { maxCatapults: 1, fireIntervalMultiplier: 1 };
 
         // Clear saves when version changes
         if (localStorage.getItem('saveVersion') !== SAVE_VERSION) {

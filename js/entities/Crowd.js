@@ -277,6 +277,7 @@ class Crowd {
             const clip = this._animData ? this._animData.getClip('cheering') : null;
             const baseDur = clip ? clip.duration : 1.0;
             person.animTimer = Math.random() * baseDur * 0.5;
+            person.flipX = 1;   
         } else {
             person.animTimer = 0;
         }

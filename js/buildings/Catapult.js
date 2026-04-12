@@ -16,7 +16,7 @@ class Catapult extends Building {
     constructor(game, x, y, data = {}) {
         super(game, 'CATAPULT', x, y, data);
 
-        this.accumulator = data.accumulator ?? this.config.baseFireInterval; // stagger first fire
+        this.accumulator = data.accumulator ?? Math.random() * this.fireInterval; // stagger first fire
 
         this._skeleton = null;
         this._animData = null;
@@ -126,6 +126,10 @@ class Catapult extends Building {
         return this.x + APPROACH_OFFSET_X;
     }
 
+    get fireInterval() {
+        return this.config.baseFireInterval * (this.game.catapultStats?.fireIntervalMultiplier ?? 1);
+    }
+
 
     update(deltaTime) {
         this._animTimer += deltaTime;
@@ -164,7 +168,7 @@ class Catapult extends Building {
 
                 if (this._animTimer >= clipDur) {
                     this._playClip('idle');
-                    this.accumulator = this.config.baseFireInterval;
+                    this.accumulator = this.fireInterval;
                     this._setState('cooldown');
                     this._assignedPersonIndex = -1;
                 }

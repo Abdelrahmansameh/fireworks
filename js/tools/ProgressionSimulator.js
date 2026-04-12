@@ -170,7 +170,10 @@ export class ProgressionSimulator {
 
             // Gold
             const crowdCount = this.mockGame.crowd.people.length;
-            const goldVal = crowdCount * BaseGoldDropsPerSecPerPerson * this.mockGame.crowdStats.goldRateMultiplier;
+            // People assigned to catapults don't toss coins (see Crowd.js gating by !person.catapultData).
+            // Approximate by removing one occupied person per catapult from gold generation.
+            const effectiveCrowd = Math.max(0, crowdCount - catapults);
+            const goldVal = effectiveCrowd * BaseGoldDropsPerSecPerPerson * this.mockGame.crowdStats.goldRateMultiplier;
             tickGPS += goldVal;
             this.productionBreakdown.gold.crowd += goldVal * tickSize;
 
