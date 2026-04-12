@@ -173,6 +173,41 @@ class DroneHub extends Building {
             accumulator: this.accumulator,
         };
     }
+
+    /**
+     * Hit test against the current skeleton outline if available, otherwise
+     * fall back to a simple bounding box based on configured width/height.
+     */
+    isPointInside(x, y) {
+        // Prefer a tight polygonal hull when the skeleton is ready
+        const outline = this.getSkeletonOutlinePoints();
+        if (outline && outline.length >= 3) {
+            // Ray-casting point-in-polygon
+            let inside = false;
+            for (let i = 0, j = outline.length - 1; i < outline.length; j = i++) {
+                const xi = outline[i].x, yi = outline[i].y;
+                const xj = outline[j].x, yj = outline[j].y;
+                const intersect = ((yi > y) !== (yj > y)) &&
+                    (x < (xj - xi) * (y - yi) / (yj - yi + 0.0) + xi);
+                if (intersect) inside = !inside;
+            }
+            return inside;
+        }
+
+        // Fallback: box based on configured width/height and skeleton scale
+        const scale = this.config.skeletonScale || 1.0;
+        const width = this.config.width * scale;
+        const height = this.config.height * scale;
+        const halfWidth = width / 2;
+
+        // Use same fallback alignment as other buildings (centered X, y..y+height in Y)
+        return (
+            x >= this.x - halfWidth &&
+            x <= this.x + halfWidth &&
+            y >= this.y &&
+            y <= this.y + height
+        );
+    }
 }
 
 export default DroneHub;

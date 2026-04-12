@@ -210,7 +210,7 @@ class ResourceGenerator extends Building {
                 particleColor,
                 particleSize,
                 particleLifetime,
-                130, // gravity
+                50, // gravity
                 'sphere',
                 new Renderer2D.Vector2(0, 0),
                 2.0, // friction

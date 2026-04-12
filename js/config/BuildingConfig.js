@@ -47,7 +47,7 @@ export const BUILDING_TYPES = {
         skeletonScale: 15,
         baseProductionRate: 3.0,
         sparkleTrailBaseCount: 6,
-        sparkleTrailScalingRatio: 0.5,
+        sparkleTrailScalingRatio: 0.25,
         maxSparkleTrailBurstCount: 100, 
         resourceType: 'sparkles',
         unlockId: 'resource_generator',

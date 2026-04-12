@@ -371,7 +371,7 @@ class CursorParticles {
                 } else {
                     // Continue approaching the target (speed scales with remaining distance, capped)
                     const dist = Math.sqrt(dist2T);
-                    const approachSpeed = Math.min(cfg.OUTLINE_PARTICLE_SPEED * 0.8, dist * cfg.OUTLINE_APPROACH_SPEED_FACTOR);
+                    const approachSpeed = dist * cfg.OUTLINE_APPROACH_SPEED_FACTOR;
                     p.vx = (dxT / dist) * approachSpeed;
                     p.vy = (dyT / dist) * approachSpeed;
                 }
