@@ -15,8 +15,8 @@
     {
       "id": "body",
       "parentId": "base",
-      "width": 1.3545976764374141,
-      "height": 1.6171251893586873,
+      "width": 1.427225730451705,
+      "height": 1.0990638143703855,
       "anchorX": 0,
       "anchorY": -0.5,
       "relX": 0,
@@ -27,7 +27,7 @@
     {
       "id": "glow",
       "parentId": "body",
-      "width": 1.2391640138408304,
+      "width": 1.5391640138408305,
       "height": 0.001,
       "color": "3c3fc3",
       "anchorX": 0,
@@ -53,15 +53,15 @@
     {
       "id": "body_outline",
       "parentId": "body",
-      "width": 1.754471147384964,
-      "height": 2.0171251893586875,
+      "width": 1.8272257304517052,
+      "height": 1.4990638143703854,
       "color": "000000",
       "anchorX": 0,
-      "anchorY": -0.40084898991143586,
+      "anchorY": -0.3665833981964263,
       "relX": 0,
       "relY": 0,
       "baseRotation": 0,
-      "z": -88
+      "z": -94
     }
   ],
   "animations": {
@@ -91,10 +91,10 @@
       "tracks": {
         "glow": [
           {
-            "time": 0.0065625,
+            "time": 0.0015625,
             "rotation": 0,
             "offsetX": 0,
-            "offsetY": -1.49,
+            "offsetY": -0.81,
             "scaleX": 1,
             "scaleY": 1,
             "r": 1,
@@ -105,10 +105,10 @@
           {
             "time": 1,
             "rotation": 0,
-            "offsetX": 0.01,
-            "offsetY": -0.67,
+            "offsetX": 0,
+            "offsetY": -0.37,
             "scaleX": 1,
-            "scaleY": 1650,
+            "scaleY": 900,
             "r": 1,
             "g": 1,
             "b": 1,

@@ -54,7 +54,7 @@ class Catapult extends Building {
                 texCoords: geometry.texCoords,
                 texture: null,
                 maxInstances: this._skeleton.partCount,
-                zIndex: 5,
+                zIndex: this.config.zIndex || 5,
                 blendMode: Renderer2D.BlendMode.NORMAL,
             });
 

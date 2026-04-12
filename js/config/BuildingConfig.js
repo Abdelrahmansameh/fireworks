@@ -28,6 +28,7 @@ export const BUILDING_TYPES = {
             showSpreadButton: true,
             showRandomizeButton: true,
         },
+        zIndex: 20,
     },
     RESOURCE_GENERATOR: {
         id: 'resource_generator',
@@ -57,6 +58,7 @@ export const BUILDING_TYPES = {
             showSpreadButton: false,
             showRandomizeButton: false,
         },
+        zIndex: 10,
     },
 
     CATAPULT: {
@@ -83,7 +85,7 @@ export const BUILDING_TYPES = {
         firingAnim: 'throwing',
         idleAnim: 'idle',
         // Rendering
-        zIndex: 5,
+        zIndex: 15,
         maxInstances: 20,  // 7 skeleton parts, but leave headroom
         unlockId: 'catapult',
         statId: 'stat-bld-catapult',
@@ -119,5 +121,6 @@ export const BUILDING_TYPES = {
             showSpreadButton: false,
             showRandomizeButton: false,
         },
+        zIndex: 12,
     }
 };

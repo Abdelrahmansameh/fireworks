@@ -40,7 +40,7 @@ class Building {
                 position: new Renderer2D.Vector2(this.x, yPos),
                 rotation: this.rotation,
                 scale: new Renderer2D.Vector2(this.scale, this.scale),
-                zIndex: 10,
+                zIndex: this.config.zIndex || 10,
                 blendMode: Renderer2D.BlendMode.NORMAL,
                 isStroke: false
             });
@@ -62,7 +62,7 @@ class Building {
                 position: new Renderer2D.Vector2(this.x, yPos),
                 rotation: this.rotation,
                 scale: new Renderer2D.Vector2(this.scale, this.scale),
-                zIndex: 20,
+                zIndex: this.config.zIndex || 20,
                 blendMode: Renderer2D.BlendMode.NORMAL,
                 isStroke: false
             });
