@@ -612,6 +612,12 @@ class FireworkGame extends Engine {
             this.particleSystem = new InstancedParticleSystem(this.renderer2D, this.profiler);
             // Re-point crowd at the fresh particle system
             if (this.crowd) this.crowd.particleSystem = this.particleSystem;
+            
+            if (this.droneSystem) {
+                this.droneSystem.dispose();
+            }
+            this.droneSystem = new InstancedDroneSystem(this.renderer2D, this.particleSystem);
+            this.droneSystem.maxDrones = this.droneStats.maxDrones;
         }
 
         this.autoLauncherCost = AUTO_LAUNCHER_COST_BASE;

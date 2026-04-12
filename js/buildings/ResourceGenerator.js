@@ -10,7 +10,7 @@ class ResourceGenerator extends Building {
         super(game, 'RESOURCE_GENERATOR', x, y, data);
 
         this.resourceType = data.resourceType || this.config.resourceType;
-        this.accumulator = data.accumulator || 0;
+        this.accumulator = Math.random() ;
 
         this._skeleton = null;
         this._animData = null;
@@ -100,8 +100,8 @@ class ResourceGenerator extends Building {
     _renderFrame() {
         if (!this._skeleton || !this._instancedGroup) return;
 
-        const clip = this._animData ? this._animData.getClip('idle') : null;
-
+        const clipName = (this.resourceType === 'sparkles') ? 'shooting' : 'idle';
+        const clip = this._animData ? this._animData.getClip(clipName) : null;
 
         const time = clip
             ? (clip.loop ? this.accumulator % clip.duration : Math.min(this.accumulator, clip.duration))
@@ -121,14 +121,53 @@ class ResourceGenerator extends Building {
     emitSparkleTrailBurst() {
         if (!this.game.particleSystem) return;
 
-        const burstCount = 15;
         const particleLifetime = 1;
+        const baseCount = this.config.sparkleTrailBaseCount ?? 15;
+        const scalingRatio = this.config.sparkleTrailScalingRatio ?? 1.0;
+        const productionMultiplier = (this.config.baseProductionRate > 0)
+            ? (this.productionRate / this.config.baseProductionRate)
+            : (this.game.generatorStats?.productionRateMultiplier ?? 1);
+        const burstCount = Math.min(this.config.maxSparkleTrailBurstCount, Math.max(1, Math.round(baseCount * (1 + (productionMultiplier - 1) * scalingRatio))));
+
         const particleSize = 1.5;
         const velocitySpread = 100;
 
 
-        const centerX = this.x;
-        const centerY = this.y + (this.config.skeletonScale);
+        // Compute spawn center from the skeleton's `roof` bone when available.
+        // Fallback to the old heuristic if skeleton data isn't ready.
+        let centerX = this.x;
+        let centerY = this.y + (this.config.skeletonScale) - 20;
+
+        if (this._skeleton && this._animData) {
+            const clipName = 'shooting';
+            const clip = this._animData ? this._animData.getClip(clipName) : null;
+            const time = clip
+                ? (clip.loop ? this.accumulator % clip.duration : Math.min(this.accumulator, clip.duration))
+                : 0;
+            const pose = computePose(this._skeleton, clip, time);
+
+            const roofPart = this._skeleton.getPart ? this._skeleton.getPart('body') : null;
+            const roofTf = pose.get && pose.get('body');
+            if (roofPart && roofTf) {
+                const anchorOffX = roofPart.anchorX * roofPart.width;
+                const anchorOffY = roofPart.anchorY * roofPart.height;
+                const cosR = Math.cos(roofTf.rotation);
+                const sinR = Math.sin(roofTf.rotation);
+
+                const meshDrawX = roofTf.x - (anchorOffX * cosR - anchorOffY * sinR);
+                const meshDrawY = roofTf.y - (anchorOffX * sinR + anchorOffY * cosR);
+
+                const scale = this.config.skeletonScale || 1;
+                const flipX = 1;
+
+                centerX = this.x + meshDrawX * flipX * scale;
+                centerY = this.y + meshDrawY * scale;
+
+                // Move the spawn point above the roof by an amount equal to the roof's height (in world units).
+                const worldPartHeight = roofPart.height * scale * (roofTf.scaleY ?? 1);
+                centerY += worldPartHeight - 5;
+            }
+        }
 
         for (let i = 0; i < burstCount; i++) {
             const randomColor = new Renderer2D.Color(
@@ -143,7 +182,7 @@ class ResourceGenerator extends Building {
             const risingSpeed = (Math.random() + 0.5) * 150;
             const velocity = new Renderer2D.Vector2(
                 Math.cos(angle) * randomSpread,
-                risingSpeed
+                risingSpeed - Math.random() * risingSpeed * 0.2
             );
 
             const position = new Renderer2D.Vector2(
@@ -175,6 +214,16 @@ class ResourceGenerator extends Building {
 
     getProductionRate() {
         return this.productionRate;
+    }
+
+    destroy() {
+        if (this._instancedGroup) {
+            this.game.renderer2D.removeInstancedGroup(this._instancedGroup);
+            this._instancedGroup = null;
+        }
+        this._skeleton = null;
+        this._animData = null;
+        super.destroy();
     }
 
     serialize() {

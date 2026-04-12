@@ -1,69 +1,100 @@
 {
   "parts": [
     {
-      "id": "core",
+      "id": "base",
       "parentId": null,
-      "width": 1,
-      "height": 1,
+      "width": 1.8211938418386648,
+      "height": 0.38986723249642197,
       "anchorX": 0,
-      "anchorY": 0,
-      "relX": 0,
-      "relY": 0,
-      "color": "cc88ff",
-      "z": 15
+      "anchorY": -0.5,
+      "relX": 0.0038343836566049347,
+      "relY": -0.03150706083576775,
+      "color": "9697cf",
+      "z": 10
     },
     {
-      "id": "Gradient",
-      "parentId": "core",
-      "width": 1,
-      "height": 0.0001,
-      "color": "a57fc3",
+      "id": "body",
+      "parentId": "base",
+      "width": 1.354471147384964,
+      "height": 1.6171251893586873,
       "anchorX": 0,
-      "anchorY": 0,
+      "anchorY": -0.5,
       "relX": 0,
-      "relY": 0,
-      "z": 0,
+      "relY": 1,
+      "color": "17184a",
+      "z": 12
+    },
+    {
+      "id": "glow",
+      "parentId": "body",
+      "width": 1.347294117647059,
+      "height": 0.001,
+      "color": "3c3fc3",
+      "anchorX": 0,
+      "anchorY": 1,
+      "relX": -0.0015190179621645322,
+      "relY": 0.9227926370073432,
+      "z": 100,
       "baseRotation": 0
     },
     {
-      "id": "core_outline",
-      "parentId": "core",
-      "width": 1.2,
-      "height": 1.2,
+      "id": "base_outline",
+      "parentId": "base",
+      "width": 2.221193841838665,
+      "height": 0.789867232496422,
       "color": "000000",
       "anchorX": 0,
-      "anchorY": 0,
+      "anchorY": -0.24679288901770463,
       "relX": 0,
       "relY": 0,
       "baseRotation": 0,
-      "z": -85
+      "z": -90
+    },
+    {
+      "id": "body_outline",
+      "parentId": "body",
+      "width": 1.754471147384964,
+      "height": 2.0171251893586875,
+      "color": "000000",
+      "anchorX": 0,
+      "anchorY": -0.40084898991143586,
+      "relX": 0,
+      "relY": 0,
+      "baseRotation": 0,
+      "z": -88
     }
   ],
   "animations": {
     "idle": {
+      "duration": 3,
+      "loop": true,
+      "tracks": {
+        "body": [
+          {
+            "time": 0,
+            "rotation": 0,
+            "offsetX": 0,
+            "offsetY": 0
+          },
+          {
+            "time": 3,
+            "rotation": 0,
+            "offsetX": 0,
+            "offsetY": 0
+          }
+        ]
+      }
+    },
+    "shooting": {
       "duration": 1,
       "loop": true,
       "tracks": {
-        "core": [
+        "glow": [
           {
-            "time": 0,
+            "time": 0.0065625,
             "rotation": 0,
             "offsetX": 0,
-            "offsetY": 0,
-            "scaleX": 1,
-            "scaleY": 1,
-            "r": 0.7,
-            "g": 0.6,
-            "b": 1,
-            "a": 0.7
-          }
-        ],
-        "Gradient": [
-          {
-            "time": 0,
-            "rotation": 0,
-            "offsetX": 0,
-            "offsetY": -0.5,
+            "offsetY": -1.49,
             "scaleX": 1,
             "scaleY": 1,
             "r": 1,
@@ -74,17 +105,18 @@
           {
             "time": 1,
             "rotation": 0,
-            "offsetX": 0,
-            "offsetY": 0,
+            "offsetX": 0.01,
+            "offsetY": -0.67,
             "scaleX": 1,
-            "scaleY": 10000,
+            "scaleY": 1650,
             "r": 1,
             "g": 1,
             "b": 1,
             "a": 1
           }
         ]
-      }
+      },
+      "props": []
     }
   }
 }
