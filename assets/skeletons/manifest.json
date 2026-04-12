@@ -24,6 +24,11 @@
       "id": "sparkle_generator",
       "name": "Sparkle Generator",
       "file": "sparkle_generator.json"
+    },
+    {
+      "id": "drone_hub",
+      "name": "Drone Hub",
+      "file": "drone_hub.json"
     }
   ]
 }

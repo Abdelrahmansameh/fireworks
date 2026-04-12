@@ -109,6 +109,8 @@ export const BUILDING_TYPES = {
         color: { r: 0.2, g: 0.7, b: 1.0, a: 1 },
         texture: null,
         textureKey: null,
+        skeletonUrl: 'assets/skeletons/drone_hub.json',
+        skeletonScale: 20,
         baseSpawnInterval: 12,
         baseDroneLifetime: 10,
         baseDroneSpeed: 600,

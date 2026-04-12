@@ -1,0 +1,18 @@
+{
+  "parts": [
+    {
+      "id": "Base",
+      "parentId": null,
+      "width": 1.11,
+      "height": 0.8099439446366783,
+      "color": "cfcfe3",
+      "anchorX": 0,
+      "anchorY": 0,
+      "relX": 0.001730103806228367,
+      "relY": 0.030311418685121105,
+      "z": 0,
+      "baseRotation": 0
+    }
+  ],
+  "animations": {}
+}
