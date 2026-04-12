@@ -30,7 +30,7 @@ export default {
 
     // Movement / trail
     MOVEMENT_DIST_THRESHOLD: 20,
-    MOVEMENT_STEP_DIV: 8,
+    MOVEMENT_STEP_DIV: 70,
     MOVEMENT_MAX_STEPS: 6,
     MOVEMENT_BIAS_SCALE: 8,
 
@@ -70,7 +70,7 @@ export default {
     GLOW_MULITPLIER_OUTLINE: 0.75,
 
     // Grab / skeleton outline mode
-    OUTLINE_SPAWN_RATE: 10,          // particles per second distributed along the outline
+    OUTLINE_SPAWN_RATE: 20,          // particles per second distributed along the outline
     OUTLINE_PARTICLE_SPEED: 30,      // base outward speed (world units/s)
     OUTLINE_PARTICLE_SPEED_VAR: 50,  // extra random speed
     // life must start at 1.0 — alpha = life², so starting below 1 makes particles dim from birth
@@ -86,5 +86,6 @@ export default {
     OUTLINE_APPROACH_SPEED_FACTOR: 8,
     // Distance (world units) within which a particle snaps to the outline and converts
     OUTLINE_ARRIVAL_DIST: 6,
+    OUTLINE_GRAVITY: 300,
     
 };

@@ -379,7 +379,8 @@ class CursorParticles {
 
             p.x += p.vx * dt;
             p.y += p.vy * dt;
-            p.vy -= cfg.GRAVITY * dt;
+            const gravity = this._grabOutlinePoints && this._outlinePerimLength > 0 ? cfg.OUTLINE_GRAVITY : cfg.GRAVITY;
+            p.vy -= gravity * dt;
             const f = Math.pow(cfg.FRICTION_BASE, dt * cfg.FRICTION_FPS);
             p.vx *= f;
             p.vy *= f;

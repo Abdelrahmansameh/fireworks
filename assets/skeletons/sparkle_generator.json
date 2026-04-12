@@ -10,24 +10,24 @@
       "relX": 0.0038343836566049347,
       "relY": -0.03150706083576775,
       "color": "9697cf",
-      "z": 10
+      "z": 15
     },
     {
       "id": "body",
       "parentId": "base",
-      "width": 1.354471147384964,
+      "width": 1.3545976764374141,
       "height": 1.6171251893586873,
       "anchorX": 0,
       "anchorY": -0.5,
       "relX": 0,
       "relY": 1,
       "color": "17184a",
-      "z": 12
+      "z": 6
     },
     {
       "id": "glow",
       "parentId": "body",
-      "width": 1.347294117647059,
+      "width": 1.2391640138408304,
       "height": 0.001,
       "color": "3c3fc3",
       "anchorX": 0,
@@ -48,7 +48,7 @@
       "relX": 0,
       "relY": 0,
       "baseRotation": 0,
-      "z": -90
+      "z": 10
     },
     {
       "id": "body_outline",

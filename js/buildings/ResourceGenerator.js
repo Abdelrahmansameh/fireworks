@@ -3,7 +3,7 @@ import * as Renderer2D from '../rendering/Renderer.js';
 import { PARTICLE_TYPES } from '../config/config.js';
 import { SkeletonData } from '../animation/SkeletonData.js';
 import { AnimationData } from '../animation/AnimationData.js';
-import { computePose, applyPoseToInstances } from '../animation/SkeletonAnimator.js';
+import { computePose, applyPoseToInstances, computeSkeletonOutlinePoints } from '../animation/SkeletonAnimator.js';
 
 class ResourceGenerator extends Building {
     constructor(game, x, y, data = {}) {
@@ -212,8 +212,95 @@ class ResourceGenerator extends Building {
         }
     }
 
+    /**
+     * Return the world-space convex hull outline of this building's skeleton at its current pose.
+     * Returns null if the skeleton is not yet loaded.
+     * @returns {{x:number,y:number}[]|null}
+     */
+    getSkeletonOutlinePoints() {
+        if (!this._skeleton || !this._animData) return null;
+
+        const clipName = (this.resourceType === 'sparkles') ? 'shooting' : 'idle';
+        const clip = this._animData ? this._animData.getClip(clipName) : null;
+        const time = clip
+            ? (clip.loop ? this.accumulator % clip.duration : Math.min(this.accumulator, clip.duration))
+            : 0;
+
+        const pose = computePose(this._skeleton, clip, time);
+        return computeSkeletonOutlinePoints(this._skeleton, pose, this.x, this.y, this.config.skeletonScale ?? 1, 1);
+    }
+
     getProductionRate() {
         return this.productionRate;
+    }
+
+    isPointInside(x, y) {
+        const scale = this.config.skeletonScale || 1.0;
+
+        if (this._skeleton && this._animData) {
+            const clipName = (this.resourceType === 'sparkles') ? 'shooting' : 'idle';
+            const clip = this._animData ? this._animData.getClip(clipName) : null;
+            const time = clip
+                ? (clip.loop ? this.accumulator % clip.duration : Math.min(this.accumulator, clip.duration))
+                : 0;
+
+            const pose = computePose(this._skeleton, clip, time);
+
+            let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+
+            for (let i = 0; i < this._skeleton.parts.length; i++) {
+                const part = this._skeleton.parts[i];
+                const tf = pose.get(part.id);
+                if (!tf) continue;
+
+                const anchorOffX = part.anchorX * part.width;
+                const anchorOffY = part.anchorY * part.height;
+                const cosR = Math.cos(tf.rotation);
+                const sinR = Math.sin(tf.rotation);
+
+                const meshDrawX = tf.x - (anchorOffX * cosR - anchorOffY * sinR);
+                const meshDrawY = tf.y - (anchorOffX * sinR + anchorOffY * cosR);
+
+                const centerX = this.x + meshDrawX * scale;
+                const centerY = this.y + meshDrawY * scale;
+
+                const halfW = (part.width * scale) / 2;
+                const halfH = (part.height * scale) / 2;
+
+                const corners = [
+                    [halfW, halfH],
+                    [halfW, -halfH],
+                    [-halfW, halfH],
+                    [-halfW, -halfH],
+                ];
+
+                for (const c of corners) {
+                    const dx = c[0], dy = c[1];
+                    const rx = dx * Math.cos(tf.rotation) - dy * Math.sin(tf.rotation);
+                    const ry = dx * Math.sin(tf.rotation) + dy * Math.cos(tf.rotation);
+                    const cx = centerX + rx;
+                    const cy = centerY + ry;
+                    if (cx < minX) minX = cx;
+                    if (cx > maxX) maxX = cx;
+                    if (cy < minY) minY = cy;
+                    if (cy > maxY) maxY = cy;
+                }
+            }
+
+            if (minX === Infinity) return false;
+            return x >= minX && x <= maxX && y >= minY && y <= maxY;
+        }
+
+        // Fallback: use boxed region based on configured width/height
+        const width = this.config.width * scale;
+        const height = this.config.height * scale;
+        const halfWidth = width / 2;
+        return (
+            x >= this.x - halfWidth &&
+            x <= this.x + halfWidth &&
+            y >= this.y &&
+            y <= this.y + height
+        );
     }
 
     destroy() {
