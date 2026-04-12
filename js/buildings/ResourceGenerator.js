@@ -1,7 +1,7 @@
 import Building from './Building.js';
 import * as Renderer2D from '../rendering/Renderer.js';
 import { PARTICLE_TYPES } from '../config/config.js';
-import { SkeletonData } from '../animation/SkeletonData.js';
+import { SkeletonData, hexToRgb } from '../animation/SkeletonData.js';
 import { AnimationData } from '../animation/AnimationData.js';
 import { computePose, applyPoseToInstances, computeSkeletonOutlinePoints } from '../animation/SkeletonAnimator.js';
 
@@ -165,21 +165,35 @@ class ResourceGenerator extends Building {
 
                 // Move the spawn point above the roof by an amount equal to the roof's height (in world units).
                 const worldPartHeight = roofPart.height * scale * (roofTf.scaleY ?? 1);
-                centerY += worldPartHeight - 5;
+                centerY += worldPartHeight - 10;
             }
         }
 
         for (let i = 0; i < burstCount; i++) {
-            const randomColor = new Renderer2D.Color(
-                Math.random(),
-                Math.random(),
-                Math.random(),
-                0.8
-            );
+            // Choose a color from a random recipe's first component color when available.
+            let particleColor = null;
+            try {
+                const recipes = Array.isArray(this.game?.recipes) ? this.game.recipes : null;
+                if (recipes && recipes.length > 0) {
+                    const ri = Math.floor(Math.random() * recipes.length);
+                    const recipe = recipes[ri];
+                    const comp = (recipe && Array.isArray(recipe.components) && recipe.components.length > 0) ? recipe.components[0] : null;
+                    if (comp && typeof comp.color === 'string') {
+                        const rgb = hexToRgb(comp.color);
+                        particleColor = new Renderer2D.Color(rgb.r, rgb.g, rgb.b, 0.8);
+                    }
+                }
+            } catch (e) {
+                // fall back to random color below
+            }
+
+            if (!particleColor) {
+                particleColor = new Renderer2D.Color(Math.random(), Math.random(), Math.random(), 0.8);
+            }
 
             const angle = Math.random() * Math.PI * 2;
             const randomSpread = Math.random() * velocitySpread;
-            const risingSpeed = (Math.random() + 0.5) * 150;
+            const risingSpeed = (Math.random() + 0.5) * 100;
             const velocity = new Renderer2D.Vector2(
                 Math.cos(angle) * randomSpread,
                 risingSpeed - Math.random() * risingSpeed * 0.2
@@ -193,7 +207,7 @@ class ResourceGenerator extends Building {
             this.game.particleSystem.addParticle(
                 position,
                 velocity,
-                randomColor,
+                particleColor,
                 particleSize,
                 particleLifetime,
                 130, // gravity
