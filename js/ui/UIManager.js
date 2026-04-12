@@ -471,6 +471,8 @@ class UIManager {
     }
 
     emitFloatingSparkleNumberBurst(screenX, screenY, color = null) {
+        return;
+        
         if (!this.game.particleSystem)
             return;
         const worldPos = this.game.screenToWorld(screenX, screenY);
@@ -625,7 +627,7 @@ class UIManager {
                 const shouldLaunch = !this.hasScrolledDuringDrag && !this.game.isClickInsideUI(e);
                 if (shouldLaunch) {
                     const worldPos = this.game.screenToWorld(e.clientX, e.clientY);
-                    const res = this.game.fireworkSystem.launchFireworkAt(worldPos.x, worldPos.y);
+                    const res = this.game.launchCursorCyclingFireworkAt(worldPos.x, worldPos.y);
                     if (res.sparkleAmount) {
                         const screenPos = this.game.renderer2D.worldToScreen(res.spawnX, res.spawnY);
                         this.showFloatingSparkle(e.clientX + 100, screenPos.y - 70, res.sparkleAmount, res.rocketColor);

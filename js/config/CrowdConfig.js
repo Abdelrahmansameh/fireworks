@@ -5,7 +5,7 @@ export const CROWD_CONFIG = {
         minSize: .9,
         maxSize: 1.25,
         seed: 12345,
-        formulaA: 0.71,  // tune crowd scaling so first crowd appears around ~2 fps
+        formulaA: 0.73, 
         formulaB: 0.0,
     },
 
@@ -18,7 +18,7 @@ export const CROWD_CONFIG = {
     // Instanced-group limits
     // We max out at 15000 instances to accommodate ~1000 people * 11 shapes per person
     maxInstances: 15000,
-    zIndex: -10,
+    zIndex: 100,
 
     // Spawn / positioning
     minOverlapDistance: 50,          // world-units — min spacing between people

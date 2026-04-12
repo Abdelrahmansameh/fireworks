@@ -91,8 +91,34 @@ class CursorParticles {
         }
         this._grabOutlinePoints = newPoints;
         if (!this._grabOutlinePoints) {
+            const core = this._toWorld(this.mouseX, this.mouseY);
             for (const p of this._particles) {
-                if (p._outlinePending) {
+                if (p._isOutline) {
+                    const dx = core.x - p.x;
+                    const dy = core.y - p.y;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    if (dist > 0) {
+                        const approachSpeed = Math.min(cfg.OUTLINE_PARTICLE_SPEED * 0.8, dist * cfg.OUTLINE_APPROACH_SPEED_FACTOR);
+                        p.vx = (dx / dist) * approachSpeed;
+                        p.vy = (dy / dist) * approachSpeed;
+                        p._outlineTargetX = core.x;
+                        p._outlineTargetY = core.y;
+                        const nx = (p.x - core.x) / dist;
+                        const ny = (p.y - core.y) / dist;
+                        p._outlineNormalX = nx;
+                        p._outlineNormalY = ny;
+                        p._outlinePending = true;
+                        // avoid reassigning repeatedly on subsequent setGrabOutline(null) calls
+                        delete p._isOutline;
+                    } else {
+                        // already at core: give a small outward kick
+                        const nx = 0, ny = 1;
+                        const speed2 = cfg.OUTLINE_PARTICLE_SPEED + Math.random() * cfg.OUTLINE_PARTICLE_SPEED_VAR;
+                        p.vx = nx * speed2;
+                        p.vy = ny * speed2;
+                        p.life = cfg.OUTLINE_PARTICLE_LIFE;
+                    }
+                } else if (p._outlinePending) {
                     delete p._outlinePending;
                     delete p._outlineTargetX; delete p._outlineTargetY;
                     delete p._outlineNormalX; delete p._outlineNormalY;
@@ -328,6 +354,7 @@ class CursorParticles {
                                 y: spawnY,
                                 vx: nx * speed,
                                 vy: ny * speed,
+                                _isOutline: true,
                                 life: cfg.OUTLINE_PARTICLE_LIFE,
                                 decay: cfg.OUTLINE_PARTICLE_DECAY,
                                 size: cfg.OUTLINE_PARTICLE_SIZE + Math.random() * cfg.OUTLINE_PARTICLE_SIZE_VAR,
@@ -345,7 +372,7 @@ class CursorParticles {
         for (let i = this._particles.length - 1; i >= 0; i--) {
             const p = this._particles[i];
 
-            if (this._grabOutlinePoints && p._outlinePending) {
+            if (p._outlinePending) {
                 const dxT = p._outlineTargetX - p.x;
                 const dyT = p._outlineTargetY - p.y;
                 const dist2T = dxT * dxT + dyT * dyT;
@@ -368,6 +395,7 @@ class CursorParticles {
                     delete p._outlinePending;
                     delete p._outlineTargetX; delete p._outlineTargetY;
                     delete p._outlineNormalX; delete p._outlineNormalY;
+                    if (p._isOutline) delete p._isOutline;
                 } else {
                     // Continue approaching the target (speed scales with remaining distance, capped)
                     const dist = Math.sqrt(dist2T);

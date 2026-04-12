@@ -1333,6 +1333,9 @@ legend {
     animation: floatUp 1.5s var(--ease-out) forwards;
     white-space: nowrap;
     transform: translate(-50%, -50%);
+        border-color: transparent;
+    background: hsla(220, 25%, 8%, 0.12);
+    backdrop-filter: blur(var(--glass-blur));
 }
 
 .floating-sparkle-inner {

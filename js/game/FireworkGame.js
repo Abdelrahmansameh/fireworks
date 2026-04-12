@@ -31,6 +31,7 @@ class FireworkGame extends Engine {
 
         this.recipes = [];
         this.currentRecipeComponents = [];
+        this.cursorRecipeIndex = 0; // index used for cycling recipes on cursor click (0 = default)
         this.autoLauncherCost = AUTO_LAUNCHER_COST_BASE;
         this.selectedLauncherIndex = null;
 
@@ -784,6 +785,42 @@ class FireworkGame extends Engine {
         this.ui.updateRecipeList(this.recipes, (index) => {
             this.selectRecipe(index);
         });
+    }
+
+    getCursorRecipeCount() {
+        return (Array.isArray(this.recipes) ? this.recipes.length : 0) + 1; // +1 for default
+    }
+
+    getCursorRecipeComponentsAt(index) {
+        // index 0 -> DEFAULT_RECIPE_COMPONENTS, index>0 -> recipes[index-1]
+        try {
+            if (index === 0) return JSON.parse(JSON.stringify(DEFAULT_RECIPE_COMPONENTS));
+            const recipe = this.recipes[index - 1];
+            if (recipe && Array.isArray(recipe.components)) return JSON.parse(JSON.stringify(recipe.components));
+        } catch (e) {
+            console.error('Failed to clone recipe components for cursor cycle:', e);
+        }
+        return JSON.parse(JSON.stringify(DEFAULT_RECIPE_COMPONENTS));
+    }
+
+    /**
+     * Launch a firework using the next recipe in the cursor-cycle (includes the default recipe).
+     * Returns the same result object as `fireworkSystem.launchFireworkAt`.
+     */
+    launchCursorCyclingFireworkAt(x, targetY = null) {
+        const count = this.getCursorRecipeCount();
+        if (count <= 0) {
+            // fallback to current components
+            return this.fireworkSystem.launchFireworkAt(x, targetY);
+        }
+        if (typeof this.cursorRecipeIndex !== 'number') this.cursorRecipeIndex = 0;
+        const usedIndex = this.cursorRecipeIndex;
+        const components = this.getCursorRecipeComponentsAt(usedIndex);
+
+        // advance index for next click
+        this.cursorRecipeIndex = (usedIndex + 1) % count;
+
+        return this.fireworkSystem.launchFireworkAt(x, targetY, null, components);
     }
 
     selectRecipe(index) {
