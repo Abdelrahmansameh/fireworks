@@ -138,15 +138,32 @@ class Crowd {
             }
         } else {
             const added = count - this.people.length;
+            const seedConfig = CROWD_CONFIG.scaling ? CROWD_CONFIG.scaling.seed : 12345;
+            const bias = CROWD_CONFIG.spawnBias || 2;
+            const leftX = GAME_BOUNDS.CROWD_LEFT_X;
+            const range = GAME_BOUNDS.CROWD_RIGHT_X - GAME_BOUNDS.CROWD_LEFT_X;
+
+            const spawnCandidates = [];
             for (let i = 0; i < added; i++) {
-                this._addPerson();
+                const idx = this.people.length + i;
+                const rng = createRng(seedConfig + idx);
+                const r = rng();
+                const candidate = leftX + (1 - Math.pow(r, bias)) * range;
+                spawnCandidates.push(candidate);
+            }
+
+            // Fill right-most positions first
+            spawnCandidates.sort((a, b) => b - a);
+
+            for (let i = 0; i < added; i++) {
+                this._addPerson(spawnCandidates[i]);
             }
         }
 
         this._reorderInstancesByY();
     }
 
-    _addPerson() {
+    _addPerson(spawnXOverride) {
         if (!this.instancedGroup) {
             this.missingCrowdsToInit++;
             return;
@@ -160,12 +177,23 @@ class Crowd {
         let positionFound = false;
         let attempts = 0;
         const maxAttempts = CROWD_CONFIG.maxPlacementAttempts;
+        const leftX = GAME_BOUNDS.CROWD_LEFT_X;
+        const rightX = GAME_BOUNDS.CROWD_RIGHT_X;
+        const range = rightX - leftX;
+        const bias = CROWD_CONFIG.spawnBias || 2;
 
         while (!positionFound && attempts < maxAttempts) {
-            x = rng() * (GAME_BOUNDS.CROWD_RIGHT_X - GAME_BOUNDS.CROWD_LEFT_X) + GAME_BOUNDS.CROWD_LEFT_X;
+            if (typeof spawnXOverride === 'number' && attempts === 0) {
+                x = spawnXOverride;
+            } else {
+                const r = rng();
+                x = leftX + (1 - Math.pow(r, bias)) * range;
+            }
+
             let overlapping = false;
             for (let i = 0; i < this.people.length; i++) {
-                if (Math.abs(this.people[i].x - x) < CROWD_CONFIG.minOverlapDistance) {
+                const otherX = (typeof this.people[i].spawnX === 'number') ? this.people[i].spawnX : this.people[i].x;
+                if (Math.abs(otherX - x) < CROWD_CONFIG.minOverlapDistance) {
                     overlapping = true;
                     break;
                 }
@@ -174,13 +202,19 @@ class Crowd {
             attempts++;
         }
 
+        if (!positionFound) {
+            x = leftX + (1 - Math.pow(rng(), bias)) * range;
+        }
+
         const y = GAME_BOUNDS.CROWD_Y + rng() * CROWD_CONFIG.ySpread;
         const scale = CROWD_CONFIG.baseScale + rng() * CROWD_CONFIG.scaleVariance;
 
         const group = this.instancedGroup;
 
+        const personStartX = GAME_BOUNDS.SCROLL_MAX_X + 1000 + (rng() * 400);
+
         const person = {
-            x: GAME_BOUNDS.SCROLL_MIN_X - 1000 - (rng() * 400),
+            x: personStartX,
             y: y,
             scale: scale,
             animTimer: rng() * Math.PI * 2,
@@ -195,7 +229,7 @@ class Crowd {
             coinAnimTimer: 0,
             collected: 0,
             bounceCount: 0,
-            flipX: 1,
+            flipX: x < personStartX ? -1 : 1,
             // Catapult interaction
             catapultData: null,
             // Overlay animation (e.g. coin toss on top of base state)

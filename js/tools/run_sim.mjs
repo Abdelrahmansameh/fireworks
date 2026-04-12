@@ -1,7 +1,7 @@
 
 import { ProgressionSimulator } from './ProgressionSimulator.js';
 const simulator = new ProgressionSimulator();
-const result = simulator.simulate(40, { clicksPerSec: 4, baseDroneYieldPerSec: 100, baseCatchYieldPerSec: 100 });
+const result = simulator.simulate(60, { clicksPerSec: 4, baseDroneYieldPerSec: 100, baseCatchYieldPerSec: 100 });
 result.events.forEach(e => {
     const m = Math.floor(e.time / 60).toString().padStart(2, '0');
     const s = (e.time % 60).toString().padStart(2, '0');

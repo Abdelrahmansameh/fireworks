@@ -26,6 +26,7 @@ export const CROWD_CONFIG = {
     ySpread: 70,                    // random Y offset below CROWD_Y
     baseScale: 8,
     scaleVariance: 0.4,             // scale = baseScale + random * scaleVariance
+    spawnBias: 2,                   // >1 biases spawn positions toward the rightmost side
 
     // Physics
     gravity: 2200,                  // world-units / s²
