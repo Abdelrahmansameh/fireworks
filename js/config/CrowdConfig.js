@@ -5,7 +5,7 @@ export const CROWD_CONFIG = {
         minSize: .9,
         maxSize: 1.25,
         seed: 12345,
-        formulaA: 0.73, 
+        formulaA: 1.5, 
         formulaB: 0.0,
     },
 

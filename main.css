@@ -1330,12 +1330,15 @@ legend {
     text-shadow:
         0 0 6px currentColor,
         0 1px 3px hsla(0, 0%, 0%, 0.6);
-    animation: floatUp 1.5s var(--ease-out) forwards;
+    /* No upward float: keep fixed on screen and control scale via CSS var */
     white-space: nowrap;
-    transform: translate(-50%, -50%);
-        border-color: transparent;
+    transform: translate(-50%, -50%) scale(var(--floating-scale, 1));
+    transition: opacity 2s var(--ease-out), transform 2s var(--ease-out);
+    opacity: 1;
+    border-color: transparent;
     background: hsla(220, 25%, 8%, 0.12);
     backdrop-filter: blur(var(--glass-blur));
+    padding: var(--sp-1);
 }
 
 .floating-sparkle-inner {
@@ -1344,6 +1347,11 @@ legend {
 
 .floating-sparkle-inner.shake {
     animation: sparkleShake 0.5s ease-out;
+}
+
+.floating-sparkle.fading {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.7);
 }
 
 @keyframes floatUp {

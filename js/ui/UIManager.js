@@ -24,6 +24,13 @@ class UIManager {
         this.notificationTimeout = null;
         this.activeFloatingSparkle = null;
         this.floatingSparkleTimeout = null;
+        this.floatingSparkleRemoveTimer = null;
+        // Floating sparkle fade/scale tuning
+        this.floatingSparkleFadeDelay = 500; // ms after last click before starting fade
+        this.floatingSparkleFadeDuration = 1500; // ms for fade transition (match CSS)
+        this.floatingSparkleStartScale = 0.75;
+        this.floatingSparkleScaleStep = 0.005;
+        this.floatingSparkleMaxScale = 1.3;
 
         this.pointerMoveHandler = this.pointerMoveHandler.bind(this);
         this.pointerUpHandler = this.pointerUpHandler.bind(this);
@@ -630,7 +637,7 @@ class UIManager {
                     const res = this.game.launchCursorCyclingFireworkAt(worldPos.x, worldPos.y);
                     if (res.sparkleAmount) {
                         const screenPos = this.game.renderer2D.worldToScreen(res.spawnX, res.spawnY);
-                        this.showFloatingSparkle(e.clientX + 100, screenPos.y - 70, res.sparkleAmount, res.rocketColor);
+                        this.showFloatingSparkle(e.clientX + 100, screenPos.y - 100, res.sparkleAmount, res.rocketColor);
                     }
                 }
             }
@@ -1671,7 +1678,49 @@ class UIManager {
 
     showFloatingSparkle(screenX, screenY, amount, rocketColor = null) {
         if (!this.showFloatingSparkleEnabled) return;
-        // If an active floating sparkle exists, update amount and trigger a shake.
+
+        const FADE_DELAY = this.floatingSparkleFadeDelay;
+        const FADE_DURATION = this.floatingSparkleFadeDuration;
+        const START_SCALE = this.floatingSparkleStartScale;
+        const SCALE_STEP = this.floatingSparkleScaleStep;
+        const MAX_SCALE = this.floatingSparkleMaxScale;
+
+        const removeElement = (elem) => {
+            if (!elem) return;
+            elem.remove();
+            if (this.activeFloatingSparkle === elem) {
+                this.activeFloatingSparkle = null;
+                this.floatingSparkleTimeout = null;
+                if (this.floatingSparkleRemoveTimer) {
+                    clearTimeout(this.floatingSparkleRemoveTimer);
+                    this.floatingSparkleRemoveTimer = null;
+                }
+            }
+        };
+
+        const scheduleFade = (elem) => {
+            if (this.floatingSparkleTimeout) {
+                clearTimeout(this.floatingSparkleTimeout);
+                this.floatingSparkleTimeout = null;
+            }
+            if (this.floatingSparkleRemoveTimer) {
+                clearTimeout(this.floatingSparkleRemoveTimer);
+                this.floatingSparkleRemoveTimer = null;
+            }
+            this.floatingSparkleTimeout = setTimeout(() => {
+                elem.classList.add('fading');
+                this.floatingSparkleRemoveTimer = setTimeout(() => removeElement(elem), FADE_DURATION);
+            }, FADE_DELAY);
+        };
+
+        const cancelFade = (elem) => {
+            if (this.floatingSparkleTimeout) { clearTimeout(this.floatingSparkleTimeout); this.floatingSparkleTimeout = null; }
+            if (this.floatingSparkleRemoveTimer) { clearTimeout(this.floatingSparkleRemoveTimer); this.floatingSparkleRemoveTimer = null; }
+            elem.classList.remove('fading');
+            elem.style.opacity = '';
+        };
+
+        // If an active floating sparkle exists, update amount, scale and trigger a shake.
         if (this.activeFloatingSparkle && document.body.contains(this.activeFloatingSparkle)) {
             const elem = this.activeFloatingSparkle;
 
@@ -1696,27 +1745,17 @@ class UIManager {
                 elem.style.color = typeof rocketColor === 'string' ? rocketColor : `rgb(${Math.round(rocketColor.r * 255)}, ${Math.round(rocketColor.g * 255)}, ${Math.round(rocketColor.b * 255)})`;
             }
 
-            const anims = elem.getAnimations();
-            let timeLeft = 1500;
-            if (anims.length > 0) {
-                const anim = anims[0];
-                anim.currentTime = Math.max(50, anim.currentTime - 250);
-                timeLeft = 1500 - anim.currentTime;
-            }
+            // update chain/scale
+            let chain = parseInt(elem.dataset.chain || '1', 10);
+            const maxChain = Math.max(1, Math.floor((MAX_SCALE - START_SCALE) / SCALE_STEP) + 1);
+            chain = Math.min(chain + 1, maxChain);
+            elem.dataset.chain = chain;
+            const scale = Math.min(MAX_SCALE, START_SCALE + (chain - 1) * SCALE_STEP);
+            elem.style.setProperty('--floating-scale', scale);
 
-            if (this.floatingSparkleTimeout) {
-                clearTimeout(this.floatingSparkleTimeout);
-            }
-
-            const remove = () => {
-                elem.remove();
-                if (this.activeFloatingSparkle === elem) {
-                    this.activeFloatingSparkle = null;
-                    this.floatingSparkleTimeout = null;
-                }
-            };
-            elem.onanimationend = (e) => { if (e.target === elem) remove(); };
-            this.floatingSparkleTimeout = setTimeout(remove, timeLeft + 100);
+            // cancel any fading and reschedule fade/removal
+            cancelFade(elem);
+            scheduleFade(elem);
 
             // trigger shake on inner span. Clear any previous timeout so
             // overlapping removals don't cancel a newly-started shake.
@@ -1742,6 +1781,7 @@ class UIManager {
         const elem = document.createElement('div');
         elem.className = 'floating-sparkle';
         elem.dataset.amount = amount;
+        elem.dataset.chain = '1';
 
         const inner = document.createElement('span');
         inner.className = 'floating-sparkle-inner';
@@ -1750,6 +1790,7 @@ class UIManager {
 
         elem.style.left = `${screenX}px`;
         elem.style.top = `${screenY}px`;
+        elem.style.setProperty('--floating-scale', START_SCALE);
         if (rocketColor) {
             elem.style.color = typeof rocketColor === 'string' ? rocketColor : `rgb(${Math.round(rocketColor.r * 255)}, ${Math.round(rocketColor.g * 255)}, ${Math.round(rocketColor.b * 255)})`;
         }
@@ -1757,15 +1798,10 @@ class UIManager {
         document.body.appendChild(elem);
         this.emitFloatingSparkleNumberBurst(screenX, screenY, rocketColor);
 
-        const remove = () => {
-            elem.remove();
-            this.activeFloatingSparkle = null;
-            this.floatingSparkleTimeout = null;
-        };
-        elem.onanimationend = (e) => { if (e.target === elem) remove(); };
-        this.floatingSparkleTimeout = setTimeout(remove, 1500);
-
         this.activeFloatingSparkle = elem;
+
+        // schedule fade/removal
+        scheduleFade(elem);
 
         // initial spawn shake — clear any previous timeout and schedule removal
         if (inner._shakeTimeout) {
