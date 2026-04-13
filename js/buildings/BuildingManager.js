@@ -83,7 +83,7 @@ class BuildingManager {
             x = Math.max(minX, Math.min(x, maxX));
         } else {
             const existing = this.getBuildingsByType(buildingType);
-            const spacing = 150;
+            const spacing = 350;
             const startX = GAME_BOUNDS.LAUNCHER_MIN_X + spacing;
             x = startX + existing.length * spacing;
 
@@ -218,7 +218,7 @@ class BuildingManager {
             return false;
         }
 
-        const minSpacing = 20;
+        const minSpacing = 50;
 
         for (const building of this.buildings) {
             if (building === excludeBuilding) continue;

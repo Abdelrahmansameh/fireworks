@@ -10,8 +10,8 @@ export function render(container) {
     panel.innerHTML = `
         <div class="crowd-info">
             <h3>Crowd Size: <span id="crowd-count">0</span></h3>
-            <p>Current Auto FPS: <span id="current-sps">0</span></p>
-            <p>Next Milestone: <span id="next-threshold">Loading...</span> Auto FPS</p>
+            <p>Current Fireworks: <span id="current-sps">0</span></p>
+            <p>Next Milestone: <span id="next-threshold">Loading...</span> Fireworks</p>
             <div class="progress-container">
                 <div id="threshold-progress" class="progress-bar"></div>
             </div>
