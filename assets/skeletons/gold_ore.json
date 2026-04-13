@@ -1,18 +1,177 @@
 {
   "parts": [
     {
-      "id": "RockBase",
+      "id": "rock_base",
       "parentId": null,
       "width": 3,
       "height": 4,
       "color": "323055",
-      "anchorX": 0.5,
-      "anchorY": 0.5,
+      "anchorX": 0,
+      "anchorY": -0.5,
       "relX": 0,
       "relY": 0,
-      "z": 0,
+      "z": 10,
       "baseRotation": 0
+    },
+    {
+      "id": "rock_base_outline",
+      "parentId": "rock_base",
+      "width": 3.4,
+      "height": 4.4,
+      "color": "000000",
+      "anchorX": 0,
+      "anchorY": -0.5,
+      "relX": 0,
+      "relY": 0,
+      "z": 3,
+      "baseRotation": 0
+    },
+    {
+      "id": "chip_tl",
+      "parentId": "rock_base",
+      "width": 0.6,
+      "height": 0.6,
+      "color": "4b3e78",
+      "anchorX": 0,
+      "anchorY": 0,
+      "relX": -0.45,
+      "relY": 0.9,
+      "z": 11
+    },
+    {
+      "id": "chip_tr",
+      "parentId": "rock_base",
+      "width": 0.55,
+      "height": 0.55,
+      "color": "4b3e78",
+      "anchorX": 0,
+      "anchorY": 0,
+      "relX": 0.45,
+      "relY": 0.85,
+      "z": 11
+    },
+    {
+      "id": "chip_bl",
+      "parentId": "rock_base",
+      "width": 0.6,
+      "height": 0.5,
+      "color": "4b3e78",
+      "anchorX": 0,
+      "anchorY": 0,
+      "relX": -0.35,
+      "relY": 0.18,
+      "z": 11
+    },
+    {
+      "id": "chip_br",
+      "parentId": "rock_base",
+      "width": 0.5,
+      "height": 0.5,
+      "color": "4b3e78",
+      "anchorX": 0,
+      "anchorY": 0,
+      "relX": 0.32,
+      "relY": 0.25,
+      "z": 11
+    },
+    {
+      "id": "gold_1",
+      "parentId": "rock_base",
+      "width": 0.35,
+      "height": 0.35,
+      "color": "f2c94c",
+      "anchorX": 0,
+      "anchorY": 0,
+      "relX": 0,
+      "relY": 0.75,
+      "z": 14
+    },
+    {
+      "id": "gold_1_outline",
+      "parentId": "gold_1",
+      "width": 0.5,
+      "height": 0.5,
+      "color": "000000",
+      "anchorX": 0,
+      "anchorY": 0,
+      "relX": 0,
+      "relY": 0,
+      "z": 13
+    },
+    {
+      "id": "gold_2",
+      "parentId": "rock_base",
+      "width": 0.32,
+      "height": 0.32,
+      "color": "f2c94c",
+      "anchorX": 0,
+      "anchorY": 0,
+      "relX": 0.32,
+      "relY": 0.6,
+      "z": 14
+    },
+    {
+      "id": "gold_2_outline",
+      "parentId": "gold_2",
+      "width": 0.46,
+      "height": 0.46,
+      "color": "000000",
+      "anchorX": 0,
+      "anchorY": 0,
+      "relX": 0,
+      "relY": 0,
+      "z": 13
+    },
+    {
+      "id": "gold_3",
+      "parentId": "rock_base",
+      "width": 0.28,
+      "height": 0.28,
+      "color": "f2c94c",
+      "anchorX": 0,
+      "anchorY": 0,
+      "relX": 0.05,
+      "relY": 0.35,
+      "z": 14
+    },
+    {
+      "id": "gold_3_outline",
+      "parentId": "gold_3",
+      "width": 0.42,
+      "height": 0.42,
+      "color": "000000",
+      "anchorX": 0,
+      "anchorY": 0,
+      "relX": 0,
+      "relY": 0,
+      "z": 13
     }
   ],
-  "animations": {}
+  "animations": {
+    "idle": {
+      "duration": 3,
+      "loop": true,
+      "tracks": {
+        "rock_base": [
+          { "time": 0, "rotation": 0, "offsetX": 0, "offsetY": 0 },
+          { "time": 3, "rotation": 0, "offsetX": 0, "offsetY": 0 }
+        ],
+        "gold_1": [
+          { "time": 0, "rotation": -0.06, "offsetX": 0, "offsetY": -0.02 },
+          { "time": 1.5, "rotation": 0.06, "offsetX": 0, "offsetY": 0.02 },
+          { "time": 3, "rotation": -0.06, "offsetX": 0, "offsetY": -0.02 }
+        ],
+        "gold_2": [
+          { "time": 0, "rotation": 0.04, "offsetX": 0, "offsetY": 0.01 },
+          { "time": 1.5, "rotation": -0.04, "offsetX": 0, "offsetY": -0.01 },
+          { "time": 3, "rotation": 0.04, "offsetX": 0, "offsetY": 0.01 }
+        ],
+        "gold_3": [
+          { "time": 0, "rotation": 0, "offsetX": 0, "offsetY": 0 },
+          { "time": 1.5, "rotation": 0.02, "offsetX": 0, "offsetY": 0.005 },
+          { "time": 3, "rotation": 0, "offsetX": 0, "offsetY": 0 }
+        ]
+      }
+    }
+  }
 }

@@ -1,12 +1,14 @@
 export const CROWD_CONFIG = {
     // Scaling
     scaling: {
-        formula: 'linear',
-        minSize: .9,
+        formula: 'power_fireworks',
+        formulaA: 0.35,
+        formulaExp: 0.5,
+        formulaOffset: 700,
+        formulaB: 0,
+        minSize: 0.9,
         maxSize: 1.25,
         seed: 12345,
-        formulaA: 1.5, 
-        formulaB: 0.0,
     },
 
     // Sprite geometry
@@ -36,7 +38,7 @@ export const CROWD_CONFIG = {
     walkArrivalDistance: 3,         // close-enough to stop walking
 
     // Grab / throw interaction
-    pickRadius: 35,                 // world-units — max cursor-to-person dist for grab
+    pickRadius: 60,                 // world-units — max cursor-to-person dist for grab (slightly increased)
     cursorHistorySize: 6,           // samples kept for launch-velocity estimation
     minDtForVelocity: 0.005,       // seconds — ignore tiny dt to avoid div-by-zero
     maxThrowSpeedSquared: 2500 * 2500, // world-units²/s² — cap launch speed to prevent extreme throws

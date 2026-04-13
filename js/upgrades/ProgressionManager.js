@@ -242,7 +242,7 @@ class ProgressionManager {
 
         for (const def of this._upgrades.values()) {
             const level = this.getUpgradeLevel(def.id);
-            if (level > 0) def.apply(game, level);
+            for (let i = 1; i <= level; i++) def.apply(game, i);
         }
 
         if (game.droneSystem) game.droneSystem.maxDrones = game.droneStats.maxDrones;

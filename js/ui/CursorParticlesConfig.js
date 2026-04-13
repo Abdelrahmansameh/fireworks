@@ -61,10 +61,10 @@ export default {
     SIZE_SCALE: 2.2,
 
     // Glow / ring
-    GLOW_OUTER_SIZE: 30,
+    GLOW_OUTER_SIZE: 70,
     GLOW_OUTER_COLOR: [1.0, 0.856, 0.564],
     GLOW_OUTER_ALPHA: 0.55,
-    GLOW_CORE_SIZE: 8,
+    GLOW_CORE_SIZE: 20,
     GLOW_CORE_COLOR: [1.0, 0.856, 0.264],
     GLOW_CORE_ALPHA: 1.0,
     GLOW_MULITPLIER_OUTLINE: 0.75,

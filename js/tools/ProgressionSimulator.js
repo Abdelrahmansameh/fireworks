@@ -71,17 +71,16 @@ export class ProgressionSimulator {
     }
 
     syncCrowd() {
-        const fps = this.getLauncherFPS();
         const config = CROWD_CONFIG.scaling;
-        const maxCap = CROWD_CONFIG.maxInstances || 1000;
+        const totalFireworks = Math.floor(this.mockGame.fireworkSystem.fireworkCount ?? 0);
         const bonus = this.mockGame.crowdStats.countBonus || 0;
+        const maxCap = CROWD_CONFIG.maxInstances || 1000;
+        const offset = config.formulaOffset ?? 0;
         
-        let target = bonus;
-        if (fps > 0) {
-            target = Math.floor(config.formulaA * Math.sqrt(fps) + config.formulaB) + bonus;
-        }
-        
-        const newCount = Math.min(target, maxCap);
+        const newCount = Math.min(
+            Math.floor(config.formulaA * Math.pow(Math.max(0, totalFireworks - offset), config.formulaExp)) + config.formulaB + bonus,
+            maxCap
+        );
         const prevCount = this.mockGame.crowd.people.length || 0;
         this.mockGame.crowd.people.length = newCount;
 
@@ -120,6 +119,20 @@ export class ProgressionSimulator {
         const BaseCatchYieldPerSec = parseFloat(inputs.baseCatchYieldPerSec) || 0;
         const BaseGoldDropsPerSecPerPerson = 1 / 5; // roughly 1 gold every 5 seconds per person as base?
 
+        // Per-minute accumulation counters (reset each minute and emitted as events)
+        const minuteAcc = {
+            sparkles: {
+                clicks: 0,
+                launchers: 0,
+                generators: 0,
+                drones: 0,
+                crowdCatching: 0
+            },
+            gold: {
+                crowd: 0
+            }
+        };
+
         for (let t = 0; t < totalTicks; t++) {
             this.time += tickSize;
 
@@ -131,13 +144,16 @@ export class ProgressionSimulator {
             const clickVal = ClicksPerSec * this.mockGame.baseSparkleMultiplier;
             tickSPS += clickVal;
             this.productionBreakdown.sparkles.clicks += clickVal * tickSize;
+            minuteAcc.sparkles.clicks += clickVal * tickSize;
 
             // Launchers (roughly assuming each firework gives baseSparkleMultiplier immediately for simplicity)
             const fps = this.getLauncherFPS();
             const launcherVal = fps * this.mockGame.baseSparkleMultiplier * this.mockGame.launcherStats.sparkleYieldMultiplier;
             tickSPS += launcherVal;
             this.productionBreakdown.sparkles.launchers += launcherVal * tickSize;
-            this.mockGame.fireworkSystem.fireworkCount += fps * tickSize; // Simulate firework count going up
+            minuteAcc.sparkles.launchers += launcherVal * tickSize;
+            this.mockGame.fireworkSystem.fireworkCount += (fps + ClicksPerSec) * tickSize; // clicks + launchers both fire fireworks
+            this.syncCrowd(); // crowd grows with total fireworks launched
 
             // Generators
             const gens = this.mockGame.buildingManager.getBuildingsByType('RESOURCE_GENERATOR').length;
@@ -145,6 +161,7 @@ export class ProgressionSimulator {
             const genVal = gens * genBase * this.mockGame.generatorStats.productionRateMultiplier;
             tickSPS += genVal;
             this.productionBreakdown.sparkles.generators += genVal * tickSize;
+            minuteAcc.sparkles.generators += genVal * tickSize;
 
             // Drones
             const droneHubs = this.mockGame.buildingManager.getBuildingsByType('DRONE_HUB').length;
@@ -156,6 +173,7 @@ export class ProgressionSimulator {
                 const droneVal = maxActiveDrones * BaseDroneYieldPerSec * this.mockGame.droneStats.sparklesPerParticleMultiplier;
                 tickSPS += droneVal;
                 this.productionBreakdown.sparkles.drones += droneVal * tickSize;
+                minuteAcc.sparkles.drones += droneVal * tickSize;
             }
 
             // Crowd Catching
@@ -166,6 +184,7 @@ export class ProgressionSimulator {
                 const catchVal = activeCatchers * BaseCatchYieldPerSec * this.mockGame.crowdStats.sparklesPerParticleMultiplier * this.mockGame.crowdStats.collectionRadiusMultiplier;
                 tickSPS += catchVal;
                 this.productionBreakdown.sparkles.crowdCatching += catchVal * tickSize;
+                minuteAcc.sparkles.crowdCatching += catchVal * tickSize;
             }
 
             // Gold
@@ -176,12 +195,40 @@ export class ProgressionSimulator {
             const goldVal = effectiveCrowd * BaseGoldDropsPerSecPerPerson * this.mockGame.crowdStats.goldRateMultiplier;
             tickGPS += goldVal;
             this.productionBreakdown.gold.crowd += goldVal * tickSize;
+            minuteAcc.gold.crowd += goldVal * tickSize;
 
             this.currentSPS = tickSPS;
             this.currentGPS = tickGPS;
 
             this.mockGame.resourceManager.resources.sparkles.add(tickSPS * tickSize);
             this.mockGame.resourceManager.resources.gold.add(tickGPS * tickSize);
+
+            // Emit a per-minute report event when a minute completes
+            if (this.time % 60 === 0) {
+                const minuteNum = Math.floor(this.time / 60);
+                const s = minuteAcc.sparkles;
+                const g = minuteAcc.gold;
+
+                const sparklesParts = [
+                    `clicks ${Math.round(s.clicks)}`,
+                    `launchers ${Math.round(s.launchers)}`,
+                    `generators ${Math.round(s.generators)}`,
+                    `drones ${Math.round(s.drones)}`,
+                    `crowdCatch ${Math.round(s.crowdCatching)}`
+                ].join(', ');
+
+                const goldPart = `crowd ${Math.round(g.crowd)}`;
+
+                this.events.push({ time: this.time, type: 'minute', label: `Minute ${minuteNum}: Sparkles — ${sparklesParts}; Gold — ${goldPart}` });
+
+                // reset minute accumulators
+                minuteAcc.sparkles.clicks = 0;
+                minuteAcc.sparkles.launchers = 0;
+                minuteAcc.sparkles.generators = 0;
+                minuteAcc.sparkles.drones = 0;
+                minuteAcc.sparkles.crowdCatching = 0;
+                minuteAcc.gold.crowd = 0;
+            }
 
             // 2. Check Progression Unlocks
             const unlocked = this.progression.tick(this.mockGame);
