@@ -138,32 +138,15 @@ class Crowd {
             }
         } else {
             const added = count - this.people.length;
-            const seedConfig = CROWD_CONFIG.scaling ? CROWD_CONFIG.scaling.seed : 12345;
-            const bias = CROWD_CONFIG.spawnBias || 2;
-            const leftX = GAME_BOUNDS.CROWD_LEFT_X;
-            const range = GAME_BOUNDS.CROWD_RIGHT_X - GAME_BOUNDS.CROWD_LEFT_X;
-
-            const spawnCandidates = [];
             for (let i = 0; i < added; i++) {
-                const idx = this.people.length + i;
-                const rng = createRng(seedConfig + idx);
-                const r = rng();
-                const candidate = leftX + (1 - Math.pow(r, bias)) * range;
-                spawnCandidates.push(candidate);
-            }
-
-            // Fill right-most positions first
-            spawnCandidates.sort((a, b) => b - a);
-
-            for (let i = 0; i < added; i++) {
-                this._addPerson(spawnCandidates[i]);
+                this._addPerson();
             }
         }
 
         this._reorderInstancesByY();
     }
 
-    _addPerson(spawnXOverride) {
+    _addPerson() {
         if (!this.instancedGroup) {
             this.missingCrowdsToInit++;
             return;
@@ -173,27 +156,50 @@ class Crowd {
         const seedConfig = CROWD_CONFIG.scaling ? CROWD_CONFIG.scaling.seed : 12345;
         const rng = createRng(seedConfig + personIndex);
 
-        let x;
+        // Slot-based placement: fill rightmost column first (leftX = -100),
+        // top-to-bottom within each column, then advance leftwards.
+        const leftX  = GAME_BOUNDS.CROWD_LEFT_X;   // right edge of crowd area (-100)
+        const rightX = GAME_BOUNDS.CROWD_RIGHT_X;  // left  edge of crowd area (-1200)
+        const xSlotSpacing = CROWD_CONFIG.xSlotSpacing ?? 72;
+        const numRows      = Math.max(1, CROWD_CONFIG.slotRows ?? 3);
+        const rowSpacing   = numRows > 1 ? CROWD_CONFIG.ySpread / (numRows - 1) : 0;
+        const jitterFracX  = CROWD_CONFIG.slotJitterX ?? 0.38;
+        const jitterFracY  = CROWD_CONFIG.slotJitterY ?? 0.50;
+
+        // Tile columns so persons beyond the first wave still spread naturally
+        const xRange  = leftX - rightX; // positive span (e.g. 1100)
+        const maxCols = Math.max(1, Math.floor(xRange / xSlotSpacing));
+        const col       = Math.floor(personIndex / numRows);
+        const row       = personIndex % numRows;
+        const effCol    = col % maxCols;
+        // Each wrap-around layer nudges slightly so stacked layers don't align
+        const wrapLayer = Math.floor(col / maxCols);
+
+        // x: start at right edge (leftX), step left (-x direction) with each column
+        const xSlot = leftX - effCol * xSlotSpacing;
+        // y: top of crowd area first, downward with each row
+        const yTop  = GAME_BOUNDS.CROWD_Y;
+        const ySlot = yTop + row * rowSpacing + wrapLayer * (rowSpacing > 0 ? rowSpacing * 0.4 : CROWD_CONFIG.ySpread * 0.15);
+
+        let x, y;
         let positionFound = false;
         let attempts = 0;
         const maxAttempts = CROWD_CONFIG.maxPlacementAttempts;
-        const leftX = GAME_BOUNDS.CROWD_LEFT_X;
-        const rightX = GAME_BOUNDS.CROWD_RIGHT_X;
-        const range = rightX - leftX;
-        const bias = CROWD_CONFIG.spawnBias || 2;
+        const yJitterAmt  = rowSpacing > 0 ? rowSpacing * jitterFracY : CROWD_CONFIG.ySpread * 0.4;
 
         while (!positionFound && attempts < maxAttempts) {
-            if (typeof spawnXOverride === 'number' && attempts === 0) {
-                x = spawnXOverride;
-            } else {
-                const r = rng();
-                x = leftX + (1 - Math.pow(r, bias)) * range;
-            }
+            const jx = (rng() * 2 - 1) * xSlotSpacing * jitterFracX;
+            const jy = (rng() * 2 - 1) * yJitterAmt;
+            x = Math.max(rightX, Math.min(leftX, xSlot + jx));
+            y = Math.max(yTop,   Math.min(yTop + CROWD_CONFIG.ySpread, ySlot + jy));
 
             let overlapping = false;
             for (let i = 0; i < this.people.length; i++) {
                 const otherX = (typeof this.people[i].spawnX === 'number') ? this.people[i].spawnX : this.people[i].x;
-                if (Math.abs(otherX - x) < CROWD_CONFIG.minOverlapDistance) {
+                const otherY = (typeof this.people[i].spawnY === 'number') ? this.people[i].spawnY : this.people[i].y;
+                const yThreshold = Math.max(1, rowSpacing) * 0.65;
+                if (Math.abs(otherX - x) < CROWD_CONFIG.minOverlapDistance &&
+                    Math.abs(otherY - y) < yThreshold) {
                     overlapping = true;
                     break;
                 }
@@ -203,10 +209,10 @@ class Crowd {
         }
 
         if (!positionFound) {
-            x = leftX + (1 - Math.pow(rng(), bias)) * range;
+            x = Math.max(rightX, Math.min(leftX, xSlot));
+            y = Math.max(yTop,   Math.min(yTop + CROWD_CONFIG.ySpread, ySlot));
         }
 
-        const y = GAME_BOUNDS.CROWD_Y + rng() * CROWD_CONFIG.ySpread;
         const scale = CROWD_CONFIG.baseScale + rng() * CROWD_CONFIG.scaleVariance;
 
         const group = this.instancedGroup;

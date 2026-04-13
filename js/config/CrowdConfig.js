@@ -30,6 +30,12 @@ export const CROWD_CONFIG = {
     scaleVariance: 0.4,             // scale = baseScale + random * scaleVariance
     spawnBias: 2,                   // >1 biases spawn positions toward the rightmost side
 
+    // Slot-based placement (right-to-left columns, top-to-bottom rows)
+    xSlotSpacing: 72,               // world-units between slot columns (right→left)
+    slotRows: 3,                    // rows per column (top→bottom within ySpread)
+    slotJitterX: 0.38,              // jitter fraction of xSlotSpacing
+    slotJitterY: 0.50,              // jitter fraction of row spacing
+
     // Physics
     gravity: 2200,                  // world-units / s²
     friction: 1.0,                  // air-resistance damping factor (v *= e^(-friction*dt))
