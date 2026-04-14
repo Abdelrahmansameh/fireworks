@@ -34,6 +34,11 @@
       "id": "gold_ore",
       "name": "Gold Ore",
       "file": "gold_ore.json"
+    },
+    {
+      "id": "alien",
+      "name": "Alien",
+      "file": "alien.json"
     }
   ]
 }
