@@ -202,7 +202,8 @@ class Catapult extends Building {
         const crowd = this.game.crowd;
         if (!crowd || this._assignedPersonIndex < 0) return;
 
-        crowd.launchPersonFromCatapult(this._assignedPersonIndex, LAUNCH_VX, LAUNCH_VY);
+        const vxMult = this.game.catapultStats?.launchVxMultiplier ?? 1;
+        crowd.launchPersonFromCatapult(this._assignedPersonIndex, LAUNCH_VX * vxMult, LAUNCH_VY);
         this._assignedPersonIndex = -1;
     }
 

@@ -1,7 +1,7 @@
 [
   { "name": "Crimson Bloom", "components": [ { "pattern": "spherical", "color": "#B71C28", "secondaryColor": "#F4A6A6", "size": 0.35, "lifetime": 3.0, "shape": "sphere", "spread": 0.9 } ] },
   { "name": "Azure Burst",  "components": [ { "pattern": "burst", "color": "#3A89C9", "secondaryColor": "#BEE8FF", "size": 0.32, "lifetime": 3.2, "shape": "sphere", "spread": 0.8 } ] },
-  { "name": "Verdant Spark", "components": [ { "pattern": "ring", "color": "#335b99", "secondaryColor": "#CFEFDE", "size": 0.28, "lifetime": 2.8, "shape": "sphere", "spread": 0.85 } ] },
+  { "name": "Verdant Spark", "components": [ { "pattern": "ring", "color": "#ee53b5", "secondaryColor": "#CFEFDE", "size": 0.28, "lifetime": 2.8, "shape": "sphere", "spread": 0.85 } ] },
   { "name": "Golden Ring",  "components": [ { "pattern": "palm", "color": "#D6AA6A", "secondaryColor": "#F6E4C9", "size": 0.4,  "lifetime": 3.5, "shape": "ring",  "spread": 0.7 } ] },
   { "name": "Violet Helix", "components": [ { "pattern": "star", "color": "#9A5BC6", "secondaryColor": "#EBD7FF", "size": 0.3,  "lifetime": 3.1, "shape": "star",  "spread": 0.9 } ] },
   { "name": "Coral Star",   "components": [ { "pattern": "willow", "color": "#E86F5A", "secondaryColor": "#FFD8C7", "size": 0.33, "lifetime": 3.0, "shape": "star",  "spread": 0.8 } ] },

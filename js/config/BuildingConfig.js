@@ -1,5 +1,5 @@
 export const AUTO_LAUNCHER_COST_BASE = 50;
-export const AUTO_LAUNCHER_COST_RATIO = 1.8;
+export const AUTO_LAUNCHER_COST_RATIO = 2;
 
 export const LAUNCHER_WORLD_HIGHLIGHT_DURATION = 2.5;
 

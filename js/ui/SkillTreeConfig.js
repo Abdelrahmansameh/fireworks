@@ -563,7 +563,7 @@ export const SKILL_TREE_CONFIG = {
             },
         },
         catapult_spawn_rate: {
-            offset: { x: -200, y: 0 },
+            offset: { x: 0, y: -200 },
             icon: 'crowd',
             branch: 'CROWD',
             treeParent: 'catapult',
@@ -578,8 +578,7 @@ export const SKILL_TREE_CONFIG = {
             maxLevel: 5,
             requires: { upgrades: { catapult: 1 } },
             apply: (game, level) => { game.catapultStats.fireIntervalMultiplier = Math.pow(0.9, level); },
-        },
-        catapult_max: {
+        }, catapult_max: {
             offset: { x: 0, y: 200 },
             icon: 'crowd',
             branch: 'CROWD',
@@ -595,6 +594,23 @@ export const SKILL_TREE_CONFIG = {
             maxLevel: 3,
             requires: { upgrades: { catapult: 1 } },
             apply: (game, level) => { game.catapultStats.maxCatapults = 1 + level; },
+        },
+        catapult_range_1: {
+            offset: { x: 0, y: 200 },
+            icon: 'crowd',
+            branch: 'CROWD',
+            treeParent: 'catapult_max',
+
+            id: 'catapult_range_1',
+            group: 'CROWD',
+            name: 'Long Shot',
+            desc: '×1.25 catapult horizontal range per level',
+            baseCost: 500,
+            costRatio: 2.0,
+            currency: 'gold',
+            maxLevel: 3,
+            requires: { upgrades: { catapult: 1 } },
+            apply: (game, level) => { game.catapultStats.launchVxMultiplier = Math.pow(1.15, level); },
         },
         crowd_catcher_yield: {
             offset: { x: 0, y: 200 },
