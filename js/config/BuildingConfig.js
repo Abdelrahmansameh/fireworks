@@ -45,7 +45,7 @@ export const BUILDING_TYPES = {
         textureKey: null,
         skeletonUrl: 'assets/skeletons/sparkle_generator.json',
         skeletonScale: 15,
-        baseProductionRate: 80.0,
+        baseProductionRate: 1500.0,
         sparkleTrailBaseCount: 6,
         sparkleTrailScalingRatio: 0.25,
         maxSparkleTrailBurstCount: 100, 

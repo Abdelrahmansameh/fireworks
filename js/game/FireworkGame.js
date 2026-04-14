@@ -82,7 +82,7 @@ class FireworkGame extends Engine {
         this.launcherStats = { spawnIntervalMultiplier: 1, sparkleYieldMultiplier: 1 };
         this.generatorStats = { productionRateMultiplier: 1 };
         this.droneHubStats = { spawnIntervalMultiplier: 1 };
-        this.catapultStats = { maxCatapults: 1, fireIntervalMultiplier: 1, launchVxMultiplier: 1 };
+        this.catapultStats = { maxCatapults: 1 };
 
         // Clear saves when version changes
         if (localStorage.getItem('saveVersion') !== SAVE_VERSION) {
@@ -399,13 +399,12 @@ class FireworkGame extends Engine {
         this.profiler.endFrame();
     }
 
-    _calculateTargetCrowdCount(_fps) {
+    _calculateTargetCrowdCount(fps) {
         const config = CROWD_CONFIG.scaling;
         const maxCap = CROWD_CONFIG.maxInstances || 1000;
         const bonus = this.crowdStats?.countBonus ?? 0;
-        const totalFireworks = Math.floor(this.fireworkSystem?.fireworkCount ?? 0);
-        const offset = config.formulaOffset ?? 0;
-        const target = Math.floor(config.formulaA * Math.pow(Math.max(0, totalFireworks - offset), config.formulaExp)) + config.formulaB;
+        if (fps <= 0) return Math.min(bonus, maxCap);
+        const target = Math.floor(config.formulaA * Math.sqrt(fps) + config.formulaB);
         return Math.min(target + bonus, maxCap);
     }
 
@@ -564,7 +563,7 @@ class FireworkGame extends Engine {
         this.launcherStats = { spawnIntervalMultiplier: 1, sparkleYieldMultiplier: 1 };
         this.generatorStats = { productionRateMultiplier: 1 };
         this.droneHubStats = { spawnIntervalMultiplier: 1 };
-        this.catapultStats = { maxCatapults: 1, fireIntervalMultiplier: 1, launchVxMultiplier: 1 };
+        this.catapultStats = { maxCatapults: 1 };
 
         this.resourceManager.reset();
 
@@ -809,18 +808,15 @@ class FireworkGame extends Engine {
      * Returns the same result object as `fireworkSystem.launchFireworkAt`.
      */
     launchCursorCyclingFireworkAt(x, targetY = null) {
-        const recipeCount = this.getCursorRecipeCount();
-        if (recipeCount <= 0) {
+        const count = this.getCursorRecipeCount();
+        if (count <= 0) {
             // fallback to current components
             return this.fireworkSystem.launchFireworkAt(x, targetY);
         }
-
-        const launcherCount = this.buildingManager.getBuildingsByType('AUTO_LAUNCHER').length % 20;
         if (typeof this.cursorRecipeIndex !== 'number') this.cursorRecipeIndex = 0;
         const usedIndex = this.cursorRecipeIndex;
         const components = this.getCursorRecipeComponentsAt(usedIndex);
 
-        const count = Math.min(recipeCount,launcherCount + 1);
         // advance index for next click
         this.cursorRecipeIndex = (usedIndex + 1) % count;
 
@@ -1002,28 +998,28 @@ class FireworkGame extends Engine {
             crowdCountElement.textContent = currentCrowd;
         }
 
-        const totalFireworks = Math.floor(this.fireworkSystem?.fireworkCount ?? 0);
+        const currentFps = this.buildingManager.getTheoreticalAutoLauncherFPS();
         if (currentSpsElement) {
-            currentSpsElement.textContent = totalFireworks.toLocaleString();
+            currentSpsElement.textContent = currentFps.toFixed(2); // Using FPS instead of SPS
         }
 
-        // formula: crowd = floor(A * max(0, FW - offset)^exp) + B
-        // inverse for crowd N: FW = (N / A)^(1/exp) + offset
+        // new formula: N = floor(A * sqrt(fps) + B)
+        // reversing to find fps needed for N+1: fps = ((N + 1 - B) / A)^2
         const config = CROWD_CONFIG.scaling;
-        const A = config.formulaA;
-        const exp = config.formulaExp;
-        const offset = config.formulaOffset ?? 0;
-
-        const nextThresholdFW = Math.ceil(Math.pow((currentCrowd + 1) / A, 1 / exp) + offset);
-        const currentThresholdFW = currentCrowd > 0 ? Math.ceil(Math.pow(currentCrowd / A, 1 / exp) + offset) : 0;
+        const nextCrowdTarget = currentCrowd + 1;
+        const nextThresholdFps = Math.pow((nextCrowdTarget - config.formulaB) / config.formulaA, 2);
 
         if (nextThresholdElement) {
-            nextThresholdElement.textContent = nextThresholdFW.toLocaleString();
+            nextThresholdElement.textContent = Math.ceil(nextThresholdFps).toString();
         }
 
         if (progressBar) {
-            const range = nextThresholdFW - currentThresholdFW;
-            const progress = range > 0 ? ((totalFireworks - currentThresholdFW) / range) * 100 : 0;
+            const currentThresholdFps = Math.pow((currentCrowd - config.formulaB) / config.formulaA, 2);
+
+            // if currentCrowd == 0, base FPS might be negative or 0 depending on formulaB
+            const baseFps = Math.max(0, currentThresholdFps);
+            const progress = ((currentFps - baseFps) / (nextThresholdFps - baseFps)) * 100;
+
             progressBar.style.width = `${Math.min(100, Math.max(0, progress))}%`;
         }
     }

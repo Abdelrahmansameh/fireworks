@@ -3,7 +3,7 @@ export const CROWD_CONFIG = {
     scaling: {
         formula: 'power_fireworks',
         formulaA: 0.35,
-        formulaExp: 0.4,
+        formulaExp: 0.5,
         formulaOffset: 200,
         formulaB: 0,
         minSize: 0.9,
