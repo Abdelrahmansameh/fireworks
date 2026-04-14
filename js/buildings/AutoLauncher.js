@@ -297,10 +297,7 @@ class AutoLauncher extends Building {
 
         let components;
 
-        // Prefer assigned recipe. If none assigned, pick a recipe from the list (sequential assignment
-        // happens during game init or building creation). Fall back to currentRecipeComponents only
-        // as a last resort to keep manual creator functionality working.
-        const recipe = (typeof this.assignedRecipeIndex === 'number') ? this.game.recipes[this.assignedRecipeIndex] : null;
+        const recipe = this.game.recipes[this.assignedRecipeIndex];
         if (recipe) {
             components = recipe.components.map(c => ({ ...c }));
         } 
