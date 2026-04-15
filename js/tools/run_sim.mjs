@@ -8,7 +8,6 @@ result.events.forEach(e => {
     console.log(`[${m}:${s}] ${e.label}`);
 });
 console.log("Unpurchased Upgrades:");
-// Wait result.unpurchasedUpgrades might not be an array if everything bought
 if (result.unpurchasedUpgrades) {
     result.unpurchasedUpgrades.forEach(u => console.log(u.name));
 }

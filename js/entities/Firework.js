@@ -6,7 +6,7 @@ import { recipeMap } from './patterns/index.js';
 function _ascentSpeedMult(t) {
     const t3 = t * t * t;
     const t6 = t3 * t3;
-    return Math.max(0.01, 1.25 - t3 - 0.2 * t6);
+    return Math.max(0.01, 1.25 - t3 - 0.15 * t6);
 }
 
 class Firework {
@@ -87,24 +87,47 @@ class Firework {
     }
 
     createRocket(x, y) {
-        const geometry = Renderer2D.buildTriangle(6, 10);
-
+        const headCfg = FIREWORK_CONFIG.rocketHead;
         const firstComponentColor = this._getFirstComponentColor();
-        const rocketColor = new Renderer2D.Color(firstComponentColor.r, firstComponentColor.g, firstComponentColor.b, 1);
 
-        const rocket = this.renderer.createNormalShape({
-            vertices: geometry.vertices,
-            indices: geometry.indices,
-            color: rocketColor,
+        const innerGeom = Renderer2D.buildTexturedSquare(headCfg.inner.size, headCfg.inner.size);
+        const outerGeom = Renderer2D.buildTexturedSquare(headCfg.outer.size, headCfg.outer.size);
+
+        const innerColor = new Renderer2D.Color(firstComponentColor.r, firstComponentColor.g, firstComponentColor.b, headCfg.inner.alpha);
+        const outerColor = new Renderer2D.Color(firstComponentColor.r, firstComponentColor.g, firstComponentColor.b, headCfg.outer.alpha);
+
+        this._glowInner = this.renderer.createNormalShape({
+            vertices: innerGeom.vertices,
+            indices: innerGeom.indices,
+            texCoords: innerGeom.texCoords,
+            texture: null,
+            color: innerColor,
             position: new Renderer2D.Vector2(x, y),
-            rotation: 0,
+            rotation: -this.currentTiltRad,
             scale: new Renderer2D.Vector2(FIREWORK_CONFIG.rocketSize, FIREWORK_CONFIG.rocketSize),
             zIndex: -20,
             blendMode: Renderer2D.BlendMode.ADDITIVE,
-            isStroke: false
+            isStroke: false,
         });
 
-        rocket.rotation = -this.currentTiltRad
+        const rocket = this.renderer.createNormalShape({
+            vertices: outerGeom.vertices,
+            indices: outerGeom.indices,
+            texCoords: outerGeom.texCoords,
+            texture: null,
+            color: outerColor,
+            position: new Renderer2D.Vector2(x, y),
+            rotation: -this.currentTiltRad,
+            scale: new Renderer2D.Vector2(FIREWORK_CONFIG.rocketSize, FIREWORK_CONFIG.rocketSize),
+            zIndex: -21,
+            blendMode: Renderer2D.BlendMode.ADDITIVE,
+            isStroke: false,
+        });
+
+        this.renderer.loadTexture(headCfg.texture, 'rocket_glow').then(texInfo => {
+            if (this._glowInner) this._glowInner.texture = texInfo;
+            rocket.texture = texInfo;
+        });
 
         return rocket;
     }
@@ -122,10 +145,21 @@ class Firework {
             const dy = Math.cos(this.currentTiltRad) * ascent;
             this.rocket.position.x += dx;
             this.rocket.position.y += dy;
+        
+            const fadeStart = 0.8;
+            let alpha_t = 0;
+            if (_t > fadeStart) {
+                const nt = (_t - fadeStart) / (1.0 - fadeStart); 
+                alpha_t = Math.pow(nt, 3); 
+            }
+            this.rocket.color.a = FIREWORK_CONFIG.rocketHead.outer.alpha * (1 - alpha_t);
             // Rotate rocket to face its actual movement direction
             this.rocket.rotation = -Math.atan2(dx, dy);
-
-            if (FIREWORK_CONFIG.rocketTrails.enabled) {
+            this._glowInner.position.x = this.rocket.position.x;
+            this._glowInner.position.y = this.rocket.position.y;
+            this._glowInner.rotation = this.rocket.rotation;
+            this._glowInner.color.a = FIREWORK_CONFIG.rocketHead.inner.alpha *   (1 - alpha_t)  ; 
+            if (FIREWORK_CONFIG.rocketTrails.enabled && _t < 0.95) {
                 this.rocketTrailTimer += delta * _speedMult;
 
                 if (this.rocketTrailTimer >= FIREWORK_CONFIG.rocketTrails.spawnRate) {
@@ -209,6 +243,7 @@ class Firework {
         this.alive = false;
         this.exploded = true;
         if (this.rocket) this.renderer.removeNormalShape(this.rocket);
+        if (this._glowInner) { this.renderer.removeNormalShape(this._glowInner); this._glowInner = null; }
 
 
 
@@ -295,6 +330,10 @@ class Firework {
         if (this.rocket) {
             this.renderer.removeNormalShape(this.rocket);
             this.rocket = null;
+        }
+        if (this._glowInner) {
+            this.renderer.removeNormalShape(this._glowInner);
+            this._glowInner = null;
         }
 
         FIREWORK_CONFIG.supportedShapes.forEach(shape => {

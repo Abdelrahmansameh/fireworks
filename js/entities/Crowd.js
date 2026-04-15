@@ -113,7 +113,6 @@ class Crowd {
                 this._addPerson();
             }
             this.missingCrowdsToInit = 0;
-            console.log(`Crowd initialized: ${this._skeleton.partCount} main parts + max ${this.maxPropParts} prop parts. Max ${CROWD_CONFIG.maxInstances} total instances.`);
         } catch (error) {
             console.error('Failed to create instanced group for crowd:', error);
         }
@@ -531,7 +530,6 @@ class Crowd {
      * @param {number} vy
      */
     launchPersonFromCatapult(personIndex, vx, vy) {
-        console.log(`Launching person ${personIndex} from catapult with velocity (${vx}, ${vy})`);
         const person = this.people[personIndex];
         if (!person)
             return;

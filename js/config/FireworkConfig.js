@@ -73,5 +73,17 @@ export const FIREWORK_CONFIG = {
     rocketTilt: {
         enabled: true,
         maxAngleDeg: 4, // maximum tilt angle left/right from vertical
-    }
+    },
+
+    rocketHead: {
+        texture: 'assets/glow.png',
+        inner: {
+            size: 22,       
+            alpha: 1.0,     
+        },
+        outer: {
+            size: 72,       
+            alpha: 0.35,    
+        },
+    },
 };
