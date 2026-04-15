@@ -6,7 +6,8 @@ export const FIREWORK_CONFIG = {
     gravityMultiplier: 9,
     particleSize: 5.0,
     ascentSpeed: 570,
-    rocketSize: 1.5,
+    lateralSpeedMultiplier: 0.001,
+    rocketSize: 1.0,
     minExplosionHeightPercent: 0.4,
     maxExplosionHeightPercent: 0.8,
     autoLauncherMeshWidth: 30,
@@ -58,7 +59,7 @@ export const FIREWORK_CONFIG = {
     rocketTrails: {
         enabled: true,
         spawnRate: 0.015,           // seconds between trail spawns
-        lifetime: 0.5,              // trail particle lifetime
+        lifetime: 0.3,              // trail particle lifetime
         size: 1.2,                  // absolute size of trail particles
         gravity: 0,               // slight upward drift
         friction: 2,              // air resistance

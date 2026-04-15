@@ -630,7 +630,7 @@ class UIManager {
                     const res = this.game.launchCursorCyclingFireworkAt(worldPos.x, worldPos.y);
                     if (res.sparkleAmount) {
                         const screenPos = this.game.renderer2D.worldToScreen(res.spawnX, res.spawnY);
-                        this.showFloatingSparkle(e.clientX + 100, screenPos.y - 70, res.sparkleAmount, res.rocketColor);
+                        this.showFloatingSparkle(e.clientX + 100, screenPos.y - 150, res.sparkleAmount, res.rocketColor);
                     }
                 }
             }
@@ -1671,7 +1671,18 @@ class UIManager {
 
     showFloatingSparkle(screenX, screenY, amount, rocketColor = null) {
         if (!this.showFloatingSparkleEnabled) return;
-        // If an active floating sparkle exists, update amount and trigger a shake.
+
+        // Behavior:
+        // - Start small (`--floating-scale` CSS var)
+        // - Grow on every repeated call while visible
+        // - When clicks stop, after a short idle delay add `.fading` and shrink
+        const IDLE_FADE_DELAY = 500; // ms until start fading after last click
+        const FINAL_REMOVE_DELAY = 2000; // ms after fade start to remove element
+        const SCALE_STEP = 0.02;
+        const MAX_SCALE = 1.5;
+        const START_SCALE = 0.75;
+        const FADE_SCALE = 0.6;
+
         if (this.activeFloatingSparkle && document.body.contains(this.activeFloatingSparkle)) {
             const elem = this.activeFloatingSparkle;
 
@@ -1696,30 +1707,40 @@ class UIManager {
                 elem.style.color = typeof rocketColor === 'string' ? rocketColor : `rgb(${Math.round(rocketColor.r * 255)}, ${Math.round(rocketColor.g * 255)}, ${Math.round(rocketColor.b * 255)})`;
             }
 
-            const anims = elem.getAnimations();
-            let timeLeft = 1500;
-            if (anims.length > 0) {
-                const anim = anims[0];
-                anim.currentTime = Math.max(50, anim.currentTime - 250);
-                timeLeft = 1500 - anim.currentTime;
-            }
+            // Grow immediately
+            const curScale = parseFloat(elem.dataset.scale || String(START_SCALE));
+            const newScale = Math.min(MAX_SCALE, curScale + SCALE_STEP);
+            elem.dataset.scale = String(newScale);
+            elem.style.setProperty('--floating-scale', String(newScale));
 
+            // Cancel any pending fade/removal timers
+            if (elem._idleTimeout) {
+                clearTimeout(elem._idleTimeout);
+                elem._idleTimeout = null;
+            }
             if (this.floatingSparkleTimeout) {
                 clearTimeout(this.floatingSparkleTimeout);
+                this.floatingSparkleTimeout = null;
             }
 
-            const remove = () => {
-                elem.remove();
-                if (this.activeFloatingSparkle === elem) {
-                    this.activeFloatingSparkle = null;
-                    this.floatingSparkleTimeout = null;
-                }
-            };
-            elem.onanimationend = (e) => { if (e.target === elem) remove(); };
-            this.floatingSparkleTimeout = setTimeout(remove, timeLeft + 100);
+            // Ensure visible state
+            elem.classList.remove('fading');
 
-            // trigger shake on inner span. Clear any previous timeout so
-            // overlapping removals don't cancel a newly-started shake.
+            // Schedule fade after short idle
+            elem._idleTimeout = setTimeout(() => {
+                elem.classList.add('fading');
+                elem.dataset.scale = String(FADE_SCALE);
+                elem.style.setProperty('--floating-scale', String(FADE_SCALE));
+                this.floatingSparkleTimeout = setTimeout(() => {
+                    if (elem.parentElement) elem.remove();
+                    if (this.activeFloatingSparkle === elem) {
+                        this.activeFloatingSparkle = null;
+                        this.floatingSparkleTimeout = null;
+                    }
+                }, FINAL_REMOVE_DELAY);
+            }, IDLE_FADE_DELAY);
+
+            // trigger shake on inner span
             if (inner._shakeTimeout) {
                 clearTimeout(inner._shakeTimeout);
                 inner._shakeTimeout = null;
@@ -1731,6 +1752,7 @@ class UIManager {
                 inner.classList.remove('shake');
                 inner._shakeTimeout = null;
             }, 600);
+
             const rect = elem.getBoundingClientRect();
             const burstX = rect.left + rect.width / 2;
             const burstY = rect.top + rect.height / 2;
@@ -1738,10 +1760,12 @@ class UIManager {
             return;
         }
 
-        // Create new floating sparkle element with inner span so we can animate shake
+        // Create new floating sparkle element with inner span
         const elem = document.createElement('div');
         elem.className = 'floating-sparkle';
         elem.dataset.amount = amount;
+        elem.dataset.scale = String(START_SCALE);
+        elem.style.setProperty('--floating-scale', String(START_SCALE));
 
         const inner = document.createElement('span');
         inner.className = 'floating-sparkle-inner';
@@ -1757,17 +1781,22 @@ class UIManager {
         document.body.appendChild(elem);
         this.emitFloatingSparkleNumberBurst(screenX, screenY, rocketColor);
 
-        const remove = () => {
-            elem.remove();
-            this.activeFloatingSparkle = null;
-            this.floatingSparkleTimeout = null;
-        };
-        elem.onanimationend = (e) => { if (e.target === elem) remove(); };
-        this.floatingSparkleTimeout = setTimeout(remove, 1500);
+        // Schedule idle fade -> remove
+        elem._idleTimeout = setTimeout(() => {
+            elem.classList.add('fading');
+            elem.style.setProperty('--floating-scale', String(FADE_SCALE));
+            this.floatingSparkleTimeout = setTimeout(() => {
+                if (elem.parentElement) elem.remove();
+                if (this.activeFloatingSparkle === elem) {
+                    this.activeFloatingSparkle = null;
+                    this.floatingSparkleTimeout = null;
+                }
+            }, FINAL_REMOVE_DELAY);
+        }, IDLE_FADE_DELAY);
 
         this.activeFloatingSparkle = elem;
 
-        // initial spawn shake — clear any previous timeout and schedule removal
+        // initial spawn shake
         if (inner._shakeTimeout) {
             clearTimeout(inner._shakeTimeout);
             inner._shakeTimeout = null;

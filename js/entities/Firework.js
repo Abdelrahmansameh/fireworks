@@ -3,6 +3,12 @@ import InstancedParticleSystem from '../particles/InstancedParticleSystem.js';
 import * as Renderer2D from '../rendering/Renderer.js';
 import { recipeMap } from './patterns/index.js';
 
+function _ascentSpeedMult(t) {
+    const t3 = t * t * t;
+    const t6 = t3 * t3;
+    return Math.max(0.01, 1.25 - t3 - 0.2 * t6);
+}
+
 class Firework {
     constructor(x, y, components, renderer, particleSystem, targetY = null, audioManager = null, initialTiltRad = null) {
         this.components = components;
@@ -33,6 +39,7 @@ class Firework {
         }
 
         this.rocket = this.createRocket(x, y);
+        this._spawnY = y;
 
         const minY = GAME_BOUNDS.WORLD_MIN_EXPLOSION_Y;
         const maxY = GAME_BOUNDS.WORLD_MAX_EXPLOSION_Y;
@@ -43,7 +50,13 @@ class Firework {
         const verticalAscentSpeed = FIREWORK_CONFIG.rocketTilt && FIREWORK_CONFIG.rocketTilt.enabled
             ? FIREWORK_CONFIG.ascentSpeed * Math.cos(this.currentTiltRad)
             : FIREWORK_CONFIG.ascentSpeed;
-        const timeToExplode = (this.targetY - y) / verticalAscentSpeed;
+        // Numerically integrate actual travel time accounting for the ease-out curve
+        let timeToExplode = 0;
+        const _integSteps = 120;
+        const _segLen = (this.targetY - y) / _integSteps;
+        for (let _i = 0; _i < _integSteps; _i++) {
+            timeToExplode += _segLen / (verticalAscentSpeed * _ascentSpeedMult(_i / _integSteps));
+        }
         if (this.audioManager) {
             const bounds = this.renderer.getVisibleWorldBounds();
             if (x >= bounds.left && x <= bounds.right && y >= bounds.bottom && y <= bounds.top) {
@@ -52,6 +65,8 @@ class Firework {
         }
 
         this.rocketTrailTimer = 0;
+        this._lateralDir = (Math.random() < 0.5 ? 1 : -1);
+        this._lateralSpeed = FIREWORK_CONFIG.ascentSpeed * FIREWORK_CONFIG.lateralSpeedMultiplier;
     }
 
     _hexToRgbA(hex) {
@@ -97,16 +112,21 @@ class Firework {
     update(delta) {
         if (!this.exploded) {
 
-
-            // Move rocket along its tilt angle (angle is relative to vertical)
-            const ascent = FIREWORK_CONFIG.ascentSpeed * delta;
-            const dx = Math.sin(this.currentTiltRad) * ascent;
+            const _tRaw = (this.rocket.position.y - this._spawnY) / (this.targetY - this._spawnY);
+            const _t = Math.max(0, Math.min(1, _tRaw));
+            const _speedMult = _ascentSpeedMult(_t);
+            const ascent = FIREWORK_CONFIG.ascentSpeed * _speedMult * delta;
+            const _lateralMult = _t * _t * (3 - 2 * _t); // smoothstep
+            const _lateralDrift = this._lateralDir * this._lateralSpeed * delta;
+            const dx = Math.sin(this.currentTiltRad) * ascent + _lateralDrift;
             const dy = Math.cos(this.currentTiltRad) * ascent;
             this.rocket.position.x += dx;
             this.rocket.position.y += dy;
+            // Rotate rocket to face its actual movement direction
+            this.rocket.rotation = -Math.atan2(dx, dy);
 
             if (FIREWORK_CONFIG.rocketTrails.enabled) {
-                this.rocketTrailTimer += delta;
+                this.rocketTrailTimer += delta * _speedMult;
 
                 if (this.rocketTrailTimer >= FIREWORK_CONFIG.rocketTrails.spawnRate) {
                     this.rocketTrailTimer = 0;
