@@ -52,7 +52,7 @@ class Crowd {
             console.warn('crowd skeleton failed to load, using minimal fallback:', e);
             // Minimal single-part fallback so the game still runs
             this._skeleton = new SkeletonData([
-                { id: 'body', parentId: null, width: 10, height: 10, anchorX: 0, anchorY: 0, relX: 0, relY: 0, color: '000000' }
+                { id: 'body', parentId: null, width: 4, height: 4, anchorX: 0, anchorY: 0, relX: 0, relY: 0, color: '000000' }
             ]);
             this._animData = new AnimationData({
                 cheering: { duration: 1, loop: true, tracks: {} },

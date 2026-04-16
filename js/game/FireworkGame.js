@@ -13,6 +13,7 @@ import UIManager from '../ui/UIManager.js';
 import ResourceManager from '../resources/ResourceManager.js';
 import GameProfiler from '../profiling/GameProfiler.js';
 import * as Renderer2D from '../rendering/Renderer.js';
+import * as TextureManager from '../rendering/TextureManager.js';
 import Engine from '../engine/Engine.js';
 import BuildingManager from '../buildings/BuildingManager.js';
 import AudioManager from '../audio/AudioManager.js';
@@ -242,6 +243,8 @@ class FireworkGame extends Engine {
 
         this.ui.initializeRendererEvents();
         this.bindEvents();
+
+        TextureManager.init(this.renderer2D);
 
         this.cursorParticles = new CursorParticles(this.renderer2D);
     }

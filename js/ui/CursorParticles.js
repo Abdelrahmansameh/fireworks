@@ -1,6 +1,7 @@
 import * as R from '../rendering/Renderer.js';
 const { BlendMode, buildTexturedSquare } = R;
 import cfg from './CursorParticlesConfig.js';
+import { getGlowTexture, ready as textureReady } from '../rendering/TextureManager.js';
 
 
 class CursorParticles {
@@ -195,8 +196,8 @@ class CursorParticles {
 
     async _init() {
         const r = this._renderer;
-        await r.loadTexture('assets/glow.png', 'cursor_glow');
-        const tex = r.getTexture('cursor_glow');
+        await textureReady();
+        const tex = getGlowTexture();
         const quad = buildTexturedSquare(cfg.SPRITE_QUAD_SIZE, cfg.SPRITE_QUAD_SIZE);
         this._group = r.createInstancedGroup({
             vertices: quad.vertices,

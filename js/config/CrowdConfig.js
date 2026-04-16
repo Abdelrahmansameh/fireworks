@@ -11,22 +11,13 @@ export const CROWD_CONFIG = {
         seed: 12345,
     },
 
-    // Sprite geometry
-    spriteWidth: 30,
-    spriteHeight: 30,
-    fallbackRadius: 10,
-    fallbackSegments: 8,
-
-    // Instanced-group limits
-    // We max out at 15000 instances to accommodate ~1000 people * 11 shapes per person
     maxInstances: 15000,
     zIndex: 100,
 
-    // Spawn / positioning
     minOverlapDistance: 50,          // world-units — min spacing between people
     maxPlacementAttempts: 10,
     ySpread: 70,                    // random Y offset below CROWD_Y
-    baseScale: 8,
+    baseScale: 6.4,
     scaleVariance: 0.4,             // scale = baseScale + random * scaleVariance
     spawnBias: 2,                   // >1 biases spawn positions toward the rightmost side
 

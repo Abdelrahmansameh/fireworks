@@ -2,6 +2,7 @@ import { FIREWORK_CONFIG, GAME_BOUNDS, PARTICLE_TYPES } from '../config/config.j
 import InstancedParticleSystem from '../particles/InstancedParticleSystem.js';
 import * as Renderer2D from '../rendering/Renderer.js';
 import { recipeMap } from './patterns/index.js';
+import { getGlowTexture, ready as textureReady } from '../rendering/TextureManager.js';
 
 function _ascentSpeedMult(t) {
     const t3 = t * t * t;
@@ -124,10 +125,19 @@ class Firework {
             isStroke: false,
         });
 
-        this.renderer.loadTexture(headCfg.texture, 'rocket_glow').then(texInfo => {
+        const texInfo = getGlowTexture();
+        if (texInfo) {
             if (this._glowInner) this._glowInner.texture = texInfo;
             rocket.texture = texInfo;
-        });
+        } else {
+            textureReady().then(() => {
+                const tex = getGlowTexture();
+                if (tex) {
+                    if (this._glowInner) this._glowInner.texture = tex;
+                    rocket.texture = tex;
+                }
+            });
+        }
 
         return rocket;
     }

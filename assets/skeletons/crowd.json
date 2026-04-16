@@ -9,7 +9,7 @@
       "anchorY": 0,
       "relX": 0,
       "relY": 0,
-      "color": "5f65b4",
+      "color": "a4abc1",
       "z": 2
     },
     {
@@ -21,7 +21,7 @@
       "anchorY": 0.5,
       "relX": 0.5,
       "relY": -0.18217286914765907,
-      "color": "5f65b4",
+      "color": "a4abc1",
       "baseRotation": 1.5606242496998803
     },
     {
@@ -29,7 +29,7 @@
       "parentId": "body",
       "width": 0.21831312909436323,
       "height": 0.5041447941111054,
-      "color": "5f65b4",
+      "color": "a4abc1",
       "anchorX": 0,
       "anchorY": 0.5,
       "relX": -0.5,
@@ -45,7 +45,7 @@
       "anchorY": 0.5,
       "relX": -0.20595314123247022,
       "relY": -0.4980156195891767,
-      "color": "5f65b4",
+      "color": "a4abc1",
       "baseRotation": 0
     },
     {
@@ -57,7 +57,7 @@
       "anchorY": 0.5,
       "relX": 0.20595314123247022,
       "relY": -0.4980156195891767,
-      "color": "5f65b4",
+      "color": "a4abc1",
       "baseRotation": 0
     },
     {
@@ -69,7 +69,7 @@
       "anchorY": 0,
       "relX": -0.7808236840571895,
       "relY": -0.9844820115496427,
-      "color": "5f65b4",
+      "color": "a4abc1",
       "baseRotation": 0
     },
     {
@@ -81,7 +81,7 @@
       "anchorY": 0,
       "relX": 0.7808236840571895,
       "relY": -0.9844820115496427,
-      "color": "5f65b4",
+      "color": "a4abc1",
       "baseRotation": 0
     },
     {
@@ -141,7 +141,7 @@
       "parentId": "arm_1_r",
       "width": 0.21890746397671143,
       "height": 0.5365349726954346,
-      "color": "5f65b4",
+      "color": "a4abc1",
       "anchorX": 0,
       "anchorY": 0.5,
       "relX": 0.0009666843083049881,
@@ -153,7 +153,7 @@
       "parentId": "arm_1_l",
       "width": 0.21890746397671143,
       "height": 0.5365349726954346,
-      "color": "5f65b4",
+      "color": "a4abc1",
       "anchorX": 0,
       "anchorY": 0.5,
       "relX": -0.0009666843083049881,
@@ -165,7 +165,7 @@
       "parentId": "arm_2_r",
       "width": 0.2292585740384222,
       "height": 0.5677712634586295,
-      "color": "5f65b4",
+      "color": "a4abc1",
       "anchorX": 0.5,
       "anchorY": 0.5,
       "relX": 0.5390084556920852,
@@ -177,7 +177,7 @@
       "parentId": "arm_2_l",
       "width": 0.2292585740384222,
       "height": 0.5677712634586295,
-      "color": "5f65b4",
+      "color": "a4abc1",
       "anchorX": -0.5,
       "anchorY": 0.5,
       "relX": -0.5390084556920852,
