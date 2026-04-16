@@ -176,7 +176,7 @@ class BuildingManager {
         }
 
         const totalWidth = GAME_BOUNDS.LAUNCHER_MAX_X - GAME_BOUNDS.LAUNCHER_MIN_X;
-        const spacing = Math.min(totalWidth / (buildingsToSpread.length + 1), 200);
+        const spacing = Math.min(totalWidth / (buildingsToSpread.length + 1), 500);
 
         buildingsToSpread.forEach((building, index) => {
             const newX = GAME_BOUNDS.LAUNCHER_MIN_X + spacing * (index + 1);

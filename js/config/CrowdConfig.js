@@ -17,7 +17,7 @@ export const CROWD_CONFIG = {
     minOverlapDistance: 50,          // world-units — min spacing between people
     maxPlacementAttempts: 10,
     ySpread: 70,                    // random Y offset below CROWD_Y
-    baseScale: 6.4,
+    baseScale: 6.7,
     scaleVariance: 0.4,             // scale = baseScale + random * scaleVariance
     spawnBias: 2,                   // >1 biases spawn positions toward the rightmost side
 
