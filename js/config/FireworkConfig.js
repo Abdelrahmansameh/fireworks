@@ -4,7 +4,8 @@ export const FIREWORK_CONFIG = {
     baseFriction: 4.0,
     verticalFrictionMultiplier: .9,
     gravityMultiplier: 9,
-    particleSize: 5.0,
+    particleSize: 5,
+    glowSize: 5,
     ascentSpeed: 570,
     lateralSpeedMultiplier: 0.001,
     rocketSize: 1.0,
@@ -41,7 +42,7 @@ export const FIREWORK_CONFIG = {
         dragonsBreath: 140,
         default: 100
     },
-    supportedShapes: ['sphere', 'star', 'ring', 'crystalDroplet', 'sliceBurst', 'triangle'],
+    supportedShapes: ['sphere', 'star', 'ring', 'crystalDroplet', 'sliceBurst', 'triangle', 'glow'],
 
     trails: {
         enabled: true,

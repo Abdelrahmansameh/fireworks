@@ -1,5 +1,6 @@
 import { FIREWORK_CONFIG, PARTICLE_TYPES } from '../config/config.js';
 import * as Renderer2D from '../rendering/Renderer.js';
+import { getGlowTexture, ready as textureReady } from '../rendering/TextureManager.js';
 const { BlendMode, Color, Vector2 } = Renderer2D;
 
 class InstancedParticleSystem {
@@ -42,7 +43,7 @@ class InstancedParticleSystem {
         // Trail system indices
         this.trailTimerIdx = 28;           // accumulator for spawn timing
         this.particleTypeIdx = 29;         // PARTICLE_TYPES int (0=default,1=firework explosion,2=trail,3=rocket trail,4=ui,5=resgen)
-        this.trailCurrentCountIdx = 30;    
+        this.trailCurrentCountIdx = 30;
         this.strideFloats = 31;
 
         const geometries = {
@@ -52,6 +53,7 @@ class InstancedParticleSystem {
             crystalDroplet: Renderer2D.buildDroplet(),
             sliceBurst: Renderer2D.buildSliceBurst(),
             triangle: Renderer2D.buildTriangle(1, Math.sqrt(3) / 2),
+            glow: Renderer2D.buildTexturedSquare(20, 20),
         };
 
         FIREWORK_CONFIG.supportedShapes.forEach(shape => {
@@ -59,10 +61,21 @@ class InstancedParticleSystem {
             this.meshes[shape] = this.renderer.createInstancedGroup({
                 vertices: g.vertices,
                 indices: g.indices,
+                texCoords: g.texCoords || null,
                 maxInstances: this.maxParticles,
                 blendMode: BlendMode.ADDITIVE,
                 zIndex: -20,
             });
+            if (shape === 'glow') {
+                const tex = getGlowTexture();
+                if (tex) {
+                    this.meshes.glow.texture = tex;
+                } else {
+                    textureReady().then(() => {
+                        this.meshes.glow.texture = getGlowTexture();
+                    });
+                }
+            }
             this.activeCounts[shape] = 0;
             this.instanceData[shape] = new Float32Array(this.maxParticles * this.strideFloats).fill(0);
             this.particleUpdateFns[shape] = new Array(this.maxParticles).fill(null);
@@ -83,13 +96,13 @@ class InstancedParticleSystem {
         this._frictionCache = new Map();
 
         this._randomPool = new Float32Array(4096);
-        this._randomIdx = 4096; 
+        this._randomIdx = 4096;
         this._refillRandomPool();
 
         this._trailPosVec = new Vector2(0, 0);
         this._trailVelVec = new Vector2(0, 0);
-        this._trailAccVec = new Vector2(0, 0); 
-        this._trailColor  = new Color(0, 0, 0, 0);
+        this._trailAccVec = new Vector2(0, 0);
+        this._trailColor = new Color(0, 0, 0, 0);
     }
     _refillRandomPool() {
         for (let i = 0; i < this._randomPool.length; i++) {
@@ -186,7 +199,7 @@ class InstancedParticleSystem {
         if (!delta) return;
         this.profiler?.startFunction?.('particleSystemUpdate');
 
-        
+
         this._frictionCache.clear();
 
         FIREWORK_CONFIG.supportedShapes.forEach(shape => {
@@ -265,7 +278,11 @@ class InstancedParticleSystem {
                 d[sBase + this.positionIdx] += d[sBase + this.velocityIdx] * delta;
                 d[sBase + this.positionIdx + 1] += d[sBase + this.velocityIdx + 1] * delta;
                 const n = d[sBase + this.lifetimeIdx] / d[sBase + this.initialLifetimeIdx];
-                d[sBase + this.colorIdx + 3] = (n * n) * (2 * this._fastRandom());
+                if (shape === 'glow') {
+                    d[sBase + this.colorIdx + 3] = 0.1 * (n * n) * (2 * this._fastRandom());
+                } else {
+                    d[sBase + this.colorIdx + 3] = (n * n) * (2 * this._fastRandom());
+                }
                 if (d[sBase + this.enableColorGradientIdx] > 0.5) {
                     const normalizedLifetime = 1 - n;
                     const gradientStartTime = d[sBase + this.gradientStartTimeIdx];
@@ -344,10 +361,10 @@ class InstancedParticleSystem {
             this._trailPosVec.y = this.pendingTrailsData[tBase + 1];
             this._trailVelVec.x = this.pendingTrailsData[tBase + 2];
             this._trailVelVec.y = this.pendingTrailsData[tBase + 3];
-            this._trailColor.r  = this.pendingTrailsData[tBase + 4];
-            this._trailColor.g  = this.pendingTrailsData[tBase + 5];
-            this._trailColor.b  = this.pendingTrailsData[tBase + 6];
-            this._trailColor.a  = this.pendingTrailsData[tBase + 7];
+            this._trailColor.r = this.pendingTrailsData[tBase + 4];
+            this._trailColor.g = this.pendingTrailsData[tBase + 5];
+            this._trailColor.b = this.pendingTrailsData[tBase + 6];
+            this._trailColor.a = this.pendingTrailsData[tBase + 7];
             this.addParticle(
                 this._trailPosVec,
                 this._trailVelVec,
@@ -356,7 +373,7 @@ class InstancedParticleSystem {
                 this.pendingTrailsData[tBase + 9],
                 FIREWORK_CONFIG.trails.gravity,
                 FIREWORK_CONFIG.trails.shape,
-                this._trailAccVec, 
+                this._trailAccVec,
                 FIREWORK_CONFIG.trails.friction,
                 null, // no update function
                 false, // no gradient
@@ -364,6 +381,23 @@ class InstancedParticleSystem {
                 0.0,
                 1.0,
                 PARTICLE_TYPES.TRAIL // mark as trail so it won't chain-spawn more trails
+            );
+            this.addParticle(
+                this._trailPosVec,
+                this._trailVelVec,
+                this._trailColor,
+                this.pendingTrailsData[tBase + 8],
+                this.pendingTrailsData[tBase + 9],
+                FIREWORK_CONFIG.trails.gravity,
+                'glow',
+                this._trailAccVec,
+                FIREWORK_CONFIG.trails.friction,
+                null,
+                false, 
+                null,
+                0.0,
+                1.0,
+                PARTICLE_TYPES.TRAIL 
             );
         }
         this.pendingTrailsCount = 0;

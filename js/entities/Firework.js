@@ -155,12 +155,12 @@ class Firework {
             const dy = Math.cos(this.currentTiltRad) * ascent;
             this.rocket.position.x += dx;
             this.rocket.position.y += dy;
-        
+
             const fadeStart = 0.8;
             let alpha_t = 0;
             if (_t > fadeStart) {
-                const nt = (_t - fadeStart) / (1.0 - fadeStart); 
-                alpha_t = Math.pow(nt, 3); 
+                const nt = (_t - fadeStart) / (1.0 - fadeStart);
+                alpha_t = Math.pow(nt, 3);
             }
             this.rocket.color.a = FIREWORK_CONFIG.rocketHead.outer.alpha * (1 - alpha_t);
             // Rotate rocket to face its actual movement direction
@@ -168,7 +168,7 @@ class Firework {
             this._glowInner.position.x = this.rocket.position.x;
             this._glowInner.position.y = this.rocket.position.y;
             this._glowInner.rotation = this.rocket.rotation;
-            this._glowInner.color.a = FIREWORK_CONFIG.rocketHead.inner.alpha *   (1 - alpha_t)  ; 
+            this._glowInner.color.a = FIREWORK_CONFIG.rocketHead.inner.alpha * (1 - alpha_t);
             if (FIREWORK_CONFIG.rocketTrails.enabled && _t < 0.95) {
                 this.rocketTrailTimer += delta * _speedMult;
 
@@ -330,6 +330,24 @@ class Firework {
                     );
 
                     if (index !== -1) this.particles[shape].add(index);
+/*
+                    const glowIndex = this.particleSystem.addParticle(
+                        pos.clone(),
+                        vel.clone(),
+                        particleColor,
+                        FIREWORK_CONFIG.glowSize * component.size,
+                        component.lifetime,
+                        g,
+                        'glow',
+                        accel,
+                        friction,
+                        updateFn,
+                        component.enableColorGradient,
+                        gradientFinalColor,
+                        component.gradientStartTime,
+                        component.gradientDuration,
+                        PARTICLE_TYPES.FIREWORK_EXPLOSION
+                    );*/
                 }
                 return;
             }
