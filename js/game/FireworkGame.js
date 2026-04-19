@@ -811,12 +811,15 @@ class FireworkGame extends Engine {
      * Returns the same result object as `fireworkSystem.launchFireworkAt`.
      */
     launchCursorCyclingFireworkAt(x, targetY = null) {
-        const count = this.getCursorRecipeCount();
+        const recipeCount = this.getCursorRecipeCount();
+        const launcherCount = this.buildingManager.getBuildingsByType('AUTO_LAUNCHER').length;
+        const count = Math.min(recipeCount, launcherCount + 1); // only cycle through as many recipes as the player has launchers (plus default)
+        
         if (count <= 0) {
-            // fallback to current components
             return this.fireworkSystem.launchFireworkAt(x, targetY);
         }
-        if (typeof this.cursorRecipeIndex !== 'number') this.cursorRecipeIndex = 0;
+        if (typeof this.cursorRecipeIndex !== 'number') 
+            this.cursorRecipeIndex = 0;
         const usedIndex = this.cursorRecipeIndex;
         const components = this.getCursorRecipeComponentsAt(usedIndex);
 

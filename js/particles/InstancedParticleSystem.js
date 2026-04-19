@@ -382,7 +382,7 @@ class InstancedParticleSystem {
                 1.0,
                 PARTICLE_TYPES.TRAIL // mark as trail so it won't chain-spawn more trails
             );
-            this.addParticle(
+            /*this.addParticle(
                 this._trailPosVec,
                 this._trailVelVec,
                 this._trailColor,
@@ -398,7 +398,7 @@ class InstancedParticleSystem {
                 0.0,
                 1.0,
                 PARTICLE_TYPES.TRAIL 
-            );
+            );*/
         }
         this.pendingTrailsCount = 0;
 
