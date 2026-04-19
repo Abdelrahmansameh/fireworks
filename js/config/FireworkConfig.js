@@ -5,7 +5,7 @@ export const FIREWORK_CONFIG = {
     verticalFrictionMultiplier: .9,
     gravityMultiplier: 9,
     particleSize: 5,
-    glowSize: 5,
+    glowSize: 8,
     ascentSpeed: 570,
     lateralSpeedMultiplier: 0.001,
     rocketSize: 1.0,
@@ -31,6 +31,7 @@ export const FIREWORK_CONFIG = {
         spinner: 1.0,
         helix: 0,
         dragonsBreath: 2.8,
+        saturn: 1.2,
         default: 2.0
     },
     patternParticleCounts: {
@@ -40,6 +41,7 @@ export const FIREWORK_CONFIG = {
         heart: 40,
         snowflake: 200,
         dragonsBreath: 140,
+        saturn: 300,
         default: 100
     },
     supportedShapes: ['sphere', 'star', 'ring', 'crystalDroplet', 'sliceBurst', 'triangle', 'glow'],

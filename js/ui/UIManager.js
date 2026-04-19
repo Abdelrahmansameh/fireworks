@@ -49,8 +49,8 @@ class UIManager {
     bindUIEvents() {
         // Initialise the skill-tree screen once the full DOM is available.
         // If the upgrades panel exposes a mount node we render embedded.
-        const upgradesMount = document.getElementById('skill-tree-panel-mount');
-        this.skillTree = new SkillTreeScreen(this.game, upgradesMount);
+       // const upgradesMount = document.getElementById('skill-tree-panel-mount');
+        //this.skillTree = new SkillTreeScreen(this.game, upgradesMount);
 
         const addComponentButtons = [
             document.getElementById('add-component')
@@ -1239,11 +1239,9 @@ class UIManager {
             const spreadSelect = componentDiv.querySelector('.spread-select');
 
             const updateSecondaryColorVisibility = () => {
-                if (patternSelect.value === 'helix' || patternSelect.value === 'christmasTree' || patternSelect.value === 'snowflake') {
-                    secondaryColorContainer.style.display = 'block';
-                } else {
-                    secondaryColorContainer.style.display = 'none';
-                }
+                const def = patternDefinitions.find(p => p.key === patternSelect.value);
+                const show = !!(def && def.hasSecondaryColor);
+                secondaryColorContainer.style.display = show ? 'block' : 'none';
             };
 
             updateSecondaryColorVisibility();

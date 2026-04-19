@@ -330,8 +330,8 @@ class Firework {
                     );
 
                     if (index !== -1) this.particles[shape].add(index);
-/*
-                    const glowIndex = this.particleSystem.addParticle(
+
+                    /*const glowIndex = this.particleSystem.addParticle(
                         pos.clone(),
                         vel.clone(),
                         particleColor,
