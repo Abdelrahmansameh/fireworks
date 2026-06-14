@@ -51,7 +51,7 @@ export default class FireworkSystem {
         }
 
         const y = minY || GAME_BOUNDS.WORLD_LAUNCHER_Y;
-        const spawnX = x + (Math.random() * 6 - 3) * FIREWORK_CONFIG.autoLauncherMeshWidth;
+        const spawnX = x + (Math.random() * 20 - 10) * FIREWORK_CONFIG.autoLauncherMeshWidth;
         const spawnY = y + FIREWORK_CONFIG.autoLauncherMeshHeight / 2;
 
         this.launch(spawnX, spawnY, components, Math.max(targetY, minY), null);

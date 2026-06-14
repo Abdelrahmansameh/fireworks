@@ -180,7 +180,7 @@ class FireworkGame extends Engine {
             }
         };
 
-        const initialCrowd = this._calculateTargetCrowdCount(this.buildingManager.getTheoreticalAutoLauncherFPS());
+        const initialCrowd = this._calculateTargetCrowdCount(this.calculateTotalSparklesPerSecond());
         this.crowd.setCount(initialCrowd);
         this.updateCrowdDisplay();
 
@@ -371,7 +371,7 @@ class FireworkGame extends Engine {
         this.profiler.endFunction('buildingsUpdate');
 
 
-        const targetCrowdSize = this._calculateTargetCrowdCount(this.buildingManager.getTheoreticalAutoLauncherFPS());
+        const targetCrowdSize = this._calculateTargetCrowdCount(this.calculateTotalSparklesPerSecond());
         
         if (targetCrowdSize > 0 && this.crowd.people.length === 0 && !this.hasSeenFirstCrowdCinematic && !this.cinematicManager.isPlaying) {
             this.hasSeenFirstCrowdCinematic = true;
@@ -402,12 +402,20 @@ class FireworkGame extends Engine {
         this.profiler.endFrame();
     }
 
-    _calculateTargetCrowdCount(fps) {
+    _calculateTargetCrowdCount(production) {
         const config = CROWD_CONFIG.scaling;
         const maxCap = CROWD_CONFIG.maxInstances || 1000;
         const bonus = this.crowdStats?.countBonus ?? 0;
-        if (fps <= 0) return Math.min(bonus, maxCap);
-        const target = Math.floor(config.formulaA * Math.sqrt(fps) + config.formulaB);
+        const offset = config.formulaOffset ?? 0;
+
+        if (production <= 0) return Math.min(bonus, maxCap);
+
+        const p = Math.max(0, production - offset);
+        const exponent = (typeof config.formulaExp === 'number') ? config.formulaExp : 0.5;
+        const a = (typeof config.formulaA === 'number') ? config.formulaA : 1;
+        const b = (typeof config.formulaB === 'number') ? config.formulaB : 0;
+
+        const target = Math.floor(a * Math.pow(p, exponent) + b);
         return Math.min(target + bonus, maxCap);
     }
 
@@ -1004,28 +1012,33 @@ class FireworkGame extends Engine {
             crowdCountElement.textContent = currentCrowd;
         }
 
-        const currentFps = this.buildingManager.getTheoreticalAutoLauncherFPS();
+        const currentSps = this.calculateTotalSparklesPerSecond();
         if (currentSpsElement) {
-            currentSpsElement.textContent = currentFps.toFixed(2); // Using FPS instead of SPS
+            currentSpsElement.textContent = currentSps.toFixed(2);
         }
 
-        // new formula: N = floor(A * sqrt(fps) + B)
-        // reversing to find fps needed for N+1: fps = ((N + 1 - B) / A)^2
         const config = CROWD_CONFIG.scaling;
-        const nextCrowdTarget = currentCrowd + 1;
-        const nextThresholdFps = Math.pow((nextCrowdTarget - config.formulaB) / config.formulaA, 2);
+        const A = (typeof config.formulaA === 'number') ? config.formulaA : 1;
+        const exp = (typeof config.formulaExp === 'number') ? config.formulaExp : 0.5;
+        const B = (typeof config.formulaB === 'number') ? config.formulaB : 0;
+        const offset = config.formulaOffset ?? 0;
 
+        const nextCrowdTarget = currentCrowd + 1;
+        const inverseThreshold = (n) => {
+            if (A === 0 || exp === 0) return Infinity;
+            return Math.pow(Math.max(0, (n - B) / A), 1 / exp) + offset;
+        };
+
+        const nextThresholdSps = inverseThreshold(nextCrowdTarget);
         if (nextThresholdElement) {
-            nextThresholdElement.textContent = Math.ceil(nextThresholdFps).toString();
+            nextThresholdElement.textContent = Math.ceil(nextThresholdSps).toString();
         }
 
         if (progressBar) {
-            const currentThresholdFps = Math.pow((currentCrowd - config.formulaB) / config.formulaA, 2);
-
-            // if currentCrowd == 0, base FPS might be negative or 0 depending on formulaB
-            const baseFps = Math.max(0, currentThresholdFps);
-            const progress = ((currentFps - baseFps) / (nextThresholdFps - baseFps)) * 100;
-
+            const currentThresholdSps = inverseThreshold(currentCrowd);
+            const base = Math.max(0, currentThresholdSps);
+            const denom = Math.max(1e-6, nextThresholdSps - base);
+            const progress = ((currentSps - base) / denom) * 100;
             progressBar.style.width = `${Math.min(100, Math.max(0, progress))}%`;
         }
     }

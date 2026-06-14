@@ -9,7 +9,8 @@
       "anchorY": 0,
       "relX": 0,
       "relY": 0,
-      "color": "adadad"
+      "color": "adadad",
+      "z": 5
     },
     {
       "id": "wheel_l",
@@ -18,9 +19,10 @@
       "height": 1.6,
       "anchorX": 0,
       "anchorY": 0,
-      "relX": -0.38,
-      "relY": -0.7,
-      "color": "555555"
+      "relX": -0.35468956202418467,
+      "relY": -0.6879474104877071,
+      "color": "555555",
+      "z": 10
     },
     {
       "id": "wheel_r",
@@ -29,9 +31,10 @@
       "height": 1.6,
       "anchorX": 0,
       "anchorY": 0,
-      "relX": 0.38,
+      "relX": 0.34565011988996497,
       "relY": -0.7,
-      "color": "555555"
+      "color": "555555",
+      "z": 10
     },
     {
       "id": "support",
@@ -41,8 +44,9 @@
       "anchorX": 0,
       "anchorY": -0.5,
       "relX": 0.05,
-      "relY": 0.45,
-      "color": "555555"
+      "relY": 0.6340115962648546,
+      "color": "555555",
+      "z": 15
     },
     {
       "id": "arm",
@@ -51,10 +55,11 @@
       "height": 7,
       "anchorX": 0,
       "anchorY": 0.15,
-      "relX": -1.0804321728691475,
-      "relY": 0.5160064025610244,
+      "relX": -0.28321802539421154,
+      "relY": 0.5815707955727805,
       "color": "adadad",
-      "baseRotation": 1.748499399759904
+      "baseRotation": 1.748499399759904,
+      "z": 20
     },
     {
       "id": "head",
@@ -65,7 +70,8 @@
       "anchorY": 0.5,
       "relX": 0,
       "relY": 0.48,
-      "color": "555555"
+      "color": "555555",
+      "z": 25
     },
     {
       "id": "counterweight",
@@ -76,7 +82,99 @@
       "anchorY": -0.3,
       "relX": 0,
       "relY": -0.48,
-      "color": "555555"
+      "color": "555555",
+      "z": 30
+    },
+    {
+      "id": "base_outline",
+      "parentId": "base",
+      "width": 8.4,
+      "height": 1.6,
+      "color": "000000",
+      "anchorX": 0,
+      "anchorY": 0,
+      "relX": 0,
+      "relY": 0,
+      "baseRotation": 0,
+      "z": -100
+    },
+    {
+      "id": "wheel_l_outline",
+      "parentId": "wheel_l",
+      "width": 2,
+      "height": 2,
+      "color": "000000",
+      "anchorX": 0,
+      "anchorY": 0,
+      "relX": 0,
+      "relY": 0,
+      "baseRotation": 0,
+      "z": 5
+    },
+    {
+      "id": "wheel_r_outline",
+      "parentId": "wheel_r",
+      "width": 2,
+      "height": 2,
+      "color": "000000",
+      "anchorX": 0,
+      "anchorY": 0,
+      "relX": 0,
+      "relY": 0,
+      "baseRotation": 0,
+      "z": 5
+    },
+    {
+      "id": "support_outline",
+      "parentId": "support",
+      "width": 1.2000000000000002,
+      "height": 3.4,
+      "color": "000000",
+      "anchorX": 0,
+      "anchorY": -0.4411764705882353,
+      "relX": 0,
+      "relY": 0,
+      "baseRotation": 0,
+      "z": -100
+    },
+    {
+      "id": "arm_outline",
+      "parentId": "arm",
+      "width": 0.9,
+      "height": 7.4,
+      "color": "000000",
+      "anchorX": 0,
+      "anchorY": 0.14189189189189189,
+      "relX": 0,
+      "relY": 0,
+      "baseRotation": 0,
+      "z": 19
+    },
+    {
+      "id": "head_outline",
+      "parentId": "head",
+      "width": 2,
+      "height": 1.4,
+      "color": "000000",
+      "anchorX": 0,
+      "anchorY": 0.35714285714285715,
+      "relX": 0,
+      "relY": 0,
+      "baseRotation": 0,
+      "z": 24
+    },
+    {
+      "id": "counterweight_outline",
+      "parentId": "counterweight",
+      "width": 1.7999999999999998,
+      "height": 1.7999999999999998,
+      "color": "000000",
+      "anchorX": 0,
+      "anchorY": -0.23333333333333334,
+      "relX": 0,
+      "relY": 0,
+      "baseRotation": 0,
+      "z": 29
     }
   ],
   "animations": {

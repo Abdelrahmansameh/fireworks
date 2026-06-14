@@ -1337,8 +1337,7 @@ legend {
     opacity: 1;
     border-color: transparent;
     background: hsla(220, 25%, 8%, 0.5);
-    backdrop-filter: blur(var(--glass-blur));
-    padding: var(--sp-1);
+        padding: var(--sp-1);
 }
 
 .floating-sparkle-inner {

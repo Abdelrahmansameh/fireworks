@@ -784,9 +784,9 @@ class Crowd {
                     state.alpha = pullElapsed / cfg.maxCaptureTime;
                     state.scale = pullElapsed / cfg.maxCaptureTime;
 
-                    const eInv = 1 / eDist;
-                    state.velocity.x += ex * eInv * cfg.pullForce * delta;
-                    state.velocity.y += ey * eInv * cfg.pullForce * delta;
+                    const distFactor = Math.max(0.1, Math.min(1, 1 - eDist / radius)) ;
+                    state.velocity.x += ex * distFactor * cfg.pullForce * delta;
+                    state.velocity.y += ey * distFactor * cfg.pullForce * delta;
 
                     state.color.r += 0.05 * delta;
                     state.color.g += 0.05 * delta;

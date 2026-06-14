@@ -16,7 +16,7 @@ export const FIREWORK_CONFIG = {
     autoLauncherMeshColor: { r: 136 / 255, g: 136 / 255, b: 136 / 255, a: 1 },
     autoLauncherTexture: 'assets/launcher.png',
     patternGravities: {
-        default: 110,
+        default: 200,
         helix: 40,
         willow: 30,
         dragonsBreath: 70,
@@ -36,6 +36,7 @@ export const FIREWORK_CONFIG = {
     },
     patternParticleCounts: {
         willow: 50,
+        pistil: 200,
         helix: 200,
         ring: 30,
         heart: 40,

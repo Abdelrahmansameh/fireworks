@@ -72,13 +72,17 @@ export class ProgressionSimulator {
 
     syncCrowd() {
         const config = CROWD_CONFIG.scaling;
-        const totalFireworks = Math.floor(this.mockGame.fireworkSystem.fireworkCount ?? 0);
         const bonus = this.mockGame.crowdStats.countBonus || 0;
         const maxCap = CROWD_CONFIG.maxInstances || 1000;
         const offset = config.formulaOffset ?? 0;
-        
+
+        const production = Math.max(0, (this.currentSPS || 0) - offset);
+        const a = (typeof config.formulaA === 'number') ? config.formulaA : 1;
+        const exp = (typeof config.formulaExp === 'number') ? config.formulaExp : 0.5;
+        const b = (typeof config.formulaB === 'number') ? config.formulaB : 0;
+
         const newCount = Math.min(
-            Math.floor(config.formulaA * Math.pow(Math.max(0, totalFireworks - offset), config.formulaExp)) + config.formulaB + bonus,
+            Math.floor(a * Math.pow(production, exp)) + b + bonus,
             maxCap
         );
         const prevCount = this.mockGame.crowd.people.length || 0;

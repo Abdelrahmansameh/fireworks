@@ -1,10 +1,12 @@
 export const CROWD_CONFIG = {
     // Scaling
     scaling: {
+        // crowd = floor(formulaA * (totalFireworks - formulaOffset)^formulaExp + formulaB)
+        // Tuned for: ~1 crowd around 3 minutes, ~30-40 crowd around 30 minutes of play.
         formula: 'power_fireworks',
-        formulaA: 0.35,
-        formulaExp: 0.5,
-        formulaOffset: 200,
+        formulaA: 0.0018,
+        formulaExp: 1.0,
+        formulaOffset: 500,
         formulaB: 0,
         minSize: 0.9,
         maxSize: 1.25,
@@ -49,10 +51,10 @@ export const CROWD_CONFIG = {
 
 export const CROWD_CATCHER_CONFIG = {
     collectionRadius: 60,     // world-units scan radius (slightly wider than drone's 50)
-    pullForce: 7000,          // wu/s² — acceleration toward person
+    pullForce: 900,          // wu/s² — acceleration toward person
     arrivalThreshold: 10,     // wu — particle collected when closer than this
-    maxCaptureTime: 5.5,      // s — force-collect after this long
-    minParticleAge: 0.3,      // s — ignore freshly-spawned particles
+    maxCaptureTime: 3.5,      // s — force-collect after this long
+    minParticleAge: 0.15,      // s — ignore freshly-spawned particles
     sparklesPerParticle: 1,   // base sparkle reward per collected particle
     scanInterval: 4,          // throttle: scan every N frames
 };

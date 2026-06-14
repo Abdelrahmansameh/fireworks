@@ -1,7 +1,7 @@
 import ring from './ring.js';
 import burst from './burst.js';
 import { spherical, solidsphere } from './spherical.js';
-import palm from './palm.js';
+import { palm, pistil } from './palm.js';
 import { star, brocade } from './star.js';
 import willow from './willow.js';
 import christmasTree from './christmasTree.js';
@@ -20,10 +20,10 @@ export const patternDefinitions = [
     { key: 'star', displayName: 'Star', recipe: star },
     { key: 'willow', displayName: 'Willow', recipe: willow },
     { key: 'ring', displayName: 'Ring', recipe: ring },
-
     { key: 'solidsphere', displayName: 'Solid Sphere', recipe: solidsphere },
     { key: 'brocade', displayName: 'Brocade', recipe: brocade },
     { key: 'heart', displayName: 'Heart', recipe: heart },
+    { key: 'pistil', displayName: 'Pistil', recipe: pistil },
     { key: 'saturn', displayName: 'Saturn', recipe: saturn, hasSecondaryColor: true },
     { key: 'brokenHeart', displayName: 'Broken Heart', recipe: brokenHeart, unlockId: 'pattern_brokenHeart' },
     { key: 'spinner', displayName: 'Spinner', recipe: spinner, unlockId: 'pattern_spinner' },
