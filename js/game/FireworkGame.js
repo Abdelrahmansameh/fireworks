@@ -983,8 +983,19 @@ class FireworkGame extends GameCore {
             // Wait until he stops walking at his spot
             await arrivalPromise;
 
-            // Beat before he tosses the coin, then force the toss
+            // Freeze his coin toss timer so he can't toss naturally during the cinematic
+            person.coinTossTimer = -9999;
+
+            // Launch a firework in front of and above the person
             await cm.wait(CINEMATIC_CONFIG.COIN_TOSS_DELAY_MS);
+            const fwX = person.x + CINEMATIC_CONFIG.FIREWORK_OFFSET_X;
+            const fwTargetY = person.y - CINEMATIC_CONFIG.FIREWORK_OFFSET_Y;
+            game.fireworkSystem.launch(fwX, GAME_BOUNDS.WORLD_LAUNCHER_Y, game.currentRecipeComponents, fwTargetY);
+            const firework = game.fireworkSystem.fireworks[game.fireworkSystem.fireworks.length - 1];
+
+            // Wait for it to explode, then a beat before the coin toss
+            await cm.waitForExplosion(firework);
+            await cm.wait(CINEMATIC_CONFIG.POST_EXPLOSION_DELAY_MS);
             person.coinTossTimer = 5; // force immediate toss
 
             // Brief pause, then zoom back out to where we were

@@ -6,8 +6,13 @@ export const CINEMATIC_CONFIG = {
     ZOOM_IN_LEVEL:       1.5,   // how far in to zoom (1.0 = normal)
     ZOOM_Y_OFFSET:       315,    // world units above person.y to center the zoom on (shows body, not feet)
     FOLLOW_DELAY_MS:       1200,    // ms after zoom-in before camera starts following the person
+    // Firework launched in front of the person before coin toss
+    FIREWORK_OFFSET_X:        300,   // world units to the right of the person
+    FIREWORK_OFFSET_Y:        -600,   // world units above the person (burst height)
+    POST_EXPLOSION_DELAY_MS:  800,   // ms after explosion before coin toss
+
     // Beat between the person stopping at his spot and tossing the coin
-    COIN_TOSS_DELAY_MS:  400,
+    COIN_TOSS_DELAY_MS:  100,
 
     // First crowd cinematic zoom-out (after coin toss)
     ZOOM_OUT_DELAY_MS:    1500,  // ms after coin toss before zoom-out starts
@@ -113,6 +118,21 @@ export default class CinematicManager {
     async waitForEvent(eventName) {
         return new Promise(resolve => {
             this._eventResolvers.set(eventName, resolve);
+        });
+    }
+
+    /**
+     * Utility: Resolves when the given Firework instance has exploded.
+     */
+    waitForExplosion(firework, timeoutMs = 10000) {
+        return new Promise(resolve => {
+            const start = Date.now();
+            const interval = setInterval(() => {
+                if (firework.exploded || (Date.now() - start) >= timeoutMs) {
+                    clearInterval(interval);
+                    resolve();
+                }
+            }, 50);
         });
     }
 

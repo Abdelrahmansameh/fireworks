@@ -217,7 +217,7 @@ class Crowd {
         const group = this.instancedGroup;
 
         // Start off-screen on the left so new people walk in from left side
-        const personStartX = GAME_BOUNDS.SCROLL_MIN_X - 1000 - (rng() * 400);
+        const personStartX = GAME_BOUNDS.SCROLL_MIN_X - 800;
 
         const person = {
             x: personStartX,
