@@ -195,6 +195,14 @@ class UIManager {
             });
         }
 
+        // Cheat: play the first crowd cinematic
+        const cheatPlayCinematicBtn = document.getElementById('cheat-play-first-crowd-cinematic');
+        if (cheatPlayCinematicBtn) {
+            cheatPlayCinematicBtn.addEventListener('click', () => {
+                this.game.cheatPlayFirstCrowdCinematic();
+            });
+        }
+
         const gameContainer = document.getElementById('game-canvas');
         gameContainer.addEventListener('pointerdown', (e) => {
             if (!this.game.isClickInsideUI(e)) {

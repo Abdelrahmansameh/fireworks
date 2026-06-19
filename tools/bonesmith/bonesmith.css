@@ -190,6 +190,65 @@ input[type="color"] {
     border-bottom: 1px solid var(--border);
 }
 
+.timeline-ruler {
+    position: relative;
+    height: 22px;
+    background: #232323;
+    border-bottom: 1px solid var(--border);
+    overflow: hidden;
+    flex-shrink: 0;
+    cursor: pointer;
+    user-select: none;
+}
+
+.ruler-scroll {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    will-change: transform;
+}
+
+.ruler-tick {
+    position: absolute;
+    bottom: 0;
+    width: 1px;
+    background: #555;
+}
+
+.ruler-tick.major {
+    background: #8a8a8a;
+}
+
+.ruler-label {
+    position: absolute;
+    top: 1px;
+    color: #aaa;
+    white-space: nowrap;
+    pointer-events: none;
+    font-family: 'Merriweather', serif;
+}
+
+.ruler-playhead {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 1px;
+    background: red;
+    pointer-events: none;
+}
+
+/* Solid gutter over the sticky label column so ticks don't bleed under it. */
+.ruler-corner {
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    background: #232323;
+    border-right: 1px solid #444;
+    z-index: 2;
+}
+
 .timeline-tracks {
     flex: 1;
     overflow: auto;
@@ -244,12 +303,81 @@ input[type="color"] {
     background-color: #dcdcaa;
     border: 1px solid #000;
     transform: translateX(-5px);
-    cursor: pointer;
+    cursor: ew-resize;
+}
+
+.keyframe:hover {
+    background-color: #f0f0c0;
 }
 
 .keyframe.selected {
     background-color: #569cd6;
+    border-color: #add8ff;
+    box-shadow: 0 0 4px rgba(86, 156, 214, 0.9);
     z-index: 5;
+}
+
+/* Rubber-band rectangle selection overlay */
+.timeline-rubber {
+    position: absolute;
+    border: 1px solid var(--accent-hover);
+    background: rgba(0, 152, 255, 0.18);
+    pointer-events: none;
+    z-index: 30;
+}
+
+/* Timeline right-click context menu */
+.timeline-context-menu {
+    position: fixed;
+    z-index: 1000;
+    min-width: 170px;
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+    padding: 4px 0;
+    font-size: 13px;
+    user-select: none;
+}
+
+.timeline-context-menu .ctx-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    padding: 6px 12px;
+    cursor: pointer;
+    color: var(--text-main);
+}
+
+.timeline-context-menu .ctx-item:hover {
+    background: var(--accent);
+    color: #fff;
+}
+
+.timeline-context-menu .ctx-item.disabled {
+    color: #666;
+    cursor: default;
+}
+
+.timeline-context-menu .ctx-item.disabled:hover {
+    background: transparent;
+    color: #666;
+}
+
+.timeline-context-menu .ctx-shortcut {
+    color: #888;
+    font-size: 11px;
+}
+
+.timeline-context-menu .ctx-item:hover .ctx-shortcut {
+    color: #dfe9f5;
+}
+
+.timeline-context-menu .ctx-sep {
+    height: 1px;
+    background: var(--border);
+    margin: 4px 0;
 }
 
 .playhead {

@@ -17,7 +17,9 @@ export const state = {
     renamePending: false,
     currentTime: 0,
     lastTime: 0,
-    selectedKeyframe: null,
+    selectedKeyframe: null,        // primary selected keyframe (for property editing) {partId, time}
+    selectedKeyframes: [],         // multi-selection set: [{partId, time}, ...]
+    keyframeClipboard: [],         // copied keyframes: [{partId, dt, kf}, ...]
     selectedPropIndex: -1,
     loadedProps: new Map(), // cached prop skeletonData and animData
     timelinePixelsPerSecond: 200,

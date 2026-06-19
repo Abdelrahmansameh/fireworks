@@ -40,5 +40,74 @@
       "baseRotation": 0
     }
   ],
-  "animations": {}
+  "animations": {
+    "toss": {
+      "duration": 0.8,
+      "loop": true,
+      "tracks": {
+        "Coin": [
+          {
+            "time": 0.09499999999999999,
+            "offsetX": 0,
+            "offsetY": 0,
+            "rotation": 0
+          },
+          {
+            "time": 0.195,
+            "offsetX": 0,
+            "offsetY": 2.19,
+            "rotation": 1.57
+          },
+          {
+            "time": 0.295,
+            "offsetX": 0,
+            "offsetY": 3.75,
+            "rotation": 3.14
+          },
+          {
+            "time": 0.39499999999999996,
+            "offsetX": 0,
+            "offsetY": 4.69,
+            "rotation": 4.71
+          },
+          {
+            "time": 0.49499999999999994,
+            "offsetX": 0,
+            "offsetY": 5,
+            "rotation": 6.28
+          },
+          {
+            "time": 0.595,
+            "offsetX": 0,
+            "offsetY": 4.69,
+            "rotation": 7.85
+          },
+          {
+            "time": 0.69,
+            "rotation": 10,
+            "offsetX": 0,
+            "offsetY": 3.71,
+            "scaleX": 1,
+            "scaleY": 1,
+            "r": 1,
+            "g": 1,
+            "b": 1,
+            "a": 1
+          },
+          {
+            "time": 0.8,
+            "rotation": 12,
+            "offsetX": 0.08,
+            "offsetY": 2.92,
+            "scaleX": 1,
+            "scaleY": 1,
+            "r": 1,
+            "g": 1,
+            "b": 1,
+            "a": 1
+          }
+        ]
+      }
+    }
+  }
 }

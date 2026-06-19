@@ -76,6 +76,9 @@
                         <label>OffX</label><input type="number" id="prop-offx-input" step="0.1" style="width:40px" />
                         <label>OffY</label><input type="number" id="prop-offy-input" step="0.1" style="width:40px" />
                     </div>
+                    <label style="display:flex; align-items:center; gap:5px; margin-bottom:4px;" title="Prop animation plays in world axes (up is +Y), decoupled from the attach bone's rotation — e.g. a tossed coin flies straight up.">
+                        <input type="checkbox" id="prop-world-motion" /> World-space motion
+                    </label>
                     <div style="display:flex; gap:5px;">
                         <button id="btn-add-anim-prop" style="flex:1">Add</button>
                         <button id="btn-update-anim-prop" style="flex:1">Update</button>
@@ -127,6 +130,8 @@
                     <label>Duration: <input type="number" id="anim-duration" step="0.1" value="1.0" style="width:50px"></label>
                     <label><input type="checkbox" id="anim-loop" checked> Loop</label>
                 </div>
+                <!-- Time ruler (JS populated) -->
+                <div class="timeline-ruler" id="timeline-ruler"></div>
                 <!-- Tracks UI roughly blocking it out -->
                 <div class="timeline-tracks" id="timeline-tracks">
                     <!-- JS populated -->

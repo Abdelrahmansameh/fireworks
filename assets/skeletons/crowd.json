@@ -1032,13 +1032,13 @@
             "rotation": 1.24
           },
           {
-            "time": 0.30640625,
+            "time": 0.09640624999999999,
             "offsetX": 0,
             "offsetY": 0,
             "rotation": 1.19
           },
           {
-            "time": 0.60640625,
+            "time": 0.39640625,
             "offsetX": 0,
             "offsetY": 0,
             "rotation": 1.19
@@ -1058,7 +1058,7 @@
             "rotation": -1.18
           },
           {
-            "time": 0.47140625,
+            "time": 0.26140625,
             "offsetX": 0,
             "offsetY": 0,
             "rotation": 0.44
@@ -1096,7 +1096,8 @@
       "props": [
         {
           "skeletonUrl": "assets/skeletons/coin.json",
-          "animation": "",
+          "animation": "toss",
+          "worldMotion": true,
           "startTime": 0,
           "endTime": 1,
           "parentPartId": "arm_3_r",

@@ -2,7 +2,8 @@ import * as Renderer2D from '../../js/rendering/Renderer.js';
 import { state } from './core/state.js';
 import { undoManager, saveState } from './core/undo.js';
 import { initIO, loadSkeletonById, populateSkeletonPicker } from './core/io.js';
-import { updateHierarchyUI, selectPart, updateTimelineUI, updateAnimPropsUI, populateAnimations, setEditorMode, updateAnimPropsPanel } from './core/ui.js';
+import { updateHierarchyUI, selectPart, updateTimelineUI, updateAnimPropsUI, populateAnimations, setEditorMode, updateAnimPropsPanel,
+    copySelectedKeyframes, cutSelectedKeyframes, pasteKeyframes, duplicateSelectedKeyframes, deleteSelectedKeyframes, selectAllKeyframes, clearKeyframeSelection } from './core/ui.js';
 import { addSkeletonOutline, deletePart, renamePart, mirrorSkeleton } from './core/skeleton.js';
 import { makeAnimationLoop, mirrorAnimation, flipAnimation } from './core/animation.js';
 import { getParentTransform } from './core/math.js';
@@ -51,6 +52,7 @@ function newSkeleton() {
     state.currentAnimId = '';
     state.selectedPartId = null;
     state.selectedKeyframe = null;
+    state.selectedKeyframes = [];
     state.currentTime = 0;
 
     document.getElementById('skeleton-picker').value = '';
@@ -231,6 +233,7 @@ function setupUI() {
             track.sort((a, b) => a.time - b.time);
         }
         state.selectedKeyframe = { partId: state.selectedPartId, time: state.currentTime };
+        state.selectedKeyframes = [{ partId: state.selectedPartId, time: state.currentTime }];
         updateTimelineUI();
     };
 
@@ -247,6 +250,8 @@ function setupUI() {
             if (state.selectedKeyframe && state.selectedKeyframe.partId === state.selectedPartId && Math.abs(state.selectedKeyframe.time - state.currentTime) < 0.01) {
                 state.selectedKeyframe = null;
             }
+            state.selectedKeyframes = state.selectedKeyframes.filter(s =>
+                !(s.partId === state.selectedPartId && Math.abs(s.time - state.currentTime) < 0.01));
             updateTimelineUI();
             updateAnimPropsUI();
         }
@@ -470,6 +475,22 @@ function setupUI() {
             if (e.ctrlKey && key === 'z') { e.preventDefault(); undoManager.undo(); return; }
             if (e.ctrlKey && (key === 'y' || (e.shiftKey && key === 'z'))) { e.preventDefault(); undoManager.redo(); return; }
 
+            // Timeline keyframe shortcuts (animation mode only)
+            if (state.editorMode === 'animation') {
+                const ctrl = e.ctrlKey || e.metaKey;
+                if (ctrl && key === 'c') { e.preventDefault(); copySelectedKeyframes(); return; }
+                if (ctrl && key === 'x') { e.preventDefault(); cutSelectedKeyframes(); return; }
+                if (ctrl && key === 'v') { e.preventDefault(); pasteKeyframes(state.currentTime); return; }
+                if (ctrl && key === 'd') { e.preventDefault(); duplicateSelectedKeyframes(); return; }
+                if (ctrl && key === 'a') { e.preventDefault(); selectAllKeyframes(); return; }
+                if ((key === 'delete' || key === 'backspace') && state.selectedKeyframes.length) {
+                    e.preventDefault(); deleteSelectedKeyframes(); return;
+                }
+                if (key === 'escape' && state.selectedKeyframes.length) {
+                    clearKeyframeSelection(); updateTimelineUI(); return;
+                }
+            }
+
             let toolBtnId = null;
             if (key === 'v') toolBtnId = 'btn-tool-select';
             else if (key === 'w') toolBtnId = 'btn-tool-move';
@@ -575,7 +596,8 @@ function setupUI() {
             parentPartId: document.getElementById('prop-parent-part').value || null,
             offsetX: parseFloat(document.getElementById('prop-offx-input').value) || 0,
             offsetY: parseFloat(document.getElementById('prop-offy-input').value) || 0,
-            rotation: 0
+            rotation: 0,
+            worldMotion: document.getElementById('prop-world-motion').checked
         };
     };
 

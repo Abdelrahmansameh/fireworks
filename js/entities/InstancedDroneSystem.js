@@ -72,6 +72,73 @@ class InstancedDroneSystem {
             blendMode: BlendMode.ADDITIVE,
             zIndex: 2000,
         });
+
+        // ── Spatial grid for particle collection ────────────────────
+        // Built once per scan frame and queried per-drone, so the cost of
+        // finding collectable particles is O(particles + drones·cells) instead
+        // of the naive O(drones·particles).
+        // One-cell margin on every side so particles just outside the play
+        // bounds (but within an edge drone's reach) still get bucketed.
+        this._gridCellSize = DRONE_CONFIG.collectionRadius;
+        this._gridX0 = GAME_BOUNDS.LAUNCHER_MIN_X - this._gridCellSize;
+        this._gridY0 = GAME_BOUNDS.WORLD_LAUNCHER_Y - this._gridCellSize;
+        this._gridCols = Math.ceil(
+            (GAME_BOUNDS.LAUNCHER_MAX_X - GAME_BOUNDS.LAUNCHER_MIN_X) / this._gridCellSize) + 3;
+        this._gridRows = Math.ceil(
+            (GAME_BOUNDS.WORLD_MAX_EXPLOSION_Y - GAME_BOUNDS.WORLD_LAUNCHER_Y) / this._gridCellSize) + 3;
+        // Each cell is a flat array storing [shapeIdx, particleIdx, x, y] tuples.
+        // Arrays are reused across frames (length reset, capacity retained).
+        this._grid = new Array(this._gridCols * this._gridRows);
+        for (let c = 0; c < this._grid.length; c++) this._grid[c] = [];
+    }
+
+    /**
+     * Rebuild the spatial grid from the currently-collectable particles.
+     * Called once per scan frame, before the per-drone loop.
+     */
+    _buildSpatialGrid() {
+        const ps = this.particleSystem;
+        const cfg = DRONE_CONFIG;
+        const grid = this._grid;
+        const cs = this._gridCellSize;
+        const gx0 = this._gridX0, gy0 = this._gridY0;
+        const cols = this._gridCols, rows = this._gridRows;
+
+        for (let c = 0; c < grid.length; c++) grid[c].length = 0;
+
+        const sStr = ps.strideFloats;
+        const pTypeIdx = ps.particleTypeIdx;
+        const pPosIdx = ps.positionIdx;
+        const initLifeIdx = ps.initialLifetimeIdx;
+        const lifeIdx = ps.lifetimeIdx;
+        const minAge = cfg.minParticleAge;
+
+        for (let si = 0; si < this._shapes.length; si++) {
+            const shape = this._shapes[si];
+            const sd = ps.instanceData[shape];
+            if (!sd) continue;
+            const pCount = ps.activeCounts[shape];
+            if (pCount === 0) continue;
+
+            for (let pi = 0; pi < pCount; pi++) {
+                const pBase = pi * sStr;
+
+                // Only collect firework-explosion particles that are old enough
+                if (sd[pBase + pTypeIdx] !== PARTICLE_TYPES.FIREWORK_EXPLOSION) continue;
+                if (sd[pBase + initLifeIdx] - sd[pBase + lifeIdx] < minAge) continue;
+
+                const x = sd[pBase + pPosIdx];
+                const y = sd[pBase + pPosIdx + 1];
+
+                const cx = Math.floor((x - gx0) / cs);
+                if (cx < 0 || cx >= cols) continue;
+                const cy = Math.floor((y - gy0) / cs);
+                if (cy < 0 || cy >= rows) continue;
+
+                const bucket = grid[cy * cols + cx];
+                bucket.push(si, pi, x, y);
+            }
+        }
     }
 
     // Pick a random world position within the playable area
@@ -167,6 +234,10 @@ class InstancedDroneSystem {
         const now = performance.now();
         this._scanFrameCounter++;
         const doScan = (this._scanFrameCounter % cfg.scanInterval) === 0;
+
+        // Build the shared spatial grid once for this scan frame so each drone
+        // can query only the particles near it.
+        if (doScan) this._buildSpatialGrid();
 
         for (let i = 0; i < this.count; i++) {
             const base = i * this.strideFloats;
@@ -342,41 +413,41 @@ class InstancedDroneSystem {
                 const radius = d[base + this.RADIUS];
                 const droneRef = ref; // captured by pull closure
 
-                for (let si = 0; si < this._shapes.length; si++) {
-                    const shape = this._shapes[si];
-                    const sd = ps.instanceData[shape];
-                    if (!sd) continue;
+                // Query only the grid cells overlapping this drone's radius.
+                const cs = this._gridCellSize;
+                const cols = this._gridCols, rows = this._gridRows;
+                const gx0 = this._gridX0, gy0 = this._gridY0;
+                const grid = this._grid;
 
-                    const pCount = ps.activeCounts[shape];
-                    if (pCount === 0) continue;
+                let mincx = Math.floor((droneX - radius - gx0) / cs);
+                if (mincx < 0) mincx = 0;
+                let maxcx = Math.floor((droneX + radius - gx0) / cs);
+                if (maxcx >= cols) maxcx = cols - 1;
+                let mincy = Math.floor((droneY - radius - gy0) / cs);
+                if (mincy < 0) mincy = 0;
+                let maxcy = Math.floor((droneY + radius - gy0) / cs);
+                if (maxcy >= rows) maxcy = rows - 1;
 
-                    const sStr = ps.strideFloats;
-                    const updateFns = ps.particleUpdateFns[shape];
-                    const pTypeIdx = ps.particleTypeIdx;
-                    const pPosIdx = ps.positionIdx;
+                for (let cy = mincy; cy <= maxcy; cy++) {
+                    const rowBase = cy * cols;
+                    for (let cx = mincx; cx <= maxcx; cx++) {
+                        const bucket = grid[rowBase + cx];
+                        for (let e = 0; e < bucket.length; e += 4) {
+                            const pdx = bucket[e + 2] - droneX;
+                            if (pdx > radius || pdx < -radius) continue;
+                            const pdy = bucket[e + 3] - droneY;
+                            if (pdy > radius || pdy < -radius) continue;
 
-                    for (let pi = 0; pi < pCount; pi++) {
-                        const pBase = pi * sStr;
+                            const pi = bucket[e + 1];
+                            const updateFns = ps.particleUpdateFns[this._shapes[bucket[e]]];
 
-                        // Only collect firework-explosion particles
-                        if (sd[pBase + pTypeIdx] !== PARTICLE_TYPES.FIREWORK_EXPLOSION) continue;
+                            // Don't override a pull that's already in progress
+                            const existingFn = updateFns[pi];
+                            if (existingFn && existingFn._isDronePull) continue;
 
-                        // Skip particles that haven't been alive long enough
-                        const pAge = sd[pBase + ps.initialLifetimeIdx] - sd[pBase + ps.lifetimeIdx];
-                        if (pAge < cfg.minParticleAge) continue;
-
-                        const pdx = sd[pBase + pPosIdx] - droneX;
-                        if (pdx > radius || pdx < -radius) continue;
-                        const pdy = sd[pBase + pPosIdx + 1] - droneY;
-                        if (pdy > radius || pdy < -radius) continue;
-
-                        // Don't override a pull that's already in progress
-                        const existingFn = updateFns[pi];
-                        if (existingFn && existingFn._isDronePull) continue;
-
-                        // Build pull closure — captures droneRef (live object)
-                        let pullElapsed = 0;
-                        const pullFn = (state, delta) => {
+                            // Build pull closure — captures droneRef (live object)
+                            let pullElapsed = 0;
+                            const pullFn = (state, delta) => {
                             if (!droneRef.active) return;
                             // todo, if you have very low fps you wont get
                             if (droneRef.lifetime <= 0.2) 
@@ -413,7 +484,8 @@ class InstancedDroneSystem {
                         };
                         pullFn._isDronePull = true;
 
-                        updateFns[pi] = pullFn;
+                            updateFns[pi] = pullFn;
+                        }
                     }
                 }
             }  // doScan

@@ -20,6 +20,7 @@ export function deletePart(id) {
     if (state.selectedKeyframe && state.selectedKeyframe.partId === id) {
         state.selectedKeyframe = null;
     }
+    state.selectedKeyframes = state.selectedKeyframes.filter(s => s.partId !== id);
 
     updateHierarchyUI();
     updateTimelineUI();

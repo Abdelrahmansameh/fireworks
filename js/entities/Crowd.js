@@ -621,11 +621,21 @@ class Crowd {
                     const propPose = computePose(cached.skeleton, propClip, propTime);
 
                     const finalPropPose = new Map();
-                    for (const [pid, ptf] of propPose.entries()) {
-                        const finalX = propRootX + (ptf.x * Math.cos(propRootRot) - ptf.y * Math.sin(propRootRot));
-                        const finalY = propRootY + (ptf.x * Math.sin(propRootRot) + ptf.y * Math.cos(propRootRot));
-                        const finalRot = propRootRot + ptf.rotation;
-                        finalPropPose.set(pid, { x: finalX, y: finalY, rotation: finalRot });
+                    if (prop.worldMotion) {
+                        // The prop's own animation drives it in world axes (up is +Y),
+                        // decoupled from the parent bone's rotation. The anchor point still
+                        // follows the bone, but the animated arc + spin play in world space —
+                        // so e.g. a tossed coin flies straight up regardless of arm angle.
+                        for (const [pid, ptf] of propPose.entries()) {
+                            finalPropPose.set(pid, { x: propRootX + ptf.x, y: propRootY + ptf.y, rotation: ptf.rotation });
+                        }
+                    } else {
+                        for (const [pid, ptf] of propPose.entries()) {
+                            const finalX = propRootX + (ptf.x * Math.cos(propRootRot) - ptf.y * Math.sin(propRootRot));
+                            const finalY = propRootY + (ptf.x * Math.sin(propRootRot) + ptf.y * Math.cos(propRootRot));
+                            const finalRot = propRootRot + ptf.rotation;
+                            finalPropPose.set(pid, { x: finalX, y: finalY, rotation: finalRot });
+                        }
                     }
 
                     applyPoseToInstances(
@@ -663,11 +673,21 @@ class Crowd {
                     const propPose = computePose(cached.skeleton, propClip, propTime);
 
                     const finalPropPose = new Map();
-                    for (const [pid, ptf] of propPose.entries()) {
-                        const finalX = propRootX + (ptf.x * Math.cos(propRootRot) - ptf.y * Math.sin(propRootRot));
-                        const finalY = propRootY + (ptf.x * Math.sin(propRootRot) + ptf.y * Math.cos(propRootRot));
-                        const finalRot = propRootRot + ptf.rotation;
-                        finalPropPose.set(pid, { x: finalX, y: finalY, rotation: finalRot });
+                    if (prop.worldMotion) {
+                        // The prop's own animation drives it in world axes (up is +Y),
+                        // decoupled from the parent bone's rotation. The anchor point still
+                        // follows the bone, but the animated arc + spin play in world space —
+                        // so e.g. a tossed coin flies straight up regardless of arm angle.
+                        for (const [pid, ptf] of propPose.entries()) {
+                            finalPropPose.set(pid, { x: propRootX + ptf.x, y: propRootY + ptf.y, rotation: ptf.rotation });
+                        }
+                    } else {
+                        for (const [pid, ptf] of propPose.entries()) {
+                            const finalX = propRootX + (ptf.x * Math.cos(propRootRot) - ptf.y * Math.sin(propRootRot));
+                            const finalY = propRootY + (ptf.x * Math.sin(propRootRot) + ptf.y * Math.cos(propRootRot));
+                            const finalRot = propRootRot + ptf.rotation;
+                            finalPropPose.set(pid, { x: finalX, y: finalY, rotation: finalRot });
+                        }
                     }
 
                     applyPoseToInstances(

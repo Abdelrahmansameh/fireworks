@@ -37,6 +37,11 @@ export function render(container) {
                 <button id="cheat-spawn-drone">Spawn Drone(s)</button>
             </div>
         </fieldset>
+
+        <fieldset>
+            <legend>Cinematics</legend>
+            <button id="cheat-play-first-crowd-cinematic">Play First Crowd Cinematic</button>
+        </fieldset>
     `;
 
     container.appendChild(panel);

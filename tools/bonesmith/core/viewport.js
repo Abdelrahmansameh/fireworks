@@ -166,9 +166,18 @@ export function loop(now) {
                     const cx = pPartTf.x - (anchorOffX * Math.cos(pPartTf.rotation) - anchorOffY * Math.sin(pPartTf.rotation));
                     const cy = pPartTf.y - (anchorOffX * Math.sin(pPartTf.rotation) + anchorOffY * Math.cos(pPartTf.rotation));
                     
-                    const finalX = propWorldX + (cx * Math.cos(propRot) - cy * Math.sin(propRot));
-                    const finalY = propWorldY + (cx * Math.sin(propRot) + cy * Math.cos(propRot));
-                    const finalRot = propRot + pPartTf.rotation;
+                    let finalX, finalY, finalRot;
+                    if (prop.worldMotion) {
+                        // Prop animation plays in world axes (up is +Y), decoupled from the
+                        // parent bone's rotation — matches the in-game Crowd renderer.
+                        finalX = propWorldX + cx;
+                        finalY = propWorldY + cy;
+                        finalRot = pPartTf.rotation;
+                    } else {
+                        finalX = propWorldX + (cx * Math.cos(propRot) - cy * Math.sin(propRot));
+                        finalY = propWorldY + (cx * Math.sin(propRot) + cy * Math.cos(propRot));
+                        finalRot = propRot + pPartTf.rotation;
+                    }
                     
                     const c = hexToRgb(pPart.color || 'FFFFFF');
                     state.instancedGroup.addInstanceRaw(

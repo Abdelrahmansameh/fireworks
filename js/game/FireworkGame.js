@@ -111,8 +111,7 @@ class FireworkGame extends GameCore {
         };
         this.crowd.onFirstPersonArrival = (person) => {
             if (this.cinematicManager.isPlaying) {
-                person.coinTossTimer = 5; // force immediate toss
-                this.cinematicManager.resumeEvent('firstCrowdCoinToss');
+                this.cinematicManager.resumeEvent('firstCrowdArrival');
             }
         };
 
@@ -414,8 +413,7 @@ class FireworkGame extends GameCore {
             };
             this.crowd.onFirstPersonArrival = (person) => {
                 if (this.cinematicManager.isPlaying) {
-                    person.coinTossTimer = 5; // force immediate toss
-                    this.cinematicManager.resumeEvent('firstCrowdCoinToss');
+                    this.cinematicManager.resumeEvent('firstCrowdArrival');
                 }
             };
         }
@@ -950,33 +948,48 @@ class FireworkGame extends GameCore {
         this.showNotification('Everything has been unlocked!');
     }
 
+    cheatPlayFirstCrowdCinematic() {
+        if (this.cinematicManager.isPlaying) return;
+        // Unspawn all crowd members so the cinematic starts from an empty scene.
+        this.crowd.setCount(0);
+        this.playFirstCrowdCinematic();
+    }
+
     playFirstCrowdCinematic() {
         this.cinematicManager.play(async (game, cm) => {
             // Camera scrolls to the left edge
             await cm.panCameraTo(GAME_BOUNDS.SCROLL_MIN_X, 3000);
 
+            // Zoom in on the empty spawn area before anyone appears
+            const originalCameraY = game.renderer2D.cameraY;
+            const zoomTargetY = GAME_BOUNDS.CROWD_Y + CINEMATIC_CONFIG.ZOOM_Y_OFFSET;
+            await cm.zoomCamera(CINEMATIC_CONFIG.ZOOM_IN_LEVEL, CINEMATIC_CONFIG.ZOOM_IN_DURATION_MS, null, zoomTargetY);
+
+            // Hold on the empty shot
+            await cm.wait(CINEMATIC_CONFIG.ZOOM_IN_DELAY_MS);
+
             // Crowd member spawns
             game.crowd.setCount(1);
             const person = game.crowd.people[0];
-            await cm.wait(100);
 
-            // Register coin-toss listener NOW before anything can fire it
-            const coinTossPromise = cm.waitForEvent('firstCrowdCoinToss');
+            // Register arrival listener NOW before he can reach his spot
+            const arrivalPromise = cm.waitForEvent('firstCrowdArrival');
 
+            await cm.wait(CINEMATIC_CONFIG.FOLLOW_DELAY_MS);
+            
             // Camera follows him as he walks to his spot
             cm.followEntity(person);
 
-            // Short delay, then zoom in — center Y slightly above feet so we see the body
-            await cm.wait(CINEMATIC_CONFIG.ZOOM_IN_DELAY_MS);
-            const zoomTargetY = person.y + CINEMATIC_CONFIG.ZOOM_Y_OFFSET;
-            await cm.zoomCamera(CINEMATIC_CONFIG.ZOOM_IN_LEVEL, CINEMATIC_CONFIG.ZOOM_IN_DURATION_MS, null, zoomTargetY);
+            // Wait until he stops walking at his spot
+            await arrivalPromise;
 
-            // Wait for the coin toss (listener was already registered)
-            await coinTossPromise;
+            // Beat before he tosses the coin, then force the toss
+            await cm.wait(CINEMATIC_CONFIG.COIN_TOSS_DELAY_MS);
+            person.coinTossTimer = 5; // force immediate toss
 
             // Brief pause, then zoom back out to where we were
             await cm.wait(CINEMATIC_CONFIG.ZOOM_OUT_DELAY_MS);
-            await cm.zoomCamera(1.0, CINEMATIC_CONFIG.ZOOM_OUT_DURATION_MS, null, game.renderer2D.cameraY);
+            await cm.zoomCamera(1.0, CINEMATIC_CONFIG.ZOOM_OUT_DURATION_MS, null, originalCameraY);
 
             cm.stopFollowing();
             await cm.wait(500);

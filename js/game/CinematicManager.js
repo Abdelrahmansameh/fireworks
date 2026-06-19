@@ -1,14 +1,17 @@
 // --- Cinematic zoom configuration ---
 export const CINEMATIC_CONFIG = {
     // First crowd cinematic zoom-in
-    ZOOM_IN_DELAY_MS:    100,   // ms after crowd member appears before zoom starts
-    ZOOM_IN_DURATION_MS: 300,  // ms for zoom-in animation
-    ZOOM_IN_LEVEL:       3.5,   // how far in to zoom (1.0 = normal)
-    ZOOM_Y_OFFSET:       60,    // world units above person.y to center the zoom on (shows body, not feet)
+    ZOOM_IN_DELAY_MS:    50,   // ms after crowd member appears before zoom starts
+    ZOOM_IN_DURATION_MS: 600,  // ms for zoom-in animation
+    ZOOM_IN_LEVEL:       1.5,   // how far in to zoom (1.0 = normal)
+    ZOOM_Y_OFFSET:       315,    // world units above person.y to center the zoom on (shows body, not feet)
+    FOLLOW_DELAY_MS:       1200,    // ms after zoom-in before camera starts following the person
+    // Beat between the person stopping at his spot and tossing the coin
+    COIN_TOSS_DELAY_MS:  400,
 
     // First crowd cinematic zoom-out (after coin toss)
-    ZOOM_OUT_DELAY_MS:    400,  // ms after coin toss before zoom-out starts
-    ZOOM_OUT_DURATION_MS: 300,  // ms for zoom-out animation
+    ZOOM_OUT_DELAY_MS:    1500,  // ms after coin toss before zoom-out starts
+    ZOOM_OUT_DURATION_MS: 900,  // ms for zoom-out animation
 };
 
 export default class CinematicManager {
@@ -68,22 +71,27 @@ export default class CinematicManager {
 
     /**
      * Utility: Pan the camera to a specific X coordinate over time.
+     * @param {number} panSpeed overrides cameraTransitionSpeed for this pan (higher = snappier)
      */
-    async panCameraTo(targetX, maxDurationMs = 5000) {
+    async panCameraTo(targetX, maxDurationMs = 5000, panSpeed = null) {
+        const prevSpeed = this.game.cameraTransitionSpeed;
+        if (panSpeed !== null) this.game.cameraTransitionSpeed = panSpeed;
+
         return new Promise(resolve => {
             this.game.setCameraTarget(targetX);
 
             const startTime = Date.now();
             const checkInterval = setInterval(() => {
                 const distance = Math.abs(this.game.renderer2D.cameraX - targetX);
-                const hasReached = (this.game.cameraTargetX === null || distance < 30.0);
+                const hasReached = (this.game.cameraTargetX === null || distance < 80.0);
                 const isTimeout = (Date.now() - startTime) >= maxDurationMs;
 
                 if (hasReached || isTimeout) {
                     clearInterval(checkInterval);
+                    this.game.cameraTransitionSpeed = prevSpeed;
                     resolve();
                 }
-            }, 50); // check 20 times a second
+            }, 200); // check 20 times a second
         });
     }
 
@@ -158,9 +166,11 @@ export default class CinematicManager {
             const ease = t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
 
             const zoom = startZoom + (targetZoom - startZoom) * ease;
-            // If following an entity, track their X live; otherwise interpolate to targetX
+            // If following an entity, ease toward their live X so we don't snap from
+            // the camera's current (lagged) position onto the entity. Otherwise
+            // interpolate to the static targetX.
             const x = this.followedEntity
-                ? this.followedEntity.x
+                ? startX + (this.followedEntity.x - startX) * ease
                 : startX + (targetX - startX) * ease;
             const y = startY + (targetY - startY) * ease;
 
