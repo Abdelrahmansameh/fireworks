@@ -1,4 +1,4 @@
-import { ProgressionSimulator } from './ProgressionSimulator.js';
+import { HeadlessSimulator } from '../sim/HeadlessSimulator.js';
 
 export function initializeProgressionTool() {
     if (document.getElementById('progression-tool-overlay')) {
@@ -72,8 +72,14 @@ export function initializeProgressionTool() {
 
     createInput('simDuration', 'Simulation Duration (Minutes)', 60);
     createInput('simClicks', 'Clicks per Second', 4);
-    createInput('simBaseDrone', 'Base Drone Yield (Sparkles/sec prev-upgrades)', 10);
-    createInput('simBaseCatch', 'Base Catch Yield (Sparkles/sec pre-upgrades)', 5);
+
+    // Drone / crowd-catch yields are emergent in the live game; the headless
+    // sim estimates them via a data-driven model. Tune those knobs in
+    // js/config/SimulationConfig.js.
+    const note = document.createElement('div');
+    note.innerText = 'Drone / crowd-catch tuning lives in js/config/SimulationConfig.js';
+    Object.assign(note.style, { fontSize: '10px', color: '#888', lineHeight: '1.4' });
+    controlsPanel.appendChild(note);
 
     const runBtn = document.createElement('button');
     runBtn.innerText = 'Run Simulation';
@@ -127,14 +133,12 @@ export function initializeProgressionTool() {
     let chartGpsInstance = null;
     let chartUpgradesInstance = null;
     let chartCrowdInstance = null;
-    const simulator = new ProgressionSimulator();
+    const simulator = new HeadlessSimulator();
 
     runBtn.onclick = () => {
         const duration = parseFloat(document.getElementById('simDuration').value) || 60;
         const inputs = {
             clicksPerSec: document.getElementById('simClicks').value,
-            baseDroneYieldPerSec: document.getElementById('simBaseDrone').value,
-            baseCatchYieldPerSec: document.getElementById('simBaseCatch').value,
         };
 
         const result = simulator.simulate(duration, inputs);

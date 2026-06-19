@@ -119,6 +119,7 @@ class AutoLauncher extends Building {
     }
 
     async _loadSkeleton() {
+        if (this.game.headless) return; // no rendering in headless mode
         try {
             const url = this.config.skeletonUrl;
             const { skeleton, rawAnimations } = await SkeletonData.load(url);
@@ -341,7 +342,11 @@ class AutoLauncher extends Building {
             }
         }
 
-        this.game.fireworkSystem.launch(spawnX, launchY, components, null, initialTilt);
+        // In headless mode we skip the visual firework entity but keep the
+        // economic effect (firework count + sparkle award) below.
+        if (!this.game.headless) {
+            this.game.fireworkSystem.launch(spawnX, launchY, components, null, initialTilt);
+        }
         this.game.fireworkSystem.fireworkCount++;
 
         const yieldMulti = this.game.launcherStats?.sparkleYieldMultiplier ?? 1;

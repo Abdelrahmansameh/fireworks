@@ -2,11 +2,20 @@ export const CROWD_CONFIG = {
     // Scaling
     scaling: {
         // crowd = floor(formulaA * (totalFireworks - formulaOffset)^formulaExp + formulaB)
-        // Tuned for: ~1 crowd around 3 minutes, ~30-40 crowd around 30 minutes of play.
+        //
+        // Driven by TOTAL FIREWORKS LAUNCHED (not sparkles/sec), which grows
+        // smoothly and monotonically — so the crowd paces gently with no jumps.
+        // Tuned for ~4 fireworks/sec of engaged play:
+        //   1st fan  ≈ 2 min  (~520 fireworks)
+        //   ~7 fans  ≈ 10 min
+        //   ~25 fans ≈ 30 min
+        //   ~60 fans ≈ 60 min
+        // Exponent < 1 gives diminishing returns so the venue fills naturally
+        // instead of exploding once production ramps up.
         formula: 'power_fireworks',
-        formulaA: 0.0018,
-        formulaExp: 1.0,
-        formulaOffset: 500,
+        formulaA: 0.005,
+        formulaExp: 1.2,
+        formulaOffset: 150,
         formulaB: 0,
         minSize: 0.9,
         maxSize: 1.25,

@@ -278,6 +278,10 @@ body {
     color: var(--text-gold);
 }
 
+.gunpowder-total {
+    color: #B0A089;
+}
+
 /* Right-align numbers in detail rows */
 .rc-row .rc-num {
     text-align: right;

@@ -64,6 +64,7 @@ class ResourceGenerator extends Building {
     }
 
     async _loadSkeleton() {
+        if (this.game.headless) return; // no rendering in headless mode
         try {
             const url = this.config.skeletonUrl;
             if (!url) return;

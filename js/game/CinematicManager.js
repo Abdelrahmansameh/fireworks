@@ -1,13 +1,29 @@
+// --- Cinematic zoom configuration ---
+export const CINEMATIC_CONFIG = {
+    // First crowd cinematic zoom-in
+    ZOOM_IN_DELAY_MS:    100,   // ms after crowd member appears before zoom starts
+    ZOOM_IN_DURATION_MS: 300,  // ms for zoom-in animation
+    ZOOM_IN_LEVEL:       3.5,   // how far in to zoom (1.0 = normal)
+    ZOOM_Y_OFFSET:       60,    // world units above person.y to center the zoom on (shows body, not feet)
+
+    // First crowd cinematic zoom-out (after coin toss)
+    ZOOM_OUT_DELAY_MS:    400,  // ms after coin toss before zoom-out starts
+    ZOOM_OUT_DURATION_MS: 300,  // ms for zoom-out animation
+};
+
 export default class CinematicManager {
     constructor(game) {
         this.game = game;
         this.isPlaying = false;
-        
+
         // Track async event resolvers
         this._eventResolvers = new Map();
-        
+
         // Entity to trace camera against
         this.followedEntity = null;
+
+        // Active zoom tween state
+        this._zoomTween = null;
     }
 
     /**
@@ -30,6 +46,13 @@ export default class CinematicManager {
 
         // Cleanup after sequence completes
         this.stopFollowing();
+        this._zoomTween = null;
+        this.game.renderer2D.cameraZoom = 1.0;
+        this.game.renderer2D.setCamera({
+            x: this.game.renderer2D.cameraX,
+            y: this.game.renderer2D.cameraY,
+            zoom: 1.0,
+        });
         this.isPlaying = false;
         this.game.isInputDisabled = false;
         this.game.hideFloatingSparkles = false;
@@ -97,15 +120,61 @@ export default class CinematicManager {
     }
 
     /**
+     * Smoothly animate zoom from current to targetZoom over durationMs.
+     * targetX/targetY: world position to center the zoom on. If null, keeps current position.
+     */
+    zoomCamera(targetZoom, durationMs, targetX = null, targetY = null) {
+        return new Promise(resolve => {
+            const r = this.game.renderer2D;
+            this._zoomTween = {
+                startZoom: r.cameraZoom,
+                targetZoom,
+                startX: r.cameraX,
+                startY: r.cameraY,
+                targetX: targetX ?? r.cameraX,
+                targetY: targetY ?? r.cameraY,
+                startTime: performance.now(),
+                durationMs,
+                resolve,
+            };
+        });
+    }
+
+    /**
      * Must be called in FireworkGame's core loop
      */
     update(deltaTime) {
         if (!this.isPlaying) return;
 
-        if (this.followedEntity) {
-            // Instantly track target rather than smooth scroll if it's following closely, 
-            // but we can just use setCameraTarget for smoothness
+        if (this.followedEntity && !this._zoomTween) {
+            // Normal follow: smooth pan via game's camera system
             this.game.setCameraTarget(this.followedEntity.x);
+        }
+
+        if (this._zoomTween) {
+            const { startZoom, targetZoom, startX, startY, targetX, targetY, startTime, durationMs, resolve } = this._zoomTween;
+            const elapsed = performance.now() - startTime;
+            const t = Math.min(elapsed / durationMs, 1.0);
+            const ease = t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+
+            const zoom = startZoom + (targetZoom - startZoom) * ease;
+            // If following an entity, track their X live; otherwise interpolate to targetX
+            const x = this.followedEntity
+                ? this.followedEntity.x
+                : startX + (targetX - startX) * ease;
+            const y = startY + (targetY - startY) * ease;
+
+            // Take full control of camera — kill game-loop pan so nothing fights us
+            this.game.cameraTargetX = null;
+            this.game.renderer2D.cameraX = x;
+            this.game.renderer2D.cameraY = y;
+            this.game.renderer2D.cameraZoom = zoom;
+            this.game.renderer2D.setCamera({ x, y, zoom });
+
+            if (t >= 1.0) {
+                this._zoomTween = null;
+                resolve();
+            }
         }
     }
 }
