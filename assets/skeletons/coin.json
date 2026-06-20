@@ -14,19 +14,6 @@
       "baseRotation": 0
     },
     {
-      "id": "Coin_outline",
-      "parentId": "Coin",
-      "width": 1.05,
-      "height": 1.05,
-      "color": "000000",
-      "anchorX": 0,
-      "anchorY": 0,
-      "relX": 0,
-      "relY": 0,
-      "baseRotation": 0,
-      "z": -100
-    },
-    {
       "id": "InnerCoin",
       "parentId": "Coin",
       "width": 0.6,
@@ -42,51 +29,45 @@
   ],
   "animations": {
     "toss": {
-      "duration": 0.8,
+      "duration": 0.9,
       "loop": true,
       "tracks": {
         "Coin": [
           {
-            "time": 0.09499999999999999,
+            "time": 0,
             "offsetX": 0,
             "offsetY": 0,
             "rotation": 0
           },
           {
-            "time": 0.195,
+            "time": 0.13921875,
             "offsetX": 0,
             "offsetY": 2.19,
             "rotation": 1.57
           },
           {
-            "time": 0.295,
+            "time": 0.2784375,
             "offsetX": 0,
             "offsetY": 3.75,
             "rotation": 3.14
           },
           {
-            "time": 0.39499999999999996,
+            "time": 0.41765625,
             "offsetX": 0,
             "offsetY": 4.69,
             "rotation": 4.71
           },
           {
-            "time": 0.49499999999999994,
+            "time": 0.5568749999999999,
             "offsetX": 0,
             "offsetY": 5,
             "rotation": 6.28
           },
           {
-            "time": 0.595,
+            "time": 0.6693749999999999,
+            "rotation": 7.85,
             "offsetX": 0,
             "offsetY": 4.69,
-            "rotation": 7.85
-          },
-          {
-            "time": 0.69,
-            "rotation": 10,
-            "offsetX": 0,
-            "offsetY": 3.71,
             "scaleX": 1,
             "scaleY": 1,
             "r": 1,
@@ -95,18 +76,31 @@
             "a": 1
           },
           {
-            "time": 0.8,
+            "time": 0.7762499999999999,
+            "rotation": 10,
+            "offsetX": 0,
+            "offsetY": 3.81,
+            "scaleX": 0.4,
+            "scaleY": 0.4,
+            "r": 1,
+            "g": 1,
+            "b": 1,
+            "a": 1
+          },
+          {
+            "time": 0.9,
             "rotation": 12,
             "offsetX": 0.08,
-            "offsetY": 2.92,
-            "scaleX": 1,
-            "scaleY": 1,
+            "offsetY": 2.09,
+            "scaleX": 0.1,
+            "scaleY": 0.1,
             "r": 1,
             "g": 1,
             "b": 1,
             "a": 1
           }
-        ]
+        ],
+        "InnerCoin": []
       }
     }
   }

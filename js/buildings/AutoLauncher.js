@@ -270,14 +270,18 @@ class AutoLauncher extends Building {
             this._overlayTimer += deltaTime;
         }
 
-        this.accumulator += deltaTime;
-        if (this.accumulator >= this.config.maxAccumulator) {
-            this.accumulator = this.config.maxAccumulator + Math.random() * this.spawnInterval;
-        }
+        // During a cinematic, don't launch (and don't build up an accumulator
+        // that would dump a burst the moment the cinematic ends).
+        if (!this.game.cinematicManager?.isPlaying) {
+            this.accumulator += deltaTime;
+            if (this.accumulator >= this.config.maxAccumulator) {
+                this.accumulator = this.config.maxAccumulator + Math.random() * this.spawnInterval;
+            }
 
-        if (this.accumulator >= 0.5 *( this.spawnInterval + Math.random() * this.spawnInterval)) {
-            this.spawnFirework();
-            this.accumulator -= this.spawnInterval;
+            if (this.accumulator >= 0.5 *( this.spawnInterval + Math.random() * this.spawnInterval)) {
+                this.spawnFirework();
+                this.accumulator -= this.spawnInterval;
+            }
         }
 
         // Always apply the recipe color (no last-resolved fallback)
