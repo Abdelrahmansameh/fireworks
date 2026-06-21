@@ -95,31 +95,28 @@ class CursorParticles {
             const core = this._toWorld(this.mouseX, this.mouseY);
             for (const p of this._particles) {
                 if (p._isOutline) {
+                    // Outline particle released: send it toward the cursor to be absorbed.
+                    // Mark it `_absorbing` so this state is terminal — once a particle is
+                    // heading to the cursor it can never revert to a normal sparkle.
                     const dx = core.x - p.x;
                     const dy = core.y - p.y;
                     const dist = Math.sqrt(dx * dx + dy * dy);
+                    p._absorbing = true;
+                    p._outlinePending = true;
+                    p._outlineTargetX = core.x;
+                    p._outlineTargetY = core.y;
+                    // avoid reassigning repeatedly on subsequent setGrabOutline(null) calls
+                    delete p._isOutline;
                     if (dist > 0) {
                         const approachSpeed = Math.min(cfg.OUTLINE_PARTICLE_SPEED * 0.8, dist * cfg.OUTLINE_APPROACH_SPEED_FACTOR);
                         p.vx = (dx / dist) * approachSpeed;
                         p.vy = (dy / dist) * approachSpeed;
-                        p._outlineTargetX = core.x;
-                        p._outlineTargetY = core.y;
-                        const nx = (p.x - core.x) / dist;
-                        const ny = (p.y - core.y) / dist;
-                        p._outlineNormalX = nx;
-                        p._outlineNormalY = ny;
-                        p._outlinePending = true;
-                        // avoid reassigning repeatedly on subsequent setGrabOutline(null) calls
-                        delete p._isOutline;
-                    } else {
-                        // already at core: give a small outward kick
-                        const nx = 0, ny = 1;
-                        const speed2 = cfg.OUTLINE_PARTICLE_SPEED + Math.random() * cfg.OUTLINE_PARTICLE_SPEED_VAR;
-                        p.vx = nx * speed2;
-                        p.vy = ny * speed2;
-                        p.life = cfg.OUTLINE_PARTICLE_LIFE;
                     }
                 } else if (p._outlinePending) {
+                    // Was being pulled toward the outline but the grab ended before it
+                    // arrived. It has already left normal mode, so it must NOT revert —
+                    // convert it to absorbing and let it chase the cursor until it dies.
+                    p._absorbing = true;
                     delete p._outlinePending;
                     delete p._outlineTargetX; delete p._outlineTargetY;
                     delete p._outlineNormalX; delete p._outlineNormalY;
@@ -181,6 +178,7 @@ class CursorParticles {
                 p._outlineNormalX = nx;
                 p._outlineNormalY = ny;
                 p._outlinePending = true;
+                delete p._absorbing;
                 const dx = tgtX - p.x;
                 const dy = tgtY - p.y;
                 const dist = Math.sqrt(dx * dx + dy * dy);
@@ -373,7 +371,19 @@ class CursorParticles {
         for (let i = this._particles.length - 1; i >= 0; i--) {
             const p = this._particles[i];
 
-            if (p._outlinePending) {
+            if (p._absorbing) {
+                // Chase the live cursor for the rest of the particle's life. It never
+                // returns to normal mode — it simply follows until it decays and dies.
+                const tgt = this._toWorld(this.mouseX, this.mouseY);
+                const dxT = tgt.x - p.x;
+                const dyT = tgt.y - p.y;
+                const dist = Math.sqrt(dxT * dxT + dyT * dyT);
+                if (dist > 0) {
+                    const approachSpeed = Math.min(cfg.OUTLINE_PARTICLE_SPEED, dist * cfg.OUTLINE_APPROACH_SPEED_FACTOR);
+                    p.vx = (dxT / dist) * approachSpeed;
+                    p.vy = (dyT / dist) * approachSpeed;
+                }
+            } else if (p._outlinePending) {
                 const dxT = p._outlineTargetX - p.x;
                 const dyT = p._outlineTargetY - p.y;
                 const dist2T = dxT * dxT + dyT * dyT;

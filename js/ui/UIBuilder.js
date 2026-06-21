@@ -15,6 +15,7 @@ import { render as renderUpgrades  } from './panels/upgradesPanel.js';
 import { render as renderStats     } from './panels/statsPanel.js';
 import { render as renderSettings  } from './panels/settingsPanel.js';
 import { render as renderCheats    } from './panels/cheatsPanel.js';
+import { render as renderBot       } from './panels/botPanel.js';
 
 const PANEL_RENDERERS = {
     recipes:   renderRecipes,
@@ -24,6 +25,7 @@ const PANEL_RENDERERS = {
     stats:     renderStats,
     settings:  renderSettings,
     cheats:    renderCheats,
+    bot:       renderBot,
 };
 
 import ICONS from './icons.js';

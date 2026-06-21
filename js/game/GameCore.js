@@ -16,6 +16,7 @@ import GameMetrics from '../metrics/GameMetrics.js';
 import FireworkSystem from '../systems/FireworkSystem.js';
 import { patternKeys, patternDefinitions, patternDisplayNames } from '../entities/patterns/index.js';
 import { expectedGPS } from '../systems/ProductionRates.js';
+import { GRAND_FINALE_CONFIG } from '../config/GrandFinaleConfig.js';
 import EmergentYieldModel from '../sim/EmergentYieldModel.js';
 import NullRenderer from '../platform/NullRenderer.js';
 import NullAudio from '../platform/NullAudio.js';
@@ -92,6 +93,12 @@ class GameCore extends Engine {
         // early saveProgress() (e.g. from applyAll) never reads undefined.
         this.hasSeenFirstCrowdCinematic = false;
         this.advancedCreatorUnlocked = false;
+
+        // Grand Finale (the ~15-min climax event). The live game drives the real
+        // particle-flooding event via GrandFinaleManager; headless models the
+        // income burst in stepHeadless. Both gate on this flag.
+        this.grandFinaleUnlocked = false;
+        this._finaleSim = { active: false, elapsed: 0, cooldown: 0 };
 
         this.progression = new ProgressionManager(PROGRESSION_CONFIG);
         this.resourceManager = new ResourceManager(this);
@@ -441,6 +448,15 @@ class GameCore extends Engine {
         }
     }
 
+    /**
+     * Unlock the Grand Finale. Base implementation just flips the flag (so the
+     * headless sim models the income burst); the live FireworkGame overrides this
+     * to also kick off the first finale and reveal its UI.
+     */
+    _unlockGrandFinale() {
+        this.grandFinaleUnlocked = true;
+    }
+
     onFirstClick(elementType) {
         if (!this.firstClickStates[elementType]) {
             this.firstClickStates[elementType] = true;
@@ -522,6 +538,9 @@ class GameCore extends Engine {
         // Emergent estimate: drone collection + crowd catching.
         this.emergentModel.applyTick(this, dt, clicksPerSec);
 
+        // Grand Finale income burst (headless model of the live particle flood).
+        if (this.grandFinaleUnlocked) this._stepHeadlessFinale(dt);
+
         // Gold from crowd coin tosses (closed-form; mirrors the live Crowd).
         const gps = expectedGPS(this).total;
         if (gps > 0) this.addGold(gps * dt, 'crowd');
@@ -533,6 +552,30 @@ class GameCore extends Engine {
 
         // Progression unlocks.
         this.checkUnlockConditions();
+    }
+
+    /**
+     * Headless model of the Grand Finale income burst. The live event floods the
+     * sky to the particle cap; here we approximate that as a sustained stream of
+     * `simEffectiveFireworksPerSec` launcher-yield fireworks (× sparkleYieldFraction)
+     * while active, on the same duration/cooldown cadence as the live manager.
+     */
+    _stepHeadlessFinale(dt) {
+        const cfg = GRAND_FINALE_CONFIG;
+        const f = this._finaleSim;
+        if (f.active) {
+            f.elapsed += dt;
+            const yieldMulti = this.launcherStats?.sparkleYieldMultiplier ?? 1;
+            const perFw = this.baseSparkleMultiplier * yieldMulti * cfg.sparkleYieldFraction;
+            const fw = cfg.simEffectiveFireworksPerSec * dt;
+            // Mirror the live finale: income only, no fireworkCount bump (which would
+            // inflate the crowd). See GrandFinaleManager._launchOne.
+            this.addSparkles(fw * perFw, cfg.sparkleSource);
+            if (f.elapsed >= cfg.durationSec) { f.active = false; f.cooldown = cfg.cooldownSec; }
+        } else {
+            f.cooldown -= dt;
+            if (cfg.autoTrigger && f.cooldown <= 0) { f.active = true; f.elapsed = 0; }
+        }
     }
 
     /**

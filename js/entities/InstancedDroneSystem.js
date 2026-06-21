@@ -1,27 +1,18 @@
 import { DRONE_CONFIG, GAME_BOUNDS, PARTICLE_TYPES } from '../config/config.js';
 import * as Renderer2D from '../rendering/Renderer.js';
+import { SkeletonData } from '../animation/SkeletonData.js';
+import { AnimationData } from '../animation/AnimationData.js';
+import { computePose } from '../animation/SkeletonAnimator.js';
 const { BlendMode } = Renderer2D;
 
-// Narrow elongated diamond/arrowhead pointing in +X direction.
-// When rotation = atan2(vy, vx), the drone faces its movement direction.
-function buildDroneMesh() {
-    const vertices = new Float32Array([
-        1.0, 0.0,   // 0 – front tip
-        0.05, 0.45, // 1 – upper wing tip
-        -0.55, 0.18, // 2 – upper back shoulder
-        -0.8, 0.0,  // 3 – tail
-        -0.55, -0.12, // 4 – lower back shoulder
-        0.05, -0.30, // 5 – lower wing tip
-    ]);
-    // Four triangles fanning from front tip
-    const indices = new Uint16Array([
-        0, 1, 2,
-        0, 2, 3,
-        0, 3, 4,
-        0, 4, 5,
-    ]);
-    return { vertices, indices };
-}
+// Each drone is rendered as a multi-part skeleton (a neon quadcopter). Every
+// part of the skeleton is one instance in a shared instanced group — so a drone
+// consumes `partsPerDrone` instances, exactly like the crowd renders people.
+const DRONE_SKELETON_URL = 'assets/skeletons/drone.json';
+// Number of distinct phase-shifted poses computed per frame. Each drone is
+// assigned one bucket so rotors/cores aren't all perfectly synchronized, while
+// the per-frame pose cost stays O(PHASE_BUCKETS) instead of O(drones).
+const PHASE_BUCKETS = 6;
 
 // CPU buffer layout (strideFloats = 19)
 // 0:px  1:py  2:vx  3:vy  4:targX  5:targY  6:wanderTimer
@@ -34,13 +25,17 @@ class InstancedDroneSystem {
         this.particleSystem = particleSystem;
 
         this.maxDrones = DRONE_CONFIG.maxDrones;
+        // Buffers are sized to a fixed hard capacity (≥ any upgraded maxDrones),
+        // so raising the soft cap (this.maxDrones) at runtime can never overflow
+        // the CPU arrays or the GL instance buffer.
+        this.capacity = Math.max(this.maxDrones, DRONE_CONFIG.maxDroneCapacity ?? this.maxDrones);
         this.strideFloats = 19;
-        this.data = new Float32Array(this.maxDrones * this.strideFloats);
+        this.data = new Float32Array(this.capacity * this.strideFloats);
         this.count = 0;
 
         // Per-drone live objects captured by pull closures:
         //   { x, y, active: bool, collected: int, scale: number }
-        this.droneRefs = new Array(this.maxDrones).fill(null);
+        this.droneRefs = new Array(this.capacity).fill(null);
 
         // Throttle: only scan for particles every N frames
         this._scanFrameCounter = 0;
@@ -63,15 +58,18 @@ class InstancedDroneSystem {
         this.TRAIL_TIMER = 17;
         this.OSC_PHASE = 18;
 
-        // Create the WebGL instanced mesh
-        const mesh = buildDroneMesh();
-        this.mesh = this.renderer.createInstancedGroup({
-            vertices: mesh.vertices,
-            indices: mesh.indices,
-            maxInstances: this.maxDrones,
-            blendMode: BlendMode.ADDITIVE,
-            zIndex: 2000,
-        });
+        // ── Skeleton rendering ──────────────────────────────────────
+        // The instanced group + per-part metadata are created once the skeleton
+        // JSON loads. Until then `this.mesh` is null and spawns are ignored.
+        this.mesh = null;
+        this.skeleton = null;
+        this.animData = null;
+        this.flyClip = null;
+        this.partsPerDrone = 0;
+        this._partMeta = null;        // precomputed per-part static data
+        this._globalAnimTimer = 0;
+        this._phasePoses = new Array(PHASE_BUCKETS).fill(null);
+        this._initSkeleton();
 
         // ── Spatial grid for particle collection ────────────────────
         // Built once per scan frame and queried per-drone, so the cost of
@@ -90,6 +88,108 @@ class InstancedDroneSystem {
         // Arrays are reused across frames (length reset, capacity retained).
         this._grid = new Array(this._gridCols * this._gridRows);
         for (let c = 0; c < this._grid.length; c++) this._grid[c] = [];
+    }
+
+    /**
+     * Load the drone skeleton + animation, then build the instanced group that
+     * holds capacity·partsPerDrone part-instances. Mirrors the crowd's approach.
+     */
+    async _initSkeleton() {
+        try {
+            const { skeleton, rawAnimations } = await SkeletonData.load(DRONE_SKELETON_URL);
+            this.skeleton = skeleton;
+            this.animData = new AnimationData(rawAnimations);
+        } catch (e) {
+            console.warn('drone skeleton failed to load, using minimal fallback:', e);
+            this.skeleton = new SkeletonData([
+                { id: 'body', parentId: null, width: 1.4, height: 0.6, anchorX: 0, anchorY: 0, relX: 0, relY: 0, color: '63ffe4' }
+            ]);
+            this.animData = new AnimationData({ fly: { duration: 1, loop: true, tracks: {} } });
+        }
+
+        this.flyClip = this.animData.getClip('fly');
+        this.partsPerDrone = this.skeleton.partCount;
+
+        // Precompute static per-part data so the per-frame write loop is cheap.
+        // drawOffset orders parts back-to-front (by z) within each drone's slot.
+        const parts = this.skeleton.parts;
+        const colors = this.skeleton.partColors;
+        const drawIndexMap = this.skeleton.drawIndexMap;
+        this._partMeta = parts.map((part, i) => ({
+            id: part.id,
+            width: part.width,
+            height: part.height,
+            anchorOffX: part.anchorX * part.width,
+            anchorOffY: part.anchorY * part.height,
+            r: colors[i].r,
+            g: colors[i].g,
+            b: colors[i].b,
+            a: colors[i].a !== undefined ? colors[i].a : 1,
+            drawOffset: drawIndexMap ? (drawIndexMap.get(part.id) || 0) : i,
+        }));
+
+        const geometry = Renderer2D.buildTexturedSquare(1, 1);
+        this.mesh = this.renderer.createInstancedGroup({
+            vertices: geometry.vertices,
+            indices: geometry.indices,
+            texCoords: geometry.texCoords,
+            texture: null,
+            maxInstances: this.capacity * this.partsPerDrone,
+            blendMode: BlendMode.NORMAL,
+            zIndex: 2000,
+        });
+    }
+
+    /**
+     * Write all part-instances for one drone into the GPU buffer. The skeleton
+     * is a side-view drone authored facing +X and standing upright; rather than
+     * tumbling to its velocity heading, the rig stays upright, mirrors via
+     * `flipX` to face its travel direction, and leans by a small `tilt`. Writes
+     * directly into instanceData (bypassing the per-instance setters' bounds
+     * guard, as the legacy drone renderer did).
+     *
+     * @param {Map} basePose — a phase-bucketed pose from computePose()
+     * @param {number} flipX — +1 (facing right) or -1 (facing left)
+     * @param {number} tilt — small body lean in radians
+     * @param {number} wx,wy — drone world position
+     * @param {number} scale — drone render scale
+     * @param {number} baseInstanceIndex — first instance slot for this drone
+     */
+    _writeDronePose(basePose, flipX, tilt, wx, wy, scale, baseInstanceIndex) {
+        const meta = this._partMeta;
+        const gpu = this.mesh.instanceData;
+        const gStr = this.mesh.instanceStrideFloats;
+        const cosT = Math.cos(tilt);
+        const sinT = Math.sin(tilt);
+
+        for (let i = 0; i < meta.length; i++) {
+            const m = meta[i];
+            const tf = basePose.get(m.id);
+            if (!tf) continue;
+
+            const localRot = tf.rotation;
+            const cosR = Math.cos(localRot);
+            const sinR = Math.sin(localRot);
+
+            // Skeleton-local draw centre (anchor-corrected), mirror horizontally
+            // by flipX, then apply the small body tilt and place at world pos.
+            const meshLocalX = tf.x - (m.anchorOffX * cosR - m.anchorOffY * sinR);
+            const meshLocalY = tf.y - (m.anchorOffX * sinR + m.anchorOffY * cosR);
+            const mlx = meshLocalX * flipX;
+            const dmx = mlx * cosT - meshLocalY * sinT;
+            const dmy = mlx * sinT + meshLocalY * cosT;
+
+            const base = (baseInstanceIndex + m.drawOffset) * gStr;
+            gpu[base + 0] = wx + dmx * scale;
+            gpu[base + 1] = wy + dmy * scale;
+            gpu[base + 2] = localRot * flipX + tilt;
+            gpu[base + 3] = m.width * scale * (tf.scaleX ?? 1);
+            gpu[base + 4] = m.height * scale * (tf.scaleY ?? 1);
+            gpu[base + 5] = m.r * (tf.r ?? 1);
+            gpu[base + 6] = m.g * (tf.g ?? 1);
+            gpu[base + 7] = m.b * (tf.b ?? 1);
+            gpu[base + 8] = m.a * (tf.a ?? 1);
+        }
     }
 
     /**
@@ -155,7 +255,10 @@ class InstancedDroneSystem {
      * Returns the drone index, or -1 if at capacity.
      */
     spawnDrone(x, y, options = {}) {
-        if (this.count >= this.maxDrones) return -1;
+        // Skeleton still loading — drones are ephemeral, so dropping the handful
+        // of spawns during the initial fetch is harmless.
+        if (!this.mesh) return -1;
+        if (this.count >= Math.min(this.maxDrones, this.capacity)) return -1;
 
         const i = this.count;
         const base = i * this.strideFloats;
@@ -164,7 +267,13 @@ class InstancedDroneSystem {
 
         const lifetime = options.lifetime ?? cfg.defaultLifetime;
         const color = options.color ?? cfg.color;
-        const scale = options.scale ?? cfg.defaultScale;
+        // Render scale, mirroring the crowd: baseScale + random·scaleVariance.
+        // Callers may pass options.scaleMultiplier (e.g. per-hub sizing) which
+        // scales the config base; an explicit options.scale (absolute) overrides
+        // everything and is kept for legacy callers/tests.
+        const sc = cfg.scaling;
+        const baseScale = sc ? sc.baseScale + Math.random() * (sc.scaleVariance || 0) : cfg.defaultScale;
+        const scale = options.scale ?? (baseScale * (options.scaleMultiplier ?? 1));
         const radius = options.collectionRadius ?? cfg.collectionRadius;
         const speed = options.speed ?? cfg.wanderSpeed;
 
@@ -197,15 +306,15 @@ class InstancedDroneSystem {
         d[base + this.TRAIL_TIMER] = 0;
         d[base + this.OSC_PHASE] = Math.random() * Math.PI * 2; // random phase offset
 
-        this.droneRefs[i] = { x, y, active: true, collected: 0, scale };
+        // phaseBucket de-syncs rotor/core animation across drones; it travels
+        // with the drone through swap-removes (droneRefs are moved, not indices).
+        this.droneRefs[i] = {
+            x, y, active: true, collected: 0, scale,
+            phaseBucket: Math.floor(Math.random() * PHASE_BUCKETS),
+        };
 
-        // Initialise the GPU slot (addInstanceRaw appends at current instanceCount)
-        this.mesh.addInstanceRaw(
-            x, y,
-            0,
-            scale, scale,
-            color.r, color.g, color.b, color.a
-        );
+        // GPU part-instances are written every frame in update(); nothing to
+        // initialise here. instanceCount is set from `count` at the end of update.
 
         this.count++;
         return i;
@@ -217,7 +326,8 @@ class InstancedDroneSystem {
      * @param {function} onAwardSparkles  Called with (sparkleAmount) when a drone collects.
      */
     update(delta, onAwardSparkles) {
-        if (this.count === 0) return;
+        // Nothing to do until the skeleton has loaded its instanced group.
+        if (!this.mesh || this.count === 0) return;
 
         const d = this.data;
         const cfg = DRONE_CONFIG;
@@ -228,10 +338,16 @@ class InstancedDroneSystem {
             this._shapes = Object.keys(ps.instanceData);
         }
 
-        const gpu = this.mesh.instanceData;
-        const gStr = this.mesh.instanceStrideFloats;
+        // ── Animation poses ──────────────────────────────────────────
+        // Compute one pose per phase bucket this frame; each drone samples the
+        // bucket it was assigned at spawn. O(PHASE_BUCKETS) instead of O(drones).
+        const clipDur = this.flyClip ? this.flyClip.duration : 1;
+        this._globalAnimTimer = (this._globalAnimTimer + delta) % clipDur;
+        for (let k = 0; k < PHASE_BUCKETS; k++) {
+            const t = (this._globalAnimTimer + (k / PHASE_BUCKETS) * clipDur) % clipDur;
+            this._phasePoses[k] = computePose(this.skeleton, this.flyClip, t);
+        }
 
-        const now = performance.now();
         this._scanFrameCounter++;
         const doScan = (this._scanFrameCounter % cfg.scanInterval) === 0;
 
@@ -241,7 +357,6 @@ class InstancedDroneSystem {
 
         for (let i = 0; i < this.count; i++) {
             const base = i * this.strideFloats;
-            const gBase = i * gStr;
             const ref = this.droneRefs[i];
 
             // ── Wander steering ──────────────────────────────────────
@@ -346,13 +461,20 @@ class InstancedDroneSystem {
             d[base + this.PY] = Math.max(GAME_BOUNDS.WORLD_LAUNCHER_Y,
                 Math.min(d[base + this.PY], GAME_BOUNDS.WORLD_MAX_EXPLOSION_Y));
 
-            // ── Visual rotation lag ───────────────────────────────────
-            // Body rotates toward velocity direction at a capped angular rate
+            // ── Upright facing + lean ─────────────────────────────────
+            // Side-view drone: don't tumble to the heading. Mirror left/right
+            // to face travel (with a dead-band so it doesn't flicker near zero
+            // horizontal speed) and lean slightly into horizontal motion.
             const vx = d[base + this.VX];
             const vy = d[base + this.VY];
-            if (vx * vx + vy * vy > 1) {
-                d[base + this.ROTATION] = Math.atan2(vy, vx);
-            }
+            let flipX = ref.flipX || 1;
+            if (vx > 30) flipX = 1;
+            else if (vx < -30) flipX = -1;
+            ref.flipX = flipX;
+            // Lean: tip the nose toward the direction of travel, capped. Sign is
+            // mirrored by flipX so it always leans "forward" in screen space.
+            const targetTilt = -flipX * Math.min(0.32, Math.abs(vx) * 0.0004);
+            ref.tilt = (ref.tilt ?? 0) + (targetTilt - (ref.tilt ?? 0)) * Math.min(1, delta * 6);
             // Sync the live ref position so pull closures are current
             ref.x = d[base + this.PX];
             ref.y = d[base + this.PY];
@@ -365,15 +487,16 @@ class InstancedDroneSystem {
                 if (d[base + this.TRAIL_TIMER] <= 0 && !isTurning) {
                     d[base + this.TRAIL_TIMER] += trailCfg.spawnRate;
 
-                    const rot = d[base + this.ROTATION];
                     const sc = ref.scale;
 
-                    // Drone tail is at local (-0.60, 0) — transform to world space
-                    const tailX = d[base + this.PX] + Math.cos(rot) * (-0.60 * sc);
-                    const tailY = d[base + this.PY] + Math.sin(rot) * (-0.60 * sc);
+                    // Downwash: the side-view drone is upright, so trail puffs eject
+                    // downward from just below the body (rotor wash), with a slight
+                    // backward bias opposite the travel direction.
+                    const tailX = d[base + this.PX] - flipX * 0.15 * sc;
+                    const tailY = d[base + this.PY] - 0.5 * sc;
 
-                    // Eject direction: opposite to drone facing (backward away from tail)
-                    const baseAngle = rot + Math.PI;
+                    // Eject mostly downward (−Y), nudged backward by heading.
+                    const baseAngle = -Math.PI / 2 - flipX * 0.25;
                     const coneHalf = trailCfg.coneAngle * (Math.PI / 180);
 
                     const dr = d[base + this.CR];
@@ -497,40 +620,36 @@ class InstancedDroneSystem {
                 const sparkles = ref.collected * cfg.sparklesPerParticle;
                 if (sparkles > 0) onAwardSparkles(sparkles);
 
-                // Swap-remove
+                // Swap-remove (CPU state only). The GPU part-instances for every
+                // live drone are rewritten below each frame, so there's no GPU
+                // buffer copy to do here — just keep the physics/ref arrays packed.
                 const lastIdx = this.count - 1;
                 if (i !== lastIdx) {
                     const lastBase = lastIdx * this.strideFloats;
-                    const gLast = lastIdx * gStr;
                     d.set(d.subarray(lastBase, lastBase + this.strideFloats), base);
-                    gpu.set(gpu.subarray(gLast, gLast + gStr), gBase);
                     this.droneRefs[i] = this.droneRefs[lastIdx];
                 }
                 this.droneRefs[lastIdx] = null;
                 this.count--;
-                this.mesh.instanceCount = this.count;
                 i--;
                 continue;
             }
 
-            // ── Write GPU slot ───────────────────────────────────────
-            // Gentle pulse so drones are visually distinct from static objects
-            const pulse = 1.0 + 0.45 * Math.sin(now * 0.003 + i * 1.3);
-            const alpha =  pulse;
-
-            gpu[gBase + 0] = d[base + this.PX];
-            gpu[gBase + 1] = d[base + this.PY];
-            gpu[gBase + 2] = d[base + this.ROTATION];
-            const sc = ref.scale;
-            gpu[gBase + 3] = sc;
-            gpu[gBase + 4] = sc;
-            gpu[gBase + 5] = d[base + this.CR];
-            gpu[gBase + 6] = d[base + this.CG];
-            gpu[gBase + 7] = d[base + this.CB];
-            gpu[gBase + 8] = alpha;
+            // ── Write skeleton part-instances ─────────────────────────
+            // Pose the drone upright, flipped to face travel and leaning into it.
+            const pose = this._phasePoses[ref.phaseBucket] || this._phasePoses[0];
+            this._writeDronePose(
+                pose,
+                ref.flipX || 1,
+                ref.tilt || 0,
+                d[base + this.PX],
+                d[base + this.PY],
+                ref.scale,
+                i * this.partsPerDrone
+            );
         }
 
-        this.mesh.instanceCount = this.count;
+        this.mesh.instanceCount = this.count * this.partsPerDrone;
     }
 
     /**
@@ -541,12 +660,13 @@ class InstancedDroneSystem {
             if (this.droneRefs[i]) this.droneRefs[i].active = false;
         }
         this.count = 0;
-        this.mesh.instanceCount = 0;
+        if (this.mesh) this.mesh.instanceCount = 0;
     }
 
     dispose() {
         this.clear();
-        this.renderer.removeInstancedGroup(this.mesh);
+        if (this.mesh) this.renderer.removeInstancedGroup(this.mesh);
+        this.mesh = null;
     }
 }
 

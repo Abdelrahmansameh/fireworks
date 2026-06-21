@@ -3,7 +3,7 @@ import * as Renderer2D from '../rendering/Renderer.js';
 import { createRng } from '../utils/random.js';
 import { SkeletonData } from '../animation/SkeletonData.js';
 import { AnimationData } from '../animation/AnimationData.js';
-import { computePose, applyPoseToInstances, computeSkeletonOutlinePoints } from '../animation/SkeletonAnimator.js';
+import { computePose, applyPoseToInstances, computeSkeletonOutlinePoints, blendPoses } from '../animation/SkeletonAnimator.js';
 
 class Crowd {
     constructor(renderer2D) {
@@ -97,6 +97,15 @@ class Crowd {
 
         this.totalPartsPerPerson = this._skeleton.partCount + this.maxPropParts;
 
+        // The instanced group holds CROWD_CONFIG.maxInstances *instances*, and each
+        // person consumes totalPartsPerPerson of them — so the real people cap is
+        // the buffer size divided by parts-per-person. Exceeding it overflows the
+        // vertex buffer (GL_INVALID_OPERATION / "Instance index out of bounds").
+        this.maxRenderablePeople = Math.max(
+            0,
+            Math.floor(CROWD_CONFIG.maxInstances / Math.max(1, this.totalPartsPerPerson))
+        );
+
         try {
             const geometry = Renderer2D.buildTexturedSquare(1, 1);
             this.instancedGroup = this.renderer.createInstancedGroup({
@@ -119,6 +128,11 @@ class Crowd {
     }
 
     setCount(count) {
+        // Never spawn more people than the instance buffer can render.
+        if (this.maxRenderablePeople != null) {
+            count = Math.min(count, this.maxRenderablePeople);
+        }
+
         if (!this.instancedGroup) {
             this.missingCrowdsToInit = count;
             return;
@@ -148,6 +162,14 @@ class Crowd {
     _addPerson() {
         if (!this.instancedGroup) {
             this.missingCrowdsToInit++;
+            return;
+        }
+
+        // Hard cap on every spawn path: never exceed what the instance buffer can
+        // render. setCount's clamp is bypassed when the skeleton is still loading
+        // (maxRenderablePeople unknown → the count is stashed in missingCrowdsToInit
+        // and replayed here), so this guard is the real backstop.
+        if (this.maxRenderablePeople != null && this.people.length >= this.maxRenderablePeople) {
             return;
         }
 
@@ -241,6 +263,17 @@ class Crowd {
             // Overlay animation (e.g. coin toss on top of base state)
             overlayClipName: null,
             overlayTimer: 0,
+            // Cinematic skeleton takeover (set by CinematicManager sequences).
+            // When cinematicIdle is true the person plays the 'cinematic_intro'
+            // idle clip instead of his state animation. If cinematicLookFn is
+            // also set, his pupils are steered toward the world point it returns.
+            cinematicIdle: false,
+            cinematicLookFn: null,
+            // Animation cross-fade: snapshot of the pose at the last state switch,
+            // blended into the live animation over blendDuration seconds.
+            blendFromPose: null,
+            blendTimer: 0,
+            blendDuration: 0,
         };
 
         this.people.push(person);
@@ -274,8 +307,115 @@ class Crowd {
         this._scanFrameCounter++;
     }
 
-    _switchToState(personIndex, newState) {
+    /**
+     * Resolve the cross-fade duration (seconds) for a state transition from the
+     * CROWD_CONFIG.blending config. Lookup order: 'from->to', '*->to', 'to',
+     * then defaultDuration. Returns 0 (no blend) when blending is disabled.
+     */
+    _resolveBlendDuration(fromState, toState) {
+        const cfg = CROWD_CONFIG.blending;
+        if (!cfg || !cfg.enabled) return 0;
+        const t = cfg.transitions || {};
+        const candidate =
+            t[`${fromState}->${toState}`] ??
+            t[`*->${toState}`] ??
+            t[toState] ??
+            cfg.defaultDuration ?? 0;
+        return Math.max(0, candidate);
+    }
+
+    /**
+     * Build the active bone-mask overlay (e.g. coin toss) for a person, or null
+     * if none is playing. The override weight fades in at the clip start and out
+     * at the end (per CROWD_CONFIG.blending.overlays) so the masked bones ease
+     * between the base state pose (cheering) and the overlay instead of snapping.
+     * @returns {{clip:Object, time:number, mode:string, boneMask:Set<string>, weight:number}|null}
+     */
+    _buildOverlay(person) {
+        if (person.overlayClipName === null || !this._animData) return null;
+        const overlayClip = this._animData.getClip(person.overlayClipName);
+        if (!overlayClip) return null;
+
+        const fades = CROWD_CONFIG.blending?.overlays?.[person.overlayClipName];
+        const fadeIn = fades?.fadeIn ?? 0;
+        const fadeOut = fades?.fadeOut ?? 0;
+        const dur = overlayClip.duration;
+        const t = person.overlayTimer;
+
+        let weight = 1;
+        if (fadeIn > 0 && t < fadeIn) weight = t / fadeIn;
+        const remaining = dur - t;
+        if (fadeOut > 0 && remaining < fadeOut) weight = Math.min(weight, Math.max(0, remaining / fadeOut));
+        weight = Math.max(0, Math.min(1, weight));
+
+        return {
+            clip: overlayClip,
+            time: t,
+            mode: 'override',
+            boneMask: new Set(['arm_1_r', 'arm_1_l', 'pupil_l', 'pupil_r']),
+            weight,
+        };
+    }
+
+    /**
+     * Snapshot the person's current rendered pose (base clip + active overlay)
+     * so it can be cross-faded into the next state's animation.
+     * @returns {Map<string, Object>|null}
+     */
+    _computePoseForBlend(person) {
+        if (!this._skeleton || !this._animData) return null;
+        const { clip, time } = this._getAnimForState(person);
+        const overlay = this._buildOverlay(person);
+        return computePose(this._skeleton, clip, time, null, overlay);
+    }
+
+    /**
+     * Arm a cross-fade from the person's current pose into whatever they animate
+     * next frame. Use for pose changes that bypass the state machine — e.g. the
+     * cinematic skeleton takeover toggling person.cinematicIdle. Call this BEFORE
+     * flipping the flag so the snapshot captures the outgoing pose.
+     * @param {Object} person
+     * @param {number} [duration] — fade time in seconds; falls back to the
+     *        blending defaultDuration. Pass 0 for an instant snap.
+     */
+    requestPoseBlend(person, duration = null) {
+        if (!person) return;
+        const cfg = CROWD_CONFIG.blending;
+        if (!cfg || !cfg.enabled) return;
+        const dur = duration != null ? Math.max(0, duration) : Math.max(0, cfg.defaultDuration ?? 0);
+        if (dur <= 0) return;
+        const snapshot = this._computePoseForBlend(person);
+        if (snapshot) {
+            person.blendFromPose = snapshot;
+            person.blendTimer = dur;
+            person.blendDuration = dur;
+        }
+    }
+
+    /**
+     * @param {number} personIndex
+     * @param {string} newState
+     * @param {number|null} [blendDuration] — override the configured fade time
+     *        for this switch (seconds). Pass 0 to force an instant snap.
+     */
+    _switchToState(personIndex, newState, blendDuration = null) {
         const person = this.people[personIndex];
+        const fromState = person.state;
+
+        // Capture a cross-fade snapshot of the outgoing pose before we mutate
+        // the state (which also resets animTimer, flipX, etc.).
+        const dur = blendDuration != null
+            ? Math.max(0, blendDuration)
+            : this._resolveBlendDuration(fromState, newState);
+        if (dur > 0 && fromState !== newState) {
+            const snapshot = this._computePoseForBlend(person);
+            if (snapshot) {
+                person.blendFromPose = snapshot;
+                person.blendTimer = dur;
+                person.blendDuration = dur;
+            }
+        }
+
         person.state = newState;
         person.bounceCount = 0;
         if (newState === 'cheering') {
@@ -443,6 +583,13 @@ class Crowd {
         // Note: coin-toss is now handled as a bone-mask overlay, not a full-clip switch.
         // We keep coinAnimTimer check only for prop visibility.
 
+        // Cinematic takeover: ignore the state machine and play the idle clip.
+        if (person.cinematicIdle) {
+            const clip = this._animData.getClip('cinematic_intro') ?? null;
+            const time = clip ? (clip.loop ? person.animTimer % clip.duration : Math.min(person.animTimer, clip.duration)) : 0;
+            return { clip, time };
+        }
+
         if (person.state === 'catapult_walk') {
             const clip = this._animData.getClip('walking') ?? null;
             const time = clip ? person.animTimer % clip.duration : 0;
@@ -487,8 +634,8 @@ class Crowd {
         catData.arcElapsed = 0;
         catData.arcHeight = 50; // extra upward arc above the straight line
 
-        person.state = 'catapult_arc';
-        person.animTimer = 0;
+        // Cross-fade the walk into the jump (config: catapult_walk->catapult_arc).
+        this._switchToState(personIndex, 'catapult_arc');
     }
 
     /**
@@ -539,6 +686,48 @@ class Crowd {
         this._switchToState(personIndex, 'falling');
     }
 
+    /**
+     * Compute per-pupil override offsets that steer the eyes toward the world
+     * point returned by person.cinematicLookFn(). The offset is clamped to
+     * CROWD_CONFIG.pupilLookRadius so the pupil stays inside its eye.
+     *
+     * @returns {Map<string,{offsetX:number,offsetY:number}>|null}
+     */
+    _computePupilLookOverrides(person, clip, time, flipX, finalScale) {
+        const target = person.cinematicLookFn();
+        if (!target) return null;
+
+        // First, solve the pose without overrides to find each eye's world centre.
+        const basePose = computePose(this._skeleton, clip, time);
+        const R = CROWD_CONFIG.pupilLookRadius ?? 0.42;
+        const overrides = new Map();
+
+        for (const [eyeId, pupilId] of [['eye_l', 'pupil_l'], ['eye_r', 'pupil_r']]) {
+            const eyeTf = basePose.get(eyeId);
+            if (!eyeTf) continue;
+
+            // Eye centre in world space (matches applyPoseToInstances transform).
+            const eyeWorldX = person.x + eyeTf.x * flipX * finalScale;
+            const eyeWorldY = person.y + eyeTf.y * finalScale;
+
+            const dx = target.x - eyeWorldX;
+            const dy = target.y - eyeWorldY;
+
+            // Convert the world-space look direction into skeleton-local pupil
+            // offset axes. World→model X is mirrored by flipX; Y is shared (+up).
+            let mx = dx * flipX;
+            let my = dy;
+            const len = Math.hypot(mx, my);
+            if (len < 1e-4) {
+                overrides.set(pupilId, { offsetX: 0, offsetY: 0 });
+            } else {
+                overrides.set(pupilId, { offsetX: (mx / len) * R, offsetY: (my / len) * R });
+            }
+        }
+
+        return overrides;
+    }
+
     _updateProceduralAnimation(person, deltaTime) {
         person.animTimer += deltaTime * person.animSpeed;
 
@@ -559,22 +748,9 @@ class Crowd {
 
         const { clip, time } = this._getAnimForState(person);
 
-        // Build coin-toss overlay (override on arms + pupils only)
-        let overlay = null;
-        if (person.overlayClipName !== null) {
-            const overlayClip = this._animData ? this._animData.getClip(person.overlayClipName) : null;
-            if (overlayClip) {
-                overlay = {
-                    clip: overlayClip,
-                    time: person.overlayTimer,
-                    mode: 'override',
-                    boneMask: new Set(['arm_1_r', 'arm_1_l', 'pupil_l', 'pupil_r']),
-                };
-            }
-        }
-
-        // Use the generic pose solver with optional overlay
-        const pose = computePose(this._skeleton, clip, time, null, overlay);
+        // Build coin-toss overlay (override on arms + pupils only), with fade
+        // weight so cheering eases into the toss and back out.
+        const overlay = this._buildOverlay(person);
 
         const minY = GAME_BOUNDS.CROWD_Y;
         const maxY = GAME_BOUNDS.CROWD_Y + (CROWD_CONFIG.ySpread || 0);
@@ -589,6 +765,28 @@ class Crowd {
         const ySizeFactor = minSize + (maxSize - minSize) * t;
 
         const finalScale = scale * ySizeFactor;
+
+        // Cinematic pupil tracking: steer the eyes toward a world target.
+        const lookOverrides = (person.cinematicIdle && person.cinematicLookFn)
+            ? this._computePupilLookOverrides(person, clip, time, flipX, finalScale)
+            : null;
+
+        // Use the generic pose solver with optional overlay / pupil overrides
+        let pose = computePose(this._skeleton, clip, time, lookOverrides, overlay);
+
+        // Cross-fade from the pose snapshot captured at the last state switch.
+        if (person.blendTimer > 0 && person.blendFromPose) {
+            person.blendTimer = Math.max(0, person.blendTimer - deltaTime);
+            let bt = person.blendDuration > 0 ? 1 - person.blendTimer / person.blendDuration : 1;
+            bt = Math.max(0, Math.min(1, bt));
+            if (CROWD_CONFIG.blending && CROWD_CONFIG.blending.ease === 'smoothstep') {
+                bt = bt * bt * (3 - 2 * bt);
+            }
+            pose = blendPoses(person.blendFromPose, pose, bt);
+            if (person.blendTimer <= 0) {
+                person.blendFromPose = null;
+            }
+        }
 
         applyPoseToInstances(
             this._skeleton, pose, this.instancedGroup,
@@ -834,20 +1032,7 @@ class Crowd {
 
         const person = this.people[this.grabbedPersonIndex];
         const { clip, time } = this._getAnimForState(person);
-
-        let overlay = null;
-        if (person.overlayClipName !== null) {
-            const overlayClip = this._animData.getClip(person.overlayClipName);
-            if (overlayClip) {
-                overlay = {
-                    clip: overlayClip,
-                    time: person.overlayTimer,
-                    mode: 'override',
-                    boneMask: new Set(['arm_1_r', 'arm_1_l', 'pupil_l', 'pupil_r']),
-                };
-            }
-        }
-
+        const overlay = this._buildOverlay(person);
         const pose = computePose(this._skeleton, clip, time, null, overlay);
 
         // Replicate the y-depth size factor from _updateProceduralAnimation
@@ -944,6 +1129,37 @@ class Crowd {
 
         this.grabbedPersonIndex = -1;
         this._cursorHistory = [];
+    }
+
+    /**
+     * Automation helper (used by the play-bot): grab the nearest cheering person
+     * and throw them toward (targetX, targetY). Mirrors the manual grab→release
+     * throw (same speed cap + 'falling' state), but aims deterministically
+     * instead of deriving velocity from cursor history. Returns true if a person
+     * was thrown.
+     */
+    throwNearestToward(targetX, targetY, speed = Math.sqrt(CROWD_CONFIG.maxThrowSpeedSquared) * 0.95) {
+        let idx = -1;
+        for (let i = 0; i < this.people.length; i++) {
+            if (this.people[i].state === 'cheering') { idx = i; break; }
+        }
+        if (idx < 0) return false;
+
+        const person = this.people[idx];
+        if (!this.tryGrab(person.x, person.y)) return false;
+
+        const gi = this.grabbedPersonIndex;
+        const gp = this.people[gi];
+        const dx = targetX - gp.x;
+        const dy = targetY - gp.y;
+        const len = Math.hypot(dx, dy) || 1;
+        gp.vx = (dx / len) * speed;
+        gp.vy = (dy / len) * speed;
+
+        this._switchToState(gi, 'falling');
+        this.grabbedPersonIndex = -1;
+        this._cursorHistory = [];
+        return true;
     }
 
     dispose() {

@@ -39,6 +39,11 @@
       "id": "alien",
       "name": "Alien",
       "file": "alien.json"
+    },
+    {
+      "id": "drone",
+      "name": "Drone",
+      "file": "drone.json"
     }
   ]
 }

@@ -203,6 +203,14 @@ class UIManager {
             });
         }
 
+        // Cheat: trigger a Grand Finale now
+        const cheatGrandFinaleBtn = document.getElementById('cheat-trigger-grand-finale');
+        if (cheatGrandFinaleBtn) {
+            cheatGrandFinaleBtn.addEventListener('click', () => {
+                this.game.cheatTriggerGrandFinale();
+            });
+        }
+
         const gameContainer = document.getElementById('game-canvas');
         gameContainer.addEventListener('pointerdown', (e) => {
             if (!this.game.isClickInsideUI(e)) {
@@ -1845,6 +1853,15 @@ class UIManager {
         if (p.isUnlocked('recipes_tab')) this.showRecipesTab();
 
         this.updateBuildingTypeVisibility();
+
+        // Bot mode (?bot=1): reveal the tab menu + Bot tab immediately so the
+        // auto-play bot can be controlled from the very start, regardless of
+        // progression. The Bot tab is hidden in normal play.
+        if (new URLSearchParams(location.search).has('bot')) {
+            this.showTabMenu();
+            this.showCollapseButton();
+            document.getElementById('bot-tab')?.classList.remove('unlock-hidden');
+        }
     }
 
     hideAllTabs() {

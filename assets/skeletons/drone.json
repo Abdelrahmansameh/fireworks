@@ -1,0 +1,468 @@
+{
+  "parts": [
+    {
+      "id": "body",
+      "parentId": null,
+      "width": 1.5,
+      "height": 0.55,
+      "color": "2b3a4a",
+      "anchorX": 0,
+      "anchorY": 0,
+      "relX": 0,
+      "relY": 0,
+      "z": 10
+    },
+    {
+      "id": "body_stripe",
+      "parentId": "body",
+      "width": 1.5,
+      "height": 0.13,
+      "color": "39597a",
+      "anchorX": 0,
+      "anchorY": 0,
+      "relX": 0,
+      "relY": 0.18,
+      "z": 11
+    },
+    {
+      "id": "skid_l",
+      "parentId": "body",
+      "width": 0.09,
+      "height": 0.22,
+      "color": "1d2731",
+      "anchorX": 0,
+      "anchorY": 0.5,
+      "relX": -0.3,
+      "relY": -0.5,
+      "z": 6
+    },
+    {
+      "id": "skid_r",
+      "parentId": "body",
+      "width": 0.09,
+      "height": 0.22,
+      "color": "1d2731",
+      "anchorX": 0,
+      "anchorY": 0.5,
+      "relX": 0.3,
+      "relY": -0.5,
+      "z": 6
+    },
+    {
+      "id": "foot",
+      "parentId": "body",
+      "width": 1.05,
+      "height": 0.09,
+      "color": "1d2731",
+      "anchorX": 0,
+      "anchorY": 0.5,
+      "relX": 0,
+      "relY": -0.88,
+      "z": 6
+    },
+    {
+      "id": "eye",
+      "parentId": "body",
+      "width": 0.28,
+      "height": 0.28,
+      "color": "ffd24c",
+      "anchorX": 0,
+      "anchorY": 0,
+      "relX": 0.4,
+      "relY": -0.02,
+      "z": 14
+    },
+    {
+      "id": "eye_glow",
+      "parentId": "eye",
+      "width": 0.5,
+      "height": 0.5,
+      "color": "9ff0ff",
+      "anchorX": 0,
+      "anchorY": 0,
+      "relX": 0,
+      "relY": 0,
+      "z": 13
+    },
+    {
+      "id": "mast_l",
+      "parentId": "body",
+      "width": 0.1,
+      "height": 0.9,
+      "color": "55687c",
+      "anchorX": 0,
+      "anchorY": -0.5,
+      "relX": -0.28,
+      "relY": 0.5,
+      "z": 8
+    },
+    {
+      "id": "mast_r",
+      "parentId": "body",
+      "width": 0.1,
+      "height": 0.9,
+      "color": "55687c",
+      "anchorX": 0,
+      "anchorY": -0.5,
+      "relX": 0.28,
+      "relY": 0.5,
+      "z": 8
+    },
+    {
+      "id": "hub_l",
+      "parentId": "mast_l",
+      "width": 0.22,
+      "height": 0.16,
+      "color": "8ea3b6",
+      "anchorX": 0,
+      "anchorY": 0,
+      "relX": 0,
+      "relY": 0.5,
+      "z": 9
+    },
+    {
+      "id": "hub_r",
+      "parentId": "mast_r",
+      "width": 0.22,
+      "height": 0.16,
+      "color": "8ea3b6",
+      "anchorX": 0,
+      "anchorY": 0,
+      "relX": 0,
+      "relY": 0.5,
+      "z": 9
+    },
+    {
+      "id": "rotor_l_a",
+      "parentId": "hub_l",
+      "width": 0.8,
+      "height": 0.06,
+      "color": "cfe8ff",
+      "anchorX": 0,
+      "anchorY": 0,
+      "relX": 0.019800928361762334,
+      "relY": 0.01883212903608067,
+      "z": 12,
+      "alpha": 0.6
+    },
+    {
+      "id": "rotor_l_b",
+      "parentId": "hub_l",
+      "width": 0.06,
+      "height": 0.8,
+      "color": "cfe8ff",
+      "anchorX": 0,
+      "anchorY": 0,
+      "relX": 0.019800928361762334,
+      "relY": 0.10051095852835029,
+      "z": 12,
+      "alpha": 0.6
+    },
+    {
+      "id": "rotor_r_a",
+      "parentId": "hub_r",
+      "width": 0.8,
+      "height": 0.06,
+      "color": "cfe8ff",
+      "anchorX": 0,
+      "anchorY": 0,
+      "relX": 0.07920371344704807,
+      "relY": 0.01883212903608067,
+      "z": 12,
+      "alpha": 0.6
+    },
+    {
+      "id": "rotor_r_b",
+      "parentId": "hub_r",
+      "width": 0.06,
+      "height": 0.8,
+      "color": "cfe8ff",
+      "anchorX": 0,
+      "anchorY": 0,
+      "relX": 0.019800928361761828,
+      "relY": 0.1277372350257721,
+      "z": 12,
+      "alpha": 0.6
+    },
+    {
+      "id": "body_outline",
+      "parentId": "body",
+      "width": 1.55,
+      "height": 0.6000000000000001,
+      "color": "000000",
+      "anchorX": 0,
+      "anchorY": 0,
+      "relX": 0,
+      "relY": 0,
+      "baseRotation": 0,
+      "z": -90
+    },
+    {
+      "id": "body_stripe_outline",
+      "parentId": "body_stripe",
+      "width": 1.55,
+      "height": 0.18,
+      "color": "000000",
+      "anchorX": 0,
+      "anchorY": 0,
+      "relX": 0,
+      "relY": 0,
+      "baseRotation": 0,
+      "z": -89
+    },
+    {
+      "id": "skid_l_outline",
+      "parentId": "skid_l",
+      "width": 0.14,
+      "height": 0.27,
+      "color": "000000",
+      "anchorX": 0,
+      "anchorY": 0.4074074074074074,
+      "relX": 0,
+      "relY": 0,
+      "baseRotation": 0,
+      "z": -94
+    },
+    {
+      "id": "skid_r_outline",
+      "parentId": "skid_r",
+      "width": 0.14,
+      "height": 0.27,
+      "color": "000000",
+      "anchorX": 0,
+      "anchorY": 0.4074074074074074,
+      "relX": 0,
+      "relY": 0,
+      "baseRotation": 0,
+      "z": -94
+    },
+    {
+      "id": "foot_outline",
+      "parentId": "foot",
+      "width": 1.1,
+      "height": 0.14,
+      "color": "000000",
+      "anchorX": 0,
+      "anchorY": 0.3214285714285714,
+      "relX": 0,
+      "relY": 0,
+      "baseRotation": 0,
+      "z": -94
+    },
+    {
+      "id": "eye_outline",
+      "parentId": "eye",
+      "width": 0.33,
+      "height": 0.33,
+      "color": "000000",
+      "anchorX": 0,
+      "anchorY": 0,
+      "relX": 0,
+      "relY": 0,
+      "baseRotation": 0,
+      "z": -86
+    },
+    {
+      "id": "mast_l_outline",
+      "parentId": "mast_l",
+      "width": 0.15000000000000002,
+      "height": 0.9500000000000001,
+      "color": "000000",
+      "anchorX": 0,
+      "anchorY": -0.47368421052631576,
+      "relX": 0,
+      "relY": 0,
+      "baseRotation": 0,
+      "z": -92
+    },
+    {
+      "id": "mast_r_outline",
+      "parentId": "mast_r",
+      "width": 0.15000000000000002,
+      "height": 0.9500000000000001,
+      "color": "000000",
+      "anchorX": 0,
+      "anchorY": -0.47368421052631576,
+      "relX": 0,
+      "relY": 0,
+      "baseRotation": 0,
+      "z": -92
+    },
+    {
+      "id": "hub_l_outline",
+      "parentId": "hub_l",
+      "width": 0.27,
+      "height": 0.21000000000000002,
+      "color": "000000",
+      "anchorX": 0,
+      "anchorY": 0,
+      "relX": 0,
+      "relY": 0,
+      "baseRotation": 0,
+      "z": -91
+    },
+    {
+      "id": "hub_r_outline",
+      "parentId": "hub_r",
+      "width": 0.27,
+      "height": 0.21000000000000002,
+      "color": "000000",
+      "anchorX": 0,
+      "anchorY": 0,
+      "relX": 0,
+      "relY": 0,
+      "baseRotation": 0,
+      "z": -91
+    },
+    {
+      "id": "rotor_l_a_outline",
+      "parentId": "rotor_l_a",
+      "width": 0.8500000000000001,
+      "height": 0.11,
+      "color": "000000",
+      "anchorX": 0,
+      "anchorY": 0,
+      "relX": 0,
+      "relY": 0,
+      "baseRotation": 0,
+      "z": -88
+    },
+    {
+      "id": "rotor_l_b_outline",
+      "parentId": "rotor_l_b",
+      "width": 0.11,
+      "height": 0.8500000000000001,
+      "color": "000000",
+      "anchorX": 0,
+      "anchorY": 0,
+      "relX": 0,
+      "relY": 0,
+      "baseRotation": 0,
+      "z": -88
+    },
+    {
+      "id": "rotor_r_a_outline",
+      "parentId": "rotor_r_a",
+      "width": 0.8500000000000001,
+      "height": 0.11,
+      "color": "000000",
+      "anchorX": 0,
+      "anchorY": 0,
+      "relX": 0,
+      "relY": 0,
+      "baseRotation": 0,
+      "z": -88
+    },
+    {
+      "id": "rotor_r_b_outline",
+      "parentId": "rotor_r_b",
+      "width": 0.11,
+      "height": 0.8500000000000001,
+      "color": "000000",
+      "anchorX": 0,
+      "anchorY": 0,
+      "relX": 0,
+      "relY": 0,
+      "baseRotation": 0,
+      "z": -88
+    }
+  ],
+  "animations": {
+    "fly": {
+      "duration": 1,
+      "loop": true,
+      "tracks": {
+        "rotor_l_a": [
+          {
+            "time": 0,
+            "rotation": 0
+          },
+          {
+            "time": 0.5,
+            "rotation": 12.5664
+          },
+          {
+            "time": 1,
+            "rotation": 25.1327
+          }
+        ],
+        "rotor_l_b": [
+          {
+            "time": 0,
+            "rotation": 0
+          },
+          {
+            "time": 0.5,
+            "rotation": 12.5664
+          },
+          {
+            "time": 1,
+            "rotation": 25.1327
+          }
+        ],
+        "rotor_r_a": [
+          {
+            "time": 0,
+            "rotation": 0
+          },
+          {
+            "time": 0.5,
+            "rotation": -12.5664
+          },
+          {
+            "time": 1,
+            "rotation": -25.1327
+          }
+        ],
+        "rotor_r_b": [
+          {
+            "time": 0,
+            "rotation": 0
+          },
+          {
+            "time": 0.5,
+            "rotation": -12.5664
+          },
+          {
+            "time": 1,
+            "rotation": -25.1327
+          }
+        ],
+        "eye_glow": [
+          {
+            "time": 0,
+            "a": 0.45,
+            "scaleX": 0.8,
+            "scaleY": 0.8
+          },
+          {
+            "time": 0.5,
+            "a": 0.9,
+            "scaleX": 1.15,
+            "scaleY": 1.15
+          },
+          {
+            "time": 1,
+            "a": 0.45,
+            "scaleX": 0.8,
+            "scaleY": 0.8
+          }
+        ],
+        "body": [
+          {
+            "time": 0,
+            "offsetY": 0
+          },
+          {
+            "time": 0.5,
+            "offsetY": 0.05
+          },
+          {
+            "time": 1,
+            "offsetY": 0
+          }
+        ]
+      }
+    }
+  }
+}

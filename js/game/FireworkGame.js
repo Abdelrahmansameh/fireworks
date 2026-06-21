@@ -6,6 +6,7 @@ import Crowd from '../entities/Crowd.js';
 import Firework from '../entities/Firework.js';
 import { patternKeys, patternDefinitions, patternDisplayNames } from '../entities/patterns/index.js';
 import CinematicManager, { CINEMATIC_CONFIG } from './CinematicManager.js';
+import GrandFinaleManager from './GrandFinaleManager.js';
 import UIManager from '../ui/UIManager.js';
 import BuildingManager from '../buildings/BuildingManager.js';
 import GameProfiler from '../profiling/GameProfiler.js';
@@ -34,6 +35,7 @@ class FireworkGame extends GameCore {
         this.profiler = new GameProfiler();
         this.audioManager = new AudioManager();
         this.cinematicManager = new CinematicManager(this);
+        this.grandFinaleManager = new GrandFinaleManager(this);
 
         this.hasSeenFirstCrowdCinematic = JSON.parse(localStorage.getItem('hasSeenFirstCrowdCinematic') || 'false');
         this.isInputDisabled = false;
@@ -245,7 +247,7 @@ class FireworkGame extends GameCore {
         this.updateCrowdDisplay();
     }
 
-    updateGame(deltaTime) {
+    updateGame(deltaTime, isFinalStep = true) {
         this.profiler.startFrame();
 
         this.procduralBackground?.update(deltaTime);
@@ -281,6 +283,9 @@ class FireworkGame extends GameCore {
         // Cinematic runs after crowd so camera reads the final person.x for this frame
         this.cinematicManager.update(deltaTime);
 
+        // Grand Finale event (floods the sky once unlocked; auto-recurs on cooldown)
+        this.grandFinaleManager.update(deltaTime);
+
         // Update peak records in GameMetrics
         const rollingSPS = this.statsTracker.getRollingRate('sparkles');
         const rollingGPS = this.statsTracker.getRollingRate('gold');
@@ -289,9 +294,12 @@ class FireworkGame extends GameCore {
 
         this.checkUnlockConditions();
 
-        this.updateUI();
-
-        this.saveProgress();
+        // Cosmetic UI refresh + persistence only on the final sub-step (during a
+        // bot fast-forward these would otherwise run N× per rendered frame).
+        if (isFinalStep) {
+            this.updateUI();
+            this.saveProgress();
+        }
 
         this.profiler.endFrame();
     }
@@ -309,14 +317,31 @@ class FireworkGame extends GameCore {
         }
     }
 
-    update(delta) {
+    /**
+     * One step of the active state's simulation. `isFinalStep` is false for all
+     * but the last sub-step of a bot fast-forward, letting updateGame() skip the
+     * cosmetic UI refresh + localStorage save on intermediate steps.
+     */
+    _stepSimulation(delta, isFinalStep = true) {
         if (this.currentState === 'game') {
             this.fireworkSystem.update(delta);
-
-            this.updateGame(delta);
+            this.updateGame(delta, isFinalStep);
         } else if (this.currentState === 'creator') {
             this.updateCreator(delta);
         }
+    }
+
+    update(delta) {
+        // The play-bot (js/bot/GameBot.js) can fast-forward by running the
+        // simulation multiple times per rendered frame. Sub-stepping (rather
+        // than scaling delta) keeps particle/crowd physics stable at high speed.
+        const steps = this.bot?.enabled ? this.bot.speedMultiplier : 1;
+        for (let i = 0; i < steps; i++) {
+            const isFinalStep = i === steps - 1;
+            this._stepSimulation(delta, isFinalStep);
+            if (this.bot?.enabled) this.bot.tick(delta);
+        }
+
         // Update skeleton outline for cursor particles (crowd grab or building drag)
         if (this.cursorParticles) {
             let outline = null;
@@ -948,6 +973,29 @@ class FireworkGame extends GameCore {
         this.showNotification('Everything has been unlocked!');
     }
 
+    /**
+     * Live override: flip the unlock flag (base behaviour) and immediately kick
+     * off the first Grand Finale so buying the upgrade pays off with a show.
+     */
+    _unlockGrandFinale() {
+        super._unlockGrandFinale();
+        // On initial load this runs from applyAll() inside the GameCore base
+        // constructor — before grandFinaleManager exists. Just set the flag then;
+        // the manager auto-fires once it's constructed and the update loop runs.
+        if (!this.grandFinaleManager) return;
+        this.showNotification('Grand Finale unlocked — the sky is about to erupt!');
+        this.grandFinaleManager.trigger();
+    }
+
+    /** Cheat / dev: force-unlock and trigger a Grand Finale now. */
+    cheatTriggerGrandFinale() {
+        this.grandFinaleUnlocked = true;
+        this.grandFinaleManager.cooldown = 0;
+        if (!this.grandFinaleManager.trigger()) {
+            this.showNotification('Grand Finale already running!');
+        }
+    }
+
     cheatPlayFirstCrowdCinematic() {
         if (this.cinematicManager.isPlaying) return;
         // Unspawn all crowd members so the cinematic starts from an empty scene.
@@ -986,6 +1034,12 @@ class FireworkGame extends GameCore {
             // Freeze his coin toss timer so he can't toss naturally during the cinematic
             person.coinTossTimer = -9999;
 
+            // Take procedural control of his skeleton: settle into an idle pose
+            // (eyes neutral for now) until the firework gives them something to follow.
+            // Cross-fade from his current cheering pose into the idle clip.
+            this.crowd.requestPoseBlend(person, CROWD_CONFIG.blending?.cinematicTakeover);
+            person.cinematicIdle = true;
+
             // Small beat after arrival, then launch a firework in front of and above the person
             await cm.wait(CINEMATIC_CONFIG.FIREWORK_SPAWN_DELAY_MS);
             const fwX = person.x + CINEMATIC_CONFIG.FIREWORK_OFFSET_X;
@@ -993,9 +1047,24 @@ class FireworkGame extends GameCore {
             game.fireworkSystem.launch(fwX, GAME_BOUNDS.WORLD_LAUNCHER_Y, game.currentRecipeComponents, fwTargetY);
             const firework = game.fireworkSystem.fireworks[game.fireworkSystem.fireworks.length - 1];
 
+            // Steer his pupils toward the rocket as it climbs; once it bursts,
+            // keep his gaze locked on the explosion point.
+            person.cinematicLookFn = () => {
+                if (firework.rocket && !firework.exploded) {
+                    return { x: firework.rocket.position.x, y: firework.rocket.position.y };
+                }
+                return { x: fwX, y: fwTargetY };
+            };
+
             // Wait for it to explode, then a beat before the coin toss
             await cm.waitForExplosion(firework);
             await cm.wait(CINEMATIC_CONFIG.POST_EXPLOSION_DELAY_MS);
+
+            // Hand the skeleton back to the normal state machine for the coin toss.
+            // Cross-fade out of the idle clip back into his state animation.
+            this.crowd.requestPoseBlend(person, CROWD_CONFIG.blending?.cinematicRelease);
+            person.cinematicIdle = false;
+            person.cinematicLookFn = null;
             person.coinTossTimer = 5; // force immediate toss
 
             // Brief pause, then zoom back out to where we were

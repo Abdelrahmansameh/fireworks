@@ -99,21 +99,31 @@ export function computePose(skeletonData, clip, time, overrides = null, overlay 
             const inMask = expandedMask === null || expandedMask.has(part.id);
             if (inMask && overlay.clip && overlay.clip.tracks[part.id]) {
                 const okf = evalTrack(overlay.clip.tracks[part.id], overlay.time);
+                // Blend weight (0..1) lets the overlay fade in/out instead of
+                // snapping. weight === 1 reproduces the original hard behavior.
+                const w = overlay.weight ?? 1;
                 if (overlay.mode === 'override') {
-                    localRot    = okf.rotation;
-                    localOffX   = okf.offsetX;
-                    localOffY   = okf.offsetY;
-                    localScaleX = okf.scaleX;
-                    localScaleY = okf.scaleY;
-                    localR = okf.r; localG = okf.g; localB = okf.b; localA = okf.a;
+                    // Lerp base → overlay by weight.
+                    localRot    += (okf.rotation - localRot) * w;
+                    localOffX   += (okf.offsetX  - localOffX) * w;
+                    localOffY   += (okf.offsetY  - localOffY) * w;
+                    localScaleX += (okf.scaleX   - localScaleX) * w;
+                    localScaleY += (okf.scaleY   - localScaleY) * w;
+                    localR += (okf.r - localR) * w;
+                    localG += (okf.g - localG) * w;
+                    localB += (okf.b - localB) * w;
+                    localA += (okf.a - localA) * w;
                 } else {
-                    // additive: add overlay deltas on top of base
-                    localRot    += okf.rotation;
-                    localOffX   += okf.offsetX;
-                    localOffY   += okf.offsetY;
-                    localScaleX *= okf.scaleX;
-                    localScaleY *= okf.scaleY;
-                    localR *= okf.r; localG *= okf.g; localB *= okf.b; localA *= okf.a;
+                    // additive: add weighted overlay deltas on top of base
+                    localRot    += okf.rotation * w;
+                    localOffX   += okf.offsetX * w;
+                    localOffY   += okf.offsetY * w;
+                    localScaleX *= 1 + (okf.scaleX - 1) * w;
+                    localScaleY *= 1 + (okf.scaleY - 1) * w;
+                    localR *= 1 + (okf.r - 1) * w;
+                    localG *= 1 + (okf.g - 1) * w;
+                    localB *= 1 + (okf.b - 1) * w;
+                    localA *= 1 + (okf.a - 1) * w;
                 }
             }
         }
@@ -140,6 +150,56 @@ export function computePose(skeletonData, clip, time, overrides = null, overlay 
     }
 
     return pivotMap;
+}
+
+/**
+ * Shortest signed angular difference (b - a) wrapped to [-PI, PI].
+ * Avoids the "long way around" spin when lerping rotations.
+ * @param {number} a
+ * @param {number} b
+ * @returns {number}
+ */
+function shortestAngleDiff(a, b) {
+    return Math.atan2(Math.sin(b - a), Math.cos(b - a));
+}
+
+/**
+ * Cross-fade between two poses produced by computePose().
+ *
+ * Linearly interpolates position, scale, and color, and takes the shortest
+ * angular path for rotation. Parts present only in `to` are taken as-is from
+ * `to`; parts present only in `from` are dropped (the destination pose defines
+ * the active part set).
+ *
+ * @param {Map<string, Object>} from — source pose (blend weight 1-t)
+ * @param {Map<string, Object>} to   — destination pose (blend weight t)
+ * @param {number} t — blend factor in [0,1]; 0 = full `from`, 1 = full `to`
+ * @param {Map<string, Object>|null} [out] — optional reusable result map
+ * @returns {Map<string, Object>}
+ */
+export function blendPoses(from, to, t, out = null) {
+    const result = out || new Map();
+    if (out) out.clear();
+
+    for (const [id, b] of to.entries()) {
+        const a = from.get(id);
+        if (!a) {
+            result.set(id, b);
+            continue;
+        }
+        result.set(id, {
+            x: a.x + (b.x - a.x) * t,
+            y: a.y + (b.y - a.y) * t,
+            rotation: a.rotation + shortestAngleDiff(a.rotation, b.rotation) * t,
+            scaleX: a.scaleX + (b.scaleX - a.scaleX) * t,
+            scaleY: a.scaleY + (b.scaleY - a.scaleY) * t,
+            r: a.r + (b.r - a.r) * t,
+            g: a.g + (b.g - a.g) * t,
+            b: a.b + (b.b - a.b) * t,
+            a: a.a + (b.a - a.a) * t,
+        });
+    }
+    return result;
 }
 
 /**

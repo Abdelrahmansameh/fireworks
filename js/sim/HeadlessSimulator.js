@@ -76,6 +76,7 @@ export class HeadlessSimulator {
                     `generators ${Math.round(s.resource_generator || 0)}`,
                     `drones ${Math.round(s.drone || 0)}`,
                     `crowdCatch ${Math.round(s.crowd_catch || 0)}`,
+                    `finale ${Math.round(s.grand_finale || 0)}`,
                 ].join(', ');
                 events.push({
                     time,
@@ -127,6 +128,7 @@ export class HeadlessSimulator {
                 generators: bs.resource_generator || 0,
                 drones: bs.drone || 0,
                 crowdCatching: bs.crowd_catch || 0,
+                grandFinale: bs.grand_finale || 0,
             },
             gold: { crowd: bg.crowd || 0 },
         };

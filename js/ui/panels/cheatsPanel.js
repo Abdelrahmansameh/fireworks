@@ -42,6 +42,11 @@ export function render(container) {
             <legend>Cinematics</legend>
             <button id="cheat-play-first-crowd-cinematic">Play First Crowd Cinematic</button>
         </fieldset>
+
+        <fieldset>
+            <legend>Grand Finale</legend>
+            <button id="cheat-trigger-grand-finale">Trigger Grand Finale</button>
+        </fieldset>
     `;
 
     container.appendChild(panel);

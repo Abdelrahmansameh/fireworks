@@ -10,7 +10,7 @@ export const CINEMATIC_CONFIG = {
     FIREWORK_SPAWN_DELAY_MS:  500,   // ms after arrival before the firework launches
     FIREWORK_OFFSET_X:        300,   // world units to the right of the person
     FIREWORK_OFFSET_Y:        -500,   // world units above the person (burst height)
-    POST_EXPLOSION_DELAY_MS:  400,   // ms after explosion before coin toss
+    POST_EXPLOSION_DELAY_MS:  800,   // ms after explosion before coin toss
 
     // Beat between the person stopping at his spot and tossing the coin
     COIN_TOSS_DELAY_MS:  100,

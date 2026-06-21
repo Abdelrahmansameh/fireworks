@@ -382,67 +382,79 @@
   ],
   "animations": {
     "cheering": {
-      "duration": 0.4,
+      "duration": 0.5,
       "loop": true,
       "tracks": {
         "body": [
           {
-            "time": 0.0018750000000000004,
+            "time": 0.0023437500000000003,
             "offsetX": 0,
             "offsetY": 0,
             "rotation": 0
           },
           {
-            "time": 0.1942708333333334,
+            "time": 0.24283854166666674,
             "offsetX": 0,
             "offsetY": -1,
             "rotation": 0
           },
           {
-            "time": 0.4,
+            "time": 0.5,
+            "rotation": 0,
             "offsetX": 0,
-            "offsetY": 0,
-            "rotation": 0
+            "offsetY": 0
           }
         ],
         "arm_1_l": [
           {
             "time": 0,
+            "rotation": 1.02,
             "offsetX": 0,
             "offsetY": 0,
-            "rotation": 0.02
+            "scaleX": 1,
+            "scaleY": 1,
+            "r": 1,
+            "g": 1,
+            "b": 1,
+            "a": 1
           },
           {
-            "time": 0.20000000000000015,
+            "time": 0.25000000000000017,
             "offsetX": 0,
             "offsetY": 0,
             "rotation": -0.74
           },
           {
-            "time": 0.4,
+            "time": 0.5,
+            "rotation": 1.02,
             "offsetX": 0,
-            "offsetY": 0,
-            "rotation": 0.02
+            "offsetY": 0
           }
         ],
         "arm_1_r": [
           {
             "time": 0,
+            "rotation": -0.92,
             "offsetX": 0,
             "offsetY": 0,
-            "rotation": -0.02
+            "scaleX": 1,
+            "scaleY": 1,
+            "r": 1,
+            "g": 1,
+            "b": 1,
+            "a": 1
           },
           {
-            "time": 0.20000000000000015,
+            "time": 0.25000000000000017,
             "offsetX": 0,
             "offsetY": 0,
             "rotation": 0.74
           },
           {
-            "time": 0.4,
+            "time": 0.5,
+            "rotation": -0.92,
             "offsetX": 0,
-            "offsetY": 0,
-            "rotation": -0.02
+            "offsetY": 0
           }
         ],
         "leg_r": [
@@ -453,16 +465,16 @@
             "rotation": 0
           },
           {
-            "time": 0.1942708333333334,
+            "time": 0.24283854166666674,
             "offsetX": 0,
             "offsetY": 0.5,
             "rotation": 0
           },
           {
-            "time": 0.4,
+            "time": 0.5,
+            "rotation": 0,
             "offsetX": 0,
-            "offsetY": 0,
-            "rotation": 0
+            "offsetY": 0
           }
         ],
         "leg_l": [
@@ -473,20 +485,46 @@
             "rotation": 0
           },
           {
-            "time": 0.1942708333333334,
+            "time": 0.24283854166666674,
             "offsetX": 0,
             "offsetY": 0.5,
             "rotation": 0
           },
           {
-            "time": 0.4,
+            "time": 0.5,
+            "rotation": 0,
             "offsetX": 0,
-            "offsetY": 0,
-            "rotation": 0
+            "offsetY": 0
           }
         ],
-        "foot_r": [],
-        "foot_l": [],
+        "foot_r": [
+          {
+            "time": 0,
+            "rotation": 0,
+            "offsetX": 0,
+            "offsetY": 0
+          },
+          {
+            "time": 0.5,
+            "rotation": 0,
+            "offsetX": 0,
+            "offsetY": 0
+          }
+        ],
+        "foot_l": [
+          {
+            "time": 0,
+            "rotation": 0,
+            "offsetX": 0,
+            "offsetY": 0
+          },
+          {
+            "time": 0.5,
+            "rotation": 0,
+            "offsetX": 0,
+            "offsetY": 0
+          }
+        ],
         "eye_r": [
           {
             "time": 0,
@@ -495,10 +533,10 @@
             "rotation": 0
           },
           {
-            "time": 0.4,
+            "time": 0.5,
+            "rotation": 0,
             "offsetX": 0,
-            "offsetY": 0,
-            "rotation": 0
+            "offsetY": 0
           }
         ],
         "eye_l": [
@@ -509,10 +547,10 @@
             "rotation": 0
           },
           {
-            "time": 0.4,
+            "time": 0.5,
+            "rotation": 0,
             "offsetX": 0,
-            "offsetY": 0,
-            "rotation": 0
+            "offsetY": 0
           }
         ],
         "pupil_r": [
@@ -523,16 +561,16 @@
             "rotation": 0
           },
           {
-            "time": 0.20000000000000015,
+            "time": 0.25000000000000017,
             "offsetX": 0.36,
             "offsetY": 0.41,
             "rotation": 0
           },
           {
-            "time": 0.4,
+            "time": 0.5,
+            "rotation": 0,
             "offsetX": 0.41,
-            "offsetY": -0.27,
-            "rotation": 0
+            "offsetY": -0.27
           }
         ],
         "pupil_l": [
@@ -543,16 +581,16 @@
             "rotation": 0
           },
           {
-            "time": 0.20000000000000015,
+            "time": 0.25000000000000017,
             "offsetX": 0.39,
             "offsetY": 0.41,
             "rotation": 0
           },
           {
-            "time": 0.4,
+            "time": 0.5,
+            "rotation": 0,
             "offsetX": 0.34,
-            "offsetY": -0.32,
-            "rotation": 0
+            "offsetY": -0.32
           }
         ],
         "arm_2_l": [
@@ -563,10 +601,10 @@
             "rotation": 0
           },
           {
-            "time": 0.4,
+            "time": 0.5,
+            "rotation": 0,
             "offsetX": 0,
-            "offsetY": 0,
-            "rotation": 0
+            "offsetY": 0
           }
         ],
         "arm_2_r": [
@@ -577,10 +615,10 @@
             "rotation": 0
           },
           {
-            "time": 0.4,
+            "time": 0.5,
+            "rotation": 0,
             "offsetX": 0,
-            "offsetY": 0,
-            "rotation": 0
+            "offsetY": 0
           }
         ],
         "arm_3_l": [
@@ -591,10 +629,10 @@
             "rotation": 0
           },
           {
-            "time": 0.4,
+            "time": 0.5,
+            "rotation": 0,
             "offsetX": 0,
-            "offsetY": 0,
-            "rotation": 0
+            "offsetY": 0
           }
         ],
         "arm_3_r": [
@@ -605,12 +643,34 @@
             "rotation": 0
           },
           {
-            "time": 0.4,
+            "time": 0.5,
+            "rotation": 0,
             "offsetX": 0,
-            "offsetY": 0,
-            "rotation": 0
+            "offsetY": 0
           }
-        ]
+        ],
+        "body_outline": [],
+        "arm_1_r_outline": [],
+        "arm_1_l_outline": [],
+        "leg_l_outline": [],
+        "leg_r_outline": [],
+        "foot_l_outline": [],
+        "foot_r_outline": [],
+        "eye_l_outline": [],
+        "eye_r_outline": [],
+        "pupil_l_outline": [
+          {
+            "time": 0,
+            "rotation": 0,
+            "offsetX": 0,
+            "offsetY": 0
+          }
+        ],
+        "pupil_r_outline": [],
+        "arm_2_r_outline": [],
+        "arm_2_l_outline": [],
+        "arm_3_r_outline": [],
+        "arm_3_l_outline": []
       },
       "props": []
     },
@@ -1265,36 +1325,6 @@
           {
             "time": 0.27859375,
             "rotation": -0.73,
-            "offsetX": 0,
-            "offsetY": 0
-          },
-          {
-            "time": 0.56359375,
-            "rotation": -0.85,
-            "offsetX": 0,
-            "offsetY": 0
-          },
-          {
-            "time": 0.86859375,
-            "rotation": -1.22,
-            "offsetX": 0,
-            "offsetY": 0
-          },
-          {
-            "time": 1.14859375,
-            "rotation": -0.84,
-            "offsetX": 0,
-            "offsetY": 0
-          },
-          {
-            "time": 1.52859375,
-            "rotation": -1.08,
-            "offsetX": 0,
-            "offsetY": 0
-          },
-          {
-            "time": 1.87359375,
-            "rotation": -0.83,
             "offsetX": 0,
             "offsetY": 0
           }

@@ -24,17 +24,23 @@ export const SIMULATION_CONFIG = {
 
     drone: {
         // Fraction of emitted particles a single active drone vacuums per second.
-        catchFractionPerDrone: 0.015,
+        // Tuned so a mid-size fleet (~25 drones) saturates near the cap — drones
+        // are meant to reign minutes 10–15. A high per-drone fraction means even
+        // a few hubs saturate quickly, giving a sharp reign spike right at unlock.
+        catchFractionPerDrone: 0.2,
         // Hard cap on the combined fraction all drones can catch.
-        maxCatchFractionTotal: 0.85,
+        maxCatchFractionTotal: 0.9,
     },
 
     crowd: {
         // How many crowd members each catapult keeps airborne (catching) at once.
-        catchersPerCatapult: 2,
+        catchersPerCatapult: 4,
         // Fraction of emitted particles a single airborne catcher grabs per second.
-        catchFractionPerCatcher: 0.01,
+        // Crowd-catching is the first emergent source (unlocks ~5 min) and should
+        // leap to the top on unlock, then plateau (capped by catapult count) as
+        // drones overtake it later.
+        catchFractionPerCatcher: 0.1,
         // Hard cap on the combined fraction the crowd can catch.
-        maxCatchFractionTotal: 0.75,
+        maxCatchFractionTotal: 0.6,
     },
 };

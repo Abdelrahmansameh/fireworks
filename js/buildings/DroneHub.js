@@ -47,7 +47,9 @@ class DroneHub extends Building {
             speed:            cfg.baseDroneSpeed     * (ds.speedMultiplier             ?? 1),
             collectionRadius: DRONE_CONFIG.collectionRadius * (ds.collectionRadiusMultiplier ?? 1),
             color:            cfg.droneColor,
-            scale:            cfg.droneScale,
+            // Multiplier on DRONE_CONFIG.scaling.baseScale — the actual drone
+            // size lives in the central config now (like the crowd).
+            scaleMultiplier:  cfg.droneScale,
             launchAngleDeg:   DRONE_CONFIG.spawnLaunchAngleDeg,
         };
     }

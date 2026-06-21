@@ -1,8 +1,13 @@
 export const DRONE_CONFIG = {
     maxDrones: 200,
+    // Hard instance-buffer capacity for the drone system. Must be ≥ the largest
+    // value maxDrones can reach via upgrades (base 200 + Drone Fleet 13×3 + Drone
+    // Swarm Protocol 10×2 = 259). The GL buffer is sized to this so raising the
+    // soft cap at runtime can never overflow it.
+    maxDroneCapacity: 320,
     collectionRadius: 50,       // world-units radius to scan for particles
     defaultLifetime: 10,         // seconds a drone lives before despawning
-    sparklesPerParticle: 1,      // sparkles awarded per collected particle
+    sparklesPerParticle: 3,      // sparkles awarded per collected particle (collectors are value-extractors)
     wanderSpeed: 300,            // world-units/sec target chase speed
     acceleration: 100,           // wu/s² ramp-up from standstill
     deceleration: 200,           // wu/s² braking when a sharp turn is detected
@@ -16,7 +21,14 @@ export const DRONE_CONFIG = {
     pullForce: 9000,             // world-units/sec² acceleration toward drone
     arrivalThreshold: 25,        // world-units — particle "collected" within this dist
     maxCaptureTime: 1.0,         // seconds before a targeted particle is force-collected
-    defaultScale: 14,            // render scale of the drone mesh
+    defaultScale: 20,            // render scale of the drone mesh (fallback / legacy)
+    // Skeleton render scale, mirroring CROWD_CONFIG: each drone's scale is
+    // baseScale + random·scaleVariance. Tune baseScale to resize the whole
+    // drone skeleton; scaleVariance adds per-drone size variety (0 = uniform).
+    scaling: {
+        baseScale: 20,
+        scaleVariance: 0,
+    },
     scanInterval: 4,             // scan for particles once every N frames (1 = every frame)
     minParticleAge: 0.3,          // seconds a particle must have been alive before a drone can pull it
     color: { r: 0.4, g: 0.9, b: 1.0, a: 1.0 },  // default drone color (cyan-ish)
@@ -25,7 +37,7 @@ export const DRONE_CONFIG = {
     oscillationFrequency: 1.5,    // Hz — cycles per second of the side-to-side wave
 
     droneTrails: {
-        enabled: true,
+        enabled: false,
         spawnRate: 0.03,
         perBurst: 3,
         lifetime: 0.1,

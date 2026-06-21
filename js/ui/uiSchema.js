@@ -53,4 +53,13 @@ export const TABS = [
 
         panelModule: () => import('./panels/cheatsPanel.js'),
     },
+    {
+        // Visibility is controlled by bot mode (?bot=1), gated in main.js — not
+        // by progression, so unlockId stays null here.
+        id: 'bot',
+        label: 'Bot',
+        unlockId: null,
+
+        panelModule: () => import('./panels/botPanel.js'),
+    },
 ];

@@ -405,6 +405,13 @@ class InstancedParticleSystem {
         this.profiler?.endFunction?.('particleSystemUpdate');
     }
 
+    /** Total live particles across all shape buffers (used by the Grand Finale). */
+    getTotalActiveParticles() {
+        let total = 0;
+        for (const shape in this.activeCounts) total += this.activeCounts[shape];
+        return total;
+    }
+
     clear() {
         Object.keys(this.activeCounts).forEach(shape => {
             this.activeCounts[shape] = 0;

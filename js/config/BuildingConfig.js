@@ -1,5 +1,9 @@
-export const AUTO_LAUNCHER_COST_BASE = 50;
-export const AUTO_LAUNCHER_COST_RATIO = 2;
+export const AUTO_LAUNCHER_COST_BASE = 30;
+// Moderate ratio: the player keeps buying launchers all game (count climbs into
+// the dozens, fireworks/sec rises, the sky fills up — the core fantasy), but not
+// so cheap that purchases come every few seconds. Launchers are also the particle
+// supply that feeds drones + crowd-catching.
+export const AUTO_LAUNCHER_COST_RATIO = 1.7;
 
 export const LAUNCHER_WORLD_HIGHLIGHT_DURATION = 2.5;
 
@@ -35,7 +39,10 @@ export const BUILDING_TYPES = {
         name: 'Sparkle Generator',
         description: 'Passively generates sparkles over time',
         baseCost: 400,
-        costRatio: 1.45,
+        // gold-fuelled flat producer — ratio kept high so late-game count stays
+        // bounded (prevents a generator runaway while it still shines ~8-11 min)
+        // and so purchases are spaced out rather than a constant trickle.
+        costRatio: 1.6,
         currency: 'gold',
         width: 25,
         height: 30,
@@ -45,7 +52,7 @@ export const BUILDING_TYPES = {
         textureKey: null,
         skeletonUrl: 'assets/skeletons/sparkle_generator.json',
         skeletonScale: 15,
-        baseProductionRate: 1500.0,
+        baseProductionRate: 1050.0,
         sparkleTrailBaseCount: 6,
         sparkleTrailScalingRatio: 0.25,
         maxSparkleTrailBurstCount: 100, 
@@ -100,8 +107,8 @@ export const BUILDING_TYPES = {
         id: 'drone_hub',
         name: 'Drone Hub',
         description: 'Periodically launches drones that collect firework particles',
-        baseCost: 200,
-        costRatio: 1.5,
+        baseCost: 180,
+        costRatio: 1.65,
         currency: 'gold',
         width: 40,
         height: 50,
@@ -111,10 +118,10 @@ export const BUILDING_TYPES = {
         textureKey: null,
         skeletonUrl: 'assets/skeletons/drone_hub.json',
         skeletonScale: 20,
-        baseSpawnInterval: 12,
-        baseDroneLifetime: 10,
+        baseSpawnInterval: 8,
+        baseDroneLifetime: 18,
         baseDroneSpeed: 600,
-        droneScale: 16,
+        droneScale: 1,   // multiplier on DRONE_CONFIG.scaling.baseScale (1 = use config size as-is)
         droneColor: { r: 0.1, g: 0.65, b: 0.8, a: 1.0 },
         unlockId: 'drone_hub',
         statId: 'stat-bld-drone',
