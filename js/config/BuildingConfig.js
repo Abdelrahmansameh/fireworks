@@ -108,7 +108,11 @@ export const BUILDING_TYPES = {
         name: 'Drone Hub',
         description: 'Periodically launches drones that collect firework particles',
         baseCost: 180,
-        costRatio: 1.65,
+        // Steeper than other buildings: a single hub is meant to be a meaningful,
+        // somewhat scarce investment (each adds an intermittent drone), so the
+        // player ends up with a handful of hubs — not dozens. Prevents the old
+        // "buy so many hubs the sky is a permanent drone swarm" runaway.
+        costRatio: 1.9,
         currency: 'gold',
         width: 40,
         height: 50,
@@ -118,8 +122,11 @@ export const BUILDING_TYPES = {
         textureKey: null,
         skeletonUrl: 'assets/skeletons/drone_hub.json',
         skeletonScale: 20,
-        baseSpawnInterval: 8,
-        baseDroneLifetime: 18,
+        // Base cadence: a 30s drone on a 60s cycle → 30s airborne, 30s downtime
+        // (50% uptime) for a fresh, un-upgraded hub. Lifetime/interval upgrades
+        // close that gap; only a fully-upgraded hub reaches ~100% uptime.
+        baseSpawnInterval: 60,
+        baseDroneLifetime: 30,
         baseDroneSpeed: 600,
         droneScale: 1,   // multiplier on DRONE_CONFIG.scaling.baseScale (1 = use config size as-is)
         droneColor: { r: 0.1, g: 0.65, b: 0.8, a: 1.0 },

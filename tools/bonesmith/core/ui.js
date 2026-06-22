@@ -715,7 +715,8 @@ export function updateAnimPropsPanel() {
     props.forEach((prop, i) => {
         const opt = document.createElement('option');
         opt.value = i;
-        opt.textContent = `[${prop.startTime}-${prop.endTime}] ${prop.skeletonUrl.split('/').pop()} (${prop.animation})`;
+        const detachTag = prop.detachTime != null ? ` ⛓✂${prop.detachTime}` : '';
+        opt.textContent = `[${prop.startTime}-${prop.endTime}] ${prop.skeletonUrl.split('/').pop()} (${prop.animation})${detachTag}`;
         list.appendChild(opt);
     });
 
@@ -727,6 +728,7 @@ export function updateAnimPropsPanel() {
         document.getElementById('prop-anim-name').value = p.animation || '';
         document.getElementById('prop-start-time').value = p.startTime;
         document.getElementById('prop-end-time').value = p.endTime;
+        document.getElementById('prop-detach-time').value = p.detachTime != null ? p.detachTime : '';
         propParent.value = p.parentPartId || '';
         document.getElementById('prop-offx-input').value = p.offsetX || 0;
         document.getElementById('prop-offy-input').value = p.offsetY || 0;

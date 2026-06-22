@@ -23,24 +23,28 @@ export const SIMULATION_CONFIG = {
     avgParticlesPerFirework: 120,
 
     drone: {
-        // Fraction of emitted particles a single active drone vacuums per second.
-        // Tuned so a mid-size fleet (~25 drones) saturates near the cap — drones
-        // are meant to reign minutes 10–15. A high per-drone fraction means even
-        // a few hubs saturate quickly, giving a sharp reign spike right at unlock.
-        catchFractionPerDrone: 0.2,
+        // Fraction of emitted particles a single active (airborne) drone vacuums
+        // per second. With the intermittent 30s/60s hubs a realistic late fleet is
+        // only a handful of simultaneously-airborne drones, so this is tuned so
+        // income scales roughly linearly with that fleet (each hub you add is felt)
+        // rather than slamming into the cap after the first couple of drones.
+        catchFractionPerDrone: 0.11,
         // Hard cap on the combined fraction all drones can catch.
-        maxCatchFractionTotal: 0.9,
+        maxCatchFractionTotal: 0.6,
     },
 
     crowd: {
         // How many crowd members each catapult keeps airborne (catching) at once.
         catchersPerCatapult: 4,
         // Fraction of emitted particles a single airborne catcher grabs per second.
-        // Crowd-catching is the first emergent source (unlocks ~5 min) and should
-        // leap to the top on unlock, then plateau (capped by catapult count) as
-        // drones overtake it later.
-        catchFractionPerCatcher: 0.1,
+        // Crowd-catching is the FIRST emergent source (unlocks ~9 min). The per-
+        // catcher fraction is deliberately small so the source RAMPS IN gently as
+        // the catapult fleet grows (1 catapult ≈ 12% of the sky, a full 4-catapult
+        // fleet ≈ the cap) instead of leaping to dominate the instant the first
+        // catapult lands. This removes the old onset cliff while preserving the
+        // late-game plateau.
+        catchFractionPerCatcher: 0.03,
         // Hard cap on the combined fraction the crowd can catch.
-        maxCatchFractionTotal: 0.6,
+        maxCatchFractionTotal: 0.45,
     },
 };

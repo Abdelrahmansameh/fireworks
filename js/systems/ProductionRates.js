@@ -3,7 +3,12 @@ import Building from '../buildings/Building.js';
 
 // Crowd people drop one coin every COIN_TOSS_INTERVAL seconds (see Crowd.js).
 export const COIN_TOSS_INTERVAL = 5;
-export const BASE_GOLD_DROPS_PER_SEC_PER_PERSON = 1 / COIN_TOSS_INTERVAL;
+// Base gold value of a single coin toss (before goldRateMultiplier upgrades).
+// Raised from 1 to compensate for the ~150 crowd cap: with far fewer people than
+// the old uncapped venue, each coin is worth more so late-game gold income stays
+// healthy and gold-priced upgrades keep pacing steadily.
+export const BASE_GOLD_PER_TOSS = 3;
+export const BASE_GOLD_DROPS_PER_SEC_PER_PERSON = BASE_GOLD_PER_TOSS / COIN_TOSS_INTERVAL;
 
 // Fallback default yields for emergent sources the sim needs to estimate.
 // Callers (sim UI) may override per-run via the `rates` argument.
@@ -40,9 +45,11 @@ export function targetCrowdCount(totalFireworks, state) {
     const maxCap = CROWD_CONFIG.maxInstances || 1000;
     const bonus = state.crowdStats?.countBonus ?? 0;
     const above = Math.max(0, totalFireworks - (config.formulaOffset ?? 0));
-    const target = above <= 0
-        ? config.formulaB
-        : Math.floor(config.formulaA * Math.pow(above, config.formulaExp ?? 1) + config.formulaB);
+    const raw = above <= 0
+        ? (config.formulaB ?? 0)
+        : config.formulaA * Math.pow(above, config.formulaExp ?? 1) + (config.formulaB ?? 0);
+    const maxCrowd = (typeof config.maxCrowd === 'number') ? config.maxCrowd : maxCap;
+    const target = Math.floor(maxCrowd * (1 - Math.exp(-raw / maxCrowd)));
     return Math.min(Math.max(0, target) + bonus, maxCap);
 }
 
@@ -50,9 +57,14 @@ export function targetCrowdCount(totalFireworks, state) {
 export function fireworksForCrowd(n, state) {
     const config = CROWD_CONFIG.scaling;
     const bonus = state.crowdStats?.countBonus ?? 0;
-    const targetN = n - bonus - config.formulaB;
+    const maxCrowd = (typeof config.maxCrowd === 'number') ? config.maxCrowd : (CROWD_CONFIG.maxInstances || 1000);
+    const targetN = n - bonus;
     if (targetN <= 0) return config.formulaOffset ?? 0;
-    const above = Math.pow(targetN / config.formulaA, 1 / (config.formulaExp ?? 1));
+    if (targetN >= maxCrowd) return Infinity; // unreachable — beyond the saturation asymptote
+    // Invert crowd = maxCrowd*(1-exp(-raw/maxCrowd)) → raw, then invert the power term.
+    const raw = -maxCrowd * Math.log(1 - targetN / maxCrowd) - (config.formulaB ?? 0);
+    if (raw <= 0) return config.formulaOffset ?? 0;
+    const above = Math.pow(raw / config.formulaA, 1 / (config.formulaExp ?? 1));
     return (config.formulaOffset ?? 0) + above;
 }
 

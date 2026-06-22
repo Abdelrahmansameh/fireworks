@@ -139,7 +139,11 @@ export function loop(now) {
                 }
                 if (cached.loading) continue;
 
-                const pTf = getParentTransform(prop.parentPartId, state.currentTime);
+                // Detached props freeze their anchor at the bone's pose at detachTime;
+                // attached props track the bone live.
+                const anchorTime = (prop.detachTime != null && state.currentTime >= prop.detachTime)
+                    ? prop.detachTime : state.currentTime;
+                const pTf = getParentTransform(prop.parentPartId, anchorTime);
                 const propWorldX = pTf.x + ((prop.offsetX||0) * Math.cos(pTf.rotation) - (prop.offsetY||0) * Math.sin(pTf.rotation));
                 const propWorldY = pTf.y + ((prop.offsetX||0) * Math.sin(pTf.rotation) + (prop.offsetY||0) * Math.cos(pTf.rotation));
                 const propRot = pTf.rotation + (prop.rotation || 0);

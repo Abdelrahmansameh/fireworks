@@ -1132,10 +1132,16 @@
             "rotation": 0
           },
           {
-            "time": 0.50640625,
+            "time": 0.48640624999999993,
+            "rotation": 0,
             "offsetX": 0.37,
-            "offsetY": 0.2,
-            "rotation": 0
+            "offsetY": 0.45,
+            "scaleX": 1,
+            "scaleY": 1,
+            "r": 1,
+            "g": 1,
+            "b": 1,
+            "a": 1
           }
         ],
         "pupil_l": [
@@ -1146,10 +1152,16 @@
             "rotation": 0
           },
           {
-            "time": 0.50640625,
+            "time": 0.48640624999999993,
+            "rotation": 0,
             "offsetX": 0.39,
-            "offsetY": 0.14,
-            "rotation": 0
+            "offsetY": 0.45,
+            "scaleX": 1,
+            "scaleY": 1,
+            "r": 1,
+            "g": 1,
+            "b": 1,
+            "a": 1
           }
         ]
       },
@@ -1157,13 +1169,14 @@
         {
           "skeletonUrl": "assets/skeletons/coin.json",
           "animation": "toss",
-          "worldMotion": true,
           "startTime": 0,
           "endTime": 1,
+          "detachTime": 0.25,
           "parentPartId": "arm_3_r",
           "offsetX": 0.6,
           "offsetY": -0.9,
-          "rotation": 0
+          "rotation": 0,
+          "worldMotion": true
         }
       ]
     },

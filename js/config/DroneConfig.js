@@ -1,10 +1,14 @@
 export const DRONE_CONFIG = {
-    maxDrones: 200,
+    // Soft cap on simultaneously-airborne drones. Kept deliberately low: with the
+    // 30s-life / 60s-cycle hubs, a fresh hub averages ~0.5 drones and a maxed one
+    // ~1, so a realistic late fleet is a handful of hubs → ~10-30 drones. The old
+    // value (200) let the sky fill with a permanent swarm.
+    maxDrones: 16,
     // Hard instance-buffer capacity for the drone system. Must be ≥ the largest
-    // value maxDrones can reach via upgrades (base 200 + Drone Fleet 13×3 + Drone
-    // Swarm Protocol 10×2 = 259). The GL buffer is sized to this so raising the
-    // soft cap at runtime can never overflow it.
-    maxDroneCapacity: 320,
+    // value maxDrones can reach via upgrades (base 16 + Drone Fleet 4×3 + Drone
+    // Swarm Protocol 5×2 = 38). The GL buffer is sized to this so raising the soft
+    // cap at runtime can never overflow it.
+    maxDroneCapacity: 64,
     collectionRadius: 50,       // world-units radius to scan for particles
     defaultLifetime: 10,         // seconds a drone lives before despawning
     sparklesPerParticle: 3,      // sparkles awarded per collected particle (collectors are value-extractors)

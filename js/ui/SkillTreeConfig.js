@@ -88,7 +88,7 @@ export const SKILL_TREE_CONFIG = {
             group: 'BASE',
             name: 'Spark Core III',
             desc: '×2.5 sparkles per firework (per level)',
-            baseCost: 50000,
+            baseCost: 30000,
             costRatio: 2.2,
             currency: 'gold',
             maxLevel: 3,
@@ -256,13 +256,15 @@ export const SKILL_TREE_CONFIG = {
             id: 'generator_production',
             group: 'GENERATOR',
             name: 'Efficient Channels',
-            desc: '×2.43 generator production rate (per level)',
+            desc: '×1.9 generator production rate (per level)',
             baseCost: 2200,
             costRatio: 2.4,
             currency: 'gold',
             maxLevel: 3,
             requires: { upgrades: { resource_generator: 1 } },
-            apply: (game, level) => { game.generatorStats.productionRateMultiplier = Math.pow(2.43, level); },
+            // Softer ×1.9/level (was ×2.43) so a fresh generator doesn't lurch on
+            // the first buy and the generator line doesn't run away late-game.
+            apply: (game, level) => { game.generatorStats.productionRateMultiplier = Math.pow(1.9, level); },
         },
         generator_overclock: {
             offset: { x: -200, y: 0 },
@@ -317,13 +319,16 @@ export const SKILL_TREE_CONFIG = {
             id: 'drone_lifetime',
             group: 'DRONE',
             name: 'Extended Range',
-            desc: '+0.42× drone lifetime (per level)',
+            desc: '+0.12× drone lifetime (per level)',
             baseCost: 1200,
             costRatio: 2.0,
             currency: 'gold',
             maxLevel: 3,
             requires: { upgrades: { drone_hub: 1 } },
-            apply: (game, level) => { game.droneStats.lifetimeMultiplier = 1 + 0.42 * level; },
+            // Modest per-level gain: lifetime and spawn-rate upgrades together lift a
+            // single hub from 50% uptime toward ~85% — still leaving downtime. Only the
+            // Swarm Protocol capstone pushes a hub past ~100% (continuous) uptime.
+            apply: (game, level) => { game.droneStats.lifetimeMultiplier = 1 + 0.12 * level; },
         },
         drone_speed: {
             offset: { x: -200, y: 0 },
@@ -368,14 +373,14 @@ export const SKILL_TREE_CONFIG = {
             id: 'drone_max',
             group: 'DRONE',
             name: 'Drone Fleet',
-            desc: '+13 max drones (per level)',
+            desc: '+4 max drones (per level)',
             baseCost: 2000,
             costRatio: 2.6,
             currency: 'gold',
             maxLevel: 3,
             requires: { upgrades: { drone_hub: 1 } },
             apply: (game, level) => {
-                game.droneStats.maxDrones = DRONE_CONFIG.maxDrones + 13 * level;
+                game.droneStats.maxDrones = DRONE_CONFIG.maxDrones + 4 * level;
                 if (game.droneSystem) game.droneSystem.maxDrones = game.droneStats.maxDrones;
             },
         },
@@ -388,13 +393,15 @@ export const SKILL_TREE_CONFIG = {
             id: 'drone_sparkle_yield',
             group: 'DRONE',
             name: 'Energy Siphon',
-            desc: '+4.2 sparkles per collected particle (per level)',
+            desc: '×2 sparkles per collected particle (per level)',
             baseCost: 1500,
             costRatio: 2.3,
             currency: 'gold',
             maxLevel: 3,
             requires: { upgrades: { drone_hub: 1 } },
-            apply: (game, level) => { game.droneStats.sparklesPerParticleMultiplier = 1 + 4.2 * level; },
+            // Smooth ×2 steps (×2 / ×4 / ×8) — each level is a clear, felt boost
+            // without the old +4.2 first level that 5×'d drone income in one buy.
+            apply: (game, level) => { game.droneStats.sparklesPerParticleMultiplier = Math.pow(2, level); },
         },
         drone_hub_spawn_rate: {
             offset: { x: 0, y: 200 },
@@ -405,13 +412,13 @@ export const SKILL_TREE_CONFIG = {
             id: 'drone_hub_spawn_rate',
             group: 'DRONE',
             name: 'Scout Protocol',
-            desc: '×0.81 drone hub spawn interval (per level)',
+            desc: '×0.92 drone hub spawn interval (per level)',
             baseCost: 1300,
             costRatio: 2.2,
             currency: 'gold',
             maxLevel: 3,
             requires: { upgrades: { drone_hub: 1 } },
-            apply: (game, level) => { game.droneHubStats.spawnIntervalMultiplier = Math.pow(0.81, level); },
+            apply: (game, level) => { game.droneHubStats.spawnIntervalMultiplier = Math.pow(0.92, level); },
         },
         drone_efficiency: {
             offset: { x: -200, y: 0 },
@@ -422,16 +429,16 @@ export const SKILL_TREE_CONFIG = {
             id: 'drone_efficiency',
             group: 'DRONE',
             name: 'Drone Swarm Protocol',
-            desc: '+10 max drones and ×0.75 hub spawn interval',
+            desc: '+5 max drones and ×0.90 hub spawn interval — the capstone that finally gives drones ~100% uptime',
             baseCost: 60000,
             costRatio: 2.0,
             currency: 'gold',
             maxLevel: 2,
             requires: { upgrades: { drone_max: 5, drone_sparkle_yield: 5, drone_hub_spawn_rate: 5 } },
             apply: (game, level) => {
-                game.droneStats.maxDrones += 10 * level;
+                game.droneStats.maxDrones += 5 * level;
                 if (game.droneSystem) game.droneSystem.maxDrones = game.droneStats.maxDrones;
-                game.droneHubStats.spawnIntervalMultiplier *= Math.pow(0.75, level);
+                game.droneHubStats.spawnIntervalMultiplier *= Math.pow(0.90, level);
             },
         },
 
@@ -650,16 +657,16 @@ export const SKILL_TREE_CONFIG = {
             id: 'crowd_catcher_yield',
             group: 'CROWD',
             name: 'Greedy Hands',
-            desc: '+1.83 sparkles per caught particle (per level)',
+            desc: '×1.8 sparkles per caught particle (per level)',
             baseCost: 500,
             costRatio: 3.2,
             currency: 'gold',
             maxLevel: 3,
             requires: { upgrades: { crowd_catcher_unlock: 1 } },
-            // Crowd-catching is the FIRST emergent source: it spikes to #1 the
-            // moment catapults arrive (~5 min), then plateaus (lower ceiling than
-            // drones) so generators and drones can take their later turns.
-            apply: (game, level) => { game.crowdStats.sparklesPerParticleMultiplier = 1 + 1.83 * level; },
+            // Crowd-catching is the FIRST emergent source. Smooth ×1.8 steps keep
+            // each level a meaningful bump while the source ramps in with the
+            // catapult fleet, rather than a single big additive jump.
+            apply: (game, level) => { game.crowdStats.sparklesPerParticleMultiplier = Math.pow(1.8, level); },
         },
         crowd_catcher_radius: {
             offset: { x: 200, y: 0 },
@@ -687,13 +694,16 @@ export const SKILL_TREE_CONFIG = {
             id: 'crowd_throw_power',
             group: 'CROWD',
             name: 'Hyper Throw',
-            desc: '+2.5 sparkles per caught particle',
+            desc: '×1.4 sparkles per caught particle (per level)',
             baseCost: 50000,
             costRatio: 2.0,
             currency: 'gold',
             maxLevel: 2,
             requires: { upgrades: { crowd_catcher_yield: 5 } },
-            apply: (game, level) => { game.crowdStats.sparklesPerParticleMultiplier += 2.5 * level; },
+            // Multiplicative capstone (applied after Greedy Hands sets the base):
+            // ×1.4 per level, a clean stacking boost instead of the old additive
+            // += that scaled with level and double-counted on replay.
+            apply: (game, _level) => { game.crowdStats.sparklesPerParticleMultiplier *= 1.4; },
         },
         crowd_invite_3: {
             offset: { x: 200, y: 0 },
@@ -706,7 +716,7 @@ export const SKILL_TREE_CONFIG = {
             group: 'CROWD',
             name: 'Extra Tickets III',
             desc: '+10 crowd members',
-            baseCost: 500000,
+            baseCost: 150000,
             costRatio: 1,
             currency: 'gold',
             maxLevel: 1,

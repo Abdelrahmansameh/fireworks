@@ -593,6 +593,8 @@ function setupUI() {
             animation: document.getElementById('prop-anim-name').value.trim(),
             startTime: parseFloat(document.getElementById('prop-start-time').value) || 0,
             endTime: parseFloat(document.getElementById('prop-end-time').value) || 1,
+            detachTime: document.getElementById('prop-detach-time').value.trim() === ''
+                ? null : parseFloat(document.getElementById('prop-detach-time').value),
             parentPartId: document.getElementById('prop-parent-part').value || null,
             offsetX: parseFloat(document.getElementById('prop-offx-input').value) || 0,
             offsetY: parseFloat(document.getElementById('prop-offy-input').value) || 0,

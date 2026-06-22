@@ -15,7 +15,7 @@ import BuildingManager from '../buildings/BuildingManager.js';
 import GameMetrics from '../metrics/GameMetrics.js';
 import FireworkSystem from '../systems/FireworkSystem.js';
 import { patternKeys, patternDefinitions, patternDisplayNames } from '../entities/patterns/index.js';
-import { expectedGPS } from '../systems/ProductionRates.js';
+import { expectedGPS, BASE_GOLD_PER_TOSS } from '../systems/ProductionRates.js';
 import { GRAND_FINALE_CONFIG } from '../config/GrandFinaleConfig.js';
 import EmergentYieldModel from '../sim/EmergentYieldModel.js';
 import NullRenderer from '../platform/NullRenderer.js';
@@ -237,7 +237,11 @@ class GameCore extends Engine {
         const a = (typeof config.formulaA === 'number') ? config.formulaA : 1;
         const b = (typeof config.formulaB === 'number') ? config.formulaB : 0;
 
-        const target = Math.floor(a * Math.pow(p, exponent) + b);
+        // Raw power term sets the early shape; the exponential envelope saturates
+        // the venue toward `maxCrowd` so the crowd asymptotes instead of exploding.
+        const raw = a * Math.pow(p, exponent) + b;
+        const maxCrowd = (typeof config.maxCrowd === 'number') ? config.maxCrowd : maxCap;
+        const target = Math.floor(maxCrowd * (1 - Math.exp(-raw / maxCrowd)));
         return Math.min(target + bonus, maxCap);
     }
 
@@ -246,7 +250,7 @@ class GameCore extends Engine {
         this.crowd.catchingEnabled = this.crowdStats.catchingEnabled;
         this.crowd.collectionRadius = CROWD_CATCHER_CONFIG.collectionRadius
             * (this.crowdStats.collectionRadiusMultiplier ?? 1);
-        this.crowd.goldPerCoinToss = Math.round(1 * (this.crowdStats.goldRateMultiplier ?? 1));
+        this.crowd.goldPerCoinToss = Math.round(BASE_GOLD_PER_TOSS * (this.crowdStats.goldRateMultiplier ?? 1));
     }
 
     // ════════════════════════════════════════════════════════════════════════

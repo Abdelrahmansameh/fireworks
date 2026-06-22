@@ -1,18 +1,17 @@
 export const CROWD_CONFIG = {
     // Scaling
     scaling: {
-        // crowd = floor(formulaA * (totalFireworks - formulaOffset)^formulaExp + formulaB)
+        // crowd = floor(maxCrowd * (1 - exp(-raw / maxCrowd))) + bonus
+        //   where raw = formulaA * (totalFireworks - formulaOffset)^formulaExp + formulaB
         //
         // Driven by TOTAL FIREWORKS LAUNCHED (not sparkles/sec), which grows
         // smoothly and monotonically — so the crowd paces gently with no jumps.
-        // Tuned for ~4 fireworks/sec of engaged play:
-        //   1st fan  ≈ 2 min  (~520 fireworks)
-        //   ~7 fans  ≈ 10 min
-        //   ~25 fans ≈ 30 min
-        //   ~60 fans ≈ 60 min
-        // Exponent < 1 gives diminishing returns so the venue fills naturally
-        // instead of exploding once production ramps up.
+        // The `raw` power term sets the EARLY shape (matches the old curve while
+        // raw << maxCrowd), and the exponential envelope SATURATES the venue so it
+        // asymptotes toward `maxCrowd` instead of exploding once production ramps.
+        // Roughly: ~1 fan @ ~6 min, ~85 @ ~15 min, ~130 @ ~20 min, ~150 (full) late.
         formula: 'power_fireworks',
+        maxCrowd: 150,          // soft asymptote — the venue fills toward this and stops
         formulaA: 0.006,
         formulaExp: 1.2,
         formulaOffset: 600,

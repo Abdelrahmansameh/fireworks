@@ -796,114 +796,117 @@ class Crowd {
         );
 
         let propInstanceOffset = this._skeleton.partCount;
+        if (!person._propFrozenAnchors) person._propFrozenAnchors = new Map();
 
-        // Render props from the base clip
-        if (clip && clip.props) {
-            for (const prop of clip.props) {
-                if (time >= prop.startTime && time <= prop.endTime) {
-                    const cached = this._propCache.get(prop.skeletonUrl);
-                    if (!cached) continue;
-
-                    const pTf = pose.get(prop.parentPartId);
-                    if (!pTf) continue;
-
-                    const anchorRot = pTf.rotation;
-                    const propRootX = pTf.x + ((prop.offsetX || 0) * Math.cos(anchorRot) - (prop.offsetY || 0) * Math.sin(anchorRot));
-                    const propRootY = pTf.y + ((prop.offsetX || 0) * Math.sin(anchorRot) + (prop.offsetY || 0) * Math.cos(anchorRot));
-                    const propRootRot = anchorRot + (prop.rotation || 0);
-
-                    const propClip = prop.animation ? cached.animData.getClip(prop.animation) : null;
-                    const propLocalTime = time - prop.startTime;
-                    const propTime = propClip && propClip.loop ? (propLocalTime % propClip.duration) : Math.min(propLocalTime, propClip ? propClip.duration : 0);
-
-                    const propPose = computePose(cached.skeleton, propClip, propTime);
-
-                    const finalPropPose = new Map();
-                    if (prop.worldMotion) {
-                        // The prop's own animation drives it in world axes (up is +Y),
-                        // decoupled from the parent bone's rotation. The anchor point still
-                        // follows the bone, but the animated arc + spin play in world space —
-                        // so e.g. a tossed coin flies straight up regardless of arm angle.
-                        for (const [pid, ptf] of propPose.entries()) {
-                            finalPropPose.set(pid, { x: propRootX + ptf.x, y: propRootY + ptf.y, rotation: ptf.rotation });
-                        }
-                    } else {
-                        for (const [pid, ptf] of propPose.entries()) {
-                            const finalX = propRootX + (ptf.x * Math.cos(propRootRot) - ptf.y * Math.sin(propRootRot));
-                            const finalY = propRootY + (ptf.x * Math.sin(propRootRot) + ptf.y * Math.cos(propRootRot));
-                            const finalRot = propRootRot + ptf.rotation;
-                            finalPropPose.set(pid, { x: finalX, y: finalY, rotation: finalRot });
-                        }
-                    }
-
-                    applyPoseToInstances(
-                        cached.skeleton, finalPropPose, this.instancedGroup,
-                        person.instanceBaseIndex + propInstanceOffset,
-                        person.x, person.y,
-                        finalScale, flipX
-                    );
-
-                    propInstanceOffset += cached.skeleton.partCount;
-                }
-            }
+        // Render props from the base clip, then from any overlay clip (so overlays
+        // like toss_coin spawn their props too). Distinct key prefixes keep the two
+        // sources' detach state separate.
+        if (clip) {
+            propInstanceOffset = this._renderClipProps(
+                clip.props, time, 'b', pose, person, finalScale, flipX, propInstanceOffset
+            );
         }
-
-        // Also render props from an overlay clip (so overlays like toss_coin spawn their props)
-        if (overlay && overlay.clip && overlay.clip.props) {
-            const oTime = overlay.time;
-            for (const prop of overlay.clip.props) {
-                if (oTime >= prop.startTime && oTime <= prop.endTime) {
-                    const cached = this._propCache.get(prop.skeletonUrl);
-                    if (!cached) continue;
-
-                    const pTf = pose.get(prop.parentPartId);
-                    if (!pTf) continue;
-
-                    const anchorRot = pTf.rotation;
-                    const propRootX = pTf.x + ((prop.offsetX || 0) * Math.cos(anchorRot) - (prop.offsetY || 0) * Math.sin(anchorRot));
-                    const propRootY = pTf.y + ((prop.offsetX || 0) * Math.sin(anchorRot) + (prop.offsetY || 0) * Math.cos(anchorRot));
-                    const propRootRot = anchorRot + (prop.rotation || 0);
-
-                    const propClip = prop.animation ? cached.animData.getClip(prop.animation) : null;
-                    const propLocalTime = oTime - prop.startTime;
-                    const propTime = propClip && propClip.loop ? (propLocalTime % propClip.duration) : Math.min(propLocalTime, propClip ? propClip.duration : 0);
-
-                    const propPose = computePose(cached.skeleton, propClip, propTime);
-
-                    const finalPropPose = new Map();
-                    if (prop.worldMotion) {
-                        // The prop's own animation drives it in world axes (up is +Y),
-                        // decoupled from the parent bone's rotation. The anchor point still
-                        // follows the bone, but the animated arc + spin play in world space —
-                        // so e.g. a tossed coin flies straight up regardless of arm angle.
-                        for (const [pid, ptf] of propPose.entries()) {
-                            finalPropPose.set(pid, { x: propRootX + ptf.x, y: propRootY + ptf.y, rotation: ptf.rotation });
-                        }
-                    } else {
-                        for (const [pid, ptf] of propPose.entries()) {
-                            const finalX = propRootX + (ptf.x * Math.cos(propRootRot) - ptf.y * Math.sin(propRootRot));
-                            const finalY = propRootY + (ptf.x * Math.sin(propRootRot) + ptf.y * Math.cos(propRootRot));
-                            const finalRot = propRootRot + ptf.rotation;
-                            finalPropPose.set(pid, { x: finalX, y: finalY, rotation: finalRot });
-                        }
-                    }
-
-                    applyPoseToInstances(
-                        cached.skeleton, finalPropPose, this.instancedGroup,
-                        person.instanceBaseIndex + propInstanceOffset,
-                        person.x, person.y,
-                        finalScale, flipX
-                    );
-
-                    propInstanceOffset += cached.skeleton.partCount;
-                }
-            }
+        if (overlay && overlay.clip) {
+            propInstanceOffset = this._renderClipProps(
+                overlay.clip.props, overlay.time, 'o', pose, person, finalScale, flipX, propInstanceOffset
+            );
         }
 
         // Hide unused preallocated instances
         for (let i = propInstanceOffset; i < this.totalPartsPerPerson; i++) {
             this.instancedGroup.updateInstanceScale(person.instanceBaseIndex + i, 0, 0);
         }
+    }
+
+    /**
+     * Render one clip's props into the person's preallocated instance slots.
+     *
+     * Each prop rides its parent bone for [startTime, endTime]. If the prop also
+     * defines a `detachTime`, the attach lasts only [startTime, detachTime]: once
+     * compareTime passes detachTime the anchor freezes at the bone's pose at the
+     * moment of release, and the prop's own animation (e.g. a worldMotion toss arc)
+     * keeps playing — so a tossed coin leaves the hand and flies free instead of
+     * tracking it for the rest of its life. Omitting detachTime keeps the prop
+     * attached for its whole lifetime.
+     *
+     * @param {Array<Object>|undefined} props
+     * @param {number} compareTime — clip time used for start/end/detach comparisons
+     * @param {string} keyPrefix — namespaces the per-prop frozen-anchor cache
+     * @returns {number} the updated propInstanceOffset
+     */
+    _renderClipProps(props, compareTime, keyPrefix, pose, person, finalScale, flipX, propInstanceOffset) {
+        if (!props) return propInstanceOffset;
+
+        for (let i = 0; i < props.length; i++) {
+            const prop = props[i];
+            if (compareTime < prop.startTime || compareTime > prop.endTime) continue;
+
+            const cached = this._propCache.get(prop.skeletonUrl);
+            if (!cached) continue;
+
+            const pTf = pose.get(prop.parentPartId);
+            if (!pTf) continue;
+
+            const anchorRot = pTf.rotation;
+            let propRootX = pTf.x + ((prop.offsetX || 0) * Math.cos(anchorRot) - (prop.offsetY || 0) * Math.sin(anchorRot));
+            let propRootY = pTf.y + ((prop.offsetX || 0) * Math.sin(anchorRot) + (prop.offsetY || 0) * Math.cos(anchorRot));
+            let propRootRot = anchorRot + (prop.rotation || 0);
+
+            // Optional detach: ride the bone until detachTime, then freeze the anchor
+            // at the release pose so the prop flies free. Captured once on the first
+            // frame past detachTime and reset whenever the clip loops back before it.
+            if (prop.detachTime != null) {
+                const key = keyPrefix + i;
+                if (compareTime < prop.detachTime) {
+                    person._propFrozenAnchors.delete(key);
+                } else {
+                    let frozen = person._propFrozenAnchors.get(key);
+                    if (!frozen) {
+                        frozen = { x: propRootX, y: propRootY, rot: propRootRot };
+                        person._propFrozenAnchors.set(key, frozen);
+                    }
+                    propRootX = frozen.x;
+                    propRootY = frozen.y;
+                    propRootRot = frozen.rot;
+                }
+            }
+
+            const propClip = prop.animation ? cached.animData.getClip(prop.animation) : null;
+            const propLocalTime = compareTime - prop.startTime;
+            const propTime = propClip && propClip.loop ? (propLocalTime % propClip.duration) : Math.min(propLocalTime, propClip ? propClip.duration : 0);
+
+            const propPose = computePose(cached.skeleton, propClip, propTime);
+
+            const finalPropPose = new Map();
+            if (prop.worldMotion) {
+                // The prop's own animation drives it in world axes (up is +Y),
+                // decoupled from the parent bone's rotation. The anchor point still
+                // follows the bone (until detached), but the animated arc + spin play
+                // in world space — so e.g. a tossed coin flies straight up regardless
+                // of arm angle.
+                for (const [pid, ptf] of propPose.entries()) {
+                    finalPropPose.set(pid, { x: propRootX + ptf.x, y: propRootY + ptf.y, rotation: ptf.rotation });
+                }
+            } else {
+                for (const [pid, ptf] of propPose.entries()) {
+                    const finalX = propRootX + (ptf.x * Math.cos(propRootRot) - ptf.y * Math.sin(propRootRot));
+                    const finalY = propRootY + (ptf.x * Math.sin(propRootRot) + ptf.y * Math.cos(propRootRot));
+                    const finalRot = propRootRot + ptf.rotation;
+                    finalPropPose.set(pid, { x: finalX, y: finalY, rotation: finalRot });
+                }
+            }
+
+            applyPoseToInstances(
+                cached.skeleton, finalPropPose, this.instancedGroup,
+                person.instanceBaseIndex + propInstanceOffset,
+                person.x, person.y,
+                finalScale, flipX
+            );
+
+            propInstanceOffset += cached.skeleton.partCount;
+        }
+
+        return propInstanceOffset;
     }
 
     _reorderInstancesByY() {
