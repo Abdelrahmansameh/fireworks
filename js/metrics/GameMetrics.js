@@ -99,12 +99,13 @@ export default class GameMetrics {
     }
 
     /**
-     * Record a drone particle collection (already counted through sparkle 'drone' source,
-     * but we keep a separate raw count for the metrics panel).
+     * Record drone particle collections (already counted through sparkle 'drone'
+     * source, but we keep a separate raw count for the metrics panel).
+     * @param {number} count  Particles collected (drone collections are batched per frame).
      */
-    recordDroneParticle() {
-        this.sessionDroneParticles++;
-        this.lifetimeDroneParticles++;
+    recordDroneParticle(count = 1) {
+        this.sessionDroneParticles += count;
+        this.lifetimeDroneParticles += count;
     }
 
     /**

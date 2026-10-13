@@ -1,8 +1,5 @@
-export const AUTO_LAUNCHER_COST_BASE = 30;
-// Moderate ratio: the player keeps buying launchers all game (count climbs into
-// the dozens, fireworks/sec rises, the sky fills up — the core fantasy), but not
-// so cheap that purchases come every few seconds. Launchers are also the particle
-// supply that feeds drones + crowd-catching.
+export const AUTO_LAUNCHER_COST_BASE = 50;
+
 export const AUTO_LAUNCHER_COST_RATIO = 1.7;
 
 export const LAUNCHER_WORLD_HIGHLIGHT_DURATION = 2.5;
@@ -38,11 +35,8 @@ export const BUILDING_TYPES = {
         id: 'resource_generator',
         name: 'Sparkle Generator',
         description: 'Passively generates sparkles over time',
-        baseCost: 400,
-        // gold-fuelled flat producer — ratio kept high so late-game count stays
-        // bounded (prevents a generator runaway while it still shines ~8-11 min)
-        // and so purchases are spaced out rather than a constant trickle.
-        costRatio: 1.6,
+        baseCost: 150,
+        costRatio: 1.8,
         currency: 'gold',
         width: 25,
         height: 30,
@@ -52,7 +46,7 @@ export const BUILDING_TYPES = {
         textureKey: null,
         skeletonUrl: 'assets/skeletons/sparkle_generator.json',
         skeletonScale: 15,
-        baseProductionRate: 1050.0,
+        baseProductionRate: 200.0,
         sparkleTrailBaseCount: 6,
         sparkleTrailScalingRatio: 0.25,
         maxSparkleTrailBurstCount: 100, 
@@ -72,7 +66,7 @@ export const BUILDING_TYPES = {
         id: 'catapult',
         name: 'Catapult',
         description: 'Launches crowd members into the firework zone to catch sparkles',
-        baseCost: 150,
+        baseCost: 100,
         costRatio: 1.6,
         currency: 'gold',
         // Skeleton-rendered; width/height used for click-bounds only
@@ -107,12 +101,8 @@ export const BUILDING_TYPES = {
         id: 'drone_hub',
         name: 'Drone Hub',
         description: 'Periodically launches drones that collect firework particles',
-        baseCost: 180,
-        // Steeper than other buildings: a single hub is meant to be a meaningful,
-        // somewhat scarce investment (each adds an intermittent drone), so the
-        // player ends up with a handful of hubs — not dozens. Prevents the old
-        // "buy so many hubs the sky is a permanent drone swarm" runaway.
-        costRatio: 1.9,
+        baseCost: 200,
+        costRatio: 2.0,
         currency: 'gold',
         width: 40,
         height: 50,

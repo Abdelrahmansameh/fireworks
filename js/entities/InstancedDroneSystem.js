@@ -309,7 +309,7 @@ class InstancedDroneSystem {
         // phaseBucket de-syncs rotor/core animation across drones; it travels
         // with the drone through swap-removes (droneRefs are moved, not indices).
         this.droneRefs[i] = {
-            x, y, active: true, collected: 0, scale,
+            x, y, active: true, collected: 0, lifetime, scale,
             phaseBucket: Math.floor(Math.random() * PHASE_BUCKETS),
         };
 
@@ -323,7 +323,8 @@ class InstancedDroneSystem {
     /**
      * Update all drones.
      * @param {number} delta  Seconds since last frame.
-     * @param {function} onAwardSparkles  Called with (sparkleAmount) when a drone collects.
+     * @param {function} onAwardSparkles  Called with (sparkleAmount, particleCount)
+     *   as drones collect — at most once per frame (collections are batched).
      */
     update(delta, onAwardSparkles) {
         // Nothing to do until the skeleton has loaded its instanced group.
@@ -355,9 +356,21 @@ class InstancedDroneSystem {
         // can query only the particles near it.
         if (doScan) this._buildSpatialGrid();
 
+        // Particles collected across all drones this frame (awarded once below).
+        let frameCollected = 0;
+
         for (let i = 0; i < this.count; i++) {
             const base = i * this.strideFloats;
             const ref = this.droneRefs[i];
+
+            // ── Drain collections ────────────────────────────────────
+            // Pull closures (run inside particleSystem.update, earlier in the
+            // frame) increment ref.collected; award continuously rather than
+            // as a lump on despawn so income and the stats-panel rate are live.
+            if (ref.collected > 0) {
+                frameCollected += ref.collected;
+                ref.collected = 0;
+            }
 
             // ── Wander steering ──────────────────────────────────────
             d[base + this.WANDER_TIMER] -= delta;
@@ -615,10 +628,11 @@ class InstancedDroneSystem {
 
             // ── Lifetime ─────────────────────────────────────────────
             d[base + this.LIFETIME] -= delta;
+            // Mirrored onto the ref so pull closures can insta-collect their
+            // particle when the drone is about to despawn.
+            ref.lifetime = d[base + this.LIFETIME];
             if (d[base + this.LIFETIME] <= 0) {
                 ref.active = false;
-                const sparkles = ref.collected * cfg.sparklesPerParticle;
-                if (sparkles > 0) onAwardSparkles(sparkles);
 
                 // Swap-remove (CPU state only). The GPU part-instances for every
                 // live drone are rewritten below each frame, so there's no GPU
@@ -647,6 +661,10 @@ class InstancedDroneSystem {
                 ref.scale,
                 i * this.partsPerDrone
             );
+        }
+
+        if (frameCollected > 0) {
+            onAwardSparkles(frameCollected * cfg.sparklesPerParticle, frameCollected);
         }
 
         this.mesh.instanceCount = this.count * this.partsPerDrone;

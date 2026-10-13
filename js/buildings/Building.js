@@ -1,5 +1,6 @@
 import * as Renderer2D from '../rendering/Renderer.js';
 import { FIREWORK_CONFIG, GAME_BOUNDS, BUILDING_TYPES } from '../config/config.js';
+import { roundUpClean, roundUpToStep } from '../utils/costRounding.js';
 
 class Building {
     constructor(game, buildingType, x, y, data = {}) {
@@ -97,11 +98,13 @@ class Building {
     static getPurchaseCost(buildingType, count) {
         const config = BUILDING_TYPES[buildingType];
         if (!config) return Infinity;
-        
-        return Math.floor(
-            config.baseCost * 
-            Math.pow(config.costRatio, count)
-        );
+
+        const raw = config.baseCost * Math.pow(config.costRatio, count);
+        // Clean the price ending (always rounding up): Auto-Launchers snap to a
+        // multiple of 25, every other building to a clean power-of-ten ending.
+        return buildingType === 'AUTO_LAUNCHER'
+            ? roundUpToStep(raw, 25)
+            : roundUpClean(raw);
     }
 
     isPointInside(x, y) {

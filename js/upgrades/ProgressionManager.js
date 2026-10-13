@@ -1,5 +1,6 @@
 import { DRONE_CONFIG } from '../config/config.js';
 import { SKILL_TREE_CONFIG } from '../ui/SkillTreeConfig.js';
+import { roundUpClean } from '../utils/costRounding.js';
 
 /**
  * ProgressionManager — centralized state for all upgrades and unlock nodes.
@@ -89,11 +90,11 @@ class ProgressionManager {
         return [...this._upgrades.values()];
     }
 
-    /** Cost of the *next* level for upgrade `id`. */
+    /** Cost of the *next* level for upgrade `id` (rounded up to a clean ending). */
     getUpgradeCost(id) {
         const def = this._upgrades.get(id);
         if (!def) return Infinity;
-        return Math.floor(def.baseCost * Math.pow(def.costRatio, this.getUpgradeLevel(id)));
+        return roundUpClean(def.baseCost * Math.pow(def.costRatio, this.getUpgradeLevel(id)));
     }
 
     /**

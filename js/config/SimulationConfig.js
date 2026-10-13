@@ -43,8 +43,8 @@ export const SIMULATION_CONFIG = {
         // fleet ≈ the cap) instead of leaping to dominate the instant the first
         // catapult lands. This removes the old onset cliff while preserving the
         // late-game plateau.
-        catchFractionPerCatcher: 0.03,
+        catchFractionPerCatcher: 0.021,
         // Hard cap on the combined fraction the crowd can catch.
-        maxCatchFractionTotal: 0.45,
+        maxCatchFractionTotal: 0.38,
     },
 };

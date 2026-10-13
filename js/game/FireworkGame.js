@@ -253,10 +253,10 @@ class FireworkGame extends GameCore {
         this.procduralBackground?.update(deltaTime);
 
         this.particleSystem.update(deltaTime);
-        this.droneSystem?.update(deltaTime, (sparkles) => {
+        this.droneSystem?.update(deltaTime, (sparkles, particleCount = 1) => {
             const multiplied = sparkles * (this.droneStats.sparklesPerParticleMultiplier ?? 1);
             this.addSparkles(multiplied, 'drone');
-            this.statsTracker.recordDroneParticle();
+            this.statsTracker.recordDroneParticle(particleCount);
         });
 
         this.updateCameraPosition(deltaTime);

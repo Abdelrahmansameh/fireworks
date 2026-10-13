@@ -23,6 +23,7 @@ import NullAudio from '../platform/NullAudio.js';
 import makeNullUI from '../platform/NullUI.js';
 import MemoryStorage from '../platform/MemoryStorage.js';
 import HeadlessCrowd from '../platform/HeadlessCrowd.js';
+import { roundUpToStep } from '../utils/costRounding.js';
 
 export const SAVE_VERSION = '4';
 
@@ -258,7 +259,8 @@ class GameCore extends Engine {
     // ════════════════════════════════════════════════════════════════════════
 
     calculateAutoLauncherCost(numLaunchers) {
-        return Math.floor(AUTO_LAUNCHER_COST_BASE * Math.pow(AUTO_LAUNCHER_COST_RATIO, numLaunchers));
+        // Mirror Building.getPurchaseCost('AUTO_LAUNCHER', …): clean ending, round up to a multiple of 25.
+        return roundUpToStep(AUTO_LAUNCHER_COST_BASE * Math.pow(AUTO_LAUNCHER_COST_RATIO, numLaunchers), 25);
     }
 
     isBuildingTypeUnlocked(buildingType) {

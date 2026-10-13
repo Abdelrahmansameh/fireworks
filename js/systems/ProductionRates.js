@@ -1,13 +1,9 @@
 import { BUILDING_TYPES, CROWD_CONFIG } from '../config/config.js';
 import Building from '../buildings/Building.js';
 
-// Crowd people drop one coin every COIN_TOSS_INTERVAL seconds (see Crowd.js).
 export const COIN_TOSS_INTERVAL = 5;
-// Base gold value of a single coin toss (before goldRateMultiplier upgrades).
-// Raised from 1 to compensate for the ~150 crowd cap: with far fewer people than
-// the old uncapped venue, each coin is worth more so late-game gold income stays
-// healthy and gold-priced upgrades keep pacing steadily.
-export const BASE_GOLD_PER_TOSS = 3;
+
+export const BASE_GOLD_PER_TOSS = 2.5;
 export const BASE_GOLD_DROPS_PER_SEC_PER_PERSON = BASE_GOLD_PER_TOSS / COIN_TOSS_INTERVAL;
 
 // Fallback default yields for emergent sources the sim needs to estimate.

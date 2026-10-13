@@ -73,11 +73,12 @@ class BuildingManager {
 
         let x;
 
-        // Place catapults near the camera (within their dedicated bounds).
+        // Stack catapults horizontally within their dedicated bounds: the first
+        // sits at the right edge and each new one is placed to its left.
         // For other buildings (e.g. auto launchers) place them sequentially
         // from left to right across the world, ignoring the current camera.
         if (buildingType === 'CATAPULT') {
-            x = this.game.renderer2D.cameraX + (Math.random() * 500 - 250);
+            x = GAME_BOUNDS.CATAPULT_MAX_X + count * GAME_BOUNDS.CATAPULT_X_STEP;
             const minX = GAME_BOUNDS.CATAPULT_MIN_X;
             const maxX = GAME_BOUNDS.CATAPULT_MAX_X;
             x = Math.max(minX, Math.min(x, maxX));
@@ -94,9 +95,6 @@ class BuildingManager {
         }
 
         let y = BUILDING_TYPES[buildingType].y;
-        if (buildingType === 'CATAPULT') {
-            y += count * GAME_BOUNDS.CATAPULT_Y_STEP;
-        }
 
         const building = this.createBuilding(buildingType, x, y);
 

@@ -1324,6 +1324,8 @@ legend {
 /* ═══════════════════════════════════════════════════════════════════════════
    FLOATING SPARKLE
    ═══════════════════════════════════════════════════════════════════════════ */
+/* The wrapper owns position + accumulated scale (driven by --fsn-scale from JS)
+   and handles the idle fade-up. The inner span owns the per-hit "pop". */
 .floating-sparkle {
     position: fixed;
     pointer-events: none;
@@ -1331,76 +1333,36 @@ legend {
     font-family: 'Merriweather', Georgia, serif;
     font-size: var(--fs-xl);
     font-weight: 900;
+    color: var(--accent, hsl(180, 70%, 65%));
     text-shadow:
         0 0 6px currentColor,
         0 1px 3px hsla(0, 0%, 0%, 0.6);
     white-space: nowrap;
-    /* Keep fixed Y position and control size via CSS var set from JS */
-    transform: translate(-50%, -50%) scale(var(--floating-scale, 0.75));
-    transition: transform 2000ms var(--ease-out), opacity 2000ms var(--ease-out);
-    opacity: 1;
-    border-color: transparent;
+    padding: var(--sp-1);
     background: hsla(220, 25%, 8%, 0.5);
-        padding: var(--sp-1);
+    border-radius: var(--radius-sm, 6px);
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(var(--fsn-scale, 0.85));
+    transition: transform 650ms var(--ease-out), opacity 650ms var(--ease-out);
+}
+
+.floating-sparkle.fading {
+    opacity: 0;
+    transform: translate(-50%, -180%) scale(var(--fsn-scale, 0.85));
 }
 
 .floating-sparkle-inner {
     display: inline-block;
 }
 
-.floating-sparkle-inner.shake {
-    animation: sparkleShake 0.5s ease-out;
+.floating-sparkle-inner.pop {
+    animation: sparklePop 350ms var(--ease-out);
 }
 
-.floating-sparkle.fading {
-    opacity: 0;
-    transform: translate(-50%, -50%) scale(0.7);
-}
-
-@keyframes floatUp {
-    0% {
-        opacity: 1;
-        transform: translate(-50%, -50%) scale(1);
-    }
-
-    60% {
-        opacity: 1;
-    }
-
-    100% {
-        opacity: 0;
-        transform: translate(-50%, -150%) scale(0.7);
-    }
-}
-
-@keyframes sparkleShake {
-    0% {
-        transform: translate(0, 0) scale(1.12);
-    }
-
-    15% {
-        transform: translate(-4px, -2px) scale(1.15);
-    }
-
-    30% {
-        transform: translate(3px, 1px) scale(1.08);
-    }
-
-    45% {
-        transform: translate(-2px, 2px) scale(1.1);
-    }
-
-    60% {
-        transform: translate(2px, -1px) scale(1.05);
-    }
-
-    75% {
-        transform: translate(-1px, 0) scale(1.02);
-    }
-
-    100% {
-        transform: translate(0, 0) scale(1);
-    }
+@keyframes sparklePop {
+    0% { transform: scale(1); }
+    35% { transform: scale(1.28); }
+    100% { transform: scale(1); }
 }
 
 
