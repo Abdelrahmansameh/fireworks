@@ -7,6 +7,8 @@ class ProcduralBackground {
         this.renderer = renderer;
         this.config = config;
         this.shapes = [];
+        this.skyBands = [];
+        this.coverageBounds = null;
         this.twinkleStars = [];
         this.twinkleTime = 0;
     }
@@ -14,10 +16,20 @@ class ProcduralBackground {
     generate() {
         this.dispose();
 
+        const { world } = this.config;
+        const padding = Math.max(1, world.verticalSafeZone ?? 1080);
+        this.coverageBounds = {
+            left: world.xMin,
+            right: world.xMax,
+            top: world.skyTopY + padding,
+            bottom: world.groundY - world.groundDepth - padding,
+        };
+
         this._buildSky();
         this._buildStars();
         this._buildTrees();
         this._buildGround();
+        this.ensureCoverage();
     }
 
     dispose() {
@@ -25,7 +37,40 @@ class ProcduralBackground {
             this.renderer.removeNormalShape(shape);
         }
         this.shapes.length = 0;
+        this.skyBands.length = 0;
+        this.skySafetyShape = null;
+        this.groundShape = null;
+        this.groundRimShape = null;
+        this.coverageBounds = null;
         this.twinkleStars.length = 0;
+    }
+
+    /** Extend the background before drawing, including during camera moves or pauses. */
+    ensureCoverage() {
+        const bounds = this.coverageBounds;
+        const visible = this.renderer.getVisibleWorldBounds?.();
+        if (!bounds || !visible || !Object.values(visible).every(Number.isFinite)) {
+            return;
+        }
+
+        const { world, ground } = this.config;
+        const padding = Math.max(1, world.verticalSafeZone ?? 1080);
+        const left = Math.min(bounds.left, visible.left - padding);
+        const right = Math.max(bounds.right, visible.right + padding);
+        const top = Math.max(bounds.top, visible.top + padding);
+        const bottom = Math.min(bounds.bottom, visible.bottom - padding);
+        if (left === bounds.left && right === bounds.right && top === bounds.top && bottom === bounds.bottom) {
+            return;
+        }
+
+        Object.assign(bounds, { left, right, top, bottom });
+        this._setRectBounds(this.skySafetyShape, left, world.skyTopY - 1, right, top);
+        for (const shape of this.skyBands) {
+            shape.position.x = left;
+            shape.scale.x = right - left;
+        }
+        this._setRectBounds(this.groundShape, left, bottom, right, world.groundY);
+        this._setRectBounds(this.groundRimShape, left, bottom, right, world.groundY + ground.rimHeight);
     }
 
     update(deltaTime) {
@@ -56,6 +101,17 @@ class ProcduralBackground {
         const bands = Math.max(1, Math.floor(sky.gradientBands));
         const ySpan = world.skyTopY - world.groundY;
 
+        // Keep the normal gradient and stars in place; continue its upper color
+        // into a safety zone rather than stretching the scene vertically.
+        this.skySafetyShape = this._addRect(
+            world.xMin,
+            world.skyTopY - 1,
+            world.xMax,
+            this.coverageBounds.top,
+            this._sampleSkyColor(1),
+            zIndex.sky
+        );
+
         for (let i = 0; i < bands; i++) {
             const t0 = i / bands;
             const t1 = (i + 1) / bands;
@@ -64,14 +120,14 @@ class ProcduralBackground {
             const y1 = world.groundY + ySpan * t1;
             const color = this._sampleSkyColor(tMid);
 
-            this._addRect(
+            this.skyBands.push(this._addRect(
                 world.xMin,
                 y0,
                 world.xMax,
                 y1,
                 color,
                 zIndex.sky
-            );
+            ));
         }
     }
 
@@ -370,9 +426,9 @@ class ProcduralBackground {
 
     _buildGround() {
         const { world, ground, zIndex } = this.config;
-        const bottomY = world.groundY - world.groundDepth;
+        const bottomY = this.coverageBounds.bottom;
 
-        this._addRect(
+        this.groundShape = this._addRect(
             world.xMin,
             bottomY,
             world.xMax,
@@ -381,9 +437,9 @@ class ProcduralBackground {
             zIndex.ground
         );
 
-        this._addRect(
+        this.groundRimShape = this._addRect(
             world.xMin,
-            world.groundY,
+            bottomY,
             world.xMax,
             world.groundY + ground.rimHeight,
             new Renderer2D.Color(ground.rimColor.r, ground.rimColor.g, ground.rimColor.b, ground.rimColor.a),
@@ -393,25 +449,31 @@ class ProcduralBackground {
 
     _addRect(x0, y0, x1, y1, color, zIndex) {
         const geom = Renderer2D.buildPolygon([
-            x0, y0,
-            x1, y0,
-            x1, y1,
-            x0, y1,
+            0, 0,
+            1, 0,
+            1, 1,
+            0, 1,
         ]);
 
         const shape = this.renderer.createNormalShape({
             vertices: geom.vertices,
             indices: geom.indices,
             color,
-            position: new Renderer2D.Vector2(0, 0),
+            position: new Renderer2D.Vector2(x0, y0),
             rotation: 0,
-            scale: new Renderer2D.Vector2(1, 1),
+            scale: new Renderer2D.Vector2(x1 - x0, y1 - y0),
             zIndex,
             blendMode: Renderer2D.BlendMode.NORMAL,
             isStroke: false,
         });
 
         this.shapes.push(shape);
+        return shape;
+    }
+
+    _setRectBounds(shape, x0, y0, x1, y1) {
+        shape.position.set(x0, y0);
+        shape.scale.set(x1 - x0, y1 - y0);
     }
 
     _addPolygon(points, color, zIndex, blendMode = Renderer2D.BlendMode.NORMAL) {

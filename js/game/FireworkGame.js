@@ -367,6 +367,7 @@ class FireworkGame extends GameCore {
     render() {
         this.profiler.startFunction('drawFrame');
         if (this.currentState === 'game') {
+            this.procduralBackground?.ensureCoverage();
             this.renderer2D.drawFrame();
         }
         if (this.previewActive && this.previewRenderer) this.previewRenderer.drawFrame();

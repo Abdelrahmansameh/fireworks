@@ -1,4 +1,5 @@
 import { TABS } from './uiSchema.js';
+import { GAME_BOUNDS } from '../config/GameBoundsConfig.js';
 
 /** Coordinates navigation and mobile sheets without owning game state. */
 export class ChromeController {
@@ -10,6 +11,7 @@ export class ChromeController {
         this.lastMoreTab = 'stats';
         this.mobile = matchMedia('(max-width: 700px)');
         this.panels = [...document.querySelectorAll('.tab-content')];
+        this.bottomControls = [document.querySelector('.tab-bar'), document.getElementById('show-menu')];
         this.panels.forEach(panel => {
             panel.querySelector('.panel-close').addEventListener('click', () => game.ui.hideActiveTab());
             panel.querySelector('.sheet-handle').addEventListener('click', () => {
@@ -149,21 +151,50 @@ export class ChromeController {
         rail.addEventListener('pointercancel', () => { start = null; this.railWasSwiped = false; });
     }
 
-    /** Keep the actual ground above a mobile sheet; all input uses this camera. */
+    /** Find the top of the mobile tab bar or its tucked menu button. */
+    getMobileDockTop() {
+        let top = this.game.renderer2D.canvas.getBoundingClientRect().bottom;
+        for (const element of this.bottomControls) {
+            if (!element) continue;
+            if (element === this.tabs.parentElement && this.tabs.classList.contains('unlock-hidden')) continue;
+            const style = getComputedStyle(element);
+            if (style.display === 'none' || style.visibility === 'hidden' || Number(style.opacity) === 0) continue;
+            const bounds = element.getBoundingClientRect();
+            if (bounds.height > 0 && bounds.bottom > 0 && bounds.top < top) top = Math.max(0, bounds.top);
+        }
+        return top;
+    }
+
+    /** Keep the tab bar below ground objects; input shares the adjusted camera. */
     animateCamera() {
         const tick = () => {
             const renderer = this.game.renderer2D;
             if (renderer && !this.game.cinematicManager?.isPlaying && !this.game.grandFinaleManager?.active) {
-                const active = this.panels.find(panel => panel.classList.contains('active'));
-                const pan = this.mobile.matches && active && ['upgrades-content', 'buildings-content', 'crowd-content'].includes(active.id);
-                if (pan || this.cameraWasPanned) {
-                    if (pan && !this.cameraWasPanned) this.cameraBaselineY = renderer.cameraY;
-                    const shift = pan ? Math.max(0, innerHeight - active.getBoundingClientRect().top + 24) : 0;
+                if (this.mobile.matches || this.cameraWasPanned) {
+                    if (this.mobile.matches && !this.cameraWasPanned) this.cameraBaselineY = renderer.cameraY;
                     const baseline = this.cameraBaselineY ?? 0;
-                    const target = baseline - Math.min(shift, innerHeight * .52) * renderer.virtualHeight / renderer.canvas.clientHeight / renderer.cameraZoom;
-                    const next = renderer.cameraY + (target - renderer.cameraY) * .12;
-                    renderer.setCamera({ x: renderer.cameraX, y: Math.abs(next - target) < .3 ? target : next, zoom: renderer.cameraZoom });
-                    this.cameraWasPanned = pan || Math.abs(next - baseline) > .3;
+                    let target = baseline;
+                    let dockTarget = baseline;
+                    if (this.mobile.matches && renderer.canvas.clientHeight > 0) {
+                        const canvas = renderer.canvas.getBoundingClientRect();
+                        const unitsPerPixel = renderer.virtualHeight / renderer.canvas.clientHeight / renderer.cameraZoom;
+                        // Allow space for feet/launcher bases below their world origin.
+                        const groundY = Math.min(GAME_BOUNDS.WORLD_GROUND_Y, GAME_BOUNDS.WORLD_LAUNCHER_Y, GAME_BOUNDS.CROWD_Y) - 16;
+                        const clearY = this.getMobileDockTop() - 16;
+                        dockTarget = Math.min(baseline, groundY + (clearY - canvas.top - canvas.height / 2) * unitsPerPixel);
+                        const active = this.panels.find(panel => panel.classList.contains('active'));
+                        if (active && ['upgrades-content', 'buildings-content', 'crowd-content'].includes(active.id)) {
+                            const shift = Math.max(0, innerHeight - active.getBoundingClientRect().top + 24);
+                            target = baseline - Math.min(shift, innerHeight * .52) * unitsPerPixel;
+                        }
+                        target = Math.min(target, dockTarget);
+                    }
+                    let next = renderer.cameraY + (target - renderer.cameraY) * .12;
+                    // The closed tab bar must never cover the ground while the camera eases.
+                    if (this.mobile.matches) next = Math.min(next, dockTarget);
+                    if (Math.abs(next - target) < .3) next = target;
+                    if (next !== renderer.cameraY) renderer.setCamera({ x: renderer.cameraX, y: next, zoom: renderer.cameraZoom });
+                    this.cameraWasPanned = this.mobile.matches || next !== baseline;
                 }
             }
             requestAnimationFrame(tick);

@@ -9,6 +9,9 @@ export const PROCEDURAL_BACKGROUND_CONFIG = {
         groundY: GAME_BOUNDS.WORLD_GROUND_Y,
         skyTopY: 760,
         groundDepth: 420,
+        // Overscan above the sky and below the ground, in world units.
+        // Coverage also expands with the camera so these edges stay offscreen.
+        verticalSafeZone: 1080,
         horizonY: GAME_BOUNDS.WORLD_GROUND_Y + 160,
     },
     zIndex: {

@@ -45,7 +45,6 @@ export function refreshUpgradeSavings(card, costs, game) {
     }
     if (fill) {
         fill.style.width = `${(progress * 100).toFixed(1)}%`;
-        fill.style.background = entries.every(([currency]) => currency === 'gold') ? '#ffd04a' : '#5fe0e0';
     }
     if (track) {
         track.setAttribute('aria-valuenow', String(Math.floor(progress * 100)));
@@ -122,6 +121,10 @@ export function createUpgradeCard({ def, level, canBuy, reason, isPrereqLocked, 
     }
 
     if (!canBuy) {
+        const status = document.createElement('p');
+        status.className = 'upgrade-saving-status';
+        status.textContent = 'Not enough resources';
+        card.appendChild(status);
         const savings = document.createElement('div');
         savings.className = 'upgrade-saving';
         savings.innerHTML = `

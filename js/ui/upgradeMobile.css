@@ -1,3 +1,31 @@
+/* Affordability stays clear at every viewport size. */
+.upgrade-card.saving {
+    background: #e1dfe7;
+    border-color: #77718a;
+    box-shadow: none;
+}
+.upgrade-card.saving .upgrade-icon {
+    color: #5f5873;
+    background: #cecad8;
+    border-color: #77718a;
+}
+.upgrade-card.saving .level-dot { border-color: #77718a; }
+.upgrade-card.saving .level-dot.filled { background: #77718a; }
+.upgrade-card.saving > .upgrade-saving-status {
+    margin-top: 10px;
+    font: 800 12px/17px 'Shantell Sans', cursive;
+    color: #514a63;
+}
+.upgrade-card.saving .upgrade-saving { margin-top: 4px; border-color: #77718a; }
+.upgrade-card.saving .upgrade-saving-track { background: #f3f0f6; }
+.upgrade-card.saving .upgrade-saving-fill {
+    background: #c6c1d1;
+    border-right-color: #77718a;
+}
+.upgrade-card.saving:has(.upgrade-saving-balance .currency-gold) .upgrade-saving-fill { background: #c6c1d1; }
+.upgrade-card.saving .upgrade-saving-balance { color: #514a63; }
+.upgrade-buy-button:disabled { background: #cecad8; color: #514a63; border-color: #77718a; box-shadow: none; opacity: 1; }
+
 /* The same continuous upgrade list adapts to the mobile sheet. */
 .upgrade-status-mobile { display: none; }
 
