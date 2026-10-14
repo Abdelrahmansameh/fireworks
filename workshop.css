@@ -1,0 +1,339 @@
+/* The firework workshop follows the supplied desktop and mobile designs. */
+#recipes-content {
+    width: min(464px, calc((100vw - 144px) * .52));
+    padding: 14px 6px 14px 14px;
+    gap: 12px;
+}
+#recipes-content > .panel-header { padding-right: 8px; }
+.workshop-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    flex: 1;
+    min-height: 0;
+    min-width: 0;
+    color: #f4ead5;
+}
+.workshop-mode-bar { display: flex; align-items: center; gap: 8px; flex-shrink: 0; margin-right: 8px; }
+.workshop-mobile-collection-label { display: none; }
+.workshop-mode-tabs {
+    display: flex;
+    flex-shrink: 0;
+    gap: 4px;
+    padding: 2px;
+    flex: 1;
+    background: #161936;
+    border: 2px solid rgba(244,234,213,.35);
+    border-radius: 14px 10px 13px 11px / 10px 14px 11px 13px;
+}
+.workshop-mode-tabs button {
+    display: flex;
+    flex: 1;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    height: 40px;
+    min-height: 40px;
+    padding: 0 4px;
+    background: transparent;
+    color: #f4ead5;
+    border-color: transparent;
+    box-shadow: none;
+    font-size: 15px;
+    font-weight: 800;
+}
+.workshop-mode-tabs button.active {
+    color: #1a1733;
+    background: #fff3da;
+    border-color: #1a1733;
+    box-shadow: 2px 2px 0 #0a0918;
+}
+.workshop-mode-tabs button:hover:not(:disabled):not(.active) { background: #2a2e5e; }
+.workshop-mode-tabs .doodle-icon { width: 18px; height: 18px; }
+#workshop-saved-count {
+    padding: 1px 7px;
+    color: #1a1733;
+    background: #ffd04a;
+    border: 2px solid #1a1733;
+    border-radius: 9px 6px 8px 7px;
+    font-size: 12px;
+    line-height: 16px;
+}
+.workshop-body, .workshop-collection {
+    display: flex;
+    flex: 1;
+    min-height: 0;
+    flex-direction: column;
+    gap: 24px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 12px 8px 4px 0;
+    scrollbar-width: thin;
+    scrollbar-color: #4b4f85 #1f2246;
+    overscroll-behavior: contain;
+}
+.workshop-body::-webkit-scrollbar, .workshop-collection::-webkit-scrollbar { width: 10px; }
+.workshop-body::-webkit-scrollbar-thumb, .workshop-collection::-webkit-scrollbar-thumb { background: #4b4f85; border-radius: 8px; border: 2px solid #1f2246; }
+.workshop-section { display: flex; flex-direction: column; gap: 8px; flex-shrink: 0; }
+.workshop-section-heading { display: flex; align-items: center; gap: 8px; min-height: 24px; }
+.workshop-section-heading h3 { margin: 0; font-size: 21px; line-height: 24px; color: #fff3da; }
+.workshop-section-heading > span:last-child:not(.workshop-section-number) { margin-left: auto; color: #ff9cc8; font-size: 14px; font-weight: 800; }
+.workshop-section-number {
+    display: grid;
+    width: 24px;
+    height: 24px;
+    flex-shrink: 0;
+    place-items: center;
+    border: 2px solid #1a1733;
+    border-radius: 50% 46% 52% 48%;
+    color: #1a1733;
+    background: #fff3da;
+    font: 400 15px 'Chewy', cursive;
+}
+.workshop-shape-grid { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 6px; padding: 2px 0; }
+.workshop-sparks-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; }
+.workshop-tile {
+    position: relative;
+    display: flex;
+    height: 68px;
+    min-height: 0;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    padding: 4px 2px;
+    border: 2px solid rgba(244,234,213,.3);
+    border-radius: 12px 8px 11px 9px / 9px 12px 8px 11px;
+    background: #2a2e5e;
+    color: #f4ead5;
+    box-shadow: none;
+    font-size: 11.5px;
+    font-weight: 700;
+    line-height: 1;
+    transition: transform 220ms cubic-bezier(.2,.9,.3,1.5), background 160ms;
+}
+.workshop-tile:hover:not(:disabled) { background: #393e73; }
+.workshop-tile.selected {
+    background: #fff3da;
+    color: #1a1733;
+    border-color: #1a1733;
+    box-shadow: 2px 3px 0 #0a0918;
+    transform: rotate(-2deg) scale(1.04);
+}
+.workshop-tile.selected:hover { background: #fff3da; transform: rotate(-2deg) scale(1.04); }
+.workshop-tile-preview, .workshop-spark-preview {
+    position: relative;
+    display: block;
+    width: 50px;
+    height: 38px;
+    max-width: 100%;
+    flex-shrink: 0;
+    overflow: hidden;
+    background: #12142e;
+    border-radius: 8px 6px 7px 6px;
+}
+.workshop-tile-preview > span, .workshop-spark-preview > span, .workshop-layer-miniature > span, .workshop-saved-photo > span { position: absolute; }
+.workshop-sparks-grid .workshop-tile { height: 62px; font-size: 12px; border-radius: 9px 12px 8px 11px / 12px 8px 11px 9px; }
+.workshop-spark-preview { width: 60px; height: 30px; border-radius: 7px 6px 8px 6px; }
+.workshop-tile-lock { display: none; }
+.workshop-tile:disabled { border-style: dashed; background: transparent; color: #b3abc9; opacity: .6; }
+.workshop-tile:disabled .workshop-tile-lock { display: grid; position: absolute; top: -6px; right: -5px; width: 22px; height: 22px; place-items: center; background: #ffd04a; color: #1a1733; border: 2px solid #1a1733; border-radius: 50%; }
+.workshop-tile-lock .doodle-icon { width: 12px; height: 12px; }
+.workshop-palette { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.workshop-swatch {
+    width: 30px;
+    height: 30px;
+    min-height: 30px;
+    flex-shrink: 0;
+    padding: 0;
+    background: var(--swatch);
+    border: 2px solid #1a1733;
+    border-radius: 48% 52% 45% 55% / 55% 45% 55% 45%;
+    box-shadow: 1px 2px 0 #0a0918;
+}
+.workshop-swatch:hover:not(:disabled) { background: var(--swatch); transform: scale(1.1); }
+.workshop-swatch.selected { box-shadow: 0 0 0 3px #fff3da, 2px 3px 0 3px #0a0918; transform: scale(1.12) rotate(-6deg); }
+.workshop-rainbow-color {
+    position: relative;
+    display: block;
+    width: 30px;
+    height: 30px;
+    flex-shrink: 0;
+    border: 2px solid #1a1733;
+    border-radius: 52% 48% 55% 45% / 45% 55% 45% 55%;
+    background: conic-gradient(#ff4d4d, #ffd04a, #86e38f, #3ee0d0, #4d8bff, #a879ff, #ff6fae, #ff4d4d);
+    box-shadow: 1px 2px 0 #0a0918;
+}
+.workshop-rainbow-color input { position: absolute; inset: 0; width: 100%; height: 100%; padding: 0; border: 0; opacity: 0; cursor: pointer; }
+.workshop-custom-row { display: flex; align-items: center; justify-content: space-between; }
+.workshop-custom-color { display: inline-flex; align-items: center; gap: 8px; font-size: 12px; color: #c9bfa8; }
+.workshop-custom-color input { width: 24px; height: 24px; padding: 0; border: 2px solid #1a1733; border-radius: 8px; background: transparent; cursor: pointer; }
+.workshop-custom-color input::-webkit-color-swatch-wrapper { padding: 0; }
+.workshop-custom-color input::-webkit-color-swatch { border: 0; }
+.workshop-fade-toggle {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    height: 44px;
+    padding: 0 12px;
+    color: #f4ead5;
+    background: #2a2e5e;
+    border: 2px solid rgba(244,234,213,.4);
+    border-radius: 12px 9px 13px 8px / 9px 13px 8px 12px;
+    font-size: 14.5px;
+    font-weight: 700;
+    cursor: pointer;
+}
+.workshop-fade-toggle > input { position: absolute; right: 12px; width: 46px; height: 26px; opacity: 0; cursor: pointer; }
+.workshop-switch { position: relative; width: 46px; height: 26px; flex-shrink: 0; border: 2px solid #1a1733; border-radius: 14px 12px 13px 12px; background: #4b4f85; transition: background 200ms; }
+.workshop-switch::after { content: ''; position: absolute; top: 2px; left: 2px; width: 18px; height: 18px; background: #fff3da; border: 2px solid #1a1733; border-radius: 50%; transition: left 220ms cubic-bezier(.2,.9,.3,1.4); }
+.workshop-fade-toggle input:checked + .workshop-switch { background: #86e38f; }
+.workshop-fade-toggle input:checked + .workshop-switch::after { left: 22px; }
+.workshop-fade-toggle input:focus-visible + .workshop-switch { outline: 3px dashed #ffd04a; outline-offset: 3px; }
+#workshop-fade-controls, .workshop-secondary-colors { display: flex; flex-direction: column; gap: 10px; padding: 12px; background: #161936; border: 2px dashed rgba(244,234,213,.4); border-radius: 12px 9px 13px 8px / 9px 13px 8px 12px; }
+.workshop-fade-label { font-size: 13px; font-weight: 700; color: #c9bfa8; }
+#workshop-fade-controls .workshop-palette { gap: 6px; }
+#workshop-fade-controls .workshop-swatch, .workshop-secondary-colors .workshop-swatch { width: 24px; height: 24px; min-height: 24px; }
+.workshop-timeline-bar { position: relative; height: 26px; overflow: hidden; border: 2px solid #1a1733; border-radius: 9px 6px 8px 7px; background: var(--fade-from); }
+.workshop-timeline-range { position: absolute; left: var(--fade-start); right: calc(100% - var(--fade-end)); top: 0; bottom: 0; background: linear-gradient(90deg, var(--fade-from), var(--fade-to)); }
+.workshop-timeline-bar::after { content: ''; position: absolute; left: var(--fade-end); top: 0; bottom: 0; right: 0; background: var(--fade-to); }
+.workshop-timeline-start { position: absolute; top: 0; bottom: 0; left: var(--fade-start); border-left: 2px dashed #1a1733; z-index: 1; }
+.workshop-timeline-endpoints { display: flex; justify-content: space-between; margin-top: 4px; margin-bottom: 6px; font-size: 12px; font-weight: 700; color: #c9bfa8; }
+.workshop-fade-timeline > label { display: grid; grid-template-columns: 64px minmax(0,1fr) 52px; align-items: center; gap: 8px; min-height: 32px; font-size: 13px; font-weight: 700; }
+.workshop-fade-timeline > label input { grid-column: 2; grid-row: 1; }
+.workshop-fade-timeline > label output { grid-column: 3; grid-row: 1; font: 400 17px 'Chewy', cursive; text-align: right; }
+.workshop-slider { display: grid; grid-template-columns: 96px 22px minmax(0,1fr) 22px 52px; align-items: center; gap: 8px; min-height: 32px; }
+.workshop-slider-title { font-size: 14px; font-weight: 700; }
+.workshop-slider > svg { width: 22px; height: 22px; }
+.workshop-slider > output { font: 400 17px 'Chewy', cursive; text-align: right; color: #fff3da; }
+.workshop-body input[type='range'] { height: 28px; }
+.workshop-body input[type='range']::-webkit-slider-runnable-track { height: 10px; border: 2px solid #1a1733; border-radius: 8px 5px 7px 6px; }
+.workshop-body input[type='range']::-webkit-slider-thumb { margin-top: -9px; border-width: 2.5px; }
+.workshop-step-tabs { display: none; }
+.workshop-preview-column {
+    position: fixed;
+    top: 76px;
+    left: calc(128px + min(464px, calc((100vw - 144px) * .52)));
+    width: min(424px, calc(100vw - 152px - min(464px, calc((100vw - 144px) * .52))));
+    max-height: calc(100dvh - 92px);
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    color: #f4ead5;
+    z-index: 110;
+    pointer-events: auto;
+}
+.workshop-polaroid { position: relative; padding: 16px 16px 12px; background: #fffaf0; color: #1a1733; border: 2px solid #1a1733; border-radius: 4px 6px 3px 5px; box-shadow: 6px 6px 0 #0a0918; transform: rotate(1deg); }
+.workshop-tape { position: absolute; top: -12px; width: 86px; height: 24px; background: rgba(255,226,122,.82); border: 1px solid rgba(26,23,51,.25); z-index: 4; pointer-events: none; }
+.workshop-tape-left { left: -18px; transform: rotate(-32deg); }
+.workshop-tape-right { right: -18px; transform: rotate(30deg); }
+.workshop-preview-photo { position: relative; width: 100%; aspect-ratio: 388 / 372; overflow: hidden; background: #0d1133; border: 2px solid #1a1733; border-radius: 3px; }
+#creator-canvas { width: 100%; height: 100%; display: block; }
+#workshop-replay { position: absolute; bottom: 8px; right: 8px; width: 32px; height: 32px; min-height: 32px; display: grid; place-items: center; padding: 0; background: rgba(13,17,51,.8); color: #fff3da; border: 1.5px solid rgba(255,243,218,.4); box-shadow: none; z-index: 2; opacity: 0; transition: opacity 160ms; }
+.workshop-preview-photo:hover #workshop-replay, #workshop-replay:focus-visible { opacity: 1; }
+.workshop-name-row { display: flex; align-items: center; gap: 8px; padding-top: 10px; }
+#recipe-name { flex: 1; min-width: 0; height: 44px; min-height: 44px; padding: 0 2px; border: 0; border-radius: 0; border-bottom: 2px dashed #c9bda3; background: transparent; color: #1a1733; font: 400 30px 'Chewy', cursive; }
+#recipe-name::placeholder { color: #9a8f76; }
+#recipe-name:focus { outline: none; border-bottom-color: #ff6fae; }
+#workshop-random-name { display: grid; flex-shrink: 0; place-items: center; width: 44px; height: 44px; padding: 0; background: #ffe27a; color: #1a1733; border: 2px solid #1a1733; border-radius: 12px 8px 11px 9px; box-shadow: 2px 2px 0 #1a1733; }
+#workshop-random-name .doodle-icon { width: 22px; height: 22px; }
+#workshop-preview-description { padding-top: 2px; color: #5a5478; font-size: 13.5px; font-weight: 600; }
+.workshop-layers { display: flex; flex-direction: column; gap: 8px; padding: 10px 14px 14px; background: #1f2246; border: 2px solid #f4ead5; border-radius: 16px 12px 15px 11px / 12px 16px 11px 15px; box-shadow: 6px 6px 0 #0a0918; }
+.workshop-layer-title h3 { font-size: 20px; line-height: 24px; color: #fff3da; }
+.workshop-layer-chips, #workshop-layer-list { display: flex; align-items: center; gap: 10px; }
+.workshop-layer-chips { flex-wrap: wrap; }
+#workshop-layer-list { gap: 10px; flex-wrap: wrap; }
+.workshop-layer-chip { position: relative; width: 58px; height: 58px; min-height: 58px; padding: 0; background: #12142e; border: 2px solid rgba(244,234,213,.4); border-radius: 50% 46% 52% 48% / 48% 52% 46% 50%; box-shadow: none; }
+.workshop-layer-chip:hover:not(:disabled) { background: #12142e; transform: rotate(-2deg); }
+.workshop-layer-chip.active { border: 2.5px solid #fff3da; box-shadow: 0 0 0 2px #1a1733, 3px 4px 0 2px #0a0918; transform: rotate(-4deg); }
+.workshop-layer-miniature { position: absolute; left: 5px; top: 5px; width: 44px; height: 44px; overflow: hidden; border-radius: 50%; }
+.workshop-layer-badge { position: absolute; right: -6px; bottom: -4px; width: 22px; height: 22px; display: grid; place-items: center; border: 2px solid #1a1733; border-radius: 50%; color: #1a1733; background: #fff3da; font: 400 14px 'Chewy', cursive; }
+.workshop-layer-chip.active .workshop-layer-badge { background: #ff6fae; }
+#workshop-add-layer { width: 58px; height: 58px; min-height: 58px; display: grid; place-items: center; background: transparent; color: #f4ead5; border: 2px dashed rgba(244,234,213,.6); border-radius: 50% 46% 52% 48% / 48% 52% 46% 50%; padding: 0; box-shadow: none; }
+#workshop-remove-active-layer { margin-left: auto; height: 44px; padding: 0 12px; background: transparent; color: #ff9a8a; border: 2px dashed #ff9a8a; border-radius: 10px 8px 11px 7px; box-shadow: none; font-size: 13px; font-weight: 700; }
+.workshop-actions { display: flex; gap: 8px; }
+.workshop-actions button { display: flex; flex: 1; align-items: center; justify-content: center; gap: 7px; height: 52px; padding: 0 4px; color: #1a1733; border: 2.5px solid #1a1733; box-shadow: 3px 4px 0 #0a0918; font: 400 20px 'Chewy', cursive; white-space: nowrap; }
+.workshop-actions .workshop-save { flex: 1.35; background: #ff7a59; font-size: 22px; }
+.workshop-actions .workshop-launch { background: #5fe0e0; border-radius: 10px 15px 9px 14px / 15px 9px 14px 10px; }
+.workshop-actions .workshop-shuffle { background: #fff3da; }
+.workshop-actions .workshop-save:hover:not(:disabled) { background: #ff916f; }
+.workshop-actions .workshop-launch:hover:not(:disabled) { background: #85ecec; }
+.workshop-collection { gap: 8px; }
+.workshop-collection-heading { display: none; }
+#workshop-saved-list { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 8px; }
+.workshop-saved-card { display: flex; min-width: 0; flex-direction: column; gap: 6px; padding: 8px; text-align: left; border-radius: 12px 9px 13px 8px / 9px 13px 8px 12px; box-shadow: 3px 3px 0 #0a0918; transform: rotate(-.6deg); }
+.workshop-saved-card:nth-child(even) { transform: rotate(.6deg); }
+.workshop-saved-photo { position: relative; display: block; width: 184px; height: 88px; max-width: 100%; overflow: hidden; background: #12142e; border-radius: 8px 6px 9px 6px; }
+.workshop-saved-text { display: flex; flex-direction: column; gap: 6px; }
+.workshop-saved-text strong { font-size: 15px; font-weight: 800; line-height: 1.15; }
+.workshop-saved-text small { font-size: 12.5px; font-weight: 600; color: #4f4970; }
+.workshop-erase-button { align-self: flex-start; margin-top: 16px; height: 44px; padding: 0 14px; background: transparent; color: #ff9a8a; border: 2px dashed #ff9a8a; border-radius: 10px 8px 11px 7px; box-shadow: none; font-size: 13.5px; }
+.workshop-empty { grid-column: 1/-1; padding: 24px 16px; text-align: center; border: 2px dashed rgba(244,234,213,.45); border-radius: 14px 10px 13px 11px; font-size: 15px; font-weight: 700; }
+body.workshop-open::after { content: ''; position: fixed; inset: 0; z-index: 90; background: rgba(9,10,28,.55); pointer-events: none; }
+@media (max-height: 800px) and (min-width: 701px) {
+    .workshop-preview-column { gap: 16px; }
+    .workshop-preview-photo { max-height: calc(100dvh - 340px); }
+}
+@media (max-width: 700px) {
+    #recipes-content, #recipes-content.sheet-full { left: 0; right: 0; width: auto; padding: 8px 14px 14px; top: 48px; bottom: max(12px, env(safe-area-inset-bottom)); height: auto !important; max-height: none; }
+    body.workshop-open .resource-counter { opacity: 0; transform: translateY(-16px); pointer-events: none; }
+    body.workshop-open .tab-bar { opacity: 0; transform: translateY(130px); pointer-events: none; }
+    #recipes-content > .panel-header { display: none; }
+    .workshop-panel { overflow-y: auto; overflow-x: hidden; padding: 0 2px; gap: 12px; scrollbar-width: none; }
+    .workshop-mode-bar { margin-right: 0; }
+    .workshop-mode-tabs button { font-size: 14px; height: 36px; min-height: 36px; }
+    .workshop-mode-tabs .doodle-icon, .workshop-collection-label { display: none; }
+    .workshop-mobile-collection-label { display: inline; }
+    .workshop-mode-bar > .panel-close { flex-shrink: 0; width: 44px; height: 44px; min-height: 44px; }
+    .workshop-preview-column { position: static; width: 100%; max-height: none; display: contents; }
+    .workshop-polaroid { flex-shrink: 0; padding: 8px 8px 6px; box-shadow: 4px 4px 0 #0a0918; transform: rotate(-.6deg); }
+    .workshop-preview-photo { height: 164px; aspect-ratio: auto; }
+    .workshop-tape-left { top: -10px; left: calc(50% - 35px); width: 70px; height: 20px; transform: rotate(3deg); }
+    .workshop-tape-right { display: none; }
+    .workshop-name-row { padding-top: 6px; }
+    #recipe-name { font-size: 24px; height: 40px; min-height: 40px; }
+    #workshop-random-name { height: 40px; min-height: 40px; }
+    #workshop-preview-description { display: none; }
+    #workshop-replay { opacity: 1; width: 28px; height: 28px; min-height: 28px; }
+    .workshop-layers { padding: 0; border: 0; background: transparent; box-shadow: none; flex-shrink: 0; min-height: 48px; }
+    .workshop-layer-title { display: none; }
+    .workshop-layer-chips, #workshop-layer-list { gap: 10px; }
+    .workshop-layer-chip, #workshop-add-layer { width: 48px; height: 48px; min-height: 48px; }
+    .workshop-layer-miniature { left: 4px; top: 4px; transform: scale(.82); transform-origin: top left; }
+    .workshop-layer-badge { width: 20px; height: 20px; font-size: 13px; }
+    #workshop-remove-active-layer { padding: 0 8px; font-size: 11px; }
+    .workshop-step-tabs { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 6px; flex-shrink: 0; }
+    .workshop-step-tabs button { height: 44px; min-height: 44px; padding: 0; display: flex; align-items: center; justify-content: center; gap: 5px; background: transparent; color: #f4ead5; border-color: rgba(244,234,213,.4); box-shadow: none; font-size: 13.5px; font-weight: 800; }
+    .workshop-step-tabs button.active { background: #fff3da; color: #1a1733; border-color: #1a1733; box-shadow: 2px 2px 0 #0a0918; transform: rotate(-1deg); }
+    .workshop-step-tabs button span { display: grid; place-items: center; width: 18px; height: 18px; border: 2px solid currentColor; border-radius: 50%; font: 400 12px 'Chewy', cursive; }
+    .workshop-body { flex: 0 0 265px; min-height: 265px; padding: 2px 0 8px; margin-bottom: 64px; touch-action: pan-y; }
+    .workshop-section { display: none; }
+    .workshop-panel[data-step='shape'] [data-workshop-section='shape'], .workshop-panel[data-step='sparks'] [data-workshop-section='sparks'], .workshop-panel[data-step='colors'] [data-workshop-section='colors'], .workshop-panel[data-step='feel'] [data-workshop-section='feel'] { display: flex; }
+    .workshop-section-heading { display: none; }
+    .workshop-shape-grid { grid-template-columns: repeat(5,minmax(0,1fr)); }
+    .workshop-tile { height: 72px; }
+    .workshop-sparks-grid .workshop-tile { height: 80px; gap: 6px; }
+    .workshop-spark-preview { width: 60px; height: 36px; }
+    .workshop-palette { display: grid; grid-template-columns: repeat(6,minmax(0,1fr)); justify-items: center; gap: 8px; }
+    .workshop-swatch, .workshop-rainbow-color { width: 44px; height: 44px; min-height: 44px; }
+    #workshop-fade-controls .workshop-palette { grid-template-columns: repeat(5,minmax(0,1fr)); gap: 8px; }
+    #workshop-fade-controls .workshop-swatch { width: 44px; height: 44px; min-height: 44px; }
+    .workshop-secondary-colors .workshop-swatch { width: 44px; height: 44px; min-height: 44px; }
+    .workshop-fade-toggle { height: 48px; flex-shrink: 0; }
+    .workshop-slider { grid-template-columns: 82px 20px minmax(0,1fr) 20px 40px; gap: 4px; min-height: 48px; }
+    .workshop-slider-title { font-size: 13px; }
+    .workshop-actions { position: fixed; left: 16px; right: 16px; bottom: calc(max(12px, env(safe-area-inset-bottom)) + 12px); padding: 8px 0 4px; background: #1f2246; z-index: 120; }
+    .workshop-actions button { height: 48px; font-size: 18px; }
+    .workshop-actions .workshop-save { font-size: 20px; }
+    .workshop-preview-column.collection-open .workshop-polaroid, .workshop-preview-column.collection-open .workshop-layers, .workshop-preview-column.collection-open .workshop-actions, .workshop-panel[data-mode='collection'] .workshop-step-tabs { display: none; }
+    .workshop-collection { flex: 0 0 auto; overflow: visible; padding: 2px 0 8px; }
+    .workshop-saved-photo { height: 88px; }
+    .workshop-saved-text strong { font-size: 14px; }
+    .workshop-saved-text small { font-size: 11.5px; }
+}
+@media (max-width:700px) {
+    .workshop-step-tabs button.active:hover:not(:disabled), .workshop-mode-tabs button.active:hover:not(:disabled) { background:#fff3da; color:#1a1733; }
+    .workshop-step-tabs button:not(.active):hover:not(:disabled) { background:#2a2e5e; color:#f4ead5; }
+}

@@ -1,0 +1,248 @@
+{
+  "v": 3,
+  "attachments": {},
+  "boards": {
+    "Buildings.dc.html": {
+      "h": 900,
+      "title": "Buildings tab",
+      "w": 1440,
+      "x": 0,
+      "y": 1720
+    },
+    "Collapsed.dc.html": {
+      "h": 1020,
+      "title": "Menu tucked away",
+      "w": 2818,
+      "x": 3040,
+      "y": 0
+    },
+    "Crowd.dc.html": {
+      "h": 900,
+      "title": "Crowd tab",
+      "w": 1440,
+      "x": 1520,
+      "y": 1720
+    },
+    "Fireworks.dc.html": {
+      "h": 900,
+      "is_interactive": true,
+      "title": "Firework tab: Workshop (playable)",
+      "w": 1440,
+      "x": 1520,
+      "y": 0
+    },
+    "Icons.dc.html": {
+      "h": 900,
+      "title": "Icon set",
+      "w": 1440,
+      "x": 1520,
+      "y": 3040
+    },
+    "Main.dc.html": {
+      "h": 900,
+      "title": "Upgrades tab open",
+      "w": 1440,
+      "x": 0,
+      "y": 0
+    },
+    "Prototype.dc.html": {
+      "h": 900,
+      "is_interactive": true,
+      "title": "Prototype: press Play",
+      "w": 1440,
+      "x": 4560,
+      "y": 0
+    },
+    "Rail.dc.html": {
+      "h": 868,
+      "title": "Rail component",
+      "w": 80,
+      "x": 3040,
+      "y": 3040
+    },
+    "Rules.dc.html": {
+      "h": 900,
+      "title": "Layout rules",
+      "w": 1440,
+      "x": 0,
+      "y": 3040
+    },
+    "Settings.dc.html": {
+      "h": 900,
+      "title": "Settings tab",
+      "w": 1440,
+      "x": 4560,
+      "y": 1720
+    },
+    "Stats.dc.html": {
+      "h": 900,
+      "title": "Stats tab",
+      "w": 1440,
+      "x": 3040,
+      "y": 1720
+    },
+    "Mobile.dc.html": {
+      "h": 844,
+      "is_interactive": true,
+      "title": "Mobile prototype: press Play",
+      "w": 390,
+      "x": 0,
+      "y": 4360
+    },
+    "MobilePlay.dc.html": {
+      "h": 844,
+      "title": "Mobile: playing",
+      "w": 390,
+      "x": 470,
+      "y": 4360
+    },
+    "MobileUpgrades.dc.html": {
+      "h": 844,
+      "title": "Mobile: Upgrades (scene pans up)",
+      "w": 390,
+      "x": 940,
+      "y": 4360
+    },
+    "MobileBuildings.dc.html": {
+      "h": 844,
+      "title": "Mobile: Buildings (scene pans up)",
+      "w": 390,
+      "x": 1410,
+      "y": 4360
+    },
+    "MobileCrowd.dc.html": {
+      "h": 844,
+      "title": "Mobile: Crowd (scene pans up)",
+      "w": 390,
+      "x": 1880,
+      "y": 4360
+    },
+    "MobileFireworks.dc.html": {
+      "h": 844,
+      "title": "Mobile: Firework studio, Shape",
+      "w": 390,
+      "x": 2350,
+      "y": 4360
+    },
+    "MobileColors.dc.html": {
+      "h": 844,
+      "title": "Mobile: Firework studio, Colors",
+      "w": 390,
+      "x": 2820,
+      "y": 4360
+    },
+    "MobileStats.dc.html": {
+      "h": 844,
+      "title": "Mobile: More, Stats",
+      "w": 390,
+      "x": 3290,
+      "y": 4360
+    },
+    "MobileSettings.dc.html": {
+      "h": 844,
+      "title": "Mobile: More, Settings",
+      "w": 390,
+      "x": 3760,
+      "y": 4360
+    },
+    "MobileTucked.dc.html": {
+      "h": 844,
+      "title": "Mobile: everything tucked",
+      "w": 390,
+      "x": 4230,
+      "y": 4360
+    },
+    "MobileGestures.dc.html": {
+      "h": 844,
+      "title": "Mobile: touch map",
+      "w": 1040,
+      "x": 4700,
+      "y": 4360
+    }
+  },
+  "createdOnFiles": {
+    "at": "2026-10-13T12:00:00Z",
+    "v": 1
+  },
+  "designSystems": [],
+  "launch": {
+    "view": "canvas"
+  },
+  "notes": {
+    "devPreview": {
+      "fill": "orange",
+      "maxH": 380,
+      "size": 24,
+      "text": "FOR DEV: the preview window must show a REAL in-game firework.\n\nThe dots in the polaroid are a CSS stand-in made for this mockup. In the game, that window is a small live canvas running the actual engine: same particles, glow, gravity and fade as the sky.\n\nThe pipeline already exists. FireworkGame.openAdvancedCreator() + updateCreator() create a second Renderer2D + InstancedParticleSystem on #creator-canvas and relaunch new Firework(0, WORLD_LAUNCHER_Y, currentRecipeComponents, …) on a loop.\n\nTo do: mount #creator-canvas inside the polaroid photo (388×372) instead of hiding the game behind a full-screen scene. Keep the main game running under the dim. Relaunch right away on every edit. The Launch button fires the recipe from a real launcher in the main sky.\n\nThe Shape grid lists unlocked shapes only.",
+      "w": 720,
+      "x": 1520,
+      "y": 980
+    },
+    "devPrototype": {
+      "fill": "orange",
+      "maxH": 736,
+      "size": 24,
+      "text": "FOR DEV: this prototype fakes the engine.\n\nSky bursts, the polaroid preview and every number here are stand-ins. Real fireworks, rates and costs come from the game (see the note under the Firework tab).\n\nUse it for flow and motion: panel in 300ms with a slight overshoot, panel out 170ms, toast 320ms, buy bounce 420ms, tab tilt 240ms, new tiles fade up 240ms.",
+      "w": 653,
+      "x": 6080,
+      "y": 0
+    },
+    "row1": {
+      "kind": "title1",
+      "maxW": 6000,
+      "text": "Left rail over the live game",
+      "w": 240,
+      "x": 0,
+      "y": -300
+    },
+    "row2": {
+      "kind": "title1",
+      "maxW": 6000,
+      "text": "The other tabs",
+      "w": 240,
+      "x": 0,
+      "y": 1420
+    },
+    "row3": {
+      "kind": "title1",
+      "maxW": 3120,
+      "text": "System: rules, icons, rail",
+      "w": 240,
+      "x": 0,
+      "y": 2740
+    },
+    "row4": {
+      "kind": "title1",
+      "maxW": 5740,
+      "text": "Mobile, portrait",
+      "x": 0,
+      "y": 4060
+    }
+  },
+  "order": [
+    "Main.dc.html",
+    "Fireworks.dc.html",
+    "Collapsed.dc.html",
+    "Prototype.dc.html",
+    "Buildings.dc.html",
+    "Crowd.dc.html",
+    "Stats.dc.html",
+    "Settings.dc.html",
+    "Rules.dc.html",
+    "Icons.dc.html",
+    "Rail.dc.html",
+    "Mobile.dc.html",
+    "MobilePlay.dc.html",
+    "MobileUpgrades.dc.html",
+    "MobileBuildings.dc.html",
+    "MobileCrowd.dc.html",
+    "MobileFireworks.dc.html",
+    "MobileColors.dc.html",
+    "MobileStats.dc.html",
+    "MobileSettings.dc.html",
+    "MobileTucked.dc.html",
+    "MobileGestures.dc.html"
+  ],
+  "pages": [],
+  "title": "Fireworks UI Redesign"
+}

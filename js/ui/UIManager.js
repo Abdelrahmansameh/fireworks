@@ -7,6 +7,8 @@ import { patternDefinitions, patternDisplayNames } from '../entities/patterns/in
 import * as Renderer2D from '../rendering/Renderer.js';
 import GameMetrics from '../metrics/GameMetrics.js';
 import { FloatingSparkleNumber } from './FloatingSparkleNumber.js';
+import { doodleIcon } from './doodleIcons.js';
+import { createUpgradeCard, refreshUpgradeSavings } from './upgradeCards.js';
 
 class UIManager {
     constructor(game) {
@@ -762,6 +764,7 @@ class UIManager {
         const selectedTab = document.getElementById(`${tab}-content`);
         if (selectedTab) {
             selectedTab.classList.add('active');
+            selectedTab.classList.remove('sheet-full');
             tabs.classList.remove('collapsed');
         }
     }
@@ -779,9 +782,11 @@ class UIManager {
                 this.skillTree.close();
             }
         } else {
+            tabs.classList.remove('collapsed');
             const tabContents = document.querySelectorAll('.tab-content');
             tabContents.forEach(content => content.classList.remove('active'));
             tabContent.classList.add('active');
+            tabContent.classList.remove('sheet-full');
             // If the upgrades tab is being opened, open embedded skill-tree
             if (tab === 'upgrades' && this.skillTree) {
                 this.skillTree.open();
@@ -812,42 +817,14 @@ class UIManager {
         };
 
         // Full compact-formatted number with suffix and max 5 significant digits
-        const formatDetail = (num) => {
-            if (num == null || isNaN(num)) return '0';
-            const n = Number(num);
-            const sign = n < 0 ? '-' : '';
-            const abs = Math.abs(n);
-
-            const units = [
-                { value: 1e12, symbol: 'T' },
-                { value: 1e9, symbol: 'B' },
-                { value: 1e6, symbol: 'M' },
-                { value: 1e3, symbol: 'K' },
-            ];
-
-            for (const unit of units) {
-                if (abs >= unit.value) {
-                    let v = abs / unit.value;
-                    let s = v.toPrecision(5);
-                    if (s.indexOf('.') !== -1) {
-                        s = s.replace(/(?:\.0+|(\.\d+?)0+)$/, '$1');
-                    }
-                    return sign + s + unit.symbol;
-                }
+        const formatDetail = num => {
+            const value = Math.max(0, Number(num) || 0);
+            if (value < 10000) return Math.floor(value).toLocaleString();
+            for (const [scale, suffix] of [[1e12, 'T'], [1e9, 'B'], [1e6, 'M'], [1e3, 'K']]) {
+                if (value >= scale) return `${Number((value / scale).toFixed(1))}${suffix}`;
             }
-
-            // Small numbers: show up to 5 significant digits without suffix
-            let s = abs.toPrecision(5);
-            if (s.indexOf('e') !== -1) {
-                s = Math.floor(abs).toLocaleString();
-            } else {
-                if (s.indexOf('.') !== -1) {
-                    s = s.replace(/(?:\.0+|(\.\d+?)0+)$/, '$1');
-                }
-            }
-            return sign + s;
+            return '0';
         };
-
         const sparkleTotalElements = sparklesElement.querySelectorAll('.sparkle-total');
         sparkleTotalElements.forEach(el => {
             el.textContent = isDetail
@@ -863,14 +840,17 @@ class UIManager {
                 : formatPill(Math.floor(gold.amount));
         });
 
+        const formatRate = value => {
+            const numeric = Number(value) || 0;
+            return numeric >= 1000 ? formatPill(Math.round(numeric)) : Number(numeric.toFixed(1)).toLocaleString();
+        };
+        const sparkleRate = document.getElementById('wallet-sparkles-rate');
+        const goldRate = document.getElementById('wallet-gold-rate');
+        if (sparkleRate) sparkleRate.textContent = `+${formatRate(totalSparklesRate)}/s`;
+        if (goldRate) goldRate.textContent = `+${formatRate(this.game.statsTracker.getRollingRate('gold'))}/s`;
+
         if (this.skillTree?.isOpen) {
             this.skillTree._updateResourceDisplay();
-        }
-        if (!sparklesElement._hasClickHandler) {
-            sparklesElement._hasClickHandler = true;
-            sparklesElement.addEventListener('click', () => {
-                sparklesElement.classList.toggle('expanded');
-            });
         }
 
         document.getElementById('firework-count').textContent = fireworkCount;
@@ -918,6 +898,7 @@ class UIManager {
         
         // 1. Check Upgrades
         let upgradesAvailable = false;
+        let upgradeCount = 0;
         if (progression.isUnlocked('upgrades_tab')) {
             for (const def of progression.getAllUpgradeDefs()) {
                 const { visible } = progression.isVisible(def.id, this.game);
@@ -925,7 +906,7 @@ class UIManager {
                     const { ok: canBuy } = progression.canPurchase(def.id, this.game);
                     if (canBuy) {
                         upgradesAvailable = true;
-                        break;
+                        upgradeCount++;
                     }
                 }
             }
@@ -952,6 +933,8 @@ class UIManager {
         const upgradesTabBtn = document.getElementById('upgrades-tab');
         if (upgradesTabBtn) {
             upgradesTabBtn.classList.toggle('has-purchaseable', upgradesAvailable);
+            const badge = document.getElementById('upgrade-tab-count');
+            if (badge) { badge.hidden = upgradeCount === 0; badge.textContent = upgradeCount; }
         }
 
         const buildingsTabBtn = document.getElementById('buildings-tab');
@@ -963,11 +946,14 @@ class UIManager {
     updateUpgradeBuyButtons() {
         const availableContainer = document.getElementById('upgrades-available');
         if (!availableContainer) return false;
-        const buyButtons = document.querySelectorAll('#upgrades-available .upgrade-buy-button, #upgrades-extra .upgrade-buy-button');
+        const buyButtons = availableContainer.querySelectorAll('.upgrade-buy-button');
         const progression = this.game.progression;
         const signature = this.getUpgradeAvailabilitySignature();
         let anyStateChanged = signature !== this._upgradeStateSignature;
         this._upgradeStateSignature = signature;
+        const now = performance.now();
+        const updateSavings = !this._lastUpgradeSavingsUpdate || now - this._lastUpgradeSavingsUpdate >= 250;
+        if (updateSavings) this._lastUpgradeSavingsUpdate = now;
         
         buyButtons.forEach(btn => {
             const upgradeId = btn.getAttribute('data-upgrade-id');
@@ -977,6 +963,9 @@ class UIManager {
                     anyStateChanged = true;
                 }
                 btn.disabled = !ok;
+                if (updateSavings && !ok) {
+                    refreshUpgradeSavings(btn.closest('.upgrade-card'), progression.getUpgradeCosts(upgradeId), this.game);
+                }
             }
         });
         return anyStateChanged;
@@ -988,7 +977,7 @@ class UIManager {
         return `${launchers}:${Boolean(this.game.gameCompleted)}|` + p.getAllUpgradeDefs().map(def => {
             if (!p.isVisible(def.id, this.game).visible) return `${def.id}:hidden`;
             const check = p.canPurchase(def.id, this.game);
-            return `${def.id}:${p.getUpgradeLevel(def.id)}:${check.ok ? 'ready' : check.reason}`;
+            return `${def.id}:${p.getUpgradeLevel(def.id)}:${check.ok ? 'ready' : check.reason}:${JSON.stringify(p.getUpgradeCosts(def.id))}`;
         }).join('|');
     }
 
@@ -1338,162 +1327,111 @@ class UIManager {
     }
 
     updateLauncherList(launchers, selectedBuildingId, onSelect) {
-        const statsDiv = document.getElementById('auto_launcher-stats');
         const launcherList = document.getElementById('auto_launcher-list');
-        const spreadBtn = document.getElementById('spread-launchers');
-        const randomizeBtn = document.getElementById('randomize-launcher-recipes');
-
-        const hasLaunchers = launchers.length > 0;
-
-        if (statsDiv) statsDiv.style.display = hasLaunchers ? '' : 'none';
-        if (spreadBtn) spreadBtn.style.display = hasLaunchers ? '' : 'none';
-        if (randomizeBtn) randomizeBtn.style.display = hasLaunchers ? '' : 'none';
-
+        const stats = document.getElementById('auto_launcher-stats');
         if (!launcherList) return;
-        launcherList.style.display = hasLaunchers ? '' : 'none';
-        launcherList.innerHTML = '';
-
-        if (!hasLaunchers) return;
-
-        // Show global spawn-rate stat once at the top
-        if (statsDiv) {
-            const baseInterval = BUILDING_TYPES.AUTO_LAUNCHER.baseSpawnInterval;
-            const spawnInterval = baseInterval * (this.game.launcherStats?.spawnIntervalMultiplier ?? 1);
-            statsDiv.innerHTML = `<div class="launcher-details"><p>Spawn Rate: Every ${spawnInterval.toFixed(1)}s</p></div>`;
+        const hasLaunchers = launchers.length > 0;
+        if (stats) stats.style.display = 'none';
+        for (const id of ['spread-launchers', 'randomize-launcher-recipes']) {
+            const button = document.getElementById(id);
+            if (button) button.style.display = hasLaunchers ? '' : 'none';
         }
-
-        launchers.forEach((launcher, index) => {
-            const launcherDiv = document.createElement('div');
-            launcherDiv.classList.add('launcher-card');
-            launcherDiv.dataset.buildingId = launcher.id;
-
-            if (launcher.id === selectedBuildingId) {
-                launcherDiv.classList.add('selected');
+        launcherList.replaceChildren();
+        const recipesUnlocked = this.game.progression.isUnlocked('recipes_tab');
+        const locate = launcher => {
+            onSelect(launcher.id);
+            this.game.setCameraTarget(launcher.x);
+            launcher.highlight(LAUNCHER_WORLD_HIGHLIGHT_DURATION);
+            this.game.saveProgress();
+            const panel = document.getElementById('buildings-content');
+            if (matchMedia('(max-width: 700px)').matches && panel.classList.contains('sheet-full')) {
+                panel.classList.remove('sheet-full');
             }
-
-            // Determine the color and pattern to show:
-            // prefer assigned recipe's value, then building override, then current recipe defaults
-            const assignedRecipeColor = this.game.recipes[launcher.assignedRecipeIndex] ? this.game.recipes[launcher.assignedRecipeIndex].components[0].color : null;
-            const colorValue = assignedRecipeColor ?? '#ffffff';
-
-            const assignedRecipePattern = (typeof launcher.assignedRecipeIndex === 'number' && this.game.recipes[launcher.assignedRecipeIndex]) ? this.game.recipes[launcher.assignedRecipeIndex].components[0].pattern : null;
-            const patternValue = assignedRecipePattern ?? '';
-
-            launcherDiv.innerHTML = `
-                <h3>Auto-Launcher ${index + 1}</h3>
-                ${this.game.progression.isUnlocked('recipes_tab') ? `
-                    <div class="recipes-option">
-                        <label>Assign Recipe:</label>
-                        <select class="recipe-select" data-building-id="${launcher.id}">
-                            <option value="">-- Shoot a random recipe --</option>
-                            ${this.game.recipes.map((recipe, rIndex) => `
-                                <option value="${rIndex}" ${launcher.assignedRecipeIndex === rIndex ? 'selected' : ''}>${recipe.name}</option>
-                            `).join('')}
-                        </select>
-                    </div>
-                    <div class="recipes-option">
-                        <label>Color:</label>
-                        <input type="color" class="launcher-color-input" data-building-id="${launcher.id}" value="${colorValue}">
-                    </div>
-                    ` : `
-                <div class="recipes-option">
-                    <label>Color:</label>
-                    <input type="color" class="launcher-color-input" data-building-id="${launcher.id}" value="${colorValue}">
-                </div>
-                <div class="recipes-option">
-                    <label>Pattern:</label>
-                    <select class="launcher-pattern-select" data-building-id="${launcher.id}">
-                        ${(this.game.unlockedPatternKeys || []).map(key => `
-                            <option value="${key}" ${patternValue === key ? 'selected' : ''}>${patternDisplayNames[key] || key}</option>
-                        `).join('')}
-                    </select>
-                </div>
-                `}
-            `;
-            launcherList.appendChild(launcherDiv);
-
-            if (this.game.progression.isUnlocked('recipes_tab')) {
-                const recipeSelect = launcherDiv.querySelector('.recipe-select');
-                if (recipeSelect) {
-                    recipeSelect.addEventListener('change', (e) => {
-                        const buildingId = e.target.getAttribute('data-building-id');
-                        const building = this.game.buildingManager.getBuildingById(buildingId);
-                        if (building) {
-                            const selectedRecipeIndex = parseInt(e.target.value);
-                            if (!isNaN(selectedRecipeIndex)) {
-                                building.assignedRecipeIndex = selectedRecipeIndex;
-                            } else {
-                                building.assignedRecipeIndex = null;
-                            }
-                            this.game.saveProgress();
-                            this.game.updateLauncherList();
-                        }
-                    });
-                }
-
-                const colorInput = launcherDiv.querySelector('.launcher-color-input');
-                if (colorInput) {
-                    colorInput.addEventListener('change', (e) => {
-                        const buildingId = e.target.getAttribute('data-building-id');
-                        const building = this.game.buildingManager.getBuildingById(buildingId);
-                        const newColor = e.target.value;
-                        if (building) {
-                            if (typeof building.assignedRecipeIndex === 'number' && this.game.recipes[building.assignedRecipeIndex]) {
-                                this.game.recipes[building.assignedRecipeIndex].components.forEach(c => c.color = newColor);
-                                this.game.updateRecipeList();
-                            } 
-                            this.game.saveProgress();
-                        }
-                    });
-                }
-            } else {
-                const colorInput = launcherDiv.querySelector('.launcher-color-input');
-                if (colorInput) {
-                    colorInput.addEventListener('change', (e) => {
-                        const buildingId = e.target.getAttribute('data-building-id');
-                        const building = this.game.buildingManager.getBuildingById(buildingId);
-                        const newColor = e.target.value;
-                        if (building) {
-                            if (typeof building.assignedRecipeIndex === 'number' && this.game.recipes[building.assignedRecipeIndex]) {
-                                // If an assigned recipe exists already, update that recipe's color
-                                this.game.recipes[building.assignedRecipeIndex].components.forEach(c => c.color = newColor);
-                                this.game.updateRecipeList();
-                            } 
-                            this.game.saveProgress();
-                        }
-                    });
-                }
-
-                const patternSelect = launcherDiv.querySelector('.launcher-pattern-select');
-                if (patternSelect) {
-                    patternSelect.addEventListener('change', (e) => {
-                        const buildingId = e.target.getAttribute('data-building-id');
-                        const building = this.game.buildingManager.getBuildingById(buildingId);
-                        if (building) {
-                            const newPattern = e.target.value;
-                            if (typeof building.assignedRecipeIndex === 'number' && this.game.recipes[building.assignedRecipeIndex]) {
-                                this.game.recipes[building.assignedRecipeIndex].components.forEach(c => c.pattern = newPattern);
-                                this.game.updateRecipeList();
-                            }
-                            this.game.saveProgress();
-                        }
-                    });
-                }
-            } 
-
-            launcherDiv.addEventListener('click', () => {
-                onSelect(launcher.id);
-                if (launcher && launcher.x !== undefined) {
-                    this.game.setCameraTarget(launcher.x);
-                    const building = this.game.buildingManager.getBuildingById(launcher.id);
-                    if (building) {
-                        building.highlight(LAUNCHER_WORLD_HIGHLIGHT_DURATION);
-                    }
-                }
+        };
+        for (const [index, launcher] of launchers.entries()) {
+            const assignedRecipe = this.game.recipes[launcher.assignedRecipeIndex];
+            const component = assignedRecipe?.components?.[0] ?? this.game.currentRecipeComponents[0];
+            const row = document.createElement('div');
+            row.className = `launcher-card${launcher.id === selectedBuildingId ? ' selected' : ''}`;
+            row.dataset.buildingId = launcher.id;
+            row.tabIndex = 0;
+            row.setAttribute('role', 'button');
+            row.setAttribute('aria-label', `Show launcher ${index + 1}`);
+            row.setAttribute('aria-pressed', String(launcher.id === selectedBuildingId));
+            row.style.setProperty('--launcher-color', component?.color ?? '#ffffff');
+            row.innerHTML = `<span class="launcher-card-icon" aria-hidden="true">${doodleIcon('launcher')}</span>`;
+            let dragged = false;
+            let pointerStart = null;
+            row.addEventListener('pointerdown', event => {
+                dragged = false;
+                pointerStart = { x: event.clientX, y: event.clientY };
             });
-        });
+            row.addEventListener('pointermove', event => {
+                if (pointerStart && Math.hypot(event.clientX - pointerStart.x, event.clientY - pointerStart.y) > 8) dragged = true;
+            });
+            row.addEventListener('pointerup', () => { pointerStart = null; });
+            row.addEventListener('pointercancel', () => { dragged = true; pointerStart = null; });
+            row.addEventListener('click', event => {
+                if (dragged || event.target.closest('input, select, option, label')) return;
+                locate(launcher);
+            });
+            row.addEventListener('keydown', event => {
+                if (event.target !== row || !['Enter', ' '].includes(event.key)) return;
+                event.preventDefault();
+                locate(launcher);
+            });
+            if (recipesUnlocked) {
+                const select = document.createElement('select');
+                select.className = 'recipe-select';
+                select.dataset.buildingId = launcher.id;
+                select.setAttribute('aria-label', `Firework for launcher ${index + 1}`);
+                select.add(new Option('Random mix', ''));
+                this.game.recipes.forEach((recipe, recipeIndex) => select.add(new Option(recipe.name, String(recipeIndex))));
+                select.value = typeof launcher.assignedRecipeIndex === 'number' ? String(launcher.assignedRecipeIndex) : '';
+                select.addEventListener('change', () => {
+                    launcher.assignedRecipeIndex = select.value === '' ? null : Number(select.value);
+                    row.style.setProperty('--launcher-color', this.game.recipes[launcher.assignedRecipeIndex]?.components?.[0]?.color ?? '#ffffff');
+                    this.game.saveProgress();
+                });
+                row.appendChild(select);
+            } else {
+                const color = document.createElement('input');
+                color.type = 'color';
+                color.className = 'launcher-color-input';
+                color.dataset.buildingId = launcher.id;
+                color.setAttribute('aria-label', `Color for launcher ${index + 1}`);
+                color.value = component?.color ?? '#ffffff';
+                const patterns = document.createElement('select');
+                patterns.className = 'launcher-pattern-select';
+                patterns.dataset.buildingId = launcher.id;
+                patterns.setAttribute('aria-label', `Shape for launcher ${index + 1}`);
+                for (const key of this.game.unlockedPatternKeys || []) patterns.add(new Option(patternDisplayNames[key] || key, key));
+                patterns.value = component?.pattern ?? '';
+                if (!patterns.value && patterns.options.length) patterns.selectedIndex = 0;
+                const assign = () => {
+                    const name = `Launcher ${index + 1}`;
+                    const recipe = { name, components: (assignedRecipe?.components ?? this.game.currentRecipeComponents).map(part => ({ ...part, color: color.value, pattern: patterns.value })) };
+                    let recipeIndex = launcher._customRecipeIndex;
+                    if (recipeIndex == null && this.game.recipes[launcher.assignedRecipeIndex]?.name === name) recipeIndex = launcher.assignedRecipeIndex;
+                    if (recipeIndex == null || !this.game.recipes[recipeIndex]) recipeIndex = this.game.recipes.push(recipe) - 1;
+                    else this.game.recipes[recipeIndex] = recipe;
+                    launcher._customRecipeIndex = recipeIndex;
+                    launcher.assignedRecipeIndex = recipeIndex;
+                    row.style.setProperty('--launcher-color', color.value);
+                    gameStorage.setItem('fireworkRecipes', JSON.stringify(this.game.recipes));
+                    this.game.updateRecipeList();
+                    this.game.saveProgress();
+                };
+                color.addEventListener('input', () => {
+                    row.style.setProperty('--launcher-color', color.value);
+                });
+                color.addEventListener('change', assign);
+                patterns.addEventListener('change', assign);
+                row.append(color, patterns);
+            }
+            launcherList.appendChild(row);
+        }
     }
-
     getReadableShape(shape) {
         switch (shape) {
             case 'sphere':
@@ -1545,18 +1483,14 @@ class UIManager {
         }
 
         const availableContainer = document.getElementById('upgrades-available');
-        const ownedContainer = document.getElementById('upgrades-owned');
-        if (!availableContainer || !ownedContainer) return;
-        const extraContainer = document.getElementById('upgrades-extra');
-        const extraSection = document.getElementById('upgrades-extra-section');
+        if (!availableContainer) return;
 
-        // Save scroll positions
+        // Keep the panel steady when purchases change the available cards.
+        const panel = availableContainer.closest('.panel');
+        const panelScroll = panel?.scrollTop ?? 0;
         const availableScroll = availableContainer.scrollTop;
-        const ownedScroll = ownedContainer.scrollTop;
 
         availableContainer.innerHTML = '';
-        ownedContainer.innerHTML = '';
-        if (extraContainer) extraContainer.innerHTML = '';
 
         const progression = this.game.progression;
         const milestone = progression.getNextMilestone();
@@ -1574,8 +1508,7 @@ class UIManager {
                 goalContainer.append(title, replay);
             }
         }
-        const availableUpgrades = [];
-        const ownedUpgrades = [];
+        const upgrades = [];
 
         for (const def of progression.getAllUpgradeDefs()) {
             const { visible } = progression.isVisible(def.id, this.game);
@@ -1584,107 +1517,53 @@ class UIManager {
             const level = progression.getUpgradeLevel(def.id);
             const maxLevel = def.maxLevel ?? 1;
 
-            if (level > 0) {
-                ownedUpgrades.push({ def, level });
-            }
-
-            if (level < maxLevel) {
+            if (level >= maxLevel) {
+                upgrades.push({ def, level, owned: true, canBuy: false });
+            } else {
                 const { ok: canBuy, reason } = progression.canPurchase(def.id, this.game);
                 const isPrereqLocked = !canBuy && !reason?.startsWith('Not enough');
                 const nextCost = progression.getUpgradeCost(def.id);
-                const balance = this.game.resourceManager.resources[def.currency]?.amount ?? 0;
-                
-                availableUpgrades.push({
+                upgrades.push({
                     def,
                     level,
                     canBuy,
                     reason,
                     isPrereqLocked,
                     nextCost,
-                    balance
+                    costs: progression.getUpgradeCosts(def.id),
                 });
             }
         }
 
-        // Sort available upgrades:
+        // Sort the single list:
         // 1. Purchasable (can afford + prereqs met) first.
         // 2. Affordability is the only issue.
         // 3. Locked by other prerequisites.
+        // 4. Fully purchased upgrades, with no duplicate cards for partial levels.
         // Secondary sort by cost (cheaper first).
         const firstGold = this.game.crowdUnlocked && progression.getUpgradeLevel('crowd_fireworks') === 0;
-        availableUpgrades.sort((a, b) => {
+        upgrades.sort((a, b) => {
+            if (a.canBuy !== b.canBuy) return a.canBuy ? -1 : 1;
+            if (Boolean(a.owned) !== Boolean(b.owned)) return a.owned ? 1 : -1;
+            if (a.owned && b.owned) return 0;
+            if (a.isPrereqLocked !== b.isPrereqLocked) return a.isPrereqLocked ? 1 : -1;
             if (firstGold && a.def.id === 'crowd_fireworks') return -1;
             if (firstGold && b.def.id === 'crowd_fireworks') return 1;
             if (a.def.id === milestone?.id) return -1;
             if (b.def.id === milestone?.id) return 1;
-            if (a.canBuy && !b.canBuy) return -1;
-            if (!a.canBuy && b.canBuy) return 1;
-
-            if (!a.isPrereqLocked && b.isPrereqLocked) return -1;
-            if (a.isPrereqLocked && !b.isPrereqLocked) return 1;
-
             return a.nextCost - b.nextCost;
         });
 
-        // Render Owned
-        ownedUpgrades.forEach(({ def, level }) => {
-            const ownedCard = document.createElement('div');
-            ownedCard.className = 'upgrade-card purchased';
+        for (const upgrade of upgrades) {
+            availableContainer.appendChild(createUpgradeCard(upgrade, this.game, upgrade.owned));
+        }
 
-            const oTitle = document.createElement('div');
-            oTitle.textContent = `${def.name} (Lv ${level})`;
-            ownedCard.appendChild(oTitle);
-
-            const oDesc = document.createElement('div');
-            oDesc.textContent = def.desc;
-            ownedCard.appendChild(oDesc);
-
-            ownedContainer.appendChild(ownedCard);
-        });
-
-        // Render Available
-        availableUpgrades.forEach(({ def, level, canBuy, reason, isPrereqLocked, nextCost, balance }, index) => {
-            const availCard = document.createElement('div');
-            availCard.className = `upgrade-card${isPrereqLocked ? ' locked' : ''}`;
-
-            const aTitle = document.createElement('div');
-            aTitle.textContent = `${def.name}${(def.maxLevel ?? 1) > 1 ? ` (${level + 1}/${def.maxLevel})` : ''}`;
-            availCard.appendChild(aTitle);
-
-            const aDesc = document.createElement('div');
-            aDesc.textContent = def.desc;
-            availCard.appendChild(aDesc);
-
-            if (isPrereqLocked) {
-                const aLock = document.createElement('div');
-                aLock.className = 'upgrade-lock-reason';
-                aLock.textContent = `🔒 ${reason}`;
-                availCard.appendChild(aLock);
-            } else {
-                const btn = document.createElement('button');
-                const costDisplay = Object.entries(progression.getUpgradeCosts(def.id)).map(([currency, cost]) => {
-                    const icon = currency === 'sparkles' ? ICONS.SPARKLE_SVG : ICONS.GOLD_SVG;
-                    return `<span class="btn-cost">${icon}<span>${cost.toLocaleString()}</span></span>`;
-                }).join(' + ');
-                
-                btn.className = 'upgrade-buy-button';
-                btn.setAttribute('data-upgrade-id', def.id);
-                btn.innerHTML = `${costDisplay}${def.action ?? 'Upgrade'}`;
-                btn.disabled = !canBuy;
-                btn.addEventListener('click', () => this.game.buyUpgrade(def.id));
-                availCard.appendChild(btn);
-            }
-
-            (index < 4 || !extraContainer ? availableContainer : extraContainer).appendChild(availCard);
-        });
-
-        if (extraSection) extraSection.hidden = availableUpgrades.length <= 4;
-        const extraTitle = document.getElementById('upgrades-extra-title');
-        if (extraTitle) extraTitle.textContent = `More upgrades (${Math.max(0, availableUpgrades.length - 4)})`;
+        const empty = document.getElementById('upgrades-empty');
+        if (empty) empty.hidden = upgrades.length > 0;
 
         // Restore scroll positions
         availableContainer.scrollTop = availableScroll;
-        ownedContainer.scrollTop = ownedScroll;
+        if (panel) panel.scrollTop = panelScroll;
         this._upgradeStateSignature = this.getUpgradeAvailabilitySignature();
     }
 
@@ -1874,6 +1753,7 @@ class UIManager {
         // Update tab active states
         const tabs = document.querySelectorAll('.building-type-tab');
         tabs.forEach(tab => {
+            tab.setAttribute('aria-selected', String(tab.getAttribute('data-building-type') === buildingType));
             if (tab.getAttribute('data-building-type') === buildingType) {
                 tab.classList.add('active');
             } else {
@@ -1899,7 +1779,7 @@ class UIManager {
         const buildings = this.game.buildingManager.getBuildingsByType(buildingType);
 
         if (buildingType === 'AUTO_LAUNCHER') {
-            this.updateLauncherList(buildings, this.game.selectedBuildingId,
+            this.updateLauncherList(buildings, this.game.buildingManager.selectedBuildingId,
                 (id) => this.game.selectLauncher(id)
             );
         } else if (buildingType === 'RESOURCE_GENERATOR') {
@@ -1970,7 +1850,7 @@ class UIManager {
         for (const [key, type] of Object.entries(BUILDING_TYPES)) {
             const cost = this.game.buildingManager.getBuyCost(key);
             const el = document.getElementById(`${type.id}-cost`);
-            if (el) el.textContent = cost;
+            if (el) el.textContent = cost.toLocaleString();
             // Update disabled state on the buy button based on current resources
             const btn = document.getElementById(`buy-${type.id}`);
             if (btn) {
@@ -1993,7 +1873,10 @@ class UIManager {
             if (!tab) continue;
 
             const unlocked = this.game.isBuildingTypeUnlocked(key);
-            tab.style.display = unlocked ? 'block' : 'none';
+            tab.style.display = '';
+            tab.disabled = !unlocked;
+            tab.classList.toggle('locked', !unlocked);
+            tab.setAttribute('aria-disabled', String(!unlocked));
 
             // If the active section belongs to a now-locked type, fall back to AUTO_LAUNCHER
             if (activeBuildingType === key && !unlocked) {

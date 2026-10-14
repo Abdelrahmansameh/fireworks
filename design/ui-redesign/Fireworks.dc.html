@@ -1,0 +1,639 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Firework workshop</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Chewy&amp;family=Shantell+Sans:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#ff7a59}a:hover{color:#ffd04a}
+@keyframes popA{0%{transform:scale(0.12);opacity:0}30%{opacity:1}100%{transform:scale(1);opacity:1}}
+@keyframes popB{0%{transform:scale(0.12);opacity:0}30%{opacity:1}100%{transform:scale(1);opacity:1}}
+@keyframes toastIn{0%{transform:translateY(16px) rotate(-2deg);opacity:0}100%{transform:translateY(0) rotate(-1deg);opacity:1}}
+.fw-scroll::-webkit-scrollbar{width:10px}
+.fw-scroll::-webkit-scrollbar-thumb{background:#4b4f85;border-radius:8px;border:2px solid #1f2246}
+.fw-range{-webkit-appearance:none;appearance:none;width:100%;height:28px;background:transparent;margin:0;cursor:pointer}
+.fw-range::-webkit-slider-runnable-track{height:10px;background:#fff3da;border:2px solid #1a1733;border-radius:8px 5px 7px 6px}
+.fw-range::-moz-range-track{height:8px;background:#fff3da;border:2px solid #1a1733;border-radius:8px 5px 7px 6px}
+.fw-range::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:24px;height:24px;margin-top:-9px;background:#ff6fae;border:2.5px solid #1a1733;border-radius:48% 52% 45% 55%;box-shadow:2px 2px 0 #0a0918}
+.fw-range::-moz-range-thumb{width:20px;height:20px;background:#ff6fae;border:2.5px solid #1a1733;border-radius:48% 52% 45% 55%;box-shadow:2px 2px 0 #0a0918}
+.fw-range:focus-visible{outline:3px dashed #ffd04a;outline-offset:3px}
+.fw-color{-webkit-appearance:none;appearance:none;border:none;padding:0;width:100%;height:100%;opacity:0;cursor:pointer;position:absolute;left:0;top:0}
+.fw-name::placeholder{color:#9a8f76}
+.fw-name:focus{outline:none;border-bottom-color:#ff6fae}
+</style>
+</helmet>
+<div style="position: relative; width: 1440px; height: 900px; overflow: hidden; background: #0b0f1f; font-family: 'Shantell Sans', 'Comic Sans MS', cursive; color: #f4ead5">
+  <img src="/_blob/c666baf500bb879daf153f03138ef07b" alt="The game: crowd of fans, auto launchers and fireworks in the night sky" style="position: absolute; left: 0; top: 0; width: 1440px; height: 900px; object-fit: cover">
+  <sc-if value="{{scrim}}" hint-placeholder-val="{{ true }}">
+    <div aria-hidden="true" style="position: absolute; left: 0; top: 0; width: 1440px; height: 900px; background: rgba(9,10,28,0.55)"></div>
+  </sc-if>
+
+  <div style="position: absolute; left: 16px; top: 16px; width: 80px; height: 868px">
+    <dc-import name="Rail" active="fireworks" hint-size="80px,868px"></dc-import>
+  </div>
+
+  <div style="position: absolute; left: 104px; top: 16px; width: 288px; display: flex; gap: 8px">
+    <div role="group" aria-label="Sparkles" style="flex: 1; min-width: 0; height: 52px; box-sizing: border-box; display: flex; align-items: center; gap: 8px; padding: 0 10px; background: #fff3da; color: #1a1733; border: 2px solid #1a1733; border-radius: 12px 8px 12px 9px / 8px 12px 9px 12px; box-shadow: 3px 3px 0 #0a0918">
+      <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><path d="M12.8 2 C13 6.4 13.6 8.6 14.8 9.6 C16.2 10.6 18.4 11.4 22 12.8 C17.6 13 15.4 13.6 14.4 14.8 C13.4 16.2 12.6 18.4 11.2 22 C11 17.6 10.4 15.4 9.2 14.4 C7.8 13.4 5.6 12.6 2 11.2 C6.4 11 8.6 10.4 9.6 9.2 C10.6 7.8 11.4 5.6 12.8 2 Z" fill="#5fe0e0" stroke="#1a1733" stroke-width="1.8" stroke-linejoin="round"></path><circle cx="12" cy="12" r="1.5" fill="#fff3da" stroke="none"></circle><circle cx="19.6" cy="4.6" r="1.3" fill="#1a1733" stroke="none"></circle></svg>
+      <div style="display: flex; flex-direction: column">
+        <span style="font-family: 'Chewy', cursive; font-size: 21px; line-height: 1">6,420</span>
+        <span style="font-size: 12px; font-weight: 700; line-height: 1.2; color: #4f4970">+182/s</span>
+      </div>
+    </div>
+    <div role="group" aria-label="Gold" style="flex: 1; min-width: 0; height: 52px; box-sizing: border-box; display: flex; align-items: center; gap: 8px; padding: 0 10px; background: #fff3da; color: #1a1733; border: 2px solid #1a1733; border-radius: 8px 12px 9px 12px / 12px 8px 12px 9px; box-shadow: 3px 3px 0 #0a0918">
+      <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="#ffd04a" stroke="#1a1733" stroke-width="1.8"></circle><circle cx="12" cy="12" r="5" fill="none" stroke="#1a1733" stroke-width="1.5" stroke-dasharray="2 2.2"></circle></svg>
+      <div style="display: flex; flex-direction: column">
+        <span style="font-family: 'Chewy', cursive; font-size: 21px; line-height: 1">2,135</span>
+        <span style="font-size: 12px; font-weight: 700; line-height: 1.2; color: #4f4970">+41/s</span>
+      </div>
+    </div>
+  </div>
+
+  <section aria-label="Fireworks" style="position: absolute; left: 104px; top: 76px; width: 464px; height: 808px; box-sizing: border-box; padding: 14px 6px 14px 14px; display: flex; flex-direction: column; gap: 12px; background-color: #1f2246; background-image: radial-gradient(rgba(255,243,218,0.09) 1.1px, transparent 1.4px); background-size: 14px 14px; border: 2px solid #f4ead5; border-radius: 18px 22px 16px 20px / 20px 16px 22px 18px; box-shadow: 6px 6px 0 #0a0918; overflow: hidden">
+
+    <header style="display: flex; align-items: center; justify-content: space-between; height: 44px; padding-right: 8px">
+      <div style="display: flex; flex-direction: column; gap: 2px">
+        <h1 style="margin: 0; font-family: 'Chewy', cursive; font-weight: 400; font-size: 28px; line-height: 1; color: #fff3da">Fireworks</h1>
+        <svg width="112" height="8" viewBox="0 0 112 8" fill="none" aria-hidden="true"><path d="M2 5 C16 1, 30 7, 46 4 S 76 1, 90 5 S 106 6, 110 3" stroke="#ff6fae" stroke-width="3" stroke-linecap="round"></path></svg>
+      </div>
+      <button aria-label="Close panel" style="width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; background: transparent; color: #f4ead5; border: 2px solid rgba(244,234,213,0.5); border-radius: 12px 9px 13px 8px / 9px 13px 8px 12px; cursor: pointer; padding: 0">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" aria-hidden="true"><path d="M5.4 5.8 C10 10.2 14 14.1 18.6 18.4"></path><path d="M18.4 5.6 C14 10 10 14 5.6 18.6"></path></svg>
+      </button>
+    </header>
+
+    <div role="tablist" aria-label="Firework views" style="display: flex; gap: 4px; padding: 2px; margin-right: 8px; background: #161936; border: 2px solid rgba(244,234,213,0.35); border-radius: 14px 10px 13px 11px / 10px 14px 11px 13px">
+      <button role="tab" aria-selected="{{isWorkshop}}" onClick="{{showWorkshop}}" style="flex: 1; height: 40px; display: flex; align-items: center; justify-content: center; gap: 6px; cursor: pointer; font-family: inherit; font-size: 15px; font-weight: 800; border-radius: 11px 8px 10px 9px / 8px 11px 9px 10px; {{workshopTabStyle}}">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.4 19.6 L5.2 15.4 L15.6 5 C16.6 4 18.1 4 19.1 5 C20.1 6 20.1 7.5 19.1 8.5 L8.7 18.9 Z"></path><path d="M13.8 6.8 L17.3 10.3"></path></svg>
+        Workshop
+      </button>
+      <button role="tab" aria-selected="{{isCollection}}" onClick="{{showCollection}}" style="flex: 1; height: 40px; display: flex; align-items: center; justify-content: center; gap: 6px; cursor: pointer; font-family: inherit; font-size: 15px; font-weight: 800; border-radius: 8px 11px 9px 10px / 11px 8px 10px 9px; {{collectionTabStyle}}">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6.2 C4.1 5 5 4.2 6.2 4.2 L9.6 4.3 C10.8 4.3 11.6 5.2 11.5 6.4 L11.4 9.7 C11.4 10.9 10.5 11.6 9.3 11.6 L6 11.5 C4.8 11.5 4 10.6 4.1 9.4 Z M12.6 6.3 C12.7 5.1 13.6 4.3 14.8 4.3 L17.9 4.4 C19.1 4.4 19.9 5.3 19.8 6.5 L19.7 9.6 C19.7 10.8 18.8 11.6 17.6 11.6 L14.6 11.5 C13.4 11.5 12.6 10.6 12.7 9.4 Z M4.1 14.6 C4.2 13.4 5.1 12.6 6.3 12.6 L9.5 12.7 C10.7 12.7 11.5 13.6 11.4 14.8 L11.3 17.9 C11.3 19.1 10.4 19.9 9.2 19.9 L6.1 19.8 C4.9 19.8 4.1 18.9 4.2 17.7 Z"></path><path d="M16.2 13 L16.2 19.6 M12.9 16.3 L19.5 16.3"></path></svg>
+        My fireworks
+        <span style="font-size: 12px; font-weight: 800; padding: 1px 7px; background: #ffd04a; color: #1a1733; border: 2px solid #1a1733; border-radius: 9px 6px 8px 7px">{{savedCount}}</span>
+      </button>
+    </div>
+
+    <sc-if value="{{isWorkshop}}" hint-placeholder-val="{{ true }}">
+      <div class="fw-scroll" style="flex: 1; min-height: 0; overflow-y: auto; padding-right: 8px; margin-top: 12px; display: flex; flex-direction: column; gap: 24px">
+
+        <div style="display: flex; flex-direction: column; gap: 8px">
+          <div style="display: flex; align-items: center; gap: 8px">
+            <span style="width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; background: #fff3da; color: #1a1733; border: 2px solid #1a1733; border-radius: 50% 46% 52% 48%; font-family: 'Chewy', cursive; font-size: 15px">1</span>
+            <h2 style="margin: 0; font-family: 'Chewy', cursive; font-weight: 400; font-size: 21px; color: #fff3da">Shape</h2>
+            <span style="margin-left: auto; font-size: 14px; font-weight: 800; color: #ff9cc8">{{patternFull}}</span>
+          </div>
+          <div style="display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 6px">
+            <sc-for list="{{patterns}}" as="p" hint-placeholder-count="13">
+              <button aria-label="{{p.aria}}" aria-pressed="{{p.selected}}" disabled="{{p.locked}}" onClick="{{p.pick}}" style="position: relative; height: 68px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; padding: 4px 2px; font-family: inherit; font-size: 11.5px; font-weight: 700; line-height: 1; border-radius: 12px 8px 11px 9px / 9px 12px 8px 11px; {{p.tileStyle}}">
+                <span style="position: relative; width: 50px; height: 38px; overflow: hidden; background: #12142e; border-radius: 8px 6px 7px 6px">
+                  <sc-for list="{{p.dots}}" as="pd" hint-placeholder-count="20">
+                    <span style="position: absolute; {{pd.s}}"></span>
+                  </sc-for>
+                </span>
+                <span>{{p.short}}</span>
+                <sc-if value="{{p.locked}}" hint-placeholder-val="{{ false }}">
+                  <span style="position: absolute; top: -6px; right: -5px; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; background: #ffd04a; color: #1a1733; border: 2px solid #1a1733; border-radius: 50%">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 11 L18 11 L18 20 L6 20 Z"></path><path d="M8.6 11 L8.6 8 C8.6 5.9 10.1 4.4 12 4.4 C13.9 4.4 15.4 5.9 15.4 8 L15.4 11"></path></svg>
+                  </span>
+                </sc-if>
+              </button>
+            </sc-for>
+          </div>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 8px">
+          <div style="display: flex; align-items: center; gap: 8px">
+            <span style="width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; background: #fff3da; color: #1a1733; border: 2px solid #1a1733; border-radius: 50% 46% 52% 48%; font-family: 'Chewy', cursive; font-size: 15px">2</span>
+            <h2 style="margin: 0; font-family: 'Chewy', cursive; font-weight: 400; font-size: 21px; color: #fff3da">Sparks</h2>
+            <span style="margin-left: auto; font-size: 14px; font-weight: 800; color: #ff9cc8">{{shapeLabel}}</span>
+          </div>
+          <div style="display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px">
+            <sc-for list="{{shapes}}" as="sh" hint-placeholder-count="5">
+              <button aria-label="{{sh.aria}}" aria-pressed="{{sh.selected}}" onClick="{{sh.pick}}" style="height: 62px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; padding: 4px 2px; cursor: pointer; font-family: inherit; font-size: 12px; font-weight: 700; line-height: 1; border-radius: 9px 12px 8px 11px / 12px 8px 11px 9px; {{sh.tileStyle}}">
+                <span style="position: relative; width: 60px; height: 30px; overflow: hidden; background: #12142e; border-radius: 7px 6px 8px 6px">
+                  <sc-for list="{{sh.dots}}" as="sd" hint-placeholder-count="3">
+                    <span style="position: absolute; {{sd.s}}"></span>
+                  </sc-for>
+                </span>
+                <span>{{sh.label}}</span>
+              </button>
+            </sc-for>
+          </div>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 10px">
+          <div style="display: flex; align-items: center; gap: 8px">
+            <span style="width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; background: #fff3da; color: #1a1733; border: 2px solid #1a1733; border-radius: 50% 46% 52% 48%; font-family: 'Chewy', cursive; font-size: 15px">3</span>
+            <h2 style="margin: 0; font-family: 'Chewy', cursive; font-weight: 400; font-size: 21px; color: #fff3da">Colors</h2>
+          </div>
+          <div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center">
+            <sc-for list="{{swatches}}" as="sw" hint-placeholder-count="10">
+              <button aria-label="{{sw.aria}}" aria-pressed="{{sw.selected}}" onClick="{{sw.pick}}" style="width: 30px; height: 30px; padding: 0; cursor: pointer; border: 2px solid #1a1733; border-radius: 48% 52% 45% 55% / 55% 45% 55% 45%; {{sw.style}}"></button>
+            </sc-for>
+            <label style="position: relative; width: 30px; height: 30px; display: block; border: 2px solid #1a1733; border-radius: 52% 48% 55% 45% / 45% 55% 45% 55%; background: conic-gradient(#ff4d4d, #ffd04a, #86e38f, #3ee0d0, #4d8bff, #a879ff, #ff6fae, #ff4d4d); box-shadow: 1px 2px 0 #0a0918; box-sizing: border-box">
+              <span style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Pick any color</span>
+              <input type="color" class="fw-color" value="{{colorVal}}" onChange="{{onCustomColor}}">
+            </label>
+          </div>
+
+          <button aria-pressed="{{fadeOn}}" onClick="{{toggleFade}}" style="display: flex; align-items: center; justify-content: space-between; gap: 10px; height: 44px; padding: 0 12px; background: #2a2e5e; color: #f4ead5; border: 2px solid rgba(244,234,213,0.4); border-radius: 12px 9px 13px 8px / 9px 13px 8px 12px; cursor: pointer; font-family: inherit; font-size: 14.5px; font-weight: 700">
+            <span>Color fade</span>
+            <span aria-hidden="true" style="position: relative; flex-shrink: 0; width: 46px; height: 26px; border: 2px solid #1a1733; border-radius: 14px 12px 13px 12px; box-sizing: border-box; {{switchTrack}}">
+              <span style="position: absolute; top: 2px; width: 18px; height: 18px; background: #fff3da; border: 2px solid #1a1733; border-radius: 50%; box-sizing: border-box; {{switchKnob}}"></span>
+            </span>
+          </button>
+
+          <sc-if value="{{fadeOn}}" hint-placeholder-val="{{ true }}">
+            <div style="display: flex; flex-direction: column; gap: 10px; padding: 12px; background: #161936; border: 2px dashed rgba(244,234,213,0.4); border-radius: 12px 9px 13px 8px / 9px 13px 8px 12px">
+              <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap">
+                <span style="font-size: 13px; font-weight: 700; color: #c9bfa8; width: 64px">Fades to</span>
+                <sc-for list="{{fadeSwatches}}" as="fw" hint-placeholder-count="10">
+                  <button aria-label="{{fw.aria}}" aria-pressed="{{fw.selected}}" onClick="{{fw.pick}}" style="width: 24px; height: 24px; padding: 0; cursor: pointer; border: 2px solid #1a1733; border-radius: 48% 52% 45% 55% / 55% 45% 55% 45%; {{fw.style}}"></button>
+                </sc-for>
+              </div>
+              <div style="display: flex; flex-direction: column; gap: 4px">
+                <div role="img" aria-label="{{timelineAria}}" style="position: relative; height: 26px; border: 2px solid #1a1733; border-radius: 9px 6px 8px 7px; overflow: hidden; background: #fff3da">
+                  <span style="position: absolute; top: 0; bottom: 0; {{segA}}"></span>
+                  <span style="position: absolute; top: 0; bottom: 0; {{segB}}"></span>
+                  <span style="position: absolute; top: 0; bottom: 0; {{segC}}"></span>
+                  <span style="position: absolute; top: -2px; bottom: -2px; width: 0; border-left: 2px dashed #1a1733; {{markStart}}"></span>
+                </div>
+                <div style="display: flex; justify-content: space-between; font-size: 12px; font-weight: 700; color: #c9bfa8">
+                  <span>boom!</span>
+                  <span>{{lifetimeLabel}}</span>
+                </div>
+              </div>
+              <div style="display: grid; grid-template-columns: 64px minmax(0, 1fr) 52px; align-items: center; gap: 8px">
+                <label for="fade-start" style="font-size: 13px; font-weight: 700; color: #f4ead5">Starts</label>
+                <input id="fade-start" class="fw-range" type="range" min="0" max="0.9" step="0.05" value="{{fadeStartVal}}" onChange="{{onFadeStart}}">
+                <span style="font-family: 'Chewy', cursive; font-size: 17px; color: #fff3da; text-align: right">{{fadeStartLabel}}</span>
+                <label for="fade-dur" style="font-size: 13px; font-weight: 700; color: #f4ead5">Takes</label>
+                <input id="fade-dur" class="fw-range" type="range" min="0.05" max="1" step="0.05" value="{{fadeDurVal}}" onChange="{{onFadeDur}}">
+                <span style="font-family: 'Chewy', cursive; font-size: 17px; color: #fff3da; text-align: right">{{fadeDurLabel}}</span>
+              </div>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{hasSecondary}}" hint-placeholder-val="{{ false }}">
+            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 10px 12px; background: #161936; border: 2px dashed rgba(244,234,213,0.4); border-radius: 9px 12px 8px 13px / 12px 8px 13px 9px">
+              <span style="font-size: 13px; font-weight: 700; color: #c9bfa8; width: 78px">{{secondaryLabel}}</span>
+              <sc-for list="{{secSwatches}}" as="ss" hint-placeholder-count="10">
+                <button aria-label="{{ss.aria}}" aria-pressed="{{ss.selected}}" onClick="{{ss.pick}}" style="width: 24px; height: 24px; padding: 0; cursor: pointer; border: 2px solid #1a1733; border-radius: 48% 52% 45% 55% / 55% 45% 55% 45%; {{ss.style}}"></button>
+              </sc-for>
+            </div>
+          </sc-if>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 6px; padding-bottom: 6px">
+          <div style="display: flex; align-items: center; gap: 8px">
+            <span style="width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; background: #fff3da; color: #1a1733; border: 2px solid #1a1733; border-radius: 50% 46% 52% 48%; font-family: 'Chewy', cursive; font-size: 15px">4</span>
+            <h2 style="margin: 0; font-family: 'Chewy', cursive; font-weight: 400; font-size: 21px; color: #fff3da">Feel</h2>
+          </div>
+          <div style="display: grid; grid-template-columns: 92px 22px minmax(0, 1fr) 22px 48px; align-items: center; column-gap: 8px; row-gap: 6px">
+            <label for="fw-size" style="font-size: 14px; font-weight: 700">Spark size</label>
+            <svg width="22" height="22" viewBox="0 0 22 22" aria-hidden="true"><circle cx="11" cy="11" r="2.4" fill="#f4ead5"></circle></svg>
+            <input id="fw-size" class="fw-range" type="range" min="0.1" max="0.7" step="0.05" value="{{sizeVal}}" onChange="{{onSize}}">
+            <svg width="22" height="22" viewBox="0 0 22 22" aria-hidden="true"><circle cx="11" cy="11" r="7.5" fill="#f4ead5"></circle></svg>
+            <span style="font-family: 'Chewy', cursive; font-size: 17px; color: #fff3da; text-align: right">{{sizeLabel}}</span>
+
+            <label for="fw-spread" style="font-size: 14px; font-weight: 700">Burst width</label>
+            <svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="#f4ead5" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M11 8 L11 6 M11 14 L11 16 M8 11 L6 11 M14 11 L16 11"></path></svg>
+            <input id="fw-spread" class="fw-range" type="range" min="0.4" max="1" step="0.1" value="{{spreadVal}}" onChange="{{onSpread}}">
+            <svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="#f4ead5" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M11 7 L11 1.5 M11 15 L11 20.5 M7 11 L1.5 11 M15 11 L20.5 11 M8 8 L4.5 4.5 M14 14 L17.5 17.5 M14 8 L17.5 4.5 M8 14 L4.5 17.5"></path></svg>
+            <span style="font-family: 'Chewy', cursive; font-size: 17px; color: #fff3da; text-align: right">{{spreadLabel}}</span>
+
+            <label for="fw-life" style="font-size: 14px; font-weight: 700">Burn time</label>
+            <svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="#f4ead5" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M8 11 L12 11"></path><circle cx="15" cy="11" r="2.4" fill="#f4ead5" stroke="none"></circle></svg>
+            <input id="fw-life" class="fw-range" type="range" min="1.5" max="4" step="0.1" value="{{lifetimeVal}}" onChange="{{onLifetime}}">
+            <svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="#f4ead5" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M1.5 11 L3.5 11 M5.5 11 L8 11 M10 11 L15 11"></path><circle cx="18.2" cy="11" r="2.6" fill="#f4ead5" stroke="none"></circle></svg>
+            <span style="font-family: 'Chewy', cursive; font-size: 17px; color: #fff3da; text-align: right">{{lifetimeLabel}}</span>
+          </div>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{isCollection}}" hint-placeholder-val="{{ false }}">
+      <div class="fw-scroll" style="flex: 1; min-height: 0; overflow-y: auto; padding-right: 8px; margin-top: 12px; display: flex; flex-direction: column; gap: 8px">
+        <sc-if value="{{noSaved}}" hint-placeholder-val="{{ false }}">
+          <div style="padding: 24px 16px; text-align: center; border: 2px dashed rgba(244,234,213,0.45); border-radius: 14px 10px 13px 11px; font-size: 15px; font-weight: 700; color: #f4ead5">Empty sky. Make one!</div>
+        </sc-if>
+        <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px">
+          <sc-for list="{{cards}}" as="c" hint-placeholder-count="8">
+            <button aria-label="{{c.aria}}" onClick="{{c.load}}" style="display: flex; flex-direction: column; gap: 6px; padding: 8px; text-align: left; background: #fff3da; color: #1a1733; border: 2px solid #1a1733; border-radius: 12px 9px 13px 8px / 9px 13px 8px 12px; box-shadow: 3px 3px 0 #0a0918; cursor: pointer; font-family: inherit; {{c.tilt}}">
+              <span style="position: relative; display: block; width: 184px; height: 88px; max-width: 100%; overflow: hidden; background: #12142e; border-radius: 8px 6px 9px 6px">
+                <sc-for list="{{c.dots}}" as="cd" hint-placeholder-count="30">
+                  <span style="position: absolute; {{cd.s}}"></span>
+                </sc-for>
+              </span>
+              <span style="font-size: 15px; font-weight: 800; line-height: 1.15">{{c.name}}</span>
+              <span style="font-size: 12.5px; font-weight: 600; color: #4f4970">{{c.meta}}</span>
+            </button>
+          </sc-for>
+        </div>
+        <button onClick="{{eraseAll}}" style="align-self: flex-start; margin-top: 16px; height: 44px; padding: 0 14px; display: flex; align-items: center; gap: 8px; background: transparent; color: #ff9a8a; border: 2px dashed #ff9a8a; border-radius: 10px 8px 11px 7px; cursor: pointer; font-family: inherit; font-size: 13.5px; font-weight: 700">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 6.6 C9.5 6.3 14.5 6.4 19.5 6.7"></path><path d="M9.4 6.4 L9.8 3.8 L14.4 3.9 L14.6 6.5"></path><path d="M6.4 6.8 L7.6 19.6 C7.7 20.4 8.3 20.9 9.1 20.9 L15 20.8 C15.8 20.8 16.4 20.2 16.4 19.4 L17.6 6.8"></path></svg>
+          Erase all
+        </button>
+      </div>
+    </sc-if>
+  </section>
+
+  <div style="position: absolute; left: 592px; top: 76px; width: 424px; display: flex; flex-direction: column; gap: 24px">
+    <figure style="position: relative; margin: 0; width: 424px; box-sizing: border-box; padding: 16px 16px 12px; background: #fffaf0; color: #1a1733; border: 2px solid #1a1733; border-radius: 4px 6px 3px 5px; box-shadow: 6px 6px 0 #0a0918; transform: rotate(1deg)">
+      <span aria-hidden="true" style="position: absolute; top: -12px; left: -18px; width: 86px; height: 24px; background: rgba(255,226,122,0.82); border: 1px solid rgba(26,23,51,0.25); transform: rotate(-32deg)"></span>
+      <span aria-hidden="true" style="position: absolute; top: -12px; right: -18px; width: 86px; height: 24px; background: rgba(255,226,122,0.82); border: 1px solid rgba(26,23,51,0.25); transform: rotate(30deg)"></span>
+      <div role="img" aria-label="{{previewAria}}" style="position: relative; width: 388px; height: 372px; overflow: hidden; background-color: #0d1133; background-image: radial-gradient(rgba(255,255,255,0.55) 0.9px, transparent 1.3px), radial-gradient(rgba(255,255,255,0.3) 0.8px, transparent 1.2px); background-size: 53px 47px, 31px 37px; background-position: 7px 11px, 19px 3px; border: 2px solid #1a1733; border-radius: 3px">
+        <div style="position: absolute; left: 0; right: 0; bottom: 0; height: 40px; background: #1b1d2c; border-top: 2px solid #2b2e44"></div>
+        <div style="position: absolute; left: 193px; top: 180px; height: 150px; width: 0; border-left: 2px dotted rgba(255,243,218,0.45)"></div>
+        <div style="position: absolute; left: 182px; top: 316px; width: 24px; height: 18px; border: 2px solid #0a0918; border-radius: 3px 3px 1px 1px; {{launcherTube}}"></div>
+        <div style="position: absolute; left: 174px; top: 330px; width: 40px; height: 12px; background: #24296b; border: 2px solid #0a0918; border-radius: 3px"></div>
+        <div style="position: absolute; left: 0; top: 0; width: 388px; height: 372px; transform-origin: 194px 168px; {{burstAnim}}">
+          <sc-for list="{{previewDots}}" as="d" hint-placeholder-count="120">
+            <span style="position: absolute; {{d.s}}"></span>
+          </sc-for>
+        </div>
+        <span style="position: absolute; right: 8px; top: 8px; display: flex; align-items: center; gap: 5px; padding: 3px 9px; background: rgba(13,17,51,0.8); color: #fff3da; border: 1.5px solid rgba(255,243,218,0.6); border-radius: 6px 9px 7px 8px; font-size: 12px; font-weight: 700">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="13" r="8"></circle><path d="M12 9 L12 13.4 L15 15"></path><path d="M9.6 2.6 L14.4 2.6"></path></svg>
+          {{lifetimeLabel}}
+        </span>
+      </div>
+      <figcaption style="display: flex; flex-direction: column; gap: 2px; padding-top: 10px">
+        <div style="display: flex; align-items: center; gap: 8px">
+          <label for="fw-name" style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Firework name</label>
+          <input id="fw-name" class="fw-name" type="text" value="{{name}}" onChange="{{onName}}" placeholder="Name your firework" style="flex: 1; min-width: 0; height: 44px; padding: 0 2px; background: transparent; color: #1a1733; border: none; border-bottom: 2px dashed #c9bda3; font-family: 'Chewy', cursive; font-size: 30px">
+          <button aria-label="Random name" onClick="{{randomName}}" style="flex-shrink: 0; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; background: #ffe27a; color: #1a1733; border: 2px solid #1a1733; border-radius: 12px 8px 11px 9px; box-shadow: 2px 2px 0 #1a1733; cursor: pointer; padding: 0">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7.6 C4.1 5.6 5.6 4.1 7.6 4.1 L16.4 4.3 C18.4 4.3 19.9 5.9 19.8 7.9 L19.7 16.4 C19.6 18.4 18.1 19.9 16.1 19.9 L7.6 19.8 C5.6 19.8 4 18.2 4.1 16.2 Z"></path><circle cx="8.6" cy="8.6" r="1.3" fill="currentColor" stroke="none"></circle><circle cx="15.4" cy="8.6" r="1.3" fill="currentColor" stroke="none"></circle><circle cx="12" cy="12" r="1.3" fill="currentColor" stroke="none"></circle><circle cx="8.6" cy="15.4" r="1.3" fill="currentColor" stroke="none"></circle><circle cx="15.4" cy="15.4" r="1.3" fill="currentColor" stroke="none"></circle></svg>
+          </button>
+        </div>
+        <span style="font-size: 13.5px; font-weight: 600; color: #5a5478">{{summary}}</span>
+      </figcaption>
+    </figure>
+
+    <div style="display: flex; flex-direction: column; gap: 8px; padding: 10px 14px 14px; background: #1f2246; border: 2px solid #f4ead5; border-radius: 16px 12px 15px 11px / 12px 16px 11px 15px; box-shadow: 6px 6px 0 #0a0918">
+      <h2 style="margin: 0; font-family: 'Chewy', cursive; font-weight: 400; font-size: 20px; line-height: 24px; color: #fff3da">Layers</h2>
+      <div style="display: flex; align-items: center; gap: 10px">
+        <sc-for list="{{layerChips}}" as="lc" hint-placeholder-count="2">
+          <button aria-label="{{lc.aria}}" aria-pressed="{{lc.selected}}" onClick="{{lc.pick}}" style="position: relative; width: 58px; height: 58px; padding: 0; cursor: pointer; background: #12142e; border-radius: 50% 46% 52% 48% / 48% 52% 46% 50%; {{lc.style}}">
+            <span style="position: absolute; left: 5px; top: 5px; width: 44px; height: 44px; overflow: hidden; border-radius: 50%">
+              <sc-for list="{{lc.dots}}" as="ld" hint-placeholder-count="20">
+                <span style="position: absolute; {{ld.s}}"></span>
+              </sc-for>
+            </span>
+            <span style="position: absolute; right: -6px; bottom: -4px; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; border: 2px solid #1a1733; border-radius: 50%; font-family: 'Chewy', cursive; font-size: 14px; color: #1a1733; {{lc.badge}}">{{lc.num}}</span>
+          </button>
+        </sc-for>
+        <sc-if value="{{canAddLayer}}" hint-placeholder-val="{{ true }}">
+          <button aria-label="Add a layer" onClick="{{addLayer}}" style="width: 58px; height: 58px; display: flex; align-items: center; justify-content: center; background: transparent; color: #f4ead5; border: 2px dashed rgba(244,234,213,0.6); border-radius: 50% 46% 52% 48% / 48% 52% 46% 50%; cursor: pointer; padding: 0">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" aria-hidden="true"><path d="M12 4.6 C12.1 9.6 12 14.4 12 19.4"></path><path d="M4.6 12.1 C9.6 11.9 14.4 12 19.4 12"></path></svg>
+          </button>
+        </sc-if>
+        <sc-if value="{{canRemoveLayer}}" hint-placeholder-val="{{ true }}">
+          <button onClick="{{removeLayer}}" style="margin-left: auto; height: 44px; padding: 0 12px; background: transparent; color: #ff9a8a; border: 2px dashed #ff9a8a; border-radius: 10px 8px 11px 7px; cursor: pointer; font-family: inherit; font-size: 13px; font-weight: 700">Remove {{activeNum}}</button>
+        </sc-if>
+      </div>
+    </div>
+
+    <div style="display: flex; gap: 8px">
+      <button onClick="{{save}}" style="flex: 1.35; height: 52px; display: flex; align-items: center; justify-content: center; gap: 8px; background: #ff7a59; color: #1a1733; border: 2.5px solid #1a1733; border-radius: 14px 10px 15px 9px / 10px 15px 9px 14px; box-shadow: 3px 4px 0 #0a0918; cursor: pointer; font-family: 'Chewy', cursive; font-size: 22px">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5.6 4.4 L18.4 4.6 L18.2 20 L12 15.8 L5.8 20.2 Z" fill="#fff3da"></path></svg>
+        Save
+      </button>
+      <button onClick="{{testLaunch}}" style="flex: 1; height: 52px; display: flex; align-items: center; justify-content: center; gap: 7px; background: #5fe0e0; color: #1a1733; border: 2.5px solid #1a1733; border-radius: 10px 15px 9px 14px / 15px 9px 14px 10px; box-shadow: 3px 4px 0 #0a0918; cursor: pointer; font-family: 'Chewy', cursive; font-size: 20px">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2.8 C14.6 5 15.6 8.4 15.2 12.4 L15 15.6 L9 15.6 L8.8 12.4 C8.4 8.4 9.4 5 12 2.8 Z" fill="#fff3da"></path><path d="M9 12.6 L6.2 15.8 L9 15.8 M15 12.6 L17.8 15.8 L15 15.8"></path><path d="M10.8 18 L10.6 21 M13.2 18 L13.4 21"></path></svg>
+        Launch
+      </button>
+      <button onClick="{{shuffle}}" style="flex: 1; height: 52px; display: flex; align-items: center; justify-content: center; gap: 7px; background: #fff3da; color: #1a1733; border: 2.5px solid #1a1733; border-radius: 14px 10px 15px 9px / 10px 15px 9px 14px; box-shadow: 3px 4px 0 #0a0918; cursor: pointer; font-family: 'Chewy', cursive; font-size: 20px">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.6 7.4 C7.8 7.2 10.8 8.4 13 12 C15.2 15.6 17.2 16.8 20.4 16.6"></path><path d="M3.6 16.6 C7.8 16.8 10 15.8 11.6 13.6 M14.4 10.4 C16 8.2 17.4 7.2 20.4 7.4"></path><path d="M17.8 4.8 L20.6 7.4 L17.8 10 M17.8 14 L20.6 16.6 L17.8 19.2"></path></svg>
+        Shuffle
+      </button>
+    </div>
+  </div>
+
+  <sc-if value="{{hasToast}}" hint-placeholder-val="{{ false }}">
+    <div role="status" style="position: absolute; left: 592px; bottom: 24px; display: flex; align-items: center; gap: 10px; padding: 12px 18px; background: #86e38f; color: #1a1733; border: 2.5px solid #1a1733; border-radius: 14px 10px 15px 9px / 10px 15px 9px 14px; box-shadow: 4px 5px 0 #0a0918; font-size: 16px; font-weight: 800; animation: toastIn 260ms ease-out both">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.6 12.8 C6.4 14.4 8 16 9.6 18 C12.6 13.2 15.8 9 19.6 5.4"></path></svg>
+      {{toast}}
+    </div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"scrim":{"editor":"boolean","default":true},"startView":{"editor":"enum","options":["workshop","collection"],"default":"workshop"},"$preview":{"width":1440,"height":900}}'>
+const PAL = ['#ff4d4d', '#ff8a3d', '#ffd04a', '#ddbb4a', '#f4f1e6', '#86e38f', '#3ee0d0', '#4d8bff', '#a879ff', '#ff6fae'];
+const PAL_NAMES = ['Red', 'Orange', 'Gold', 'Champagne', 'Silver', 'Green', 'Teal', 'Blue', 'Violet', 'Pink'];
+const PATTERNS = [
+  { key: 'spherical', short: 'Sphere', full: 'Spherical' },
+  { key: 'burst', short: 'Burst', full: 'Burst' },
+  { key: 'palm', short: 'Palm', full: 'Palm' },
+  { key: 'star', short: 'Star', full: 'Star' },
+  { key: 'willow', short: 'Willow', full: 'Willow' },
+  { key: 'ring', short: 'Ring', full: 'Ring' },
+  { key: 'solidsphere', short: 'Solid', full: 'Solid Sphere' },
+  { key: 'brocade', short: 'Brocade', full: 'Brocade' },
+  { key: 'heart', short: 'Heart', full: 'Heart' },
+  { key: 'pistil', short: 'Pistil', full: 'Pistil' },
+  { key: 'saturn', short: 'Saturn', full: 'Saturn', sec: 'Ring color' },
+  { key: 'brokenHeart', short: 'Broken', full: 'Broken Heart' },
+  { key: 'christmasTree', short: 'Xmas tree', full: 'Christmas Tree', sec: 'Ornaments' },
+  { key: 'spinner', short: 'Spinner', full: 'Spinner', locked: true },
+  { key: 'helix', short: 'Helix', full: 'Helix', sec: '2nd strand', locked: true },
+  { key: 'snowflake', short: 'Snowflake', full: 'Snowflake', sec: 'Tips', locked: true },
+  { key: 'dragonsBreath', short: 'Dragon', full: "Dragon's Breath", locked: true }
+];
+const SHAPES = [
+  { key: 'sphere', label: 'Dot' },
+  { key: 'star', label: 'Star' },
+  { key: 'ring', label: 'Ring' },
+  { key: 'crystalDroplet', label: 'Droplet' },
+  { key: 'sliceBurst', label: 'Slice' }
+];
+const NAMES = ['Starburst', 'Golden Shower', 'Crimson Comet', 'Twinkle', 'Violet Vortex', 'Nova', 'Firefly Flicker', 'Midnight Magic', 'Sunset Spark', 'Aurora Arc', 'Cosmic Cascade', 'Solar Flare', 'Comet Tail', 'Radiant Rain', 'Frosty Flicker', 'Crystal Cascade', 'Stellar Storm', 'Luminous Lagoon', 'Dusk Dazzle', 'Starlit Symphony'];
+
+function rng(seed) { let s = seed >>> 0; return function () { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; }; }
+function circle(n, r, off, sec) { const a = []; for (let i = 0; i < n; i++) { const t = (off || 0) + i / n * Math.PI * 2; a.push({ x: Math.cos(t) * r, y: Math.sin(t) * r, sec: !!sec }); } return a; }
+function heartPts(n) { const a = []; for (let i = 0; i < n; i++) { const t = i / n * Math.PI * 2; const x = 16 * Math.pow(Math.sin(t), 3); const y = -(13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t)); a.push({ x: x / 17, y: (y + 2) / 17 }); } return a; }
+function fib(n, scale) { const a = [], g = Math.PI * (3 - Math.sqrt(5)); for (let i = 0; i < n; i++) { const r = Math.sqrt((i + 0.5) / n) * scale, t = i * g; a.push({ x: Math.cos(t) * r, y: Math.sin(t) * r }); } return a; }
+const GEN = {
+  spherical: () => [].concat(circle(24, 1), circle(18, 0.78, 0.17), circle(12, 0.52, 0.3), circle(6, 0.26, 0.5)),
+  burst: () => { const r = rng(7), a = []; for (let i = 0; i < 14; i++) { const t = i / 14 * Math.PI * 2 + (r() - 0.5) * 0.25; [0.38, 0.66, 0.95].forEach((k) => { const m = k * (0.85 + r() * 0.3); a.push({ x: Math.cos(t) * m, y: Math.sin(t) * m }); }); } return a; },
+  palm: () => { const a = []; for (let b = 0; b < 7; b++) { const t = (-90 + (b - 3) * 34) * Math.PI / 180; for (let i = 1; i <= 7; i++) { const m = i / 7; a.push({ x: Math.cos(t) * m * 1.05, y: Math.sin(t) * m + 0.55 * m * m }); } } return a; },
+  star: () => { const a = [], P = []; for (let i = 0; i < 10; i++) { const t = -Math.PI / 2 + i * Math.PI / 5; const r = i % 2 ? 0.45 : 1; P.push([Math.cos(t) * r, Math.sin(t) * r]); } for (let i = 0; i < 10; i++) { const p = P[i], q = P[(i + 1) % 10]; for (let k = 0; k < 4; k++) { const f = k / 4; a.push({ x: p[0] + (q[0] - p[0]) * f, y: p[1] + (q[1] - p[1]) * f }); } } return a; },
+  willow: () => { const a = []; for (let i = 0; i < 16; i++) { const t = i / 16 * Math.PI * 2; for (let k = 1; k <= 6; k++) { const m = k / 6; a.push({ x: Math.cos(t) * m * 0.9, y: Math.sin(t) * m * 0.72 + 0.6 * m * m - 0.15 }); } } return a; },
+  ring: () => circle(32, 1),
+  solidsphere: () => fib(70, 1),
+  brocade: () => { const a = []; for (let i = 0; i < 22; i++) { const t = i / 22 * Math.PI * 2; [0.55, 0.7, 0.85, 1].forEach((m) => a.push({ x: Math.cos(t) * m, y: Math.sin(t) * m + 0.12 * m * m })); } return a; },
+  heart: () => heartPts(36),
+  pistil: () => { const r = rng(3), a = []; for (let i = 0; i < 18; i++) { const t = r() * Math.PI * 2, m = Math.sqrt(r()) * 0.3; a.push({ x: Math.cos(t) * m, y: Math.sin(t) * m }); } return a.concat(circle(26, 1)); },
+  saturn: () => { const a = fib(30, 0.55), tilt = -0.28; for (let i = 0; i < 32; i++) { const t = i / 32 * Math.PI * 2; const x = Math.cos(t), y = Math.sin(t) * 0.28; a.push({ x: x * Math.cos(tilt) - y * Math.sin(tilt), y: x * Math.sin(tilt) + y * Math.cos(tilt), sec: true }); } return a; },
+  brokenHeart: () => heartPts(36).map((p) => { const s = p.x < 0 ? -1 : 1, ang = s * 0.16; const x = p.x * Math.cos(ang) - p.y * Math.sin(ang), y = p.x * Math.sin(ang) + p.y * Math.cos(ang); return { x: x + s * 0.16, y: y + 0.04 }; }),
+  spinner: () => { const a = []; for (let arm = 0; arm < 3; arm++) { for (let i = 1; i <= 15; i++) { const m = i / 15, t = arm * 2 * Math.PI / 3 + m * Math.PI * 1.4; a.push({ x: Math.cos(t) * m, y: Math.sin(t) * m }); } } return a; },
+  helix: () => { const a = []; for (let i = 0; i < 22; i++) { const f = i / 21, y = 0.95 - 1.9 * f; a.push({ x: Math.sin(f * Math.PI * 4) * 0.42, y: y }); a.push({ x: Math.sin(f * Math.PI * 4 + Math.PI) * 0.42, y: y, sec: true }); } return a; },
+  christmasTree: () => { const a = []; const edge = (p, q, n) => { for (let i = 0; i < n; i++) { const f = i / n; a.push({ x: p[0] + (q[0] - p[0]) * f, y: p[1] + (q[1] - p[1]) * f }); } }; edge([0, -1], [-0.72, 0.62], 12); edge([-0.72, 0.62], [0.72, 0.62], 10); edge([0.72, 0.62], [0, -1], 12); edge([-0.4, 0.05], [0.28, -0.3], 5); edge([-0.55, 0.42], [0.5, 0], 7); const r = rng(11); for (let i = 0; i < 9; i++) { const y = -0.6 + r() * 1.1, w = (y + 1) / 1.62 * 0.62; a.push({ x: (r() * 2 - 1) * w * 0.8, y: y, sec: true }); } a.push({ x: 0, y: 0.74 }, { x: 0, y: 0.86 }); return a; },
+  dragonsBreath: () => { const r = rng(5), a = []; for (let i = 0; i < 46; i++) { const f = r(), y = 0.85 - f * 1.85, w = 0.08 + f * 0.5; a.push({ x: (r() * 2 - 1) * w + Math.sin(f * 6) * 0.08, y: y }); } return a; },
+  snowflake: () => { const a = []; for (let k = 0; k < 6; k++) { const t = -Math.PI / 2 + k * Math.PI / 3, c = Math.cos(t), s = Math.sin(t); for (let i = 1; i <= 6; i++) { const m = i / 6; a.push({ x: c * m, y: s * m }); } [0.5, 0.78].forEach((m) => { [-1, 1].forEach((side) => { const bt = t + side * 0.6; a.push({ x: c * m + Math.cos(bt) * 0.11, y: s * m + Math.sin(bt) * 0.11 }); a.push({ x: c * m + Math.cos(bt) * 0.22, y: s * m + Math.sin(bt) * 0.22, sec: true }); }); }); } return a; }
+};
+const PTS = {};
+Object.keys(GEN).forEach((k) => { PTS[k] = GEN[k](); });
+
+function hex2rgb(h) { const n = parseInt(h.slice(1), 16); return [(n >> 16) & 255, (n >> 8) & 255, n & 255]; }
+function mix(a, b, t) { const A = hex2rgb(a), B = hex2rgb(b); return '#' + A.map((v, i) => Math.round(v + (B[i] - v) * t).toString(16).padStart(2, '0')).join(''); }
+function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
+function colorAt(L, t) { if (!L.fade) return L.color; const f = clamp((t - L.fadeStart) / Math.max(L.fadeDur, 0.01), 0, 1); return mix(L.color, L.fadeColor, f); }
+function dotStyle(x, y, d, col, op, glow) {
+  return 'left:' + (x - d / 2).toFixed(1) + 'px; top:' + (y - d / 2).toFixed(1) + 'px; width:' + d.toFixed(1) + 'px; height:' + d.toFixed(1) + 'px; border-radius:50%; background:' + col + '; opacity:' + op + ';' + (glow ? ' box-shadow:0 0 ' + glow + 'px ' + col + ';' : '');
+}
+function headStyle(shape, x, y, d, col, ang) {
+  let w = d, h = d, extra = '';
+  if (shape === 'star') { w = h = d * 1.7; extra = 'background:' + col + '; clip-path:polygon(50% 0,61% 35%,98% 35%,68% 57%,79% 91%,50% 70%,21% 91%,32% 57%,2% 35%,39% 35%);'; }
+  else if (shape === 'ring') { w = h = d * 1.35; extra = 'border-radius:50%; box-sizing:border-box; border:' + Math.max(1.5, d * 0.24).toFixed(1) + 'px solid ' + col + ';'; }
+  else if (shape === 'crystalDroplet') { w = h = d * 1.2; extra = 'border-radius:50% 50% 50% 0; background:' + col + '; transform:rotate(' + (ang + 45).toFixed(0) + 'deg); box-shadow:0 0 ' + Math.round(d * 0.6) + 'px ' + col + ';'; }
+  else if (shape === 'sliceBurst') { w = d * 2.4; h = Math.max(2, d * 0.38); extra = 'border-radius:2px; background:' + col + '; transform:rotate(' + ang.toFixed(0) + 'deg); box-shadow:0 0 ' + Math.round(d * 0.5) + 'px ' + col + ';'; }
+  else { extra = 'border-radius:50%; background:' + col + '; box-shadow:0 0 ' + Math.round(d * 0.9) + 'px ' + col + ';'; }
+  return 'left:' + (x - w / 2).toFixed(1) + 'px; top:' + (y - h / 2).toFixed(1) + 'px; width:' + w.toFixed(1) + 'px; height:' + h.toFixed(1) + 'px; ' + extra;
+}
+function mini(L, w, h, R, d, max, colOverride) {
+  const pts = PTS[L.pattern], stride = Math.max(1, Math.ceil(pts.length / max)), out = [];
+  for (let i = 0; i < pts.length; i += stride) { const p = pts[i]; const col = colOverride || (p.sec ? L.secondary : L.color); out.push({ s: dotStyle(w / 2 + p.x * R, h / 2 + p.y * R, d, col, 1, colOverride ? 0 : Math.round(d * 1.2)) }); }
+  return out;
+}
+function burstDots(L, cx, cy, Rmax) {
+  const pts = PTS[L.pattern], R = Rmax * L.spread, d = 3.5 + L.size * 15;
+  const life = (L.lifetime - 1.5) / 2.5, ghosts = 1 + Math.round(life * 3), sag = life * 0.14, out = [];
+  for (let k = ghosts; k >= 1; k--) {
+    const f = 1 - k * 0.12, col = colorAt(L, 0.9 - k * 0.2), sd = Math.max(2, d * (0.6 - k * 0.07)), op = (0.72 - k * 0.14).toFixed(2);
+    pts.forEach((p) => { const m = Math.hypot(p.x, p.y); out.push({ s: dotStyle(cx + p.x * R * f, cy + (p.y * f + sag * m * m * f * f) * R, sd, p.sec ? L.secondary : col, op, 0) }); });
+  }
+  const head = colorAt(L, 0.9);
+  pts.forEach((p) => { const m = Math.hypot(p.x, p.y); const x = cx + p.x * R, y = cy + (p.y + sag * m * m) * R; const ang = Math.atan2(y - cy, x - cx) * 180 / Math.PI; out.push({ s: headStyle(L.shape, x, y, d, p.sec ? L.secondary : head, ang) }); });
+  return out;
+}
+function patternOf(key) { return PATTERNS.find((p) => p.key === key) || PATTERNS[0]; }
+function shapeOf(key) { return SHAPES.find((s) => s.key === key) || SHAPES[0]; }
+function layer(pattern, color, shape, size, lifetime, spread, secondary, fade) {
+  return Object.assign({ pattern: pattern, color: color, shape: shape, size: size, lifetime: lifetime, spread: spread, secondary: secondary || '#f4f1e6', fade: false, fadeColor: '#ff6fae', fadeStart: 0.3, fadeDur: 0.5 }, fade || {});
+}
+const SAVED = [
+  { name: 'Crimson Bloom', layers: [layer('burst', '#d6aa6a', 'sphere', 0.35, 3.0, 0.9, '#f4a6a6')] },
+  { name: 'Azure Burst', layers: [layer('burst', '#e07638', 'sphere', 0.32, 3.2, 0.8, '#bee8ff')] },
+  { name: 'Verdant Spark', layers: [layer('ring', '#e77f29', 'sphere', 0.28, 2.8, 0.85, '#cfefde')] },
+  { name: 'Golden Ring', layers: [layer('palm', '#f14343', 'ring', 0.4, 3.5, 0.7, '#f6e4c9')] },
+  { name: 'Violet Helix', layers: [layer('star', '#b71c28', 'star', 0.3, 3.1, 0.9, '#ebd7ff')] },
+  { name: 'Coral Star', layers: [layer('willow', '#e86f5a', 'star', 0.33, 3.0, 0.8, '#ffd8c7')] },
+  { name: 'Icy Shard', layers: [layer('solidsphere', '#bdeeff', 'sphere', 0.27, 2.9, 0.7, '#4aafd6')] },
+  { name: 'Sunflare', layers: [layer('brocade', '#efb158', 'sphere', 0.36, 3.3, 0.95, '#ffd79a')] },
+  { name: 'Emerald Fan', layers: [layer('heart', '#1ed9fa', 'star', 0.34, 3.4, 0.9, '#bdeee0')] },
+  { name: 'Midnight Ring', layers: [layer('spherical', '#1c2e8a', 'ring', 0.31, 3.0, 0.75, '#8a9fd6')] }
+];
+
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = {
+      view: props.startView || 'workshop',
+      active: 0,
+      name: 'Golden Willow',
+      anim: 'popA',
+      toast: '',
+      layers: [
+        layer('willow', '#ffd04a', 'sphere', 0.3, 3.2, 0.85, '#f4f1e6', { fade: true, fadeColor: '#ff6fae', fadeStart: 0.35, fadeDur: 0.45 }),
+        layer('ring', '#3ee0d0', 'star', 0.25, 2.2, 0.5, '#f4f1e6')
+      ],
+      saved: SAVED.slice()
+    };
+  }
+  componentWillUnmount() { clearTimeout(this.toastTimer); }
+  replay() { return this.state.anim === 'popA' ? 'popB' : 'popA'; }
+  flash(msg) {
+    clearTimeout(this.toastTimer);
+    this.setState({ toast: msg });
+    this.toastTimer = setTimeout(() => this.setState({ toast: '' }), 2400);
+  }
+  patch(change, replay) {
+    const layers = this.state.layers.slice();
+    layers[this.state.active] = Object.assign({}, layers[this.state.active], change);
+    const next = { layers: layers };
+    if (replay) next.anim = this.replay();
+    this.setState(next);
+  }
+  renderVals() {
+    const st = this.state;
+    const L = st.layers[st.active] || st.layers[0];
+    const pat = patternOf(L.pattern);
+    const on = 'background:#fff3da; color:#1a1733; border:2px solid #1a1733; box-shadow:2px 3px 0 #0a0918; transform:rotate(-2deg) scale(1.04); cursor:pointer;';
+    const off = 'background:#2a2e5e; color:#f4ead5; border:2px solid rgba(244,234,213,0.3); box-shadow:none; transform:none; cursor:pointer;';
+    const locked = 'background:transparent; color:#b3abc9; border:2px dashed rgba(244,234,213,0.35); box-shadow:none; transform:none; cursor:not-allowed;';
+
+    const patterns = PATTERNS.filter((p) => !p.locked).map((p) => {
+      const selected = p.key === L.pattern;
+      const asLayer = Object.assign({}, L, { pattern: p.key });
+      return {
+        short: p.short, locked: !!p.locked, selected: selected,
+        aria: p.full + (p.locked ? ' (locked, unlock it in Upgrades)' : ''),
+        tileStyle: p.locked ? locked : (selected ? on : off),
+        dots: mini(asLayer, 50, 38, 15, 2.6, 40, p.locked ? '#6f688d' : null),
+        pick: () => { if (!p.locked) this.patch({ pattern: p.key }, true); }
+      };
+    });
+
+    const shapes = SHAPES.map((s) => {
+      const selected = s.key === L.shape;
+      return {
+        label: s.label, selected: selected, aria: s.label + ' sparks',
+        tileStyle: selected ? on : off,
+        dots: [[14, 19, -30], [30, 12, 0], [46, 18, 30]].map((q) => ({ s: headStyle(s.key, q[0], q[1], 7, L.color, q[2]) })),
+        pick: () => this.patch({ shape: s.key }, true)
+      };
+    });
+
+    const swatchSet = (current, apply, big) => PAL.map((c, i) => {
+      const selected = c === current;
+      return {
+        aria: PAL_NAMES[i], selected: selected,
+        style: 'background:' + c + '; box-shadow:' + (selected ? '0 0 0 3px #fff3da, 2px 3px 0 3px #0a0918' : '1px 2px 0 #0a0918') + '; transform:' + (selected ? (big ? 'scale(1.12) rotate(-6deg)' : 'scale(1.1)') : 'none') + ';',
+        pick: () => apply(c)
+      };
+    });
+
+    const preview = [];
+    st.layers.forEach((ly) => { burstDots(ly, 194, 168, 150).forEach((d) => preview.push(d)); });
+    preview.push({ s: dotStyle(194, 168, 9, colorAt(st.layers[0], 0), 0.9, 22) });
+
+    const startPct = L.fadeStart * 100;
+    const endT = Math.min(L.fadeStart + L.fadeDur, 1);
+    const endCol = colorAt(L, endT);
+
+    const layerChips = st.layers.map((ly, i) => {
+      const selected = i === st.active;
+      return {
+        num: i + 1, selected: selected,
+        aria: 'Layer ' + (i + 1) + ': ' + patternOf(ly.pattern).full,
+        style: selected ? 'border:2.5px solid #fff3da; box-shadow:0 0 0 2px #1a1733, 3px 4px 0 2px #0a0918; transform:rotate(-4deg);' : 'border:2px solid rgba(244,234,213,0.4); box-shadow:none; transform:none;',
+        badge: selected ? 'background:#ff6fae;' : 'background:#fff3da;',
+        dots: mini(ly, 44, 44, 16, 2.6, 36),
+        pick: () => this.setState({ active: i })
+      };
+    });
+
+    const cards = st.saved.map((r, i) => {
+      const dots = [];
+      r.layers.forEach((ly) => mini(ly, 184, 88, 34, 3.6, 44).forEach((d) => dots.push(d)));
+      const first = r.layers[0];
+      return {
+        name: r.name, dots: dots, aria: 'Edit ' + r.name,
+        meta: patternOf(first.pattern).full + ' · ' + shapeOf(first.shape).label.toLowerCase() + ' sparks' + (r.layers.length > 1 ? ' · ' + r.layers.length + ' layers' : ''),
+        tilt: 'transform:rotate(' + (i % 2 ? 0.6 : -0.6) + 'deg);',
+        load: () => {
+          this.setState({ layers: r.layers.map((ly) => Object.assign({}, ly)), active: 0, name: r.name, view: 'workshop', anim: this.replay() });
+          this.flash('Editing “' + r.name + '”');
+        }
+      };
+    });
+
+    const tabOn = 'background:#fff3da; color:#1a1733; border:2px solid #1a1733; box-shadow:2px 2px 0 #0a0918;';
+    const tabOff = 'background:transparent; color:#f4ead5; border:2px solid transparent; box-shadow:none;';
+    const unlockedKeys = PATTERNS.filter((p) => !p.locked).map((p) => p.key);
+    const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
+
+    return {
+      scrim: this.props.scrim ?? true,
+      isWorkshop: st.view === 'workshop',
+      isCollection: st.view === 'collection',
+      workshopTabStyle: st.view === 'workshop' ? tabOn : tabOff,
+      collectionTabStyle: st.view === 'collection' ? tabOn : tabOff,
+      showWorkshop: () => this.setState({ view: 'workshop' }),
+      showCollection: () => this.setState({ view: 'collection' }),
+      savedCount: st.saved.length,
+      noSaved: st.saved.length === 0,
+
+      patterns: patterns,
+      patternFull: pat.full,
+      shapes: shapes,
+      shapeLabel: shapeOf(L.shape).label + ' sparks',
+      swatches: swatchSet(L.color, (c) => this.patch({ color: c }), true),
+      colorVal: L.color,
+      onCustomColor: (e) => this.patch({ color: e.target.value }),
+
+      fadeOn: L.fade,
+      toggleFade: () => this.patch({ fade: !L.fade }),
+      switchTrack: L.fade ? 'background:#86e38f;' : 'background:#4b4f85;',
+      switchKnob: L.fade ? 'left:22px;' : 'left:2px;',
+      fadeSwatches: swatchSet(L.fadeColor, (c) => this.patch({ fadeColor: c }), false),
+      segA: 'left:0; width:' + startPct + '%; background:' + L.color + ';',
+      segB: 'left:' + startPct + '%; width:' + ((endT - L.fadeStart) * 100) + '%; background:linear-gradient(90deg, ' + L.color + ', ' + endCol + ');',
+      segC: 'left:' + (endT * 100) + '%; right:0; background:' + L.fadeColor + ';',
+      markStart: 'left:calc(' + startPct + '% - 1px);',
+      timelineAria: 'Color over time: ' + L.color + ' until ' + (L.fadeStart * L.lifetime).toFixed(1) + ' seconds, then fades to ' + L.fadeColor,
+      fadeStartVal: L.fadeStart,
+      fadeDurVal: L.fadeDur,
+      fadeStartLabel: (L.fadeStart * L.lifetime).toFixed(1) + 's',
+      fadeDurLabel: (L.fadeDur * L.lifetime).toFixed(1) + 's',
+      onFadeStart: (e) => this.patch({ fadeStart: parseFloat(e.target.value) }),
+      onFadeDur: (e) => this.patch({ fadeDur: parseFloat(e.target.value) }),
+
+      hasSecondary: !!pat.sec,
+      secondaryLabel: pat.sec || '',
+      secSwatches: swatchSet(L.secondary, (c) => this.patch({ secondary: c }), false),
+
+      sizeVal: L.size, spreadVal: L.spread, lifetimeVal: L.lifetime,
+      sizeLabel: L.size.toFixed(2),
+      spreadLabel: Math.round(L.spread * 100) + '%',
+      lifetimeLabel: L.lifetime.toFixed(1) + 's',
+      onSize: (e) => this.patch({ size: parseFloat(e.target.value) }),
+      onSpread: (e) => this.patch({ spread: parseFloat(e.target.value) }),
+      onLifetime: (e) => this.patch({ lifetime: parseFloat(e.target.value) }),
+
+      previewDots: preview,
+      burstAnim: 'animation:' + st.anim + ' 750ms cubic-bezier(0.2, 0.9, 0.3, 1) both;',
+      launcherTube: 'background:repeating-linear-gradient(0deg, ' + st.layers[0].color + ' 0 5px, #fff3da 5px 8px);',
+      previewAria: 'Preview of ' + (st.name || 'your firework') + ': ' + st.layers.map((ly) => patternOf(ly.pattern).full).join(' and '),
+      name: st.name,
+      onName: (e) => this.setState({ name: e.target.value }),
+      randomName: () => this.setState({ name: pick(NAMES) }),
+      summary: st.layers.map((ly) => patternOf(ly.pattern).full).join(' + ') + ' · ' + st.layers.length + (st.layers.length > 1 ? ' layers' : ' layer'),
+
+      layerChips: layerChips,
+      activeNum: st.active + 1,
+      canAddLayer: st.layers.length < 4,
+      canRemoveLayer: st.layers.length > 1,
+      addLayer: () => {
+        const n = st.layers.length;
+        const layers = st.layers.concat([layer(pick(['ring', 'pistil', 'burst', 'star']), PAL[(n * 3 + 4) % PAL.length], 'sphere', 0.25, 2.4, 0.55)]);
+        this.setState({ layers: layers, active: n, anim: this.replay() });
+      },
+      removeLayer: () => {
+        const layers = st.layers.filter((_, i) => i !== st.active);
+        this.setState({ layers: layers, active: Math.max(0, st.active - 1), anim: this.replay() });
+      },
+
+      cards: cards,
+      eraseAll: () => { this.setState({ saved: [] }); this.flash('Poof. All gone.'); },
+      save: () => {
+        const name = (st.name || '').trim() || 'Untitled firework';
+        this.setState({ saved: [{ name: name, layers: st.layers.map((ly) => Object.assign({}, ly)) }].concat(st.saved) });
+        this.flash('“' + name + '” saved');
+      },
+      testLaunch: () => { this.setState({ anim: this.replay() }); this.flash('Whoosh!'); },
+      shuffle: () => {
+        const fade = Math.random() < 0.4;
+        this.patch({
+          pattern: pick(unlockedKeys), shape: pick(SHAPES).key, color: pick(PAL), secondary: pick(PAL),
+          size: Math.round((0.1 + Math.floor(Math.random() * 13) * 0.05) * 100) / 100,
+          lifetime: Math.round((1.5 + Math.floor(Math.random() * 26) * 0.1) * 10) / 10,
+          spread: Math.round((0.4 + Math.floor(Math.random() * 7) * 0.1) * 10) / 10,
+          fade: fade, fadeColor: pick(PAL)
+        }, true);
+      },
+      hasToast: !!st.toast,
+      toast: st.toast
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Mobile: everything tucked</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Chewy&amp;family=Shantell+Sans:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+@keyframes sheetInA{0%{transform:translateY(110%)}100%{transform:translateY(0)}}
+@keyframes sheetInB{0%{transform:translateY(110%)}100%{transform:translateY(0)}}
+@keyframes sheetOut{0%{transform:translateY(0)}100%{transform:translateY(110%)}}
+@keyframes swapR{0%{transform:translateX(36px);opacity:0}100%{transform:none;opacity:1}}
+@keyframes swapL{0%{transform:translateX(-36px);opacity:0}100%{transform:none;opacity:1}}
+@keyframes popA{0%{transform:scale(0.12);opacity:0}30%{opacity:1}100%{transform:scale(1);opacity:1}}
+@keyframes popB{0%{transform:scale(0.12);opacity:0}30%{opacity:1}100%{transform:scale(1);opacity:1}}
+@keyframes toastA{0%{transform:translateY(-24px) rotate(2deg);opacity:0}60%{transform:translateY(3px) rotate(-1deg);opacity:1}100%{transform:translateY(0) rotate(-1deg);opacity:1}}
+@keyframes toastB{0%{transform:translateY(-24px) rotate(2deg);opacity:0}60%{transform:translateY(3px) rotate(-1deg);opacity:1}100%{transform:translateY(0) rotate(-1deg);opacity:1}}
+@keyframes skyPop{0%{transform:scale(0.08);opacity:0}12%{opacity:1}65%{opacity:1}100%{transform:scale(1.1) translateY(14px);opacity:0}}
+@keyframes trailUp{0%{transform:scaleY(0);opacity:1}75%{transform:scaleY(1);opacity:0.9}100%{transform:scaleY(1);opacity:0}}
+@keyframes floatUp{0%{transform:translateY(8px) scale(0.8);opacity:0}20%{transform:translateY(0) scale(1.08);opacity:1}100%{transform:translateY(-52px) scale(1);opacity:0}}
+@keyframes bought{0%{transform:scale(1)}30%{transform:scale(1.04) rotate(-1deg)}100%{transform:scale(1)}}
+@keyframes cardIn{0%{transform:translateY(10px);opacity:0}100%{transform:none;opacity:1}}
+@keyframes dropIn{0%{transform:translateY(-6px);opacity:0}100%{transform:none;opacity:1}}
+@keyframes seatPop{0%{transform:scale(0) rotate(-20deg)}60%{transform:scale(1.3) rotate(8deg)}100%{transform:scale(1)}}
+@keyframes bump{0%{transform:scale(1)}40%{transform:scale(1.35)}100%{transform:scale(1)}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes bubbleIn{0%{transform:scale(0) rotate(-30deg)}70%{transform:scale(1.15) rotate(6deg)}100%{transform:scale(1) rotate(0)}}
+@keyframes tagBob{0%,100%{transform:translateY(0) rotate(-3deg)}50%{transform:translateY(-6px) rotate(-3deg)}}
+.press{transition:transform 90ms ease, box-shadow 90ms ease, filter 120ms ease}
+.press:active{transform:translate(2px,2px) !important;box-shadow:0 0 0 rgba(0,0,0,0) !important}
+.noscroll{scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.noscroll::-webkit-scrollbar{display:none}
+.fw-range{-webkit-appearance:none;appearance:none;width:100%;height:32px;background:transparent;margin:0;cursor:pointer;touch-action:pan-y}
+.fw-range::-webkit-slider-runnable-track{height:12px;background:#fff3da;border:2px solid #1a1733;border-radius:8px 5px 7px 6px}
+.fw-range::-moz-range-track{height:10px;background:#fff3da;border:2px solid #1a1733;border-radius:8px 5px 7px 6px}
+.fw-range::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:30px;height:30px;margin-top:-11px;background:#ff6fae;border:2.5px solid #1a1733;border-radius:48% 52% 45% 55%;box-shadow:2px 2px 0 #0a0918}
+.fw-range::-moz-range-thumb{width:26px;height:26px;background:#ff6fae;border:2.5px solid #1a1733;border-radius:48% 52% 45% 55%;box-shadow:2px 2px 0 #0a0918}
+.st-range::-webkit-slider-thumb{background:#b9a3ff}
+.st-range::-moz-range-thumb{background:#b9a3ff}
+.fw-color{-webkit-appearance:none;appearance:none;border:none;padding:0;width:100%;height:100%;opacity:0;cursor:pointer;position:absolute;left:0;top:0}
+.fw-name::placeholder{color:#9a8f76}
+.fw-name:focus{outline:none;border-bottom-color:#ff6fae}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; overflow: hidden; background: #0b0f1f">
+  <dc-import name="Mobile" tucked="on" live="off" hint-size="390px,844px"></dc-import>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

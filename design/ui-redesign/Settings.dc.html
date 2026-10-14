@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Settings tab</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Chewy&amp;family=Shantell+Sans:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#ff7a59}a:hover{color:#ffd04a}
+.st-range{-webkit-appearance:none;appearance:none;width:100%;height:28px;background:transparent;margin:0;cursor:pointer}
+.st-range::-webkit-slider-runnable-track{height:10px;background:#fff3da;border:2px solid #1a1733;border-radius:8px 5px 7px 6px}
+.st-range::-moz-range-track{height:8px;background:#fff3da;border:2px solid #1a1733;border-radius:8px 5px 7px 6px}
+.st-range::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:24px;height:24px;margin-top:-9px;background:#b9a3ff;border:2.5px solid #1a1733;border-radius:48% 52% 45% 55%;box-shadow:2px 2px 0 #0a0918}
+.st-range::-moz-range-thumb{width:20px;height:20px;background:#b9a3ff;border:2.5px solid #1a1733;border-radius:48% 52% 45% 55%;box-shadow:2px 2px 0 #0a0918}
+.st-range:focus-visible{outline:3px dashed #ffd04a;outline-offset:3px}
+</style>
+</helmet>
+<div style="position: relative; width: 1440px; height: 900px; overflow: hidden; background: #0b0f1f; font-family: 'Shantell Sans', 'Comic Sans MS', cursive; color: #f4ead5">
+  <img src="/_blob/c666baf500bb879daf153f03138ef07b" alt="The game: crowd of fans, auto launchers and fireworks in the night sky" style="position: absolute; left: 0; top: 0; width: 1440px; height: 900px; object-fit: cover">
+
+  <div style="position: absolute; left: 16px; top: 16px; width: 80px; height: 868px">
+    <dc-import name="Rail" active="settings" hint-size="80px,868px"></dc-import>
+  </div>
+
+  <div style="position: absolute; left: 104px; top: 16px; width: 288px; display: flex; gap: 8px">
+    <div role="group" aria-label="Sparkles" style="flex: 1; min-width: 0; height: 52px; box-sizing: border-box; display: flex; align-items: center; gap: 8px; padding: 0 10px; background: #fff3da; color: #1a1733; border: 2px solid #1a1733; border-radius: 12px 8px 12px 9px / 8px 12px 9px 12px; box-shadow: 3px 3px 0 #0a0918">
+      <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><path d="M12.8 2 C13 6.4 13.6 8.6 14.8 9.6 C16.2 10.6 18.4 11.4 22 12.8 C17.6 13 15.4 13.6 14.4 14.8 C13.4 16.2 12.6 18.4 11.2 22 C11 17.6 10.4 15.4 9.2 14.4 C7.8 13.4 5.6 12.6 2 11.2 C6.4 11 8.6 10.4 9.6 9.2 C10.6 7.8 11.4 5.6 12.8 2 Z" fill="#5fe0e0" stroke="#1a1733" stroke-width="1.8" stroke-linejoin="round"></path><circle cx="12" cy="12" r="1.5" fill="#fff3da" stroke="none"></circle><circle cx="19.6" cy="4.6" r="1.3" fill="#1a1733" stroke="none"></circle></svg>
+      <div style="display: flex; flex-direction: column">
+        <span style="font-family: 'Chewy', cursive; font-size: 21px; line-height: 1">6,420</span>
+        <span style="font-size: 12px; font-weight: 700; line-height: 1.2; color: #4f4970">+182/s</span>
+      </div>
+    </div>
+    <div role="group" aria-label="Gold" style="flex: 1; min-width: 0; height: 52px; box-sizing: border-box; display: flex; align-items: center; gap: 8px; padding: 0 10px; background: #fff3da; color: #1a1733; border: 2px solid #1a1733; border-radius: 8px 12px 9px 12px / 12px 8px 12px 9px; box-shadow: 3px 3px 0 #0a0918">
+      <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="#ffd04a" stroke="#1a1733" stroke-width="1.8"></circle><circle cx="12" cy="12" r="5" fill="none" stroke="#1a1733" stroke-width="1.5" stroke-dasharray="2 2.2"></circle></svg>
+      <div style="display: flex; flex-direction: column">
+        <span style="font-family: 'Chewy', cursive; font-size: 21px; line-height: 1">2,135</span>
+        <span style="font-size: 12px; font-weight: 700; line-height: 1.2; color: #4f4970">+41/s</span>
+      </div>
+    </div>
+  </div>
+
+  <section aria-label="Settings" style="position: absolute; left: 104px; top: 76px; width: 288px; box-sizing: border-box; padding: 14px; display: flex; flex-direction: column; gap: 24px; background-color: #1f2246; background-image: radial-gradient(rgba(255,243,218,0.09) 1.1px, transparent 1.4px); background-size: 14px 14px; border: 2px solid #f4ead5; border-radius: 18px 22px 16px 20px / 20px 16px 22px 18px; box-shadow: 6px 6px 0 #0a0918; overflow: hidden">
+
+    <header style="display: flex; align-items: center; justify-content: space-between; height: 44px">
+      <div style="display: flex; flex-direction: column; gap: 2px">
+        <h1 style="margin: 0; font-family: 'Chewy', cursive; font-weight: 400; font-size: 28px; line-height: 1; color: #fff3da">Settings</h1>
+        <svg width="104" height="8" viewBox="0 0 104 8" fill="none" aria-hidden="true"><path d="M2 5 C16 1, 28 7, 42 4 S 70 1, 84 5 S 98 6, 102 3" stroke="#b9a3ff" stroke-width="3" stroke-linecap="round"></path></svg>
+      </div>
+      <button aria-label="Close panel" style="width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; background: transparent; color: #f4ead5; border: 2px solid rgba(244,234,213,0.5); border-radius: 12px 9px 13px 8px / 9px 13px 8px 12px; cursor: pointer; padding: 0">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" aria-hidden="true"><path d="M5.4 5.8 C10 10.2 14 14.1 18.6 18.4"></path><path d="M18.4 5.6 C14 10 10 14 5.6 18.6"></path></svg>
+      </button>
+    </header>
+
+    <div style="display: flex; flex-direction: column; gap: 8px">
+      <h2 style="margin: 0; font-family: 'Chewy', cursive; font-weight: 400; font-size: 20px; line-height: 24px; color: #fff3da">Sound</h2>
+      <div style="display: flex; flex-direction: column; gap: 12px; padding: 10px; background: #2a2e5e; border: 2px solid rgba(244,234,213,0.4); border-radius: 12px 9px 13px 8px / 9px 13px 8px 12px">
+        <div style="display: flex; flex-direction: column; gap: 4px">
+          <div style="display: flex; justify-content: space-between; align-items: center">
+            <label for="st-music" style="display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 700">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 9.4 L7 9.4 L12 5 L12 19 L7 14.6 L3 14.6 Z"></path><path d="M15.4 9.4 C16.4 10.8 16.4 13.2 15.4 14.6"></path></svg>
+              Music
+            </label>
+            <span style="font-family: 'Chewy', cursive; font-size: 17px; color: #fff3da">15%</span>
+          </div>
+          <input id="st-music" class="st-range" type="range" min="0" max="100" value="15">
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 4px">
+          <div style="display: flex; justify-content: space-between; align-items: center">
+            <label for="st-sfx" style="display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 700">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 9.4 L7 9.4 L12 5 L12 19 L7 14.6 L3 14.6 Z"></path><path d="M15.4 9 C16.6 10.6 16.6 13.4 15.4 15 M18.2 6.4 C20.8 9.6 20.8 14.4 18.2 17.6"></path></svg>
+              Booms
+            </label>
+            <span style="font-family: 'Chewy', cursive; font-size: 17px; color: #fff3da">40%</span>
+          </div>
+          <input id="st-sfx" class="st-range" type="range" min="0" max="100" value="40">
+        </div>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 8px">
+      <h2 style="margin: 0; font-family: 'Chewy', cursive; font-weight: 400; font-size: 20px; line-height: 24px; color: #fff3da">Screen</h2>
+      <button aria-pressed="true" style="display: flex; align-items: center; justify-content: space-between; height: 44px; padding: 0 10px; background: #2a2e5e; color: #f4ead5; border: 2px solid rgba(244,234,213,0.4); border-radius: 12px 9px 13px 8px / 9px 13px 8px 12px; cursor: pointer; font-family: inherit; font-size: 14px; font-weight: 700">
+        <span>Sparkle pop-ups</span>
+        <span aria-hidden="true" style="position: relative; flex-shrink: 0; width: 44px; height: 24px; box-sizing: border-box; background: #86e38f; border: 2px solid #1a1733; border-radius: 13px 11px 12px 11px">
+          <span style="position: absolute; top: 1px; left: 21px; width: 18px; height: 18px; box-sizing: border-box; background: #fff3da; border: 2px solid #1a1733; border-radius: 50%"></span>
+        </span>
+      </button>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 8px">
+      <h2 style="margin: 0; font-family: 'Chewy', cursive; font-weight: 400; font-size: 20px; line-height: 24px; color: #fff3da">Save</h2>
+      <div style="display: flex; flex-direction: column; gap: 8px; padding: 10px; background: #fff3da; color: #1a1733; border: 2px solid #1a1733; border-radius: 12px 9px 13px 8px / 9px 13px 8px 12px; box-shadow: 3px 3px 0 #0a0918">
+        <div style="display: flex; align-items: center; gap: 8px; height: 24px">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1a1733" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.6 5.8 C4.7 4.9 5.4 4.2 6.4 4.2 L16 4.4 L19.6 8 L19.4 18.4 C19.4 19.3 18.6 20 17.7 20 L6.2 19.8 C5.3 19.8 4.6 19 4.7 18.1 Z" fill="#86e38f"></path><path d="M8 4.4 L8 9 L15 9.2 L15 4.6"></path><path d="M7.6 20 L7.8 14 L16.4 14.2 L16.2 20"></path></svg>
+          <span style="font-size: 13px; font-weight: 700">Saved 12s ago</span>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px">
+          <button style="height: 44px; background: #ff7a59; color: #1a1733; border: 2px solid #1a1733; border-radius: 11px 8px 12px 9px; box-shadow: 2px 2px 0 #1a1733; cursor: pointer; font-family: 'Chewy', cursive; font-size: 18px; padding: 0">Save</button>
+          <button style="height: 44px; background: #ffffff; color: #1a1733; border: 2px solid #1a1733; border-radius: 8px 11px 9px 12px; box-shadow: 2px 2px 0 #1a1733; cursor: pointer; font-family: inherit; font-size: 13px; font-weight: 800; padding: 0">Copy code</button>
+        </div>
+        <button style="height: 44px; background: transparent; color: #1a1733; border: 2px dashed #1a1733; border-radius: 11px 8px 12px 9px; cursor: pointer; font-family: inherit; font-size: 13px; font-weight: 800; padding: 0">Load code</button>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 8px">
+      <div style="display: flex; align-items: center; justify-content: space-between; height: 24px">
+        <h2 style="margin: 0; font-family: 'Chewy', cursive; font-weight: 400; font-size: 20px; line-height: 24px; color: #ffb3a6">Reset</h2>
+        <span style="font-size: 12px; font-weight: 700; color: #e6c3bd">hold to confirm</span>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px">
+        <button style="height: 44px; background: transparent; color: #ffb3a6; border: 2px solid #ff9a8a; border-radius: 10px 8px 11px 7px; cursor: pointer; font-family: inherit; font-size: 12px; font-weight: 800; padding: 0">Launchers</button>
+        <button style="height: 44px; background: transparent; color: #ffb3a6; border: 2px solid #ff9a8a; border-radius: 8px 10px 7px 11px; cursor: pointer; font-family: inherit; font-size: 12px; font-weight: 800; padding: 0">Upgrades</button>
+        <button style="height: 44px; background: #ff9a8a; color: #1a1733; border: 2px solid #1a1733; border-radius: 10px 8px 11px 7px; cursor: pointer; font-family: inherit; font-size: 12px; font-weight: 800; padding: 0">All</button>
+      </div>
+    </div>
+  </section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

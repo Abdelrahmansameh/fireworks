@@ -134,15 +134,20 @@ try {
     });
     assert(completion.completed && !completion.active && completion.timesFired === 0, 'Reload repeated a completed finale.');
     const creator = await page.evaluate(() => {
+        game.ui.showTab('recipes');
         game.openAdvancedCreator();
+        const timeBefore = game.elapsedGameTime;
         for (let i = 0; i < 300; i++) game.update(1 / 60);
         game.render();
-        const result = { state: game.currentState, targetY: game.previewFirework?.targetY,
+        const result = { state: game.currentState, previewActive: game.previewActive,
+            previewVisible: !document.getElementById('creator-scene').hidden,
+            mainGameVisible: getComputedStyle(document.getElementById('game-container')).display !== 'none',
+            gameContinues: game.elapsedGameTime > timeBefore,
             particles: game.previewParticleSystem.getTotalActiveParticles() };
         game.closeAdvancedCreator();
         return result;
     });
-    assert(creator.state === 'creator' && creator.targetY === 100 && creator.particles > 0,
+    assert(creator.state === 'game' && creator.previewActive && creator.previewVisible && creator.mainGameVisible && creator.gameContinues && creator.particles > 0,
         `The studio did not show a live firework preview: ${JSON.stringify(creator)}`);
     const finale = await page.evaluate(() => {
         game.hasSeenFirstCrowdCinematic = true;

@@ -38,7 +38,7 @@ try {
         if (!game.buyUpgrade('crowd_spark_1')) throw new Error('Could not invite the crowd');
         const card = document.getElementById('crowd-gold-upgrade');
         const result = { gold: game.resourceManager.resources.gold.amount,
-            firstUpgrade: document.querySelector('#upgrades-available .upgrade-buy-button')?.dataset.upgradeId,
+            firstUpgrade: document.querySelector('#upgrades-available .upgrade-buy-button[data-upgrade-id="crowd_fireworks"]')?.dataset.upgradeId,
             cardVisible: !card.hidden, disabled: document.getElementById('crowd-gold-upgrade-buy').disabled,
             recipes: game.progression.isUnlocked('recipes_tab') };
         game.resume();
@@ -124,7 +124,7 @@ try {
             visibleAfterCrowd: !document.getElementById('crowd-gold-upgrade').hidden,
             level: game.progression.getUpgradeLevel('crowd_fireworks'), multiplier: game.launcherStats.sparkleYieldMultiplier,
             price: document.getElementById('crowd-gold-upgrade-buy').innerText,
-            firstUpgrade: document.querySelector('#upgrades-available .upgrade-buy-button')?.dataset.upgradeId };
+            firstUpgrade: document.querySelector('#upgrades-available .upgrade-buy-button[data-upgrade-id="crowd_fireworks"]')?.dataset.upgradeId };
     });
     assert(reset.refund.gold === 80 && reset.hiddenAfterReset && reset.visibleAfterCrowd
         && reset.goldBeforeCrowd === reset.goldAfterCrowd && reset.level === 0 && reset.multiplier === 1

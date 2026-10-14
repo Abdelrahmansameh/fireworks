@@ -49,6 +49,7 @@ export class FloatingSparkleNumber {
         this.lastAddTime = 0;
         this.fadeTimer = null;
         this.removeTimer = null;
+        this.pulseDirection = 1;
     }
 
     setEnabled(enabled) {
@@ -88,10 +89,14 @@ export class FloatingSparkleNumber {
         this.el.style.left = `${screenX}px`;
         this.el.style.top = `${screenY}px`;
         this.el.style.setProperty('--fsn-scale', this.scale.toFixed(3));
+        this.pulseDirection *= -1;
+        this.el.style.setProperty('--fsn-shake', `${this.pulseDirection * 3}px`);
+        this.el.style.setProperty('--fsn-tilt', `${this.pulseDirection * 3}deg`);
+        this.el.classList.remove('fading');
         const css = toCssColor(color);
         if (css) this.el.style.color = css;
 
-        // Restart the pop animation.
+        // Give every click a fresh bounce, alternating the little side-to-side kick.
         inner.classList.remove('pop');
         void inner.offsetWidth; // reflow so the animation replays
         inner.classList.add('pop');

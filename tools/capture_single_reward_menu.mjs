@@ -41,8 +41,6 @@ try {
         game.ui.hideActiveTab();
         game.ui.toggleTab('upgrades');
         if (!document.getElementById('upgrades-content').classList.contains('active')) throw new Error('The upgrade menu did not open');
-        const owned = document.getElementById('upgrades-owned').closest('details');
-        owned.open = true;
         game.ui.updateUI(game.getSparkles(), game.calculateTotalSparklesPerSecond(), game.fireworkSystem.fireworkCount,
             game.buildingManager.getBuildingsByType('AUTO_LAUNCHER').length, game.calculateAutoLauncherCost(3));
         game.render();

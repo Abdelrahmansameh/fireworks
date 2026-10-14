@@ -1,0 +1,18 @@
+/* The same continuous upgrade list adapts to the mobile sheet. */
+.upgrade-status-mobile { display: none; }
+
+@media (max-width: 700px) {
+    .upgrades-panel .upgrade-grid:empty { display: none; }
+    .upgrades-panel .upgrade-card { flex-shrink: 0; }
+    .upgrades-panel .upgrade-icon { width: 40px; height: 40px; }
+    .upgrades-panel .upgrade-icon .doodle-icon { width: 24px; height: 24px; }
+    .upgrades-panel .upgrade-name { font-size: 14px; line-height: 20px; }
+    .upgrades-panel .upgrade-effect { font-size: 15.5px; line-height: 22px; }
+    .upgrades-panel .upgrade-saving { height: 32px; }
+    .upgrades-panel .upgrade-saving-meta { height: 100%; padding-top: 0; padding-bottom: 0; }
+    .upgrades-panel .upgrade-card.purchased { background: #e3dccb; }
+    .upgrades-panel .upgrade-owned-status { height: 32px; margin-top: 8px; display: flex; align-items: center; justify-content: center; gap: 6px; color: #1a1733; background: #86e38f; border: 2px solid #1a1733; border-radius: 9px 6px 8px 7px; font-family: 'Chewy', cursive; font-size: 17px; }
+    .upgrades-panel .upgrade-owned-status .doodle-icon { width: 15px; height: 15px; }
+    .upgrades-panel .upgrade-status-desktop { display: none; }
+    .upgrades-panel .upgrade-status-mobile { display: inline; }
+}

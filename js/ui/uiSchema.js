@@ -28,7 +28,7 @@ export const TABS = [
     },
     {
         id: 'recipes',
-        label: 'Recipes',
+        label: 'Fireworks',
         unlockId: 'recipes_tab',
         panelModule: () => import('./panels/recipesPanel.js'),
     },

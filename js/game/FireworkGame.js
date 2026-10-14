@@ -330,8 +330,6 @@ class FireworkGame extends GameCore {
         if (this.currentState === 'game') {
             this.fireworkSystem.update(delta);
             this.updateGame(delta, isFinalStep);
-        } else if (this.currentState === 'creator') {
-            this.updateCreator(delta);
         }
     }
 
@@ -350,6 +348,7 @@ class FireworkGame extends GameCore {
             if (this.bot?.enabled) this.bot.tick(stepDelta);
             if (botRunning && !this.bot.enabled) break;
         }
+        if (this.previewActive) this.updateCreator(frameDelta);
 
         // Update skeleton outline for cursor particles (crowd grab or building drag)
         if (this.cursorParticles) {
@@ -369,9 +368,8 @@ class FireworkGame extends GameCore {
         this.profiler.startFunction('drawFrame');
         if (this.currentState === 'game') {
             this.renderer2D.drawFrame();
-        } else if (this.currentState === 'creator') {
-            if (this.previewRenderer) this.previewRenderer.drawFrame();
         }
+        if (this.previewActive && this.previewRenderer) this.previewRenderer.drawFrame();
         this.profiler.endFunction('drawFrame');
         this.cursorParticles?.render();
     }
@@ -678,6 +676,7 @@ class FireworkGame extends GameCore {
 
         const launcherCards = document.querySelectorAll('.launcher-card');
         launcherCards.forEach((card) => {
+            card.setAttribute('aria-pressed', String(card.dataset.buildingId === buildingId));
             if (card.dataset.buildingId === buildingId) {
                 card.classList.add('selected');
             } else {
@@ -862,84 +861,61 @@ class FireworkGame extends GameCore {
     openAdvancedCreator() {
         const creatorScene = document.getElementById('creator-scene');
         if (!creatorScene) return;
-
-        document.getElementById('game-container').style.display = 'none';
-        const uiElements = document.querySelectorAll('.top-bar-container, .tab-content');
-        uiElements.forEach(el => el.style.display = 'none');
-
-        creatorScene.style.display = 'flex';
-
+        if (!document.getElementById('recipes-content')?.classList.contains('active')) {
+            this.ui.showTab('recipes');
+        }
+        creatorScene.hidden = false;
         const canvas = document.getElementById('creator-canvas');
-        this.previewRenderer = new Renderer2D.Renderer2D(canvas, {});
+        if (!canvas) return;
+        // Reuse this context when navigating away and back to the workshop.
+        if (!this.previewRenderer) {
+            this.previewRenderer = new Renderer2D.Renderer2D(canvas);
+            this.previewParticleSystem = new InstancedParticleSystem(this.previewRenderer, this.profiler);
+            const sky = Renderer2D.buildTexturedSquare(10000, 10000);
+            this.previewRenderer.createNormalShape({
+                vertices: sky.vertices, indices: sky.indices,
+                position: new Renderer2D.Vector2(),
+                color: new Renderer2D.Color(13 / 255, 17 / 255, 51 / 255, 1),
+                zIndex: -100,
+            });
+            // WebGL textures belong to their own context. The game's shared glow
+            // texture must be replaced with one loaded by the preview renderer.
+            this.previewParticleSystem.meshes.glow.texture = null;
+            this.previewRenderer.loadTexture('assets/glow.png', 'workshop-glow').then((texture) => {
+                this.previewGlowTexture = texture;
+                this.previewParticleSystem.meshes.glow.texture = texture;
+            });
+        }
+        this.previewActive = true;
         this.previewRenderer._resizeIfNeeded();
-        this.previewParticleSystem = new InstancedParticleSystem(this.previewRenderer, this.profiler);
-
-        this.updateComponentsList('creator-components-list');
-        const nameInput = document.getElementById('creator-recipe-name');
-        if (nameInput) nameInput.value = document.getElementById('recipe-name').value;
-
-        this.currentState = 'creator';
-        this.previewFirework = null;
+        this.previewRenderer.setCamera({ x: 0, y: 70, zoom: window.matchMedia('(max-width: 700px)').matches ? 4.4 : 2.7 });
+        this.workshop?.restartPreview();
     }
 
     closeAdvancedCreator() {
         const creatorScene = document.getElementById('creator-scene');
-        if (!creatorScene) return;
-
-        creatorScene.style.display = 'none';
-        document.getElementById('game-container').style.display = 'block';
-        const uiElements = document.querySelectorAll('.top-bar-container, .tab-content');
-        uiElements.forEach(el => el.style.display = '');
-
-        if (this.previewParticleSystem) {
-            this.previewParticleSystem.dispose();
-            this.previewParticleSystem = null;
-        }
-        this.previewRenderer = null;
-        this.previewFirework = null;
-
-        this.updateComponentsList('components-list');
-
-        this.currentState = 'game';
+        if (creatorScene) creatorScene.hidden = true;
+        this.previewActive = false;
+        this.workshop?.restartPreview();
     }
 
     updateCreator(delta) {
-        this.fireworkSystem.update(delta);
-        this.updateGame(delta);
-
-        if (this.previewParticleSystem) {
-            this.previewParticleSystem.update(delta);
-        }
-
-        let lifetime = 0;
-        if (this.currentRecipeComponents) {
-            for (const component of this.currentRecipeComponents) {
-                if (component.lifetime) {
-                    lifetime = Math.max(lifetime, component.lifetime);
-                }
-            }
-        }
-        lifetime -= 1;
-
-        if (this.previewFireworkTimer) {
-            this.previewFireworkTimer -= delta;
-            if (this.previewFireworkTimer <= 0) {
-                this.previewFireworkTimer = null;
-            }
-        }
-
-        if (this.previewFirework) {
-            this.previewFirework.update(delta);
-            if (!this.previewFirework.alive) {
-                this.previewFirework.dispose();
-                this.previewFirework = null;
-            }
-        }
-
-        if (!this.previewFirework && !this.previewFireworkTimer) {
-            const y = GAME_BOUNDS.WORLD_LAUNCHER_Y;
-            this.previewFirework = new Firework(0, y, this.currentRecipeComponents, this.previewRenderer, this.previewParticleSystem, 100, this.audioManager);
-            this.previewFireworkTimer = lifetime;
+        if (!this.previewRenderer || !this.previewParticleSystem) return;
+        this.previewParticleSystem.meshes.glow.texture = this.previewGlowTexture ?? null;
+        this.previewParticleSystem.update(delta);
+        this.previewFireworkTimer = Math.max(0, (this.previewFireworkTimer ?? 0) - delta);
+        this.previewRenderer.setCamera({ x: 0, y: 70, zoom: window.matchMedia('(max-width: 700px)').matches ? 4.4 : 2.7 });
+        if (!this.previewFireworkTimer && this.currentRecipeComponents.length) {
+            this.previewParticleSystem.clear();
+            const components = this.currentRecipeComponents.map((component) => ({ ...component }));
+            // A preview bursts immediately, so every control change has visible
+            // feedback. Particle physics and shape recipes are the real game's.
+            const firework = new Firework(0, 100, components, this.previewRenderer, this.previewParticleSystem, 100, null, 0);
+            firework.rocket.texture = this.previewGlowTexture ?? null;
+            if (firework._glowInner) firework._glowInner.texture = this.previewGlowTexture ?? null;
+            firework.explode();
+            firework.dispose();
+            this.previewFireworkTimer = Math.max(...components.map((component) => component.lifetime ?? 3)) * 0.55 + 0.2;
         }
     }
 

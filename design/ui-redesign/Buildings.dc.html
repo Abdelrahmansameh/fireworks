@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Buildings tab</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Chewy&amp;family=Shantell+Sans:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#ff7a59}a:hover{color:#ffd04a}
+</style>
+</helmet>
+<div style="position: relative; width: 1440px; height: 900px; overflow: hidden; background: #0b0f1f; font-family: 'Shantell Sans', 'Comic Sans MS', cursive; color: #f4ead5">
+  <img src="/_blob/c666baf500bb879daf153f03138ef07b" alt="The game: crowd of fans, auto launchers and fireworks in the night sky" style="position: absolute; left: 0; top: 0; width: 1440px; height: 900px; object-fit: cover">
+
+  <div style="position: absolute; left: 1060px; top: 740px; height: 32px; box-sizing: border-box; display: flex; align-items: center; padding: 0 10px; background: #5fe0e0; color: #1a1733; border: 2px solid #1a1733; border-radius: 10px 7px 9px 8px; box-shadow: 2px 2px 0 #0a0918; font-family: 'Chewy', cursive; font-size: 17px; transform: rotate(-3deg)">#2</div>
+
+  <div style="position: absolute; left: 16px; top: 16px; width: 80px; height: 868px">
+    <dc-import name="Rail" active="buildings" hint-size="80px,868px"></dc-import>
+  </div>
+
+  <div style="position: absolute; left: 104px; top: 16px; width: 288px; display: flex; gap: 8px">
+    <div role="group" aria-label="Sparkles" style="flex: 1; min-width: 0; height: 52px; box-sizing: border-box; display: flex; align-items: center; gap: 8px; padding: 0 10px; background: #fff3da; color: #1a1733; border: 2px solid #1a1733; border-radius: 12px 8px 12px 9px / 8px 12px 9px 12px; box-shadow: 3px 3px 0 #0a0918">
+      <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><path d="M12.8 2 C13 6.4 13.6 8.6 14.8 9.6 C16.2 10.6 18.4 11.4 22 12.8 C17.6 13 15.4 13.6 14.4 14.8 C13.4 16.2 12.6 18.4 11.2 22 C11 17.6 10.4 15.4 9.2 14.4 C7.8 13.4 5.6 12.6 2 11.2 C6.4 11 8.6 10.4 9.6 9.2 C10.6 7.8 11.4 5.6 12.8 2 Z" fill="#5fe0e0" stroke="#1a1733" stroke-width="1.8" stroke-linejoin="round"></path><circle cx="12" cy="12" r="1.5" fill="#fff3da" stroke="none"></circle><circle cx="19.6" cy="4.6" r="1.3" fill="#1a1733" stroke="none"></circle></svg>
+      <div style="display: flex; flex-direction: column">
+        <span style="font-family: 'Chewy', cursive; font-size: 21px; line-height: 1">6,420</span>
+        <span style="font-size: 12px; font-weight: 700; line-height: 1.2; color: #4f4970">+182/s</span>
+      </div>
+    </div>
+    <div role="group" aria-label="Gold" style="flex: 1; min-width: 0; height: 52px; box-sizing: border-box; display: flex; align-items: center; gap: 8px; padding: 0 10px; background: #fff3da; color: #1a1733; border: 2px solid #1a1733; border-radius: 8px 12px 9px 12px / 12px 8px 12px 9px; box-shadow: 3px 3px 0 #0a0918">
+      <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="#ffd04a" stroke="#1a1733" stroke-width="1.8"></circle><circle cx="12" cy="12" r="5" fill="none" stroke="#1a1733" stroke-width="1.5" stroke-dasharray="2 2.2"></circle></svg>
+      <div style="display: flex; flex-direction: column">
+        <span style="font-family: 'Chewy', cursive; font-size: 21px; line-height: 1">2,135</span>
+        <span style="font-size: 12px; font-weight: 700; line-height: 1.2; color: #4f4970">+41/s</span>
+      </div>
+    </div>
+  </div>
+
+  <section aria-label="Buildings" style="position: absolute; left: 104px; top: 76px; width: 288px; height: 808px; box-sizing: border-box; padding: 14px; display: flex; flex-direction: column; gap: 24px; background-color: #1f2246; background-image: radial-gradient(rgba(255,243,218,0.09) 1.1px, transparent 1.4px); background-size: 14px 14px; border: 2px solid #f4ead5; border-radius: 18px 22px 16px 20px / 20px 16px 22px 18px; box-shadow: 6px 6px 0 #0a0918; overflow: hidden">
+
+    <div style="display: flex; flex-direction: column; gap: 12px">
+      <header style="display: flex; align-items: center; justify-content: space-between; height: 44px">
+        <div style="display: flex; flex-direction: column; gap: 2px">
+          <h1 style="margin: 0; font-family: 'Chewy', cursive; font-weight: 400; font-size: 28px; line-height: 1; color: #fff3da">Buildings</h1>
+          <svg width="112" height="8" viewBox="0 0 112 8" fill="none" aria-hidden="true"><path d="M2 5 C16 1, 30 7, 46 4 S 76 1, 90 5 S 106 6, 110 3" stroke="#5fe0e0" stroke-width="3" stroke-linecap="round"></path></svg>
+        </div>
+        <button aria-label="Close panel" style="width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; background: transparent; color: #f4ead5; border: 2px solid rgba(244,234,213,0.5); border-radius: 12px 9px 13px 8px / 9px 13px 8px 12px; cursor: pointer; padding: 0">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" aria-hidden="true"><path d="M5.4 5.8 C10 10.2 14 14.1 18.6 18.4"></path><path d="M18.4 5.6 C14 10 10 14 5.6 18.6"></path></svg>
+        </button>
+      </header>
+      <div role="tablist" aria-label="Building types" style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px">
+        <button role="tab" aria-selected="true" aria-label="Launchers, 14" style="height: 40px; display: flex; flex-direction: row; align-items: center; justify-content: center; gap: 6px; background: #fff3da; color: #1a1733; border: 2px solid #1a1733; border-radius: 11px 8px 10px 9px; box-shadow: 2px 2px 0 #0a0918; transform: rotate(-2deg); cursor: pointer; padding: 0; font-family: inherit">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8.4 20 L9.6 9.2 C9.7 8.3 10.5 7.7 11.4 7.8 L13.4 8 C14.3 8.1 14.9 8.9 14.8 9.8 L13.7 20.1"></path><path d="M9.2 13 C11 13.2 12.7 13.3 14.4 13.5"></path><path d="M4.6 20.6 C9.4 20.2 14.6 20.3 19.5 20.7"></path></svg>
+          <span style="font-family: 'Chewy', cursive; font-size: 16px; line-height: 1">14</span>
+        </button>
+        <button role="tab" aria-selected="false" aria-label="Generators, 2" style="height: 40px; display: flex; flex-direction: row; align-items: center; justify-content: center; gap: 6px; background: #2a2e5e; color: #f4ead5; border: 2px solid rgba(244,234,213,0.35); border-radius: 8px 11px 9px 10px; cursor: pointer; padding: 0; font-family: inherit">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5.4 20 L5.8 11.6 C5.9 10.6 6.7 9.9 7.7 9.9 L16.4 10.1 C17.4 10.1 18.2 10.9 18.1 11.9 L17.8 20"></path><path d="M3.6 20.4 C9 20.1 15 20.2 20.4 20.6"></path><circle cx="11.9" cy="15.2" r="2.4"></circle><path d="M9.6 9.9 L10 7.4 L14 7.5 L14.3 10"></path><path d="M12 1.8 L12.7 3.6 L14.5 4.3 L12.7 5 L12 6.8 L11.3 5 L9.5 4.3 L11.3 3.6 Z" fill="currentColor" stroke="none"></path></svg>
+          <span style="font-family: 'Chewy', cursive; font-size: 16px; line-height: 1">2</span>
+        </button>
+        <button role="tab" aria-selected="false" aria-label="Catapults, 1" style="height: 40px; display: flex; flex-direction: row; align-items: center; justify-content: center; gap: 6px; background: #2a2e5e; color: #f4ead5; border: 2px solid rgba(244,234,213,0.35); border-radius: 11px 8px 10px 9px; cursor: pointer; padding: 0; font-family: inherit">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.6 18.6 C9 18.3 15 18.4 20.4 18.8"></path><circle cx="7" cy="19.4" r="1.6"></circle><circle cx="16.6" cy="19.5" r="1.6"></circle><path d="M9.4 18.4 L12 13.6 L14.4 18.5"></path><path d="M6 15.6 C9.6 12.6 13.4 9 16.6 5.4"></path><path d="M15.2 3.8 C16.8 3 18.6 3.6 19.2 5.2 C18 6.4 16.4 6.6 15.2 5.6 Z"></path></svg>
+          <span style="font-family: 'Chewy', cursive; font-size: 16px; line-height: 1">1</span>
+        </button>
+        <button role="tab" aria-selected="false" aria-label="Drone hub, locked" style="position: relative; height: 40px; display: flex; flex-direction: row; align-items: center; justify-content: center; gap: 6px; background: transparent; color: #b3abc9; border: 2px dashed rgba(244,234,213,0.35); border-radius: 8px 11px 9px 10px; cursor: pointer; padding: 0; font-family: inherit">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.6 20.4 C9 20.1 15 20.2 20.4 20.6"></path><path d="M5.6 20.2 L6.6 16.4 C10.2 16.2 13.8 16.2 17.4 16.5 L18.4 20.3"></path><path d="M9.4 9 C11.1 8.8 12.9 8.8 14.6 9.1 L14 11.4 C12.7 11.7 11.3 11.7 10 11.4 Z"></path><path d="M9.6 9 L7.4 7.2 M14.4 9 L16.6 7.2 M5.2 6.8 L9 6.8 M15 6.8 L18.8 6.8"></path></svg>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 11 L18 11 L18 20 L6 20 Z"></path><path d="M8.6 11 L8.6 8 C8.6 5.9 10.1 4.4 12 4.4 C13.9 4.4 15.4 5.9 15.4 8 L15.4 11"></path></svg>
+        </button>
+      </div>
+    </div>
+
+    <article style="display: grid; grid-template-columns: 36px minmax(0, 1fr) auto; column-gap: 12px; row-gap: 8px; align-items: center; padding: 10px; background: #fff3da; color: #1a1733; border: 2px solid #1a1733; border-radius: 12px 9px 13px 8px / 9px 13px 8px 12px; box-shadow: 3px 3px 0 #0a0918">
+      <span style="width: 36px; height: 36px; box-sizing: border-box; display: flex; align-items: center; justify-content: center; background: #ff7a59; border: 2px solid #1a1733; border-radius: 48% 52% 45% 55% / 55% 45% 55% 45%">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1a1733" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8.4 20 L9.6 9.2 C9.7 8.3 10.5 7.7 11.4 7.8 L13.4 8 C14.3 8.1 14.9 8.9 14.8 9.8 L13.7 20.1" fill="#fff3da"></path><path d="M9.2 13 C11 13.2 12.7 13.3 14.4 13.5"></path><path d="M4.6 20.6 C9.4 20.2 14.6 20.3 19.5 20.7"></path></svg>
+      </span>
+      <div style="min-width: 0">
+        <h2 style="margin: 0; font-size: 15px; font-weight: 800; line-height: 18px">Auto Launcher</h2>
+        <p style="margin: 0; font-size: 13px; font-weight: 600; line-height: 17px; color: #4a4566">Fires every 2.8s</p>
+      </div>
+      <span style="align-self: start; font-family: 'Chewy', cursive; font-size: 18px; line-height: 18px">×14</span>
+      <button aria-label="Buy an auto launcher for 1,240 sparkles" style="grid-column: 1 / -1; height: 44px; display: flex; align-items: center; justify-content: center; gap: 6px; background: #ff7a59; color: #1a1733; border: 2px solid #1a1733; border-radius: 11px 8px 12px 9px / 8px 12px 9px 11px; box-shadow: 2px 2px 0 #1a1733; cursor: pointer; padding: 0; font-family: 'Chewy', cursive; font-size: 20px">
+        <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M12.8 2 C13 6.4 13.6 8.6 14.8 9.6 C16.2 10.6 18.4 11.4 22 12.8 C17.6 13 15.4 13.6 14.4 14.8 C13.4 16.2 12.6 18.4 11.2 22 C11 17.6 10.4 15.4 9.2 14.4 C7.8 13.4 5.6 12.6 2 11.2 C6.4 11 8.6 10.4 9.6 9.2 C10.6 7.8 11.4 5.6 12.8 2 Z" fill="#5fe0e0" stroke="#1a1733" stroke-width="2" stroke-linejoin="round"></path><circle cx="12" cy="12" r="1.5" fill="#fff3da" stroke="none"></circle><circle cx="19.6" cy="4.6" r="1.3" fill="#1a1733" stroke="none"></circle></svg>1,240
+      </button>
+    </article>
+
+    <div style="display: flex; flex-direction: column; gap: 8px">
+      <h2 style="margin: 0; font-family: 'Chewy', cursive; font-weight: 400; font-size: 20px; line-height: 24px; color: #fff3da">Launchers</h2>
+      <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px">
+        <button style="height: 44px; display: flex; align-items: center; justify-content: center; gap: 6px; background: #2a2e5e; color: #f4ead5; border: 2px solid rgba(244,234,213,0.5); border-radius: 10px 8px 11px 7px; cursor: pointer; font-family: inherit; font-size: 13px; font-weight: 700; padding: 0">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.6 18 L20.4 18.2"></path><path d="M6 17.6 L6 11 M12 17.8 L12 11 M18 17.8 L18 11"></path><path d="M3.4 7 L8 7 M16 7 L20.6 7 M5.4 5 L3.4 7 L5.4 9 M18.6 5 L20.6 7 L18.6 9"></path></svg>
+          Spread out
+        </button>
+        <button style="height: 44px; display: flex; align-items: center; justify-content: center; gap: 6px; background: #2a2e5e; color: #f4ead5; border: 2px solid rgba(244,234,213,0.5); border-radius: 8px 11px 7px 10px; cursor: pointer; font-family: inherit; font-size: 13px; font-weight: 700; padding: 0">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7.6 C4.1 5.6 5.6 4.1 7.6 4.1 L16.4 4.3 C18.4 4.3 19.9 5.9 19.8 7.9 L19.7 16.4 C19.6 18.4 18.1 19.9 16.1 19.9 L7.6 19.8 C5.6 19.8 4 18.2 4.1 16.2 Z"></path><circle cx="8.6" cy="8.6" r="1.3" fill="currentColor" stroke="none"></circle><circle cx="15.4" cy="15.4" r="1.3" fill="currentColor" stroke="none"></circle><circle cx="12" cy="12" r="1.3" fill="currentColor" stroke="none"></circle></svg>
+          Mix all
+        </button>
+      </div>
+      <ul style="list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px">
+        <li style="display: grid; grid-template-columns: 28px minmax(0, 1fr) 44px; column-gap: 8px; align-items: center">
+          <span style="font-family: 'Chewy', cursive; font-size: 16px; color: #fff3da">#1</span>
+          <button aria-label="Launcher 1 fires a random mix. Change" style="height: 44px; min-width: 0; display: flex; align-items: center; gap: 8px; padding: 0 10px; background: #fff3da; color: #1a1733; border: 2px solid #1a1733; border-radius: 10px 8px 11px 7px; cursor: pointer; font-family: inherit; font-size: 14px; font-weight: 700">
+            <span aria-hidden="true" style="flex-shrink: 0; width: 20px; height: 20px; box-sizing: border-box; border: 2px solid #1a1733; border-radius: 50%; background: conic-gradient(#ff4d4d, #ffd04a, #3ee0d0, #a879ff, #ff4d4d)"></span>
+            <span style="flex: 1; text-align: left">Random</span>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9.4 C8 11.2 10 13 12 15 C14 13 16 11.2 18 9.2"></path></svg>
+          </button>
+          <button aria-label="Show launcher 1" style="width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; background: transparent; color: #f4ead5; border: 2px solid rgba(244,234,213,0.5); border-radius: 50% 46% 52% 48%; cursor: pointer; padding: 0">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="6.5"></circle><path d="M12 2.5 L12 5.5 M12 18.5 L12 21.5 M2.5 12 L5.5 12 M18.5 12 L21.5 12"></path></svg>
+          </button>
+        </li>
+        <li style="display: grid; grid-template-columns: 28px minmax(0, 1fr) 44px; column-gap: 8px; align-items: center">
+          <span style="font-family: 'Chewy', cursive; font-size: 16px; color: #5fe0e0">#2</span>
+          <button aria-label="Launcher 2 fires Coral Star. Change" style="height: 44px; min-width: 0; display: flex; align-items: center; gap: 8px; padding: 0 10px; background: #fff3da; color: #1a1733; border: 2px solid #1a1733; border-radius: 10px 8px 11px 7px; box-shadow: 0 0 0 3px #5fe0e0; cursor: pointer; font-family: inherit; font-size: 14px; font-weight: 700">
+            <span aria-hidden="true" style="position: relative; flex-shrink: 0; width: 20px; height: 20px; box-sizing: border-box; border: 2px solid #1a1733; border-radius: 50%; background: #12142e">
+              <span style="position: absolute; left: 3px; top: 3px; width: 10px; height: 10px; background: #e86f5a; clip-path: polygon(50% 0,61% 35%,98% 35%,68% 57%,79% 91%,50% 70%,21% 91%,32% 57%,2% 35%,39% 35%)"></span>
+            </span>
+            <span style="flex: 1; text-align: left">Coral Star</span>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9.4 C8 11.2 10 13 12 15 C14 13 16 11.2 18 9.2"></path></svg>
+          </button>
+          <button aria-label="Show launcher 2" style="width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; background: #5fe0e0; color: #1a1733; border: 2px solid #1a1733; border-radius: 50% 46% 52% 48%; cursor: pointer; padding: 0">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="6.5"></circle><path d="M12 2.5 L12 5.5 M12 18.5 L12 21.5 M2.5 12 L5.5 12 M18.5 12 L21.5 12"></path></svg>
+          </button>
+        </li>
+        <li style="display: grid; grid-template-columns: 28px minmax(0, 1fr) 44px; column-gap: 8px; align-items: center">
+          <span style="font-family: 'Chewy', cursive; font-size: 16px; color: #fff3da">#3</span>
+          <button aria-label="Launcher 3 fires Golden Willow. Change" style="height: 44px; min-width: 0; display: flex; align-items: center; gap: 8px; padding: 0 10px; background: #fff3da; color: #1a1733; border: 2px solid #1a1733; border-radius: 10px 8px 11px 7px; cursor: pointer; font-family: inherit; font-size: 14px; font-weight: 700">
+            <span aria-hidden="true" style="flex-shrink: 0; width: 20px; height: 20px; box-sizing: border-box; border: 2px solid #1a1733; border-radius: 50%; background: #12142e; box-shadow: inset 0 0 0 3px #12142e, inset 0 0 0 6px #ffd04a"></span>
+            <span style="flex: 1; text-align: left">Golden Willow</span>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9.4 C8 11.2 10 13 12 15 C14 13 16 11.2 18 9.2"></path></svg>
+          </button>
+          <button aria-label="Show launcher 3" style="width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; background: transparent; color: #f4ead5; border: 2px solid rgba(244,234,213,0.5); border-radius: 50% 46% 52% 48%; cursor: pointer; padding: 0">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="6.5"></circle><path d="M12 2.5 L12 5.5 M12 18.5 L12 21.5 M2.5 12 L5.5 12 M18.5 12 L21.5 12"></path></svg>
+          </button>
+        </li>
+        <li style="display: grid; grid-template-columns: 28px minmax(0, 1fr) 44px; column-gap: 8px; align-items: center">
+          <span style="font-family: 'Chewy', cursive; font-size: 16px; color: #fff3da">#4</span>
+          <button aria-label="Launcher 4 fires a random mix. Change" style="height: 44px; min-width: 0; display: flex; align-items: center; gap: 8px; padding: 0 10px; background: #fff3da; color: #1a1733; border: 2px solid #1a1733; border-radius: 10px 8px 11px 7px; cursor: pointer; font-family: inherit; font-size: 14px; font-weight: 700">
+            <span aria-hidden="true" style="flex-shrink: 0; width: 20px; height: 20px; box-sizing: border-box; border: 2px solid #1a1733; border-radius: 50%; background: conic-gradient(#ff4d4d, #ffd04a, #3ee0d0, #a879ff, #ff4d4d)"></span>
+            <span style="flex: 1; text-align: left">Random</span>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9.4 C8 11.2 10 13 12 15 C14 13 16 11.2 18 9.2"></path></svg>
+          </button>
+          <button aria-label="Show launcher 4" style="width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; background: transparent; color: #f4ead5; border: 2px solid rgba(244,234,213,0.5); border-radius: 50% 46% 52% 48%; cursor: pointer; padding: 0">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="6.5"></circle><path d="M12 2.5 L12 5.5 M12 18.5 L12 21.5 M2.5 12 L5.5 12 M18.5 12 L21.5 12"></path></svg>
+          </button>
+        </li>
+        <li style="display: grid; grid-template-columns: 28px minmax(0, 1fr) 44px; column-gap: 8px; align-items: center">
+          <span style="font-family: 'Chewy', cursive; font-size: 16px; color: #fff3da">#5</span>
+          <button aria-label="Launcher 5 fires Sunflare. Change" style="height: 44px; min-width: 0; display: flex; align-items: center; gap: 8px; padding: 0 10px; background: #fff3da; color: #1a1733; border: 2px solid #1a1733; border-radius: 10px 8px 11px 7px; cursor: pointer; font-family: inherit; font-size: 14px; font-weight: 700">
+            <span aria-hidden="true" style="flex-shrink: 0; width: 20px; height: 20px; box-sizing: border-box; border: 2px solid #1a1733; border-radius: 50%; background: radial-gradient(#efb158 2px, #12142e 3px)"></span>
+            <span style="flex: 1; text-align: left">Sunflare</span>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9.4 C8 11.2 10 13 12 15 C14 13 16 11.2 18 9.2"></path></svg>
+          </button>
+          <button aria-label="Show launcher 5" style="width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; background: transparent; color: #f4ead5; border: 2px solid rgba(244,234,213,0.5); border-radius: 50% 46% 52% 48%; cursor: pointer; padding: 0">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="6.5"></circle><path d="M12 2.5 L12 5.5 M12 18.5 L12 21.5 M2.5 12 L5.5 12 M18.5 12 L21.5 12"></path></svg>
+          </button>
+        </li>
+      </ul>
+    </div>
+  </section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>
