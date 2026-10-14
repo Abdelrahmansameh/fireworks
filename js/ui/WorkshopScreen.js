@@ -68,6 +68,12 @@ export class WorkshopScreen {
         }
     }
 
+    setMode(mode) {
+        this.mode = mode;
+        this.syncVisibility();
+        if (mode === 'editor') this.panel.scrollTop = 0;
+    }
+
     get component() {
         const components = this.game.currentRecipeComponents;
         this.selectedLayer = Math.min(this.selectedLayer, Math.max(0, components.length - 1));
@@ -82,8 +88,7 @@ export class WorkshopScreen {
         const button = event.target.closest('button');
         if (!button || button.disabled) return;
         if (button.dataset.workshopMode) {
-            this.mode = button.dataset.workshopMode;
-            this.syncVisibility();
+            this.setMode(button.dataset.workshopMode);
         } else if (button.dataset.workshopStep) {
             this.step = button.dataset.workshopStep;
             this.refresh();
@@ -105,7 +110,7 @@ export class WorkshopScreen {
         } else if (button.dataset.savedRecipe !== undefined) {
             this.game.selectRecipe(Number(button.dataset.savedRecipe));
             this.selectedLayer = 0;
-            this.mode = 'editor';
+            this.setMode('editor');
             this.changed();
         } else if (button.id === 'workshop-add-layer') {
             this.game.currentRecipeComponents.push({ ...DEFAULT_RECIPE_COMPONENTS[0], color: WORKSHOP_COLORS[(this.game.currentRecipeComponents.length + 3) % WORKSHOP_COLORS.length] });
