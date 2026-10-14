@@ -74,6 +74,7 @@ class GameCore extends Engine {
         this.elapsedGameTime = Number(this.storage.getItem('elapsedGameTime')) || 0;
         this.gameCompleted = this.storage.getItem('gameCompleted') === 'true';
         this.crowdUnlocked = false;
+        this.restoreCrowdArrival(this.storage.getItem('crowdStartFireworks'), this.storage.getItem('crowdStartedAt'));
         this.fireworkSystem = new FireworkSystem(this);
 
         this.recipes = [];
@@ -99,7 +100,7 @@ class GameCore extends Engine {
         this.hasSeenFirstCrowdCinematic = false;
         this.advancedCreatorUnlocked = false;
 
-        // Grand Finale (the ~15-min climax event). The live game drives the real
+        // Grand Finale climax event. The live game drives the real
         // particle-flooding event via GrandFinaleManager; headless models the
         // income burst in stepHeadless. Both gate on this flag.
         this.grandFinaleUnlocked = false;
@@ -238,6 +239,27 @@ class GameCore extends Engine {
         return targetCrowdCount(production, this);
     }
 
+    /** Only a newly purchased crowd opening starts the new arrival schedule. */
+    beginCrowdArrival() {
+        if (Number.isFinite(this.crowdStartFireworks) && Number.isFinite(this.crowdStartedAt)) return;
+        this.crowdStartFireworks = this.fireworkSystem.fireworkCount;
+        this.crowdStartedAt = this.elapsedGameTime;
+    }
+
+    restoreCrowdArrival(fireworks, startedAt) {
+        const present = value => value !== null && value !== undefined && value !== '';
+        const valid = present(fireworks) && present(startedAt)
+            && Number.isFinite(Number(fireworks)) && Number(fireworks) >= 0
+            && Number.isFinite(Number(startedAt)) && Number(startedAt) >= 0;
+        this.crowdStartFireworks = valid ? Number(fireworks) : null;
+        this.crowdStartedAt = valid ? Number(startedAt) : null;
+    }
+
+    clearCrowdArrival() {
+        this.crowdStartFireworks = null;
+        this.crowdStartedAt = null;
+    }
+
     syncCrowdStats() {
         if (!this.crowd || this.headless) return;
         this.crowd.catchingEnabled = this.crowdStats.catchingEnabled;
@@ -364,9 +386,11 @@ class GameCore extends Engine {
         }
 
         this.progression.resetUpgradesState();
+        this.clearCrowdArrival();
         this.unlockedPatternKeys = this.unlockedPatternKeys.filter(key =>
             !patternDefinitions.find(pattern => pattern.key === key)?.unlockId);
         this.progression.applyAll(this);
+        this.crowd?.setCount(0);
 
         for (const [currency, amount] of Object.entries(refunds)) {
             if (amount > 0) this.resourceManager.resources[currency]?.add(amount);
@@ -518,6 +542,8 @@ class GameCore extends Engine {
 
         this.storage.setItem('elapsedGameTime', this.elapsedGameTime);
         this.storage.setItem('gameCompleted', this.gameCompleted);
+        this.storage.setItem('crowdStartFireworks', JSON.stringify(this.crowdStartFireworks));
+        this.storage.setItem('crowdStartedAt', JSON.stringify(this.crowdStartedAt));
 
         this.storage.setItem('fireworkCount', this.fireworkSystem.fireworkCount);
         this.storage.setItem('autoLauncherCost', this.autoLauncherCost);

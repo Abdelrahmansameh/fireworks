@@ -188,6 +188,7 @@ try {
                     assert(game.buyUpgrade(id), `Reset regression could not purchase ${id}`);
                     for (const currency of ['sparkles', 'gold']) charged[currency] += before[currency] - wallets[currency].amount;
                 };
+                purchase('base_mult_1');
                 purchase('auto_launcher');
                 assert(game.buildingManager.buildings.some(building => building.grantUpgradeId === 'auto_launcher'),
                     'Auto Launcher grant was not tagged with its purchased upgrade');
@@ -196,7 +197,6 @@ try {
                     assert(paidBuilding && !paidBuilding.grantUpgradeId, 'Separately purchased launcher was tagged as a grant');
                     paidBuildingId = paidBuilding.id;
                 }
-                purchase('base_mult_1');
                 purchase('base_mult_1');
                 purchase('catapult_max');
                 purchase('catapult_max');
@@ -224,6 +224,8 @@ try {
             assert(paidLauncherRefund > 0 && game.buildingManager.buildings.length === 0,
                 'Paid launcher reset did not refund and remove the retained launcher');
             const beforeGrant = wallets.sparkles.amount;
+            const starterCost = game.progression.getUpgradeCost('base_mult_1');
+            assert(game.buyUpgrade('base_mult_1'), 'Could not repurchase the starter for launcher reset accounting');
             const licenseCost = game.progression.getUpgradeCost('auto_launcher');
             assert(game.buyUpgrade('auto_launcher'), 'Could not repurchase launcher license for reset accounting check');
             const firstPaid = game.buildingManager.buyBuilding('AUTO_LAUNCHER');
@@ -234,10 +236,10 @@ try {
             const launcherRefund = game.resetAutoLaunchers();
             assert(launcherRefund === expectedPaidRefund, 'Launcher refund included the grant or lost a paid purchase price');
             const licenseRefund = game.resetUpgrades();
-            assert(licenseRefund.sparkles === licenseCost && wallets.sparkles.amount === beforeGrant,
+            assert(licenseRefund.sparkles === starterCost + licenseCost && wallets.sparkles.amount === beforeGrant,
                 'Launcher reset followed by upgrade reset manufactured currency');
             results.reset.launcherReset = { paidPurchaseRefund: launcherRefund, includedLauncherRefund: 0,
-                licenseRefund: licenseRefund.sparkles, currencyGrowth: 0, purchasePricesPreservedAfterDeserialize: true };
+                starterAndLicenseRefund: licenseRefund.sparkles, currencyGrowth: 0, purchasePricesPreservedAfterDeserialize: true };
 
             game._handleUnlock('drone_hub');
             game.droneStats.maxDrones = 4;

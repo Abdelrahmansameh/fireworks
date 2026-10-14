@@ -25,7 +25,7 @@ try {
         game.checkUnlockConditions();
         game.resourceManager.resources.sparkles.amount = 100000;
         game.resourceManager.resources.gold.amount = 100000;
-        for (const id of ['auto_launcher', 'base_mult_1', 'launcher_spawn_rate']) game.buyUpgrade(id);
+        for (const id of ['base_mult_1', 'auto_launcher', 'launcher_spawn_rate']) game.buyUpgrade(id);
         game.ui.expandAllTabs();
         game.ui.showTab('upgrades');
         game.ui.renderUpgrades();

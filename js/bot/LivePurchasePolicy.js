@@ -26,8 +26,8 @@ export default class LivePurchasePolicy {
         // The crowd's economic introduction comes before either collection system.
         const crowdUnlock = game.progression.getUpgradeDef('crowd_unlock') ? 'crowd_unlock' : 'crowd_spark_1';
         if (game.progression.getUpgradeLevel(crowdUnlock) === 0) return { upgrade: crowdUnlock, label: 'Welcome the crowd' };
-        if (game.progression.getUpgradeDef('unlock_recipes_tab') && game.progression.getUpgradeLevel('unlock_recipes_tab') === 0) return { upgrade: 'unlock_recipes_tab', label: 'Create firework recipes' };
         if (this._count(game, 'CATAPULT') === 0) return { building: 'CATAPULT', label: 'First catapult' };
+        if (game.progression.getUpgradeDef('unlock_recipes_tab') && game.progression.getUpgradeLevel('unlock_recipes_tab') === 0) return { upgrade: 'unlock_recipes_tab', label: 'Create firework recipes' };
         if (this._count(game, 'DRONE_HUB') === 0) return { building: 'DRONE_HUB', label: 'First drone hub' };
         return { upgrade: 'grand_finale', label: 'Grand finale' };
     }

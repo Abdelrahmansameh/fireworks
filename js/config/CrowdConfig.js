@@ -1,18 +1,27 @@
 export const CROWD_CONFIG = {
     // Scaling
     scaling: {
-        // The crowd chapter supplies the first fans; lifetime fireworks then
-        // gradually fill a small venue without a sudden gold-income jump.
+        // New venues start with one fan and count only fireworks fired afterward.
         formula: 'power_fireworks',
+        maxCrowd: 30,
+        formulaA: 0.025,
+        formulaExp: 1,
+        formulaOffset: 0,
+        formulaB: 1.05,
+        minSize: 0.9,
+        maxSize: 1.25,
+        seed: 12345,
+    },
+
+    // Already-open venues keep their previous crowd and gold-income curve.
+    legacyScaling: {
         maxCrowd: 30,
         formulaA: 0.025,
         formulaExp: 1,
         formulaOffset: 100,
         formulaB: 4,
-        minSize: 0.9,
-        maxSize: 1.25,
-        seed: 12345,
     },
+    arrivals: { firstFans: 5, firstInterval: 45, laterInterval: 15 },
 
     maxPeople: 48,
     maxInstances: 2048,

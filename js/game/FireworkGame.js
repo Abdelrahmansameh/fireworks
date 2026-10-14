@@ -1,5 +1,5 @@
 import { gameStorage } from '../platform/GameStorage.js';
-import { fireworksForCrowd } from '../systems/ProductionRates.js';
+import { fireworksForCrowd, getCrowdArrivalProgress } from '../systems/ProductionRates.js';
 import { FIREWORK_CONFIG, GAME_BOUNDS, PROCEDURAL_BACKGROUND_CONFIG, DEFAULT_RECIPE_COMPONENTS, GENERIC_RECIPE_NAMES, PREDEFINED_RECIPES, AUTO_LAUNCHER_COST_BASE, DRONE_CONFIG, CROWD_CONFIG } from '../config/config.js';
 import GameCore from './GameCore.js';
 import InstancedParticleSystem from '../particles/InstancedParticleSystem.js';
@@ -393,6 +393,7 @@ class FireworkGame extends GameCore {
         this.currentRecipeComponents = [...DEFAULT_RECIPE_COMPONENTS];
         this.baseSparkleMultiplier = 1;
         this.elapsedGameTime = 0;
+        this.clearCrowdArrival();
         this.gameCompleted = false;
         this.grandFinaleUnlocked = false;
         this.grandFinaleManager.reset();
@@ -690,6 +691,8 @@ class FireworkGame extends GameCore {
         const data = {
             fireworkCount: this.fireworkSystem.fireworkCount,
             elapsedGameTime: this.elapsedGameTime,
+            crowdStartFireworks: this.crowdStartFireworks,
+            crowdStartedAt: this.crowdStartedAt,
             gameCompleted: this.gameCompleted,
             autoLauncherCost: this.autoLauncherCost,
             sparkles: this.getSparkles(),
@@ -722,6 +725,7 @@ class FireworkGame extends GameCore {
 
         this.fireworkSystem.init(data.fireworkCount || 0);
         this.elapsedGameTime = Math.max(0, Number(data.elapsedGameTime) || 0);
+        this.restoreCrowdArrival(data.crowdStartFireworks, data.crowdStartedAt);
         this.gameCompleted = !!data.gameCompleted;
         this.autoLauncherCost = data.autoLauncherCost || AUTO_LAUNCHER_COST_BASE;
         this.recipes = data.recipes || [];
@@ -763,6 +767,8 @@ class FireworkGame extends GameCore {
 
         this.ui.initializeUnlockStates();
         this.progression.applyAll(this);
+        this.crowd.setCount(this._calculateTargetCrowdCount(this.fireworkSystem.fireworkCount));
+        this.updateCrowdDisplay();
         this.saveProgress();
     }
 
@@ -805,16 +811,20 @@ class FireworkGame extends GameCore {
 
     updateCrowdDisplay() {
         const crowdCountElement = document.getElementById('crowd-count');
+        const crowdCountLabel = document.getElementById('crowd-count-label');
         const currentSpsElement = document.getElementById('current-sps');
         const nextThresholdElement = document.getElementById('next-threshold');
         const progressBar = document.getElementById('threshold-progress');
+        const fireworksLabel = document.getElementById('crowd-firework-progress');
+        const arrivalCountdown = document.getElementById('crowd-arrival-countdown');
 
         const currentCrowd = this.crowd ? this.crowd.people.length : 0;
         if (crowdCountElement) {
             crowdCountElement.textContent = currentCrowd;
         }
+        if (crowdCountLabel) crowdCountLabel.textContent = currentCrowd === 1 ? 'fan' : 'fans';
 
-        // Crowd is driven by total fireworks launched (see CROWD_CONFIG.scaling).
+        // Inverse thresholds stay absolute; new venues also have an arrival clock.
         const currentFireworks = this.fireworkSystem.fireworkCount;
         if (currentSpsElement) {
             currentSpsElement.textContent = Math.floor(currentFireworks).toLocaleString();
@@ -822,9 +832,16 @@ class FireworkGame extends GameCore {
 
         const nextThresholdFireworks = fireworksForCrowd(currentCrowd + 1, this);
         const full = !Number.isFinite(nextThresholdFireworks);
+        const arrival = getCrowdArrivalProgress(currentCrowd + 1, this);
+        const waitingForArrival = !full && currentFireworks >= nextThresholdFireworks && arrival.secondsRemaining > 1e-7;
         if (nextThresholdElement) {
             nextThresholdElement.textContent = full ? '—' : Math.ceil(nextThresholdFireworks).toLocaleString();
-            nextThresholdElement.parentElement.hidden = full;
+        }
+        if (fireworksLabel) fireworksLabel.hidden = full || waitingForArrival;
+        if (arrivalCountdown) {
+            arrivalCountdown.hidden = !waitingForArrival;
+            const text = waitingForArrival ? `Next fan: ${Math.ceil(arrival.secondsRemaining)}s` : '';
+            if (arrivalCountdown.textContent !== text) arrivalCountdown.textContent = text;
         }
         const fullLabel = document.getElementById('crowd-full');
         if (fullLabel) fullLabel.hidden = !full;
@@ -838,8 +855,13 @@ class FireworkGame extends GameCore {
             const currentThresholdFireworks = fireworksForCrowd(currentCrowd, this);
             const base = Math.max(0, currentThresholdFireworks);
             const denom = Math.max(1e-6, nextThresholdFireworks - base);
-            const progress = ((currentFireworks - base) / denom) * 100;
-            progressBar.style.width = `${Math.min(100, Math.max(0, progress))}%`;
+            const fireworkProgress = currentFireworks >= nextThresholdFireworks ? 1 : Math.min(1, Math.max(0, (currentFireworks - base) / denom));
+            const progress = Math.min(fireworkProgress, arrival.progress) * 100;
+            progressBar.style.width = `${progress}%`;
+            progressBar.parentElement.setAttribute('aria-valuenow', Math.round(progress));
+            progressBar.parentElement.setAttribute('aria-valuetext', waitingForArrival
+                ? `Next fan in ${Math.ceil(arrival.secondsRemaining)} seconds`
+                : `${Math.floor(currentFireworks)} of ${Math.ceil(nextThresholdFireworks)} fireworks`);
         }
     }
 

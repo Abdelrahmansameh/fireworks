@@ -28,7 +28,7 @@ try {
         game.checkUnlockConditions();
         game.resourceManager.resources.sparkles.amount = 2000;
         game.resourceManager.resources.gold.amount = 0;
-        for (const id of ['auto_launcher', 'base_mult_1', 'launcher_spawn_rate']) {
+        for (const id of ['base_mult_1', 'auto_launcher', 'launcher_spawn_rate']) {
             if (!game.buyUpgrade(id)) throw new Error(`Could not buy ${id}`);
         }
         for (let i = 0; i < 2; i++) {
@@ -39,12 +39,13 @@ try {
         const card = document.getElementById('crowd-gold-upgrade');
         const result = { gold: game.resourceManager.resources.gold.amount,
             firstUpgrade: document.querySelector('#upgrades-available .upgrade-buy-button[data-upgrade-id="crowd_fireworks"]')?.dataset.upgradeId,
+            firstSavingUpgrade: document.querySelector('#upgrades-available .upgrade-card.saving .upgrade-buy-button')?.dataset.upgradeId,
             cardVisible: !card.hidden, disabled: document.getElementById('crowd-gold-upgrade-buy').disabled,
             recipes: game.progression.isUnlocked('recipes_tab') };
         game.resume();
         return result;
     });
-    assert(initial.firstUpgrade === 'crowd_fireworks' && initial.cardVisible && initial.disabled,
+    assert(initial.firstUpgrade === 'crowd_fireworks' && initial.firstSavingUpgrade === 'crowd_fireworks' && initial.cardVisible && initial.disabled,
         `Opening Night did not immediately show the first gold purchase: ${JSON.stringify(initial)}`);
     assert(initial.gold === 0 && !initial.recipes, 'Crowd unlock granted free gold or recipes.');
     await page.waitForFunction(() => game.hasSeenFirstCrowdCinematic && !game.cinematicManager.isPlaying
@@ -57,6 +58,7 @@ try {
             panelScroll: document.querySelector('#crowd-content .panel').scrollTop,
             gold: game.resourceManager.resources.gold.amount,
             earnedGold: game.statsTracker.sessionGoldBySource.crowd ?? 0,
+            crowdLabel: document.getElementById('crowd-count-label').textContent,
             card: document.getElementById('crowd-gold-upgrade').innerText,
             gameSeconds: game.elapsedGameTime, recipes: game.progression.isUnlocked('recipes_tab') };
     });
@@ -64,6 +66,7 @@ try {
         `The first crowd cinematic did not return to its purchase card: ${JSON.stringify(introduction)}`);
     assert(introduction.gold === introduction.earnedGold && !introduction.recipes,
         'The introduction added a free gold reward or recipe access.');
+    assert(introduction.crowdLabel === 'fan', 'The first crowd member did not use the singular label.');
     assert(introduction.card.toLowerCase().includes('80 gold') && introduction.card.includes('+25% launcher sparkles.'),
         `The first gold card did not show its price and effect: ${introduction.card}`);
     const directory = join('traces', 'live-balance');
@@ -117,7 +120,7 @@ try {
         const refund = game.resetUpgrades();
         const hiddenAfterReset = document.getElementById('crowd-gold-upgrade').hidden;
         const gold = game.resourceManager.resources.gold.amount;
-        for (const id of ['auto_launcher', 'base_mult_1', 'launcher_spawn_rate', 'crowd_spark_1']) {
+        for (const id of ['base_mult_1', 'auto_launcher', 'launcher_spawn_rate', 'crowd_spark_1']) {
             if (!game.buyUpgrade(id)) throw new Error(`Reset could not rebuy ${id}`);
         }
         return { refund, hiddenAfterReset, goldBeforeCrowd: gold, goldAfterCrowd: game.resourceManager.resources.gold.amount,

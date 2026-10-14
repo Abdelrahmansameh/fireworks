@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Preview the real early-game menu after crowds, before the separate recipe purchase.
+// Preview the real early-game menu after crowds, before the later recipe chapter.
 import { createRequire } from 'node:module';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
@@ -25,7 +25,7 @@ try {
         game.checkUnlockConditions();
         game.resourceManager.resources.sparkles.amount = 2000;
         game.resourceManager.resources.gold.amount = 1000;
-        for (const id of ['auto_launcher', 'base_mult_1', 'launcher_spawn_rate']) {
+        for (const id of ['base_mult_1', 'auto_launcher', 'launcher_spawn_rate']) {
             if (!game.buyUpgrade(id)) throw new Error(`Preview could not buy ${id}`);
         }
         for (let i = 0; i < 2; i++) {
@@ -35,7 +35,7 @@ try {
             if (!game.buyUpgrade(id)) throw new Error(`Preview could not buy ${id}`);
         }
         if (game.progression.isUnlocked('recipes_tab')) throw new Error('Opening Night bundled recipe access');
-        if (!game.progression.canPurchase('unlock_recipes_tab', game).ok) throw new Error('The separate recipe upgrade is unavailable');
+        if (game.progression.isVisible('unlock_recipes_tab', game).visible) throw new Error('Recipes appeared before the catapult chapter');
         game.ui.renderUpgrades();
         game.ui.expandAllTabs();
         game.ui.hideActiveTab();

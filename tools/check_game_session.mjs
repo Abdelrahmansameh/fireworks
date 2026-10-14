@@ -54,6 +54,8 @@ try {
             patterns: game.unlockedPatternKeys, stored: localStorage.getItem('resources'),
             progression: game.progression.getState(), crowd: game.crowdStats,
             drone: game.droneStats, catapult: game.catapultStats,
+            crowdTarget: game._calculateTargetCrowdCount(game.fireworkSystem.fireworkCount),
+            crowdStartFireworks: game.crowdStartFireworks, crowdStartedAt: game.crowdStartedAt,
             studio: game.advancedCreatorUnlocked, recipes: game.progression.isUnlocked('recipes_tab') };
     });
     assert(restored.sparkles >= 12345 && restored.gold >= 6789 && restored.launchers === 1,
@@ -69,6 +71,8 @@ try {
     assert(restored.drone.speedMultiplier === 1.35 && restored.drone.collectionRadiusMultiplier === 1.5625,
         'Existing drone speed or reach was lost during bundle migration.');
     assert(restored.hubs === 3, 'Bundle migration duplicated or removed an existing drone hub.');
+    assert(restored.crowdTarget === 9 && restored.crowdStartFireworks === null && restored.crowdStartedAt === null,
+        'The new arrival schedule changed an existing unanchored crowd.');
 
     await page.evaluate(() => game.saveProgress());
     await page.reload({ waitUntil: 'domcontentloaded' });

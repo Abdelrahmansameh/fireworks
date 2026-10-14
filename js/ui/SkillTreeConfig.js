@@ -10,7 +10,7 @@ const node = (id, parent, branch, name, desc, cost, currency, extra = {}) => ({
     offset: { x: branch === 'CROWD' ? 200 : branch === 'LAUNCHER' ? -200 : 0, y: -180 },
     name, desc, baseCost: cost, currency, costRatio: 1, maxLevel: 1, ...extra,
 });
-export const SHOW_MILESTONES = ['auto_launcher', 'crowd_spark_1', 'catapult', 'drone_hub', 'launcher_sparkle_2', 'grand_finale'];
+export const SHOW_MILESTONES = ['base_mult_1', 'auto_launcher', 'crowd_spark_1', 'catapult', 'drone_hub', 'launcher_sparkle_2', 'grand_finale'];
 export const SKILL_TREE_CONFIG = {
     branches: {
         BASE: { color: '#FFC857', label: 'Fireworks' },
@@ -20,16 +20,17 @@ export const SKILL_TREE_CONFIG = {
         DRONE: { color: '#29B6F6', label: 'Drones' },
     },
     nodes: {
-        auto_launcher: node('auto_launcher', 'ROOT', 'LAUNCHER', 'Auto Launcher',
+        base_mult_1: node('base_mult_1', 'ROOT', 'BASE', 'Brighter Sparks',
+            '+75% sparkles.', 30, 'sparkles', {
+                offset: { x: 0, y: 0 }, milestone: true,
+                maxLevel: 2, costRatio: 8, apply: game => { game.baseSparkleMultiplier *= 1.75; },
+            }),
+        auto_launcher: node('auto_launcher', 'base_mult_1', 'LAUNCHER', 'Auto Launcher',
             'Fires a firework every 5s.', 45, 'sparkles', {
-                offset: { x: 0, y: 0 }, milestone: true, action: 'Build', unlockId: 'buildings_tab',
+                offset: { x: 0, y: -180 }, milestone: true, action: 'Build', unlockId: 'buildings_tab',
                 apply: game => unlock(game, 'buildings_tab'), onPurchase: grant('AUTO_LAUNCHER'),
             }),
-        base_mult_1: node('base_mult_1', 'auto_launcher', 'BASE', 'Brighter Sparks',
-            '+75% sparkles.', 90, 'sparkles', {
-                maxLevel: 2, costRatio: 2.6, apply: game => { game.baseSparkleMultiplier *= 1.75; },
-            }),
-        launcher_spawn_rate: node('launcher_spawn_rate', 'base_mult_1', 'LAUNCHER', 'Rapid Fire',
+        launcher_spawn_rate: node('launcher_spawn_rate', 'auto_launcher', 'LAUNCHER', 'Rapid Fire',
             '+33% launcher fire rate.', 150, 'sparkles', {
                 maxLevel: 2, costRatio: 4, apply: game => { game.launcherStats.spawnIntervalMultiplier *= 0.75; },
             }),
@@ -37,7 +38,7 @@ export const SKILL_TREE_CONFIG = {
             'Fans bring gold.', 330, 'sparkles', {
                 milestone: true, action: 'Invite', unlockId: 'crowd',
                 requires: { stats: { launcherCount: 3 }, upgrades: { base_mult_1: 1 } },
-                apply: game => unlock(game, 'crowd'),
+                apply: game => unlock(game, 'crowd'), onPurchase: game => game.beginCrowdArrival(),
             }),
         crowd_fireworks: node('crowd_fireworks', 'crowd_spark_1', 'CROWD', 'Sparkle Powder',
             '+25% launcher sparkles.', 80, 'gold', {
@@ -45,12 +46,13 @@ export const SKILL_TREE_CONFIG = {
             }),
         crowd_gold_1: node('crowd_gold_1', 'crowd_fireworks', 'CROWD', 'Better Tips',
             '+75% crowd gold.', 120, 'gold', {
-                maxLevel: 2, costRatio: 4, requires: { upgrades: { unlock_recipes_tab: 1 } },
+                maxLevel: 2, costRatio: 4,
                 apply: game => { game.crowdStats.goldRateMultiplier *= 1.75; },
             }),
-        unlock_recipes_tab: node('unlock_recipes_tab', 'crowd_fireworks', 'BASE', 'Firework Recipes',
-            'Create your own fireworks.', 180, 'sparkles', {
+        unlock_recipes_tab: node('unlock_recipes_tab', 'catapult_spawn_rate', 'BASE', 'Firework Recipes',
+            'Create your own fireworks.', 600, 'sparkles', {
                 action: 'Unlock', unlockId: 'recipes_tab', botOptional: true,
+                requires: { stats: { launcherCount: 10 } },
                 apply: game => unlock(game, 'recipes_tab'),
             }),
         unlock_brokenHeart: node('unlock_brokenHeart', 'unlock_recipes_tab', 'BASE', 'Broken Heart',

@@ -461,7 +461,8 @@ class ProgressionManager {
         const def = this._upgrades.get(id);
         if (!def) return {};
         const baseCost = legacy ? LEGACY_BASE_COSTS[id] ?? def.baseCost : def.baseCost;
-        const costs = { [def.currency]: roundUpClean(baseCost * Math.pow(def.costRatio, index)) };
+        const costRatio = legacy && id === 'base_mult_1' ? 2.6 : def.costRatio;
+        const costs = { [def.currency]: roundUpClean(baseCost * Math.pow(costRatio, index)) };
         const secondaryCost = legacy && id === 'grand_finale' ? { gold: 15000 } : def.secondaryCost;
         for (const [currency, amount] of Object.entries(secondaryCost ?? {})) {
             costs[currency] = (costs[currency] ?? 0) + amount;

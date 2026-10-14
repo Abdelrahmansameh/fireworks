@@ -159,6 +159,7 @@ export default class GameBot {
     _checkMilestones() {
         const game = this.game;
         const states = {
+            firstUpgrade: game.progression.getUpgradeLevel('base_mult_1') > 0,
             autoLaunchersUnlocked: game.isBuildingTypeUnlocked('AUTO_LAUNCHER'),
             firstAutoLauncher: this._count('AUTO_LAUNCHER') > 0,
             crowd: (game.crowd?.people.length ?? 0) > 0,
@@ -275,6 +276,9 @@ export default class GameBot {
             launcherFPS: rates.launcherFPS,
             launcherCapacityFPS: this.game.buildingManager.getTheoreticalAutoLauncherFPS(),
             crowd: this.game.crowd?.people.length ?? 0,
+            naturalCrowd: Math.max(0, (this.game.crowd?.people.length ?? 0) - (this.game.crowdStats?.countBonus ?? 0)),
+            crowdStartFireworks: this.game.crowdStartFireworks,
+            crowdStartedAt: this.game.crowdStartedAt,
             recipesUnlocked: this.game.progression.isUnlocked('recipes_tab'),
             advancedCreatorUnlocked: !!this.game.advancedCreatorUnlocked,
             unlockedPatterns: [...(this.game.unlockedPatternKeys ?? [])],

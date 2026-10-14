@@ -32,36 +32,78 @@ export function launcherFPS(state) {
     return launchers / (baseInterval * mult);
 }
 
-/**
- * Target crowd count given the lifetime total of fireworks launched.
- * Formula: floor(A * (totalFireworks - offset)^exp + B), clamped at 0 and bonus.
- */
+/** Both anchors must exist; absent anchors identify an already-open legacy venue. */
+export function hasCrowdArrivalAnchor(state) {
+    return Number.isFinite(state.crowdStartFireworks) && Number.isFinite(state.crowdStartedAt);
+}
+
+function crowdScaling(state) {
+    return hasCrowdArrivalAnchor(state) ? CROWD_CONFIG.scaling : CROWD_CONFIG.legacyScaling;
+}
+
+function arrivalAgeForNaturalCount(count) {
+    const { firstFans, firstInterval, laterInterval } = CROWD_CONFIG.arrivals;
+    if (count <= 1) return 0;
+    if (count <= firstFans) return (count - 1) * firstInterval;
+    return (firstFans - 1) * firstInterval + (count - firstFans) * laterInterval;
+}
+
+function crowdAge(state) {
+    return Math.max(0, (state.elapsedGameTime ?? 0) - state.crowdStartedAt);
+}
+
+/** The real game-time arrival gate, independent of the firework requirement. */
+export function getCrowdArrivalProgress(nextCrowdCount, state) {
+    if (!hasCrowdArrivalAnchor(state)) return { secondsRemaining: 0, progress: 1 };
+    const count = Math.max(0, nextCrowdCount - (state.crowdStats?.countBonus ?? 0));
+    const requiredAge = arrivalAgeForNaturalCount(count);
+    const previousAge = arrivalAgeForNaturalCount(count - 1);
+    const age = crowdAge(state);
+    return {
+        secondsRemaining: Math.max(0, requiredAge - age),
+        progress: requiredAge === 0 ? 1 : Math.min(1, Math.max(0, (age - previousAge) / Math.max(1e-6, requiredAge - previousAge))),
+    };
+}
+
+/** Natural arrivals are paced; bought ticket bonuses arrive immediately. */
 export function targetCrowdCount(totalFireworks, state) {
-    const config = CROWD_CONFIG.scaling;
+    const config = crowdScaling(state);
     const maxCap = CROWD_CONFIG.maxPeople || 48;
     const bonus = state.crowdStats?.countBonus ?? 0;
-    const above = Math.max(0, totalFireworks - (config.formulaOffset ?? 0));
+    const anchored = hasCrowdArrivalAnchor(state);
+    const anchor = anchored ? state.crowdStartFireworks : 0;
+    const above = Math.max(0, totalFireworks - anchor - (config.formulaOffset ?? 0));
     const raw = above <= 0
         ? (config.formulaB ?? 0)
         : config.formulaA * Math.pow(above, config.formulaExp ?? 1) + (config.formulaB ?? 0);
     const maxCrowd = (typeof config.maxCrowd === 'number') ? config.maxCrowd : maxCap;
-    const target = Math.floor(maxCrowd * (1 - Math.exp(-raw / maxCrowd)));
+    let target = Math.floor(maxCrowd * (1 - Math.exp(-raw / maxCrowd)));
+    if (anchored) {
+        const { firstFans, firstInterval, laterInterval } = CROWD_CONFIG.arrivals;
+        const age = crowdAge(state);
+        const firstPhase = (firstFans - 1) * firstInterval;
+        const ageCap = age < firstPhase
+            ? 1 + Math.floor((age + 1e-7) / firstInterval)
+            : firstFans + Math.floor((age - firstPhase + 1e-7) / laterInterval);
+        target = Math.min(target, ageCap);
+    }
     return Math.min(Math.max(0, target) + bonus, maxCap);
 }
 
-/** Inverse of targetCrowdCount: total fireworks needed to reach `n` crowd (ignoring bonus). */
+/** Absolute lifetime firework threshold. Arrival time is a separate gate. */
 export function fireworksForCrowd(n, state) {
-    const config = CROWD_CONFIG.scaling;
+    const config = crowdScaling(state);
     const bonus = state.crowdStats?.countBonus ?? 0;
+    const anchor = hasCrowdArrivalAnchor(state) ? state.crowdStartFireworks : 0;
     const maxCrowd = (typeof config.maxCrowd === 'number') ? config.maxCrowd : (CROWD_CONFIG.maxPeople || 48);
     const targetN = n - bonus;
-    if (targetN <= 0) return config.formulaOffset ?? 0;
+    if (targetN <= 0) return anchor + (config.formulaOffset ?? 0);
     if (targetN >= maxCrowd) return Infinity; // unreachable — beyond the saturation asymptote
     // Invert crowd = maxCrowd*(1-exp(-raw/maxCrowd)) → raw, then invert the power term.
     const raw = -maxCrowd * Math.log(1 - targetN / maxCrowd) - (config.formulaB ?? 0);
-    if (raw <= 0) return config.formulaOffset ?? 0;
+    if (raw <= 0) return anchor + (config.formulaOffset ?? 0);
     const above = Math.pow(raw / config.formulaA, 1 / (config.formulaExp ?? 1));
-    return (config.formulaOffset ?? 0) + above;
+    return anchor + (config.formulaOffset ?? 0) + above;
 }
 
 /** Cost of the next building of the given type. */
