@@ -11,7 +11,9 @@ export class ChromeController {
         this.lastMoreTab = 'stats';
         this.mobile = matchMedia('(max-width: 700px)');
         this.panels = [...document.querySelectorAll('.tab-content')];
-        this.bottomControls = [document.querySelector('.tab-bar'), document.getElementById('show-menu')];
+        this.rail = document.querySelector('.tab-bar');
+        this.cameraBaselineY = game.renderer2D.cameraY;
+        this.cameraBaselineZoom = game.renderer2D.cameraZoom;
         this.panels.forEach(panel => {
             panel.querySelector('.panel-close').addEventListener('click', () => game.ui.hideActiveTab());
             panel.querySelector('.sheet-handle').addEventListener('click', () => {
@@ -151,18 +153,10 @@ export class ChromeController {
         rail.addEventListener('pointercancel', () => { start = null; this.railWasSwiped = false; });
     }
 
-    /** Find the top of the mobile tab bar or its tucked menu button. */
+    /** Reserve the tab bar's resting position before unlock and while tucked. */
     getMobileDockTop() {
-        let top = this.game.renderer2D.canvas.getBoundingClientRect().bottom;
-        for (const element of this.bottomControls) {
-            if (!element) continue;
-            if (element === this.tabs.parentElement && this.tabs.classList.contains('unlock-hidden')) continue;
-            const style = getComputedStyle(element);
-            if (style.display === 'none' || style.visibility === 'hidden' || Number(style.opacity) === 0) continue;
-            const bounds = element.getBoundingClientRect();
-            if (bounds.height > 0 && bounds.bottom > 0 && bounds.top < top) top = Math.max(0, bounds.top);
-        }
-        return top;
+        const parentTop = this.rail.offsetParent?.getBoundingClientRect().top ?? 0;
+        return parentTop + this.rail.offsetTop;
     }
 
     /** Keep the tab bar below ground objects; input shares the adjusted camera. */
@@ -171,16 +165,19 @@ export class ChromeController {
             const renderer = this.game.renderer2D;
             if (renderer && !this.game.cinematicManager?.isPlaying && !this.game.grandFinaleManager?.active) {
                 if (this.mobile.matches || this.cameraWasPanned) {
-                    if (this.mobile.matches && !this.cameraWasPanned) this.cameraBaselineY = renderer.cameraY;
-                    const baseline = this.cameraBaselineY ?? 0;
+                    const baselineZoom = this.cameraBaselineZoom;
+                    const zoom = this.mobile.matches ? baselineZoom * GAME_BOUNDS.MOBILE_ZOOM_FACTOR : baselineZoom;
+                    // Keep the default bottom edge fixed when widening the mobile view.
+                    const baseline = this.cameraBaselineY + renderer.virtualHeight / 2 * (1 / zoom - 1 / baselineZoom);
                     let target = baseline;
                     let dockTarget = baseline;
                     if (this.mobile.matches && renderer.canvas.clientHeight > 0) {
                         const canvas = renderer.canvas.getBoundingClientRect();
-                        const unitsPerPixel = renderer.virtualHeight / renderer.canvas.clientHeight / renderer.cameraZoom;
-                        // Allow space for feet/launcher bases below their world origin.
-                        const groundY = Math.min(GAME_BOUNDS.WORLD_GROUND_Y, GAME_BOUNDS.WORLD_LAUNCHER_Y, GAME_BOUNDS.CROWD_Y) - 16;
-                        const clearY = this.getMobileDockTop() - 16;
+                        const unitsPerPixel = renderer.virtualHeight / renderer.canvas.clientHeight / zoom;
+                        const groundY = Math.min(GAME_BOUNDS.WORLD_GROUND_Y, GAME_BOUNDS.WORLD_LAUNCHER_Y, GAME_BOUNDS.CROWD_Y);
+                        // Preserve the previous footing margin in screen pixels at the wider zoom.
+                        const footingPixels = 16 * renderer.canvas.clientHeight / renderer.virtualHeight * baselineZoom;
+                        const clearY = this.getMobileDockTop() - 16 - footingPixels;
                         dockTarget = Math.min(baseline, groundY + (clearY - canvas.top - canvas.height / 2) * unitsPerPixel);
                         const active = this.panels.find(panel => panel.classList.contains('active'));
                         if (active && ['upgrades-content', 'buildings-content', 'crowd-content'].includes(active.id)) {
@@ -189,16 +186,17 @@ export class ChromeController {
                         }
                         target = Math.min(target, dockTarget);
                     }
-                    let next = renderer.cameraY + (target - renderer.cameraY) * .12;
+                    // Reframe position and zoom together, including the very first frame.
+                    let next = renderer.cameraZoom !== zoom ? target : renderer.cameraY + (target - renderer.cameraY) * .12;
                     // The closed tab bar must never cover the ground while the camera eases.
                     if (this.mobile.matches) next = Math.min(next, dockTarget);
                     if (Math.abs(next - target) < .3) next = target;
-                    if (next !== renderer.cameraY) renderer.setCamera({ x: renderer.cameraX, y: next, zoom: renderer.cameraZoom });
+                    if (next !== renderer.cameraY || zoom !== renderer.cameraZoom) renderer.setCamera({ x: renderer.cameraX, y: next, zoom });
                     this.cameraWasPanned = this.mobile.matches || next !== baseline;
                 }
             }
             requestAnimationFrame(tick);
         };
-        requestAnimationFrame(tick);
+        tick();
     }
 }

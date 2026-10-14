@@ -17,6 +17,7 @@ export const GAME_BOUNDS = {
     BUILDING_Y: -435,
     CATAPULT_X_STEP: -140,
     IS_ZOOM_LOCKED: true,
+    MOBILE_ZOOM_FACTOR: 0.85,
     MAX_ZOOM: 5,
     MIN_ZOOM: 0.4
 };

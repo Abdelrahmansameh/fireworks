@@ -13,15 +13,68 @@ const browser = await chromium.launch({ headless: true,
 const assert = (condition, message) => { if (!condition) throw new Error(message); };
 const errors = [];
 const results = [];
+const mobileViewports = [{ width: 390, height: 844 }, { width: 360, height: 640 },
+    { width: 320, height: 568 }, { width: 700, height: 900 }, { width: 640, height: 360 }];
 const screenshots = join('traces', 'mobile-ground');
 await mkdir(screenshots, { recursive: true });
+const url = new URL(process.argv[2] ?? 'http://127.0.0.1:8765/');
+url.searchParams.delete('bot');
 
 try {
+    // A fresh mobile game reserves the navigation space before it is unlocked.
+    // Sample each frame from startup through the real unlock handlers to catch a flash.
+    for (const { viewport, deviceScaleFactor } of [
+        ...mobileViewports.map(viewport => ({ viewport, deviceScaleFactor: 1 })),
+        { viewport: mobileViewports[0], deviceScaleFactor: 3 },
+    ]) {
+        const fresh = await browser.newPage({ viewport, deviceScaleFactor });
+        fresh.on('pageerror', error => errors.push(String(error)));
+        await fresh.addInitScript(() => {
+            window.__mobileBootFrames = [];
+            document.addEventListener('DOMContentLoaded', () => {
+                const sample = () => {
+                    const r = window.game?.renderer2D;
+                    if (window.game?.chrome && r) {
+                        window.__mobileBootFrames.push({ y: r.cameraY, zoom: r.cameraZoom,
+                            ground: r.worldToScreen(r.cameraX, -540).y });
+                    }
+                    requestAnimationFrame(sample);
+                };
+                requestAnimationFrame(sample);
+            });
+        });
+        await fresh.goto(url.toString(), { waitUntil: 'domcontentloaded' });
+        await fresh.waitForFunction(() => window.game?.chrome && !game._isRestoring && window.__mobileBootFrames.length >= 6);
+        const initial = await fresh.evaluate(async () => {
+            game.pause();
+            const locked = document.getElementById('tab-list').classList.contains('unlock-hidden');
+            const r = game.renderer2D;
+            const canvas = r.canvas.getBoundingClientRect();
+            const dock = getComputedStyle(document.querySelector('.tab-bar'));
+            const expectedGround = canvas.bottom - parseFloat(dock.bottom) - parseFloat(dock.height) - 16
+                - 16 * r.canvas.clientHeight / r.virtualHeight;
+            const initial = { y: r.cameraY, zoom: r.cameraZoom,
+                ground: r.worldToScreen(r.cameraX, -540).y };
+            game._handleUnlock('sparkle_counter');
+            game._handleUnlock('tab_menu');
+            game._handleUnlock('upgrades_tab');
+            for (let i = 0; i < 24; i++) await new Promise(resolve => requestAnimationFrame(resolve));
+            return { locked, unlocked: !document.getElementById('tab-list').classList.contains('unlock-hidden'),
+                expectedGround, initial, frames: window.__mobileBootFrames };
+        });
+        const label = `${viewport.width}x${viewport.height}@${deviceScaleFactor}: fresh unlock`;
+        assert(initial.locked && initial.unlocked, `${label}: the fresh navigation did not transition from locked to unlocked`);
+        assert(initial.frames.every(frame => Math.abs(frame.zoom - .85) < .00001
+            && Math.abs(frame.ground - initial.expectedGround) < .3
+            && Math.abs(frame.y - initial.initial.y) < .3),
+        `${label}: startup or unlocking shifted the camera: ${JSON.stringify(initial)}`);
+        results.push({ label, frames: initial.frames.length, cameraY: +initial.initial.y.toFixed(2), zoom: initial.initial.zoom });
+        await fresh.close();
+    }
+
     const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
     page.setDefaultTimeout(15000);
     page.on('pageerror', error => errors.push(String(error)));
-    const url = new URL(process.argv[2] ?? 'http://127.0.0.1:8765/');
-    url.searchParams.delete('bot');
     await page.goto(url.toString(), { waitUntil: 'domcontentloaded' });
     await page.waitForFunction(() => window.game?.chrome && window.game?.procduralBackground && !game._isRestoring);
     const fixture = await page.evaluate(async () => {
@@ -68,7 +121,7 @@ try {
         await page.evaluate(() => { window.__groundCheck.previous = null; window.__groundCheck.stable = 0; });
         await page.waitForFunction(() => {
             const r = game.renderer2D;
-            const current = [r.cameraY, document.querySelector('.tab-bar').getBoundingClientRect().top];
+            const current = [r.cameraY, r.cameraZoom, document.querySelector('.tab-bar').getBoundingClientRect().top];
             const check = window.__groundCheck;
             const same = check.previous && current.every((value, index) => Math.abs(value - check.previous[index]) < .08);
             check.stable = same ? check.stable + 1 : 0;
@@ -92,6 +145,14 @@ try {
                     top: element.getBoundingClientRect().top }));
             const bottomUiTop = Math.min(canvas.bottom, ...ui.map(element => element.top));
             const ground = r.worldToScreen(r.cameraX, window.__groundCheck.lowerAnchor);
+            const sceneAnchor = r.worldToScreen(r.cameraX, -540);
+            const dockStyle = getComputedStyle(document.querySelector('.tab-bar'));
+            const expectedSceneAnchorY = canvas.bottom - parseFloat(dockStyle.bottom) - parseFloat(dockStyle.height) - 16
+                - 16 * r.canvas.clientHeight / r.virtualHeight;
+            // Compare to the prior zoom 1 camera while preserving the same ground pixel.
+            const previousCameraY = -540 + (expectedSceneAnchorY - canvas.top - canvas.height / 2)
+                * r.virtualHeight / r.canvas.clientHeight;
+            const previousSkyTop = previousCameraY + r.virtualHeight / 2;
             const world = game.screenToWorld(ground.x, ground.y);
             const savedGrab = game.crowd.grabbedPersonIndex;
             game.crowd.grabbedPersonIndex = 0;
@@ -123,13 +184,20 @@ try {
                 if (!rectangles.some(rect => x >= rect.left - .001 && x <= rect.right + .001
                     && y >= rect.bottom - .001 && y <= rect.top + .001)) uncovered.push({ x, y });
             }
-            return { cameraY: r.cameraY, ground, bottomUiTop, clearance: bottomUiTop - ground.y,
+            return { cameraY: r.cameraY, zoom: r.cameraZoom, ground, sceneAnchor,
+                expectedSceneAnchorY, previousSkyTop, skyTop: bounds.top,
+                bottomUiTop, clearance: bottomUiTop - ground.y,
                 canvas: { top: canvas.top, bottom: canvas.bottom }, ui,
                 objectBounds, walletBottom, activePanel: active?.id ?? null,
                 roundTripError: Math.hypot(world.x - r.cameraX, world.y - window.__groundCheck.lowerAnchor), uncovered };
         });
         if (mobile) {
             assert(!state.activePanel, `${label}: a panel opened during the navigation-bar check`);
+            assert(Math.abs(state.zoom - .85) < .00001, `${label}: mobile zoom is not .85: ${JSON.stringify(state)}`);
+            assert(Math.abs(state.sceneAnchor.y - state.expectedSceneAnchorY) < .3,
+                `${label}: zoom or menu state moved the ground pixel: ${JSON.stringify(state)}`);
+            assert(state.skyTop > state.previousSkyTop + 1,
+                `${label}: mobile zoom did not expose more sky: ${JSON.stringify(state)}`);
             // Crowd placement runs upward from CROWD_Y. This lower safety anchor
             // also covers a full ySpread below it, so allow four pixels of tolerance.
             assert(state.clearance >= 12, `${label}: ground overlaps bottom UI: ${JSON.stringify(state)}`);
@@ -141,11 +209,10 @@ try {
         }
         assert(state.roundTripError < .00001, `${label}: input and rendering cameras disagree: ${JSON.stringify(state)}`);
         assert(state.uncovered.length === 0, `${label}: uncovered background: ${JSON.stringify(state.uncovered)}`);
-        results.push({ label, clearance: +state.clearance.toFixed(2), cameraY: +state.cameraY.toFixed(2) });
+        results.push({ label, clearance: +state.clearance.toFixed(2), cameraY: +state.cameraY.toFixed(2), zoom: state.zoom });
     };
 
-    for (const size of [{ width: 390, height: 844 }, { width: 360, height: 640 },
-        { width: 320, height: 568 }, { width: 700, height: 900 }, { width: 640, height: 360 }]) {
+    for (const size of mobileViewports) {
         await page.setViewportSize(size);
         const prefix = `${size.width}x${size.height}`;
         await page.evaluate(() => { game.ui.hideActiveTab(); game.ui.expandAllTabs(); });
@@ -163,8 +230,9 @@ try {
     // Crossing the desktop breakpoint must release the mobile camera correction.
     await page.setViewportSize({ width: 1440, height: 900 });
     await inspect('desktop restore', false);
-    const restored = await page.evaluate(() => game.renderer2D.cameraY);
-    assert(Math.abs(restored - fixture.baseline) < .4, `Desktop camera failed to restore: ${restored} vs ${fixture.baseline}`);
+    const restored = await page.evaluate(() => ({ y: game.renderer2D.cameraY, zoom: game.renderer2D.cameraZoom }));
+    assert(Math.abs(restored.y - fixture.baseline) < .4 && Math.abs(restored.zoom - 1) < .00001,
+        `Desktop camera failed to restore: ${JSON.stringify(restored)} vs ${fixture.baseline}/1`);
 
     // Cover camera movement and zoom outside the original sky and ground extent.
     await page.setViewportSize({ width: 2560, height: 1080 });
