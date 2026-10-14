@@ -171,7 +171,7 @@ body.menu-tucked .tab-bar { opacity: 0; transform: translateX(-110px); pointer-e
 @media (max-height: 700px) and (min-width: 701px) { .tab { min-height: 52px; gap: 2px; } .tab-bar { top: 72px; bottom: 8px; padding: 6px 8px; } .collapse-button { top: 18px; } .tabs { gap: 4px; } }
 @media (max-width: 700px) {
     :root { --mobile-status-top: max(8px, env(safe-area-inset-top)); }
-    .resource-counter { top: max(16px, env(safe-area-inset-top)); left: 16px; width: 264px; }
+    .resource-counter { top: var(--mobile-status-top); left: 16px; width: 264px; }
     .wallet-card { height: 48px; }
     .rc-num { font-size: 20px; }
     .tab-bar { left: 12px; right: 12px; top: auto; bottom: max(12px, env(safe-area-inset-bottom)); width: auto; height: 76px; padding: 6px; display: block; border-radius: 18px 15px 20px 16px; }
@@ -197,7 +197,7 @@ body.menu-tucked .tab-bar { opacity: 0; transform: translateX(-110px); pointer-e
     .show-menu { left: auto; top: auto; right: 16px; bottom: max(16px, env(safe-area-inset-bottom)); border-radius: 50%; height: 48px; }
     body.menu-tucked .show-menu { display: grid; place-items: center; }
     .notification {
-        top: var(--mobile-status-top); bottom: auto;
+        top: calc(var(--mobile-status-top) + 60px); bottom: auto;
         width: max-content; max-width: calc(100vw - 24px);
         padding: 6px 12px; font-size: 12px; line-height: 16px;
         white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
@@ -205,6 +205,7 @@ body.menu-tucked .tab-bar { opacity: 0; transform: translateX(-110px); pointer-e
         transform: translate(-50%, -8px);
     }
     .notification.show { transform: translate(-50%, 0); }
+    body.workshop-open .notification { top: var(--mobile-status-top); }
     .upgrade-buy-button { height: 48px; }
     .upgrade-card-head { gap: 12px; }
     .upgrade-copy { flex: 1; }
@@ -259,7 +260,7 @@ body.menu-tucked .tab-bar { opacity: 0; transform: translateX(-110px); pointer-e
     .tab.active, .tab.active:hover:not(:disabled) { transform:translateY(-8px) rotate(-2deg); }
 }
 @media (max-width:700px) {
-    .resource-counter { top:calc(var(--mobile-status-top) + 44px); left:12px; right:12px; width:auto; transition:opacity 240ms, transform 240ms; }
+    .resource-counter { top:var(--mobile-status-top); left:12px; right:12px; width:auto; transition:opacity 240ms, transform 240ms; }
     .wallet-rate { font-size:11.5px; }
     body.menu-tucked .ressource-count { width:max-content; height:36px; align-items:center; gap:6px; padding:0 12px 0 8px; background:rgba(31,34,70,.88); color:#fff3da; border:2px solid rgba(244,234,213,.6); border-radius:18px 14px 16px 15px; }
     body.menu-tucked .wallet-card { flex:0; padding:0; height:auto; border:0; background:transparent; box-shadow:none; color:inherit; gap:6px; }
