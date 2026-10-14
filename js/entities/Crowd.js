@@ -97,14 +97,11 @@ class Crowd {
 
         this.totalPartsPerPerson = this._skeleton.partCount + this.maxPropParts;
 
-        // The instanced group holds CROWD_CONFIG.maxInstances *instances*, and each
-        // person consumes totalPartsPerPerson of them — so the real people cap is
-        // the buffer size divided by parts-per-person. Exceeding it overflows the
-        // vertex buffer (GL_INVALID_OPERATION / "Instance index out of bounds").
-        this.maxRenderablePeople = Math.max(
-            0,
-            Math.floor(CROWD_CONFIG.maxInstances / Math.max(1, this.totalPartsPerPerson))
-        );
+        // People and skeleton-part instances have distinct units. Allocate room
+        // for every part/prop of every permitted person, including future art.
+        this.maxRenderablePeople = CROWD_CONFIG.maxPeople ?? 48;
+        const maxPartInstances = Math.max(CROWD_CONFIG.maxInstances,
+            this.maxRenderablePeople * Math.max(1, this.totalPartsPerPerson));
 
         try {
             const geometry = Renderer2D.buildTexturedSquare(1, 1);
@@ -113,7 +110,7 @@ class Crowd {
                 indices: geometry.indices,
                 texCoords: geometry.texCoords,
                 texture: null,
-                maxInstances: CROWD_CONFIG.maxInstances,
+                maxInstances: maxPartInstances,
                 zIndex: CROWD_CONFIG.zIndex,
                 blendMode: Renderer2D.BlendMode.NORMAL,
             });
@@ -269,6 +266,7 @@ class Crowd {
             // also set, his pupils are steered toward the world point it returns.
             cinematicIdle: false,
             cinematicLookFn: null,
+            cinematicCoinTossDisabled: false,
             // Animation cross-fade: snapshot of the pose at the last state switch,
             // blended into the live animation over blendDuration seconds.
             blendFromPose: null,
@@ -558,8 +556,10 @@ class Crowd {
             }
         }
 
-        person.coinTossTimer += deltaTime;
-        if (person.coinTossTimer >= 5 && !person.catapultData) {
+        if (!person.cinematicCoinTossDisabled) {
+            person.coinTossTimer += deltaTime;
+        }
+        if (!person.cinematicCoinTossDisabled && person.coinTossTimer >= 5 && !person.catapultData) {
             person.coinTossTimer -= 5;
             if (this.onCoinDrop) {
                 this.onCoinDrop(this.goldPerCoinToss, 'crowd');
@@ -986,6 +986,7 @@ class Crowd {
                 const existingFn = updateFns[pi];
                 if (existingFn && (existingFn._isDronePull || existingFn._isCrowdPull)) continue;
 
+                const sparkleValue = sd[pBase + ps.sparkleValueIdx] || 0;
                 let pullElapsed = 0;
                 const pullFn = (state, delta) => {
                     pullElapsed += delta;
@@ -996,7 +997,7 @@ class Crowd {
 
                     if (eDist < cfg.arrivalThreshold || pullElapsed >= cfg.maxCaptureTime) {
                         personRef.collected++;
-                        if (onCatch) onCatch(cfg.sparklesPerParticle);
+                        if (onCatch) onCatch(cfg.sparklesPerParticle * sparkleValue);
                         state.lifetime = 0;
                         return;
                     }

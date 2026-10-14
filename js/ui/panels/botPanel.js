@@ -46,34 +46,49 @@ export function render(container) {
                 <span id="bot-status" class="stats-value">idle</span>
             </div>
             <div class="recipes-option">
+                <label for="bot-preset">Player:</label>
+                <select id="bot-preset">
+                    <option value="active">Active · 2 → 0.3 clicks/s</option>
+                    <option value="relaxed">Relaxed · 1 → 0.15 clicks/s</option>
+                    <option value="idle">Idle · opening clicks</option>
+                    <option value="custom">Custom</option>
+                </select>
+            </div>
+            <div class="recipes-option">
                 <label>Clicks / sec:</label>
-                <input type="number" id="bot-clicks" value="5" step="1" min="0" max="100">
+                <input type="number" id="bot-clicks" value="2" step="0.1" min="0" max="4">
             </div>
             <div class="recipes-option">
                 <label>Speed:</label>
                 <input type="range" id="bot-speed" value="1" step="1" min="1" max="50">
                 <span id="bot-speed-label" class="stats-value">1x</span>
             </div>
+            <div class="recipes-option"><button id="bot-export">Export report</button></div>
         </fieldset>
 
         <div class="stats-section" id="bot-final-banner" style="display:none">
-            <h3 class="stats-section-title">🏁 FINAL REPORT — GAME BEATEN</h3>
+            <h3 class="stats-section-title">🏁 GRAND FINALE COMPLETE</h3>
         </div>
 
         <div class="stats-section">
             <h3 class="stats-section-title">Progression</h3>
-            ${row('Elapsed (game time)', 'bot-elapsed')}
+            ${row('Game time', 'bot-elapsed')}
             ${row('Sparkles', 'bot-sparkles')}
             ${row('Gold', 'bot-gold')}
             ${row('Sparkles / sec', 'bot-sps')}
             ${row('Gold / sec', 'bot-gps')}
             ${row('Crowd size', 'bot-crowd')}
             ${row('Fireworks launched', 'bot-fireworks')}
-            ${row('Upgrades (levels)', 'bot-upgrades')}
+            ${row('Launcher fireworks / sec', 'bot-launcher-fps')}
+            ${row('Longest wait', 'bot-max-gap')}
+            ${row('Saving for', 'bot-goal')}
+            ${row('Sparkles spent', 'bot-sparkles-spent')}
+            ${row('Gold spent', 'bot-gold-spent')}
+            ${row('Upgrade levels', 'bot-upgrades')}
         </div>
 
         <div class="stats-section">
-            <h3 class="stats-section-title">Sparkle Production (by source)</h3>
+            <h3 class="stats-section-title">Sparkles by source</h3>
             ${row('Clicks', 'bot-src-clicks')}
             ${row('Auto-Launchers', 'bot-src-launchers')}
             ${row('Generators', 'bot-src-generators')}
@@ -94,7 +109,7 @@ export function render(container) {
         </div>
 
         <div class="stats-section">
-            <h3 class="stats-section-title">Event Timeline</h3>
+            <h3 class="stats-section-title">Events</h3>
             <div id="bot-events" class="stats-subgroup"></div>
         </div>
     `;
@@ -118,18 +133,33 @@ function wireControls(panel) {
     const clicksInput = panel.querySelector('#bot-clicks');
     const speedInput = panel.querySelector('#bot-speed');
     const speedLabel = panel.querySelector('#bot-speed-label');
+    const presetInput = panel.querySelector('#bot-preset');
 
     toggleBtn?.addEventListener('click', () => {
         const bot = window.game?.bot;
         if (!bot) return;
+        if (bot.complete) { window.location.reload(); return; }
         if (bot.enabled) bot.stop(); else bot.start();
     });
     clicksInput?.addEventListener('change', () => {
         window.game?.bot?.setClicksPerSec(clicksInput.value);
     });
+    presetInput?.addEventListener('change', () => {
+        window.game?.bot?.setPreset(presetInput.value);
+    });
     speedInput?.addEventListener('input', () => {
         speedLabel.textContent = `${speedInput.value}x`;
         window.game?.bot?.setSpeedMultiplier(speedInput.value);
+    });
+    panel.querySelector('#bot-export')?.addEventListener('click', () => {
+        const report = window.game?.bot?.getReport();
+        if (!report) return;
+        const url = URL.createObjectURL(new Blob([JSON.stringify(report, null, 2)], { type: 'application/json' }));
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `live-bot-${report.preset}-${Math.floor(report.elapsed)}s.json`;
+        link.click();
+        URL.revokeObjectURL(url);
     });
 }
 
@@ -140,7 +170,7 @@ export function updateReport(game) {
 
     // Status + toggle label
     const toggleBtn = document.getElementById('bot-toggle');
-    if (toggleBtn) toggleBtn.textContent = bot.enabled ? 'Stop Bot' : (bot.complete ? 'Restart Bot' : 'Start Bot');
+    if (toggleBtn) toggleBtn.textContent = bot.enabled ? 'Pause Bot' : (bot.complete ? 'New Test' : 'Start Bot');
     set('bot-status', bot.complete ? 'complete' : (bot.enabled ? 'running' : 'idle'));
 
     const banner = document.getElementById('bot-final-banner');
@@ -148,6 +178,8 @@ export function updateReport(game) {
 
     // Keep controls in sync with the bot's actual config (unless being edited).
     syncControl('bot-clicks', bot.clicksPerSec);
+    const presetEl = document.getElementById('bot-preset');
+    if (presetEl && document.activeElement !== presetEl) presetEl.value = bot.preset;
     const speedEl = document.getElementById('bot-speed');
     if (speedEl && document.activeElement !== speedEl && +speedEl.value !== bot.speedMultiplier) {
         speedEl.value = bot.speedMultiplier;
@@ -161,6 +193,11 @@ export function updateReport(game) {
     set('bot-gps', fmtRate(r.gps));
     set('bot-crowd', fmt(r.crowd));
     set('bot-fireworks', fmt(r.fireworks));
+    set('bot-launcher-fps', fmtRate(r.launcherFPS));
+    set('bot-max-gap', fmtTime(r.maxPurchaseGap));
+    set('bot-goal', [r.goal?.label, r.goal?.next].filter(Boolean).join(' — ') || '—');
+    set('bot-sparkles-spent', fmt(r.spending.sparkles));
+    set('bot-gold-spent', fmt(r.spending.gold));
     set('bot-upgrades', `${r.upgrades.purchasedLevels} / ${r.upgrades.totalLevels}`);
 
     const s = r.productionBreakdown.sparkles;

@@ -27,6 +27,7 @@ export default class CinematicManager {
 
         // Track async event resolvers
         this._eventResolvers = new Map();
+        this._pendingWaits = [];
 
         // Entity to trace camera against
         this.followedEntity = null;
@@ -72,7 +73,7 @@ export default class CinematicManager {
      * Utility: Pause execution for N milliseconds
      */
     async wait(ms) {
-        return new Promise(resolve => setTimeout(resolve, ms));
+        return this._waitUntil(() => false, ms);
     }
 
     /**
@@ -86,18 +87,9 @@ export default class CinematicManager {
         return new Promise(resolve => {
             this.game.setCameraTarget(targetX);
 
-            const startTime = Date.now();
-            const checkInterval = setInterval(() => {
-                const distance = Math.abs(this.game.renderer2D.cameraX - targetX);
-                const hasReached = (this.game.cameraTargetX === null || distance < 80.0);
-                const isTimeout = (Date.now() - startTime) >= maxDurationMs;
-
-                if (hasReached || isTimeout) {
-                    clearInterval(checkInterval);
-                    this.game.cameraTransitionSpeed = prevSpeed;
-                    resolve();
-                }
-            }, 200); // check 20 times a second
+            this._pendingWaits.push({ elapsed: 0, timeout: maxDurationMs,
+                ready: () => this.game.cameraTargetX === null || Math.abs(this.game.renderer2D.cameraX - targetX) < 80,
+                resolve: () => { this.game.cameraTransitionSpeed = prevSpeed; resolve(); } });
         });
     }
 
@@ -126,15 +118,11 @@ export default class CinematicManager {
      * Utility: Resolves when the given Firework instance has exploded.
      */
     waitForExplosion(firework, timeoutMs = 10000) {
-        return new Promise(resolve => {
-            const start = Date.now();
-            const interval = setInterval(() => {
-                if (firework.exploded || (Date.now() - start) >= timeoutMs) {
-                    clearInterval(interval);
-                    resolve();
-                }
-            }, 50);
-        });
+        return this._waitUntil(() => firework.exploded, timeoutMs);
+    }
+
+    _waitUntil(ready, timeout) {
+        return new Promise(resolve => this._pendingWaits.push({ elapsed: 0, timeout, ready, resolve }));
     }
 
     /**
@@ -162,7 +150,7 @@ export default class CinematicManager {
                 startY: r.cameraY,
                 targetX: targetX ?? r.cameraX,
                 targetY: targetY ?? r.cameraY,
-                startTime: performance.now(),
+                elapsed: 0,
                 durationMs,
                 resolve,
             };
@@ -174,6 +162,14 @@ export default class CinematicManager {
      */
     update(deltaTime) {
         if (!this.isPlaying) return;
+        for (let i = this._pendingWaits.length - 1; i >= 0; i--) {
+            const wait = this._pendingWaits[i];
+            wait.elapsed += deltaTime * 1000;
+            if (wait.elapsed >= wait.timeout || wait.ready()) {
+                this._pendingWaits.splice(i, 1);
+                wait.resolve();
+            }
+        }
 
         if (this.followedEntity && !this._zoomTween) {
             // Normal follow: smooth pan via game's camera system
@@ -181,8 +177,9 @@ export default class CinematicManager {
         }
 
         if (this._zoomTween) {
-            const { startZoom, targetZoom, startX, startY, targetX, targetY, startTime, durationMs, resolve } = this._zoomTween;
-            const elapsed = performance.now() - startTime;
+            const { startZoom, targetZoom, startX, startY, targetX, targetY, durationMs, resolve } = this._zoomTween;
+            this._zoomTween.elapsed += deltaTime * 1000;
+            const elapsed = this._zoomTween.elapsed;
             const t = Math.min(elapsed / durationMs, 1.0);
             const ease = t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
 

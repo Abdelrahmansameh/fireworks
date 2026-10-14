@@ -17,8 +17,8 @@ class DroneHub extends Building {
     constructor(game, x, y, data = {}) {
         super(game, 'DRONE_HUB', x, y, data);
 
-        // Stagger initial spawn so all hubs don't fire at once
-        this.accumulator = data.accumulator ?? (Math.random() * this.config.baseSpawnInterval);
+        // A bought hub launches as soon as its visual system is ready.
+        this.accumulator = data.accumulator ?? this.spawnInterval;
 
         // Per-drone options derived from current level
         this._updateDroneOptions();
@@ -43,6 +43,9 @@ class DroneHub extends Building {
         const ds  = this.game.droneStats ?? {};
 
         this.droneOptions = {
+            baseLifetime:     cfg.baseDroneLifetime,
+            baseSpeed:        cfg.baseDroneSpeed,
+            baseRadius:       DRONE_CONFIG.collectionRadius,
             lifetime:         cfg.baseDroneLifetime  * (ds.lifetimeMultiplier         ?? 1),
             speed:            cfg.baseDroneSpeed     * (ds.speedMultiplier             ?? 1),
             collectionRadius: DRONE_CONFIG.collectionRadius * (ds.collectionRadiusMultiplier ?? 1),
@@ -65,14 +68,14 @@ class DroneHub extends Building {
         this.accumulator += deltaTime;
 
         if (this.accumulator >= this.spawnInterval) {
-            this._spawnDrone();
-            this.accumulator -= this.spawnInterval;
+            if (this._spawnDrone()) this.accumulator -= this.spawnInterval;
+            else this.accumulator = this.spawnInterval;
         }
     }
 
     _spawnDrone() {
         const droneSystem = this.game.droneSystem;
-        if (!droneSystem) return;
+        if (!droneSystem) return false;
 
         // Recalculate so that global upgrades are always reflected
         this._updateDroneOptions();
@@ -81,7 +84,7 @@ class DroneHub extends Building {
         const spawnX = this.x + (Math.random() - 0.5) * this.config.width;
         const spawnY = this.y + this.config.height * 0.6;
 
-        droneSystem.spawnDrone(spawnX, spawnY, this.droneOptions);
+        return droneSystem.spawnDrone(spawnX, spawnY, this.droneOptions) >= 0;
     }
 
     get spawnInterval() {

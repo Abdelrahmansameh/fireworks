@@ -10,7 +10,7 @@ class AutoLauncher extends Building {
     constructor(game, x, y, data = {}) {
         super(game, 'AUTO_LAUNCHER', x, y, data);
 
-        this.accumulator =  Math.random() * 5;
+        this.accumulator = data.accumulator ?? Math.random() * this.spawnInterval;
         this.assignedRecipeIndex = data.assignedRecipeIndex ?? null;
 
         this._skeleton = null;
@@ -274,11 +274,10 @@ class AutoLauncher extends Building {
         // that would dump a burst the moment the cinematic ends).
         if (!this.game.cinematicManager?.isPlaying) {
             this.accumulator += deltaTime;
-            if (this.accumulator >= this.config.maxAccumulator) {
-                this.accumulator = this.config.maxAccumulator + Math.random() * this.spawnInterval;
-            }
-
-            if (this.accumulator >= 0.5 *( this.spawnInterval + Math.random() * this.spawnInterval)) {
+            // Staggered timers keep the show lively while preserving the exact
+            // cadence bought by the player, including at a lower frame rate.
+            this.accumulator = Math.min(this.accumulator, this.spawnInterval * 32);
+            while (this.accumulator >= this.spawnInterval) {
                 this.spawnFirework();
                 this.accumulator -= this.spawnInterval;
             }
@@ -303,11 +302,12 @@ class AutoLauncher extends Building {
         let components;
 
         const recipe = this.game.recipes[this.assignedRecipeIndex];
-        if (recipe) {
+        if (recipe?.components?.length) {
             components = recipe.components.map(c => ({ ...c }));
         } 
         else {
-            return;
+            components = this.game.currentRecipeComponents.map(c => ({ ...c }));
+            if (components.length === 0) return;
         }
 
         const spawnX = x + (Math.random() * 0.2 - 0.15) * this.config.width;

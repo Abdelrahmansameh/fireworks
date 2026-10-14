@@ -15,7 +15,8 @@ import BuildingManager from '../buildings/BuildingManager.js';
 import GameMetrics from '../metrics/GameMetrics.js';
 import FireworkSystem from '../systems/FireworkSystem.js';
 import { patternKeys, patternDefinitions, patternDisplayNames } from '../entities/patterns/index.js';
-import { expectedGPS, BASE_GOLD_PER_TOSS } from '../systems/ProductionRates.js';
+import { expectedGPS, BASE_GOLD_PER_TOSS, targetCrowdCount } from '../systems/ProductionRates.js';
+import { gameStorage } from '../platform/GameStorage.js';
 import { GRAND_FINALE_CONFIG } from '../config/GrandFinaleConfig.js';
 import EmergentYieldModel from '../sim/EmergentYieldModel.js';
 import NullRenderer from '../platform/NullRenderer.js';
@@ -48,12 +49,13 @@ export const SAVE_VERSION = '4';
 class GameCore extends Engine {
     constructor(options = {}) {
         super();
+        this._isRestoring = !(options.headless ?? false);
 
         // ── Services (overridden by the live subclass) ──────────────────────
         this.headless = options.headless ?? false;
         this.storage = options.storage
             ?? (this.headless ? new MemoryStorage()
-                : (typeof localStorage !== 'undefined' ? localStorage : new MemoryStorage()));
+                : gameStorage);
         this.rng = options.rng ?? Math.random;
         this.now = options.now ?? (() => (typeof performance !== 'undefined' ? performance.now() : Date.now()));
 
@@ -62,14 +64,16 @@ class GameCore extends Engine {
         this.audioManager = new NullAudio();
         this.ui = makeNullUI();
 
-        // Clear saves when the save format version changes.
+        // Keep existing progress when the balance changes.
         if (this.storage.getItem('saveVersion') !== SAVE_VERSION) {
-            this.storage.clear();
             this.storage.setItem('saveVersion', SAVE_VERSION);
         }
 
         // ── Core logic state ────────────────────────────────────────────────
         this.gameState = { autoLaunchers: [] };
+        this.elapsedGameTime = Number(this.storage.getItem('elapsedGameTime')) || 0;
+        this.gameCompleted = this.storage.getItem('gameCompleted') === 'true';
+        this.crowdUnlocked = false;
         this.fireworkSystem = new FireworkSystem(this);
 
         this.recipes = [];
@@ -104,7 +108,7 @@ class GameCore extends Engine {
         this.progression = new ProgressionManager(PROGRESSION_CONFIG);
         this.resourceManager = new ResourceManager(this);
         this.buildingManager = new BuildingManager(this);
-        this.statsTracker = new GameMetrics();
+        this.statsTracker = new GameMetrics({ storage: this.storage, now: () => this.elapsedGameTime * 1000 });
 
         // Stat multiplier buckets (recomputed by progression.applyAll).
         this.baseSparkleMultiplier = 1;
@@ -128,7 +132,7 @@ class GameCore extends Engine {
         this.catapultStats = { maxCatapults: 1 };
 
         // Headless-only collaborators.
-        this.emergentModel = new EmergentYieldModel();
+        this.emergentModel = this.headless ? new EmergentYieldModel() : null;
         this.crowd = this.headless ? new HeadlessCrowd() : null;
 
         if (this.headless) {
@@ -188,6 +192,10 @@ class GameCore extends Engine {
         return this.baseSparkleMultiplier;
     }
 
+    getFireworkRecoveryBudget() {
+        return this.baseSparkleMultiplier * (this.launcherStats?.sparkleYieldMultiplier ?? 1) * 1.5;
+    }
+
     addGold(amount, source = 'unknown') {
         this.resourceManager.resources.gold.add(amount);
         this.statsTracker.record('gold', amount, source);
@@ -226,24 +234,8 @@ class GameCore extends Engine {
     }
 
     _calculateTargetCrowdCount(production) {
-        const config = CROWD_CONFIG.scaling;
-        const maxCap = CROWD_CONFIG.maxInstances || 1000;
-        const bonus = this.crowdStats?.countBonus ?? 0;
-        const offset = config.formulaOffset ?? 0;
-
-        if (production <= 0) return Math.min(bonus, maxCap);
-
-        const p = Math.max(0, production - offset);
-        const exponent = (typeof config.formulaExp === 'number') ? config.formulaExp : 0.5;
-        const a = (typeof config.formulaA === 'number') ? config.formulaA : 1;
-        const b = (typeof config.formulaB === 'number') ? config.formulaB : 0;
-
-        // Raw power term sets the early shape; the exponential envelope saturates
-        // the venue toward `maxCrowd` so the crowd asymptotes instead of exploding.
-        const raw = a * Math.pow(p, exponent) + b;
-        const maxCrowd = (typeof config.maxCrowd === 'number') ? config.maxCrowd : maxCap;
-        const target = Math.floor(maxCrowd * (1 - Math.exp(-raw / maxCrowd)));
-        return Math.min(target + bonus, maxCap);
+        if (!this.crowdUnlocked) return 0;
+        return targetCrowdCount(production, this);
     }
 
     syncCrowdStats() {
@@ -251,7 +243,7 @@ class GameCore extends Engine {
         this.crowd.catchingEnabled = this.crowdStats.catchingEnabled;
         this.crowd.collectionRadius = CROWD_CATCHER_CONFIG.collectionRadius
             * (this.crowdStats.collectionRadiusMultiplier ?? 1);
-        this.crowd.goldPerCoinToss = Math.round(BASE_GOLD_PER_TOSS * (this.crowdStats.goldRateMultiplier ?? 1));
+        this.crowd.goldPerCoinToss = BASE_GOLD_PER_TOSS * (this.crowdStats.goldRateMultiplier ?? 1);
     }
 
     // ════════════════════════════════════════════════════════════════════════
@@ -271,6 +263,17 @@ class GameCore extends Engine {
             case 'DRONE_HUB': return this.progression.isUnlocked('drone_hub');
             default: return false;
         }
+    }
+
+    grantMilestoneBuilding(type, grantUpgradeId = null) {
+        const count = this.buildingManager.getBuildingsByType(type).length;
+        const x = type === 'AUTO_LAUNCHER' ? this.buildingManager.getNewBuildingX(type)
+            : type === 'CATAPULT' ? GAME_BOUNDS.CATAPULT_MAX_X + count * GAME_BOUNDS.CATAPULT_X_STEP
+            : (GAME_BOUNDS.LAUNCHER_MIN_X + GAME_BOUNDS.LAUNCHER_MAX_X) / 2;
+        this.buildingManager.createBuilding(type, x, GAME_BOUNDS.BUILDING_Y, { grantUpgradeId });
+        this.ui.updateBuildingCounts?.();
+        this.ui.updateBuildingCosts?.();
+        this.updateLauncherList();
     }
 
     buyAutoLauncher() {
@@ -338,7 +341,7 @@ class GameCore extends Engine {
     // ════════════════════════════════════════════════════════════════════════
 
     buyUpgrade(id) {
-        this.progression.purchaseUpgrade(id, this);
+        return this.progression.purchaseUpgrade(id, this);
     }
 
     recomputeUpgrades() {
@@ -348,22 +351,33 @@ class GameCore extends Engine {
     resetUpgrades() {
         const refunds = { sparkles: 0, gold: 0 };
 
+        // Included units are part of their upgrade price. Returning that price
+        // also returns those units; separately bought buildings stay in place.
+        for (const building of [...this.buildingManager.buildings]) {
+            if (building.grantUpgradeId) this.buildingManager.removeBuilding(building);
+        }
+
         for (const def of this.progression.getAllUpgradeDefs()) {
-            const level = this.progression.getUpgradeLevel(def.id);
-            for (let l = 0; l < level; l++) {
-                const cost = Math.floor(def.baseCost * Math.pow(def.costRatio, l));
-                if (def.currency === 'gold') refunds.gold += cost;
-                else refunds.sparkles += cost;
+            for (const [currency, amount] of Object.entries(this.progression.getUpgradeRefunds(def.id))) {
+                refunds[currency] = (refunds[currency] ?? 0) + amount;
             }
         }
 
         this.progression.resetUpgradesState();
+        this.unlockedPatternKeys = this.unlockedPatternKeys.filter(key =>
+            !patternDefinitions.find(pattern => pattern.key === key)?.unlockId);
         this.progression.applyAll(this);
 
-        if (refunds.sparkles > 0) this.resourceManager.resources.sparkles.add(refunds.sparkles);
-        if (refunds.gold > 0) this.resourceManager.resources.gold.add(refunds.gold);
+        for (const [currency, amount] of Object.entries(refunds)) {
+            if (amount > 0) this.resourceManager.resources[currency]?.add(amount);
+        }
 
         this.saveProgress();
+        this.ui.initializeUnlockStates?.();
+        this.ui.updateBuildingCounts?.();
+        this.ui.updateBuildingCosts?.();
+        this.ui.updateBuildingTypeVisibility?.();
+        this.updateLauncherList();
         if (this.ui?.renderUpgrades) this.ui.renderUpgrades();
 
         return refunds;
@@ -406,6 +420,12 @@ class GameCore extends Engine {
         this.ui.handleUnlock(id);
 
         switch (id) {
+            case 'crowd':
+                this.crowdUnlocked = true;
+                this.progression.recordUnlock('crowds_tab');
+                this.ui.handleUnlock('crowds_tab');
+                this.ui.showCrowdsTab();
+                break;
             case 'sparkle_counter':
                 this.ui.showSparkleCounter();
                 break;
@@ -426,20 +446,20 @@ class GameCore extends Engine {
                 this.ui.showCrowdsTab();
                 break;
             case 'resource_generator':
-                this.showNotification('New building unlocked: Sparkle Generator!');
+                this.showNotification('Sparkle Generator unlocked!');
                 this.ui.updateBuildingTypeVisibility();
                 break;
             case 'drone_hub':
-                this.showNotification('New building unlocked: Drone Hub!');
+                this.showNotification('Drone Hub unlocked!');
                 this.ui.updateBuildingTypeVisibility();
                 break;
             case 'catapult':
-                this.showNotification('New building unlocked: Catapult!');
+                this.showNotification('Catapult unlocked!');
                 this.ui.updateBuildingTypeVisibility();
                 break;
             case 'recipes_tab':
                 this.ui.showRecipesTab();
-                this.showNotification('Recipe system unlocked! You can now create and assign custom recipes.');
+                this.showNotification('Recipes unlocked!');
                 break;
         }
         // Pattern unlocks (from skill-tree upgrades) — id format 'pattern_<key>'
@@ -494,7 +514,10 @@ class GameCore extends Engine {
 
     saveProgress() {
         // Headless runs never persist (and must not clobber the player's save).
-        if (this.headless) return;
+        if (this.headless || this._isRestoring) return;
+
+        this.storage.setItem('elapsedGameTime', this.elapsedGameTime);
+        this.storage.setItem('gameCompleted', this.gameCompleted);
 
         this.storage.setItem('fireworkCount', this.fireworkSystem.fireworkCount);
         this.storage.setItem('autoLauncherCost', this.autoLauncherCost);
@@ -589,6 +612,9 @@ class GameCore extends Engine {
      * rank options by time-to-afford.
      */
     currentRates(clicksPerSec = 0) {
+        if (!this.headless) {
+            return { sps: this.statsTracker.getRollingRate('sparkles'), gps: this.statsTracker.getRollingRate('gold') };
+        }
         let sps = this.calculateTotalSparklesPerSecond();
         sps += clicksPerSec * this.baseSparkleMultiplier;
         const em = this.emergentModel.rates(this, clicksPerSec);

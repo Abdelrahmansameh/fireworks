@@ -614,7 +614,7 @@ export class SkillTreeScreen {
         if (ok) return level > 0 ? 'partial' : 'available';
 
         // Only money is the issue
-        if (reason === `Not enough ${def.currency}`) {
+        if (reason?.startsWith('Not enough')) {
             return level > 0 ? 'partial_insufficient' : 'insufficient';
         }
 
@@ -724,7 +724,8 @@ export class SkillTreeScreen {
         const state = this._getNodeState(id);
         const level = progression.getUpgradeLevel(id);
         const maxLevel = def.maxLevel ?? 1;
-        const cost = progression.getUpgradeCost(id);
+        const cost = Object.entries(progression.getUpgradeCosts(id))
+            .map(([currency, amount]) => `<strong>${amount.toLocaleString()}</strong> <em>${currency}</em>`).join(' + ');
         const layout = SKILL_TREE_CONFIG.nodes[id];
         const branchColor = SKILL_TREE_CONFIG.branches[layout?.branch]?.color ?? '#45a29e';
         const branchLabel = SKILL_TREE_CONFIG.branches[layout?.branch]?.label ?? '';
@@ -733,7 +734,7 @@ export class SkillTreeScreen {
 
 
         const costHTML = (state !== 'maxed')
-            ? `<div class="stt-cost">Cost: <strong>${cost.toLocaleString()}</strong> <em>${def.currency}</em></div>`
+            ? `<div class="stt-cost">Cost: ${cost}</div>`
             : '';
 
         this.tooltip.innerHTML = `

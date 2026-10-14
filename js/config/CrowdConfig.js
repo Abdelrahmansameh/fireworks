@@ -1,27 +1,21 @@
 export const CROWD_CONFIG = {
     // Scaling
     scaling: {
-        // crowd = floor(maxCrowd * (1 - exp(-raw / maxCrowd))) + bonus
-        //   where raw = formulaA * (totalFireworks - formulaOffset)^formulaExp + formulaB
-        //
-        // Driven by TOTAL FIREWORKS LAUNCHED (not sparkles/sec), which grows
-        // smoothly and monotonically — so the crowd paces gently with no jumps.
-        // The `raw` power term sets the EARLY shape (matches the old curve while
-        // raw << maxCrowd), and the exponential envelope SATURATES the venue so it
-        // asymptotes toward `maxCrowd` instead of exploding once production ramps.
-        // Roughly: ~1 fan @ ~6 min, ~85 @ ~15 min, ~130 @ ~20 min, ~150 (full) late.
+        // The crowd chapter supplies the first fans; lifetime fireworks then
+        // gradually fill a small venue without a sudden gold-income jump.
         formula: 'power_fireworks',
-        maxCrowd: 150,          // soft asymptote — the venue fills toward this and stops
-        formulaA: 0.006,
-        formulaExp: 1.2,
-        formulaOffset: 600,
-        formulaB: 0,
+        maxCrowd: 30,
+        formulaA: 0.025,
+        formulaExp: 1,
+        formulaOffset: 100,
+        formulaB: 4,
         minSize: 0.9,
         maxSize: 1.25,
         seed: 12345,
     },
 
-    maxInstances: 15000,
+    maxPeople: 48,
+    maxInstances: 2048,
     zIndex: 100,
 
     minOverlapDistance: 20,          // world-units — min spacing between people
@@ -99,11 +93,12 @@ export const CROWD_CONFIG = {
 };
 
 export const CROWD_CATCHER_CONFIG = {
-    collectionRadius: 60,     // world-units scan radius (slightly wider than drone's 50)
+    collectionRadius: 60,
     pullForce: 900,          // wu/s² — acceleration toward person
     arrivalThreshold: 10,     // wu — particle collected when closer than this
     maxCaptureTime: 3.5,      // s — force-collect after this long
     minParticleAge: 0.15,      // s — ignore freshly-spawned particles
-    sparklesPerParticle: 3,   // base sparkle reward per collected particle (collectors are value-extractors)
+    // Multiplier on the particle's share of its firework recovery budget.
+    sparklesPerParticle: 1,
     scanInterval: 4,          // throttle: scan every N frames
 };

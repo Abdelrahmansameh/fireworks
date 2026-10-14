@@ -38,7 +38,7 @@ export function launcherFPS(state) {
  */
 export function targetCrowdCount(totalFireworks, state) {
     const config = CROWD_CONFIG.scaling;
-    const maxCap = CROWD_CONFIG.maxInstances || 1000;
+    const maxCap = CROWD_CONFIG.maxPeople || 48;
     const bonus = state.crowdStats?.countBonus ?? 0;
     const above = Math.max(0, totalFireworks - (config.formulaOffset ?? 0));
     const raw = above <= 0
@@ -53,7 +53,7 @@ export function targetCrowdCount(totalFireworks, state) {
 export function fireworksForCrowd(n, state) {
     const config = CROWD_CONFIG.scaling;
     const bonus = state.crowdStats?.countBonus ?? 0;
-    const maxCrowd = (typeof config.maxCrowd === 'number') ? config.maxCrowd : (CROWD_CONFIG.maxInstances || 1000);
+    const maxCrowd = (typeof config.maxCrowd === 'number') ? config.maxCrowd : (CROWD_CONFIG.maxPeople || 48);
     const targetN = n - bonus;
     if (targetN <= 0) return config.formulaOffset ?? 0;
     if (targetN >= maxCrowd) return Infinity; // unreachable — beyond the saturation asymptote
@@ -98,7 +98,7 @@ export function expectedSPS(state, rates = {}) {
     const genCount = countBuildings(state, 'RESOURCE_GENERATOR');
     const genBase = BUILDING_TYPES.RESOURCE_GENERATOR.baseProductionRate;
     const genMult = state.generatorStats?.productionRateMultiplier ?? 1;
-    const generators = genCount * genBase * genMult;
+    const generators = genCount * genBase * genMult * baseSparkleMult;
 
     // Drones: steady-state active count ≈ spawnRate × lifetime, capped by maxDrones.
     let drones = 0;

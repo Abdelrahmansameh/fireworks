@@ -309,7 +309,10 @@ class InstancedDroneSystem {
         // phaseBucket de-syncs rotor/core animation across drones; it travels
         // with the drone through swap-removes (droneRefs are moved, not indices).
         this.droneRefs[i] = {
-            x, y, active: true, collected: 0, lifetime, scale,
+            x, y, active: true, collected: 0, collectedValue: 0, lifetime, scale,
+            baseLifetime: options.baseLifetime ?? lifetime,
+            baseSpeed: options.baseSpeed ?? speed,
+            baseRadius: options.baseRadius ?? radius,
             phaseBucket: Math.floor(Math.random() * PHASE_BUCKETS),
         };
 
@@ -318,6 +321,22 @@ class InstancedDroneSystem {
 
         this.count++;
         return i;
+    }
+
+    /** Apply a purchase immediately to drones already visible in the sky. */
+    applyUpgradeStats(stats) {
+        this.maxDrones = stats.maxDrones;
+        for (let i = 0; i < this.count; i++) {
+            const base = i * this.strideFloats;
+            const ref = this.droneRefs[i];
+            const lifetime = ref.baseLifetime * (stats.lifetimeMultiplier ?? 1);
+            const change = lifetime - this.data[base + this.INITIAL_LIFETIME];
+            this.data[base + this.INITIAL_LIFETIME] = lifetime;
+            this.data[base + this.LIFETIME] = Math.max(0, this.data[base + this.LIFETIME] + change);
+            ref.lifetime = this.data[base + this.LIFETIME];
+            this.data[base + this.SPEED] = ref.baseSpeed * (stats.speedMultiplier ?? 1);
+            this.data[base + this.RADIUS] = ref.baseRadius * (stats.collectionRadiusMultiplier ?? 1);
+        }
     }
 
     /**
@@ -358,6 +377,7 @@ class InstancedDroneSystem {
 
         // Particles collected across all drones this frame (awarded once below).
         let frameCollected = 0;
+        let frameCollectedValue = 0;
 
         for (let i = 0; i < this.count; i++) {
             const base = i * this.strideFloats;
@@ -369,6 +389,8 @@ class InstancedDroneSystem {
             // as a lump on despawn so income and the stats-panel rate are live.
             if (ref.collected > 0) {
                 frameCollected += ref.collected;
+                frameCollectedValue += ref.collectedValue;
+                ref.collectedValue = 0;
                 ref.collected = 0;
             }
 
@@ -579,7 +601,10 @@ class InstancedDroneSystem {
 
                             // Don't override a pull that's already in progress
                             const existingFn = updateFns[pi];
-                            if (existingFn && existingFn._isDronePull) continue;
+                            if (existingFn && (existingFn._isDronePull || existingFn._isCrowdPull)) continue;
+
+                            const sd = ps.instanceData[this._shapes[bucket[e]]];
+                            const sparkleValue = sd[pi * ps.strideFloats + ps.sparkleValueIdx] || 0;
 
                             // Build pull closure — captures droneRef (live object)
                             let pullElapsed = 0;
@@ -589,6 +614,7 @@ class InstancedDroneSystem {
                             if (droneRef.lifetime <= 0.2) 
                             {                                
                                 droneRef.collected++;
+                                droneRef.collectedValue += sparkleValue;
                                 state.lifetime = 0;
                                 return;
                             }
@@ -601,6 +627,7 @@ class InstancedDroneSystem {
                             if (eDist < cfg.arrivalThreshold || pullElapsed >= cfg.maxCaptureTime) {
                                 // Particle reached the drone (or timed out) — collect it
                                 droneRef.collected++;
+                                droneRef.collectedValue += sparkleValue;
                                 state.lifetime = 0; // kill particle
                                 return;
                             }
@@ -664,7 +691,7 @@ class InstancedDroneSystem {
         }
 
         if (frameCollected > 0) {
-            onAwardSparkles(frameCollected * cfg.sparklesPerParticle, frameCollected);
+            onAwardSparkles(frameCollectedValue * cfg.sparklesPerParticle, frameCollected);
         }
 
         this.mesh.instanceCount = this.count * this.partsPerDrone;

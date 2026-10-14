@@ -1,3 +1,4 @@
+import { gameStorage } from '../platform/GameStorage.js';
 class AudioManager {
     constructor() {
         this.backgroundMusic = null;
@@ -34,11 +35,11 @@ class AudioManager {
         this.backgroundMusic = new Audio('assets/backgroundsong.mp3');
         this.backgroundMusic.loop = true;
 
-        const savedMusicVolume = localStorage.getItem('musicVolume');
+        const savedMusicVolume = gameStorage.getItem('musicVolume');
         this._musicVolume = savedMusicVolume !== null ? parseInt(savedMusicVolume) / 100 : 0.15;
         this.backgroundMusic.volume = this._musicVolume;
 
-        const savedSfxVolume = localStorage.getItem('sfxVolume');
+        const savedSfxVolume = gameStorage.getItem('sfxVolume');
         this._sfxVolume = savedSfxVolume !== null ? parseInt(savedSfxVolume) / 100 : 0.15;
 
         this.playBackgroundMusic();

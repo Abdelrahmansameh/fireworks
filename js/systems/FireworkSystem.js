@@ -37,7 +37,9 @@ export default class FireworkSystem {
             this.game.particleSystem,
             targetY,
             this.game.audioManager,
-            initialTilt
+            initialTilt,
+            this.game.getFireworkRecoveryBudget?.()
+                ?? this.game.baseSparkleMultiplier * (this.game.launcherStats?.sparkleYieldMultiplier ?? 1) * 1.5
         );
         this.fireworks.push(firework);
     }

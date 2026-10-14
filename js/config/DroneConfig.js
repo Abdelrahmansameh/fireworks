@@ -1,19 +1,11 @@
 export const DRONE_CONFIG = {
-    // Soft cap on simultaneously-airborne drones. Kept deliberately low: with the
-    // 30s-life / 60s-cycle hubs, a fresh hub averages ~0.5 drones and a maxed one
-    // ~1, so a realistic late fleet is a handful of hubs → ~10-30 drones. The old
-    // value (200) let the sky fill with a permanent swarm.
-    maxDrones: 16,
-    // Hard instance-buffer capacity for the drone system. Must be ≥ the largest
-    // value maxDrones can reach via upgrades (base 16 + Drone Fleet 4×3 + Drone
-    // Swarm Protocol 5×2 = 38). The GL buffer is sized to this so raising the soft
-    // cap at runtime can never overflow it.
-    maxDroneCapacity: 64,
-    collectionRadius: 50,       // world-units radius to scan for particles
+    maxDrones: 2,
+    maxDroneCapacity: 16,
+    collectionRadius: 50,
     defaultLifetime: 10,         // seconds a drone lives before despawning
-    sparklesPerParticle: 3,      // sparkles awarded per collected particle (collectors are value-extractors)
+    sparklesPerParticle: 1,      // multiplier on each particle's recovery value
     wanderSpeed: 300,            // world-units/sec target chase speed
-    acceleration: 100,           // wu/s² ramp-up from standstill
+    acceleration: 220,           // wu/s² ramp-up from standstill
     deceleration: 200,           // wu/s² braking when a sharp turn is detected
     turnThresholdDot: 0.75,      // dot(currentHeading, desiredDir) below this triggers braking (~70°)
     minTurnSpeed: 10,            // wu/s — floor drone slows to before turning hard
@@ -37,7 +29,7 @@ export const DRONE_CONFIG = {
     minParticleAge: 0.3,          // seconds a particle must have been alive before a drone can pull it
     color: { r: 0.4, g: 0.9, b: 1.0, a: 1.0 },  // default drone color (cyan-ish)
 
-    oscillationAmplitude: 1100,    // wu/s — perpendicular speed added by the sine wave
+    oscillationAmplitude: 400,    // gentle movement without fighting the speed upgrade
     oscillationFrequency: 1.5,    // Hz — cycles per second of the side-to-side wave
 
     droneTrails: {

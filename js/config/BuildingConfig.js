@@ -1,6 +1,6 @@
-export const AUTO_LAUNCHER_COST_BASE = 50;
+export const AUTO_LAUNCHER_COST_BASE = 60;
 
-export const AUTO_LAUNCHER_COST_RATIO = 1.7;
+export const AUTO_LAUNCHER_COST_RATIO = 1.22;
 
 export const LAUNCHER_WORLD_HIGHLIGHT_DURATION = 2.5;
 
@@ -21,6 +21,7 @@ export const BUILDING_TYPES = {
         skeletonUrl: 'assets/skeletons/auto_launcher.json',
         skeletonScale: 10,
         baseSpawnInterval: 5,
+        maxCount: 32,
         maxAccumulator: 200,
         unlockId: 'buildings_tab',
         statId: 'stat-bld-auto',
@@ -35,7 +36,7 @@ export const BUILDING_TYPES = {
         id: 'resource_generator',
         name: 'Sparkle Generator',
         description: 'Passively generates sparkles over time',
-        baseCost: 150,
+        baseCost: 375,
         costRatio: 1.8,
         currency: 'gold',
         width: 25,
@@ -46,8 +47,9 @@ export const BUILDING_TYPES = {
         textureKey: null,
         skeletonUrl: 'assets/skeletons/sparkle_generator.json',
         skeletonScale: 15,
-        baseProductionRate: 200.0,
-        sparkleTrailBaseCount: 6,
+        baseProductionRate: 1,
+        maxCount: 3,
+        sparkleTrailBaseCount: 8,
         sparkleTrailScalingRatio: 0.25,
         maxSparkleTrailBurstCount: 100, 
         resourceType: 'sparkles',
@@ -66,8 +68,8 @@ export const BUILDING_TYPES = {
         id: 'catapult',
         name: 'Catapult',
         description: 'Launches crowd members into the firework zone to catch sparkles',
-        baseCost: 100,
-        costRatio: 1.6,
+        baseCost: 525,
+        costRatio: 1.65,
         currency: 'gold',
         // Skeleton-rendered; width/height used for click-bounds only
         width: 120,
@@ -101,8 +103,8 @@ export const BUILDING_TYPES = {
         id: 'drone_hub',
         name: 'Drone Hub',
         description: 'Periodically launches drones that collect firework particles',
-        baseCost: 200,
-        costRatio: 2.0,
+        baseCost: 1350,
+        costRatio: 1.8,
         currency: 'gold',
         width: 40,
         height: 50,
@@ -112,11 +114,10 @@ export const BUILDING_TYPES = {
         textureKey: null,
         skeletonUrl: 'assets/skeletons/drone_hub.json',
         skeletonScale: 20,
-        // Base cadence: a 30s drone on a 60s cycle → 30s airborne, 30s downtime
-        // (50% uptime) for a fresh, un-upgraded hub. Lifetime/interval upgrades
-        // close that gap; only a fully-upgraded hub reaches ~100% uptime.
-        baseSpawnInterval: 60,
-        baseDroneLifetime: 30,
+        // A first hub maintains a collector; upgrades add overlapping flights.
+        baseSpawnInterval: 24,
+        baseDroneLifetime: 28,
+        maxCount: 6,
         baseDroneSpeed: 600,
         droneScale: 1,   // multiplier on DRONE_CONFIG.scaling.baseScale (1 = use config size as-is)
         droneColor: { r: 0.1, g: 0.65, b: 0.8, a: 1.0 },

@@ -1,17 +1,20 @@
+import { gameStorage } from '../platform/GameStorage.js';
 import { STATS_CONFIG } from '../config/config.js';
 
 /**
  * GameMetrics — tracks resource gains with source labels and computes
  * rolling averages. Window duration is set by STATS_CONFIG.rollingWindowSeconds.
- * Lifetime totals are persisted to localStorage.
+ * Lifetime totals are persisted to gameStorage.
  */
 export default class GameMetrics {
     /** Rolling-average window in seconds (driven by config). */
     static get WINDOW() { return STATS_CONFIG.rollingWindowSeconds; }
 
-    constructor() {
+    constructor({ storage = gameStorage, now = () => performance.now() } = {}) {
+        this.storage = storage;
+        this.now = now;
         // Rolling-window event buffers
-        // Each entry: { ts: performance.now(), amount: number, source: string }
+        // Each entry: { ts: this.now(), amount: number, source: string }
         this.events = {
             sparkles: [],
             gold: []
@@ -21,7 +24,7 @@ export default class GameMetrics {
         this.fireworkEvents = [];
 
         // ── Session totals (reset on page load) ─────────────────────────────
-        this.sessionStartTime = performance.now();
+        this.sessionStartTime = this.now();
         this.sessionSparkles = 0;
         this.sessionSparklesBySource = {};
         this.sessionGold = 0;
@@ -60,7 +63,7 @@ export default class GameMetrics {
      */
     record(resource, amount, source = 'unknown') {
         if (amount <= 0) return;
-        const ts = performance.now();
+        const ts = this.now();
 
         // Push to rolling buffer
         if (this.events[resource]) {
@@ -88,7 +91,7 @@ export default class GameMetrics {
      * @param {string} source  'manual' | 'auto_launcher'
      */
     recordFirework(source = 'unknown') {
-        const ts = performance.now();
+        const ts = this.now();
         this.fireworkEvents.push({ ts, source });
 
         this.sessionFireworks++;
@@ -129,7 +132,7 @@ export default class GameMetrics {
      */
     getRollingRate(resource, source = null) {
         const W = GameMetrics.WINDOW;
-        const now = performance.now();
+        const now = this.now();
         const cutoff = now - W * 1000;
 
         // Purge expired events
@@ -155,7 +158,7 @@ export default class GameMetrics {
      */
     getFireworksPerSecond(source = null) {
         const W = GameMetrics.WINDOW;
-        const now = performance.now();
+        const now = this.now();
         const cutoff = now - W * 1000;
 
         let i = 0;
@@ -188,7 +191,7 @@ export default class GameMetrics {
     // ─────────────────────────────────────────────────────────────────────────
 
     getSessionDurationSeconds() {
-        return (performance.now() - this.sessionStartTime) / 1000;
+        return (this.now() - this.sessionStartTime) / 1000;
     }
 
     static formatDuration(seconds) {
@@ -221,12 +224,12 @@ export default class GameMetrics {
             peakFPS: this.peakFPS,
             peakCrowdSize: this.peakCrowdSize
         };
-        localStorage.setItem('gameMetrics', JSON.stringify(data));
+        this.storage.setItem('gameMetrics', JSON.stringify(data));
     }
 
     load() {
         try {
-            const raw = localStorage.getItem('gameMetrics');
+            const raw = this.storage.getItem('gameMetrics');
             if (!raw) return;
             const data = JSON.parse(raw);
 
@@ -250,7 +253,7 @@ export default class GameMetrics {
     reset() {
         this.events = { sparkles: [], gold: [] };
         this.fireworkEvents = [];
-        this.sessionStartTime = performance.now();
+        this.sessionStartTime = this.now();
         this.sessionSparkles = 0;
         this.sessionSparklesBySource = {};
         this.sessionGold = 0;

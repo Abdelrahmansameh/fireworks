@@ -1,3 +1,4 @@
+import { gameStorage } from '../platform/GameStorage.js';
 import { GAME_BOUNDS, DEFAULT_RECIPE_COMPONENTS, COMPONENT_PROPERTY_RANGES, PARTICLE_TYPES, STATS_CONFIG, LAUNCHER_WORLD_HIGHLIGHT_DURATION, BUILDING_TYPES } from '../config/config.js';
 import { TABS } from './uiSchema.js';
 import ICONS from './icons.js';
@@ -34,7 +35,7 @@ class UIManager {
         this._lastNotificationCheck = 0;
         this._notificationCheckInterval = 500; // ms
 
-        const storedFS = localStorage.getItem('showFloatingSparkle');
+        const storedFS = gameStorage.getItem('showFloatingSparkle');
         this.showFloatingSparkleEnabled = storedFS === null ? true : (storedFS === 'true');
         this.floatingSparkle.setEnabled(this.showFloatingSparkleEnabled);
 
@@ -77,6 +78,29 @@ class UIManager {
             this.game.randomizeRecipe();
         }));
 
+        document.getElementById('open-advanced-creator')?.addEventListener('click', () => {
+            if (this.game.advancedCreatorUnlocked) this.game.openAdvancedCreator();
+        });
+        document.getElementById('close-advanced-creator')?.addEventListener('click', () => {
+            const name = document.getElementById('creator-recipe-name').value;
+            document.getElementById('recipe-name').value = name;
+            this.game.closeAdvancedCreator();
+        });
+        document.getElementById('creator-add-component')?.addEventListener('click', () => {
+            this.game.currentRecipeComponents.push({ ...DEFAULT_RECIPE_COMPONENTS[0] });
+            this.game.updateComponentsList('creator-components-list');
+            this.game.saveCurrentRecipeComponents();
+        });
+        document.getElementById('creator-randomize-recipe')?.addEventListener('click', () => {
+            this.game.randomizeRecipe();
+            this.game.updateComponentsList('creator-components-list');
+        });
+        document.getElementById('creator-save-recipe')?.addEventListener('click', () => {
+            document.getElementById('recipe-name').value = document.getElementById('creator-recipe-name').value;
+            this.game.saveCurrentRecipe();
+            document.getElementById('creator-recipe-name').value = document.getElementById('recipe-name').value;
+        });
+
         const eraseRecipeButtons = [
             document.getElementById('erase-recipes')
         ];
@@ -110,7 +134,7 @@ class UIManager {
         document.getElementById('reset-launchers').addEventListener('click', () => {
             this.showConfirmation(
                 'Reset Auto-Launchers',
-                'Are you sure you want to reset all auto-launchers? This will remove all launchers and refund 100% of their cost.',
+                'Sell all launchers? Paid launchers are refunded; included launchers are returned.',
                 () => {
                     const refundAmount = this.game.resetAutoLaunchers(); // Method in game needs adjustment
                     this.showNotification(`Auto-launchers reset! Refunded ${Math.floor(refundAmount)} sparkles`);
@@ -121,12 +145,16 @@ class UIManager {
         document.getElementById('reset-upgrades').addEventListener('click', () => {
             this.showConfirmation(
                 'Reset All Upgrades',
-                'Are you sure you want to reset all upgrades? You will be refunded their full cost.',
+                'Refund all upgrades? Included buildings are removed. Bought buildings stay.',
                 () => {
                     const refunds = this.game.resetUpgrades();
                     this.showNotification(`Upgrades reset! Refunded ${Math.floor(refunds.sparkles)} sparkles` + (refunds.gold > 0 ? ` and ${Math.floor(refunds.gold)} gold` : ''));
                 }
             );
+        });
+
+        document.getElementById('crowd-gold-upgrade-buy')?.addEventListener('click', () => {
+            this.game.buyUpgrade('crowd_fireworks');
         });
 
         // Tab buttons — loop over TABS schema
@@ -299,7 +327,7 @@ class UIManager {
             fsToggle.checked = this.showFloatingSparkleEnabled;
             fsToggle.addEventListener('change', (e) => {
                 this.showFloatingSparkleEnabled = e.target.checked;
-                localStorage.setItem('showFloatingSparkle', this.showFloatingSparkleEnabled);
+                gameStorage.setItem('showFloatingSparkle', this.showFloatingSparkleEnabled);
                 this.floatingSparkle.setEnabled(this.showFloatingSparkleEnabled);
             });
         }
@@ -310,7 +338,7 @@ class UIManager {
         const sfxValue = document.getElementById('sfx-volume-value');
 
         if (musicSlider && musicValue) {
-            const savedVolume = localStorage.getItem('musicVolume');
+            const savedVolume = gameStorage.getItem('musicVolume');
             const volume = savedVolume !== null ? parseInt(savedVolume) : 15;
             musicSlider.value = volume;
             musicValue.textContent = volume;
@@ -320,12 +348,12 @@ class UIManager {
                 const volume = parseInt(e.target.value);
                 musicValue.textContent = volume;
                 this.game.audioManager.setMusicVolume(volume / 100);
-                localStorage.setItem('musicVolume', volume);
+                gameStorage.setItem('musicVolume', volume);
             });
         }
 
         if (sfxSlider && sfxValue) {
-            const savedVolume = localStorage.getItem('sfxVolume');
+            const savedVolume = gameStorage.getItem('sfxVolume');
             const volume = savedVolume !== null ? parseInt(savedVolume) : 15;
             sfxSlider.value = volume;
             sfxValue.textContent = volume;
@@ -335,7 +363,7 @@ class UIManager {
                 const volume = parseInt(e.target.value);
                 sfxValue.textContent = volume;
                 this.game.audioManager.setSfxVolume(volume / 100);
-                localStorage.setItem('sfxVolume', volume);
+                gameStorage.setItem('sfxVolume', volume);
             });
         }
     }
@@ -850,6 +878,16 @@ class UIManager {
         // Update building counts and costs via data-driven loops
         this.updateBuildingCounts();
         this.updateBuildingCosts();
+        this.renderCrowdGoldUpgrade();
+        const creatorButton = document.getElementById('open-advanced-creator');
+        if (creatorButton) creatorButton.hidden = !this.game.advancedCreatorUnlocked;
+        const replayButton = document.getElementById('replay-grand-finale');
+        if (replayButton && this.game.grandFinaleManager) {
+            const finale = this.game.grandFinaleManager;
+            replayButton.disabled = !finale.canTrigger();
+            replayButton.textContent = finale.active ? 'Finale!' : finale.cooldown > 0
+                ? `Encore in ${Math.ceil(finale.cooldown)}s` : 'Encore';
+        }
 
         // Update stats tab (throttled to every 250 ms)
         const now = performance.now();
@@ -897,14 +935,9 @@ class UIManager {
         let buildingsAvailable = false;
         if (progression.isUnlocked('buildings_tab')) {
             for (const [key, type] of Object.entries(BUILDING_TYPES)) {
-                // Skip if building type isn't unlocked yet
-                if (type.unlockId && !progression.isUnlocked(type.unlockId)) continue;
-                
-                // Special check for catapult limit
-                if (key === 'CATAPULT') {
-                    const count = this.game.buildingManager.getBuildingsByType('CATAPULT').length;
-                    if (count >= (this.game.catapultStats?.maxCatapults ?? 1)) continue;
-                }
+                if (!this.game.isBuildingTypeUnlocked(key)) continue;
+                const count = this.game.buildingManager.getBuildingsByType(key).length;
+                if (count >= this.game.buildingManager.getBuildingLimit(key)) continue;
 
                 const cost = this.game.buildingManager.getBuyCost(key);
                 const balance = this.game.resourceManager.resources[type.currency]?.amount ?? 0;
@@ -930,25 +963,33 @@ class UIManager {
     updateUpgradeBuyButtons() {
         const availableContainer = document.getElementById('upgrades-available');
         if (!availableContainer) return false;
-        const buyButtons = availableContainer.querySelectorAll('.upgrade-buy-button');
+        const buyButtons = document.querySelectorAll('#upgrades-available .upgrade-buy-button, #upgrades-extra .upgrade-buy-button');
         const progression = this.game.progression;
-        let anyStateChanged = false;
+        const signature = this.getUpgradeAvailabilitySignature();
+        let anyStateChanged = signature !== this._upgradeStateSignature;
+        this._upgradeStateSignature = signature;
         
         buyButtons.forEach(btn => {
             const upgradeId = btn.getAttribute('data-upgrade-id');
             if (upgradeId) {
-                const cost = progression.getUpgradeCost(upgradeId);
-                const def = progression.getUpgradeDef(upgradeId);
-                const balance = this.game.resourceManager.resources[def.currency]?.amount ?? 0;
-                const canAfford = balance >= cost;
-                
-                if (btn.disabled && canAfford) {
+                const { ok } = progression.canPurchase(upgradeId, this.game);
+                if (btn.disabled === ok) {
                     anyStateChanged = true;
                 }
-                btn.disabled = !canAfford;
+                btn.disabled = !ok;
             }
         });
         return anyStateChanged;
+    }
+
+    getUpgradeAvailabilitySignature() {
+        const p = this.game.progression;
+        const launchers = this.game.buildingManager.getBuildingsByType('AUTO_LAUNCHER').length;
+        return `${launchers}:${Boolean(this.game.gameCompleted)}|` + p.getAllUpgradeDefs().map(def => {
+            if (!p.isVisible(def.id, this.game).visible) return `${def.id}:hidden`;
+            const check = p.canPurchase(def.id, this.game);
+            return `${def.id}:${p.getUpgradeLevel(def.id)}:${check.ok ? 'ready' : check.reason}`;
+        }).join('|');
     }
 
     updateStatsTab() {
@@ -1470,7 +1511,30 @@ class UIManager {
         }
     }
 
+    renderCrowdGoldUpgrade() {
+        const card = document.getElementById('crowd-gold-upgrade');
+        if (!card) return;
+        const progression = this.game.progression;
+        const def = progression.getUpgradeDef('crowd_fireworks');
+        const level = progression.getUpgradeLevel('crowd_fireworks');
+        const visible = Boolean(def && progression.isVisible(def.id, this.game).visible && level < def.maxLevel);
+        const canBuy = visible && progression.canPurchase(def.id, this.game).ok;
+        const cost = def ? progression.getUpgradeCost(def.id) : 0;
+        const signature = `${visible}:${level}:${cost}:${canBuy}`;
+        if (signature === this._crowdGoldUpgradeSignature) return;
+        this._crowdGoldUpgradeSignature = signature;
+        card.hidden = !visible;
+        if (!visible) return;
+
+        document.getElementById('crowd-gold-upgrade-name').textContent = def.maxLevel > 1 ? `${def.name} (${level + 1}/${def.maxLevel})` : def.name;
+        document.getElementById('crowd-gold-upgrade-effect').textContent = def.desc;
+        const button = document.getElementById('crowd-gold-upgrade-buy');
+        button.innerHTML = `<span class="btn-cost">${ICONS.GOLD_SVG}<span>${cost.toLocaleString()} gold</span></span>${def.action ?? 'Upgrade'}`;
+        button.disabled = !canBuy;
+    }
+
     renderUpgrades() {
+        this.renderCrowdGoldUpgrade();
         // When the skill tree is open, refresh it.
         if (this.skillTree?.isOpen) {
             this.skillTree.refresh();
@@ -1483,6 +1547,8 @@ class UIManager {
         const availableContainer = document.getElementById('upgrades-available');
         const ownedContainer = document.getElementById('upgrades-owned');
         if (!availableContainer || !ownedContainer) return;
+        const extraContainer = document.getElementById('upgrades-extra');
+        const extraSection = document.getElementById('upgrades-extra-section');
 
         // Save scroll positions
         const availableScroll = availableContainer.scrollTop;
@@ -1490,8 +1556,24 @@ class UIManager {
 
         availableContainer.innerHTML = '';
         ownedContainer.innerHTML = '';
+        if (extraContainer) extraContainer.innerHTML = '';
 
         const progression = this.game.progression;
+        const milestone = progression.getNextMilestone();
+        const goalContainer = document.getElementById('show-progression-goal');
+        if (goalContainer) {
+            goalContainer.replaceChildren();
+            goalContainer.hidden = !this.game.gameCompleted;
+            if (this.game.gameCompleted) {
+                const title = document.createElement('h3');
+                title.textContent = 'What a show!';
+                const replay = document.createElement('button');
+                replay.id = 'replay-grand-finale';
+                replay.textContent = 'Encore';
+                replay.addEventListener('click', () => this.game.triggerGrandFinale());
+                goalContainer.append(title, replay);
+            }
+        }
         const availableUpgrades = [];
         const ownedUpgrades = [];
 
@@ -1508,7 +1590,7 @@ class UIManager {
 
             if (level < maxLevel) {
                 const { ok: canBuy, reason } = progression.canPurchase(def.id, this.game);
-                const isPrereqLocked = !canBuy && reason !== `Not enough ${def.currency}`;
+                const isPrereqLocked = !canBuy && !reason?.startsWith('Not enough');
                 const nextCost = progression.getUpgradeCost(def.id);
                 const balance = this.game.resourceManager.resources[def.currency]?.amount ?? 0;
                 
@@ -1529,7 +1611,12 @@ class UIManager {
         // 2. Affordability is the only issue.
         // 3. Locked by other prerequisites.
         // Secondary sort by cost (cheaper first).
+        const firstGold = this.game.crowdUnlocked && progression.getUpgradeLevel('crowd_fireworks') === 0;
         availableUpgrades.sort((a, b) => {
+            if (firstGold && a.def.id === 'crowd_fireworks') return -1;
+            if (firstGold && b.def.id === 'crowd_fireworks') return 1;
+            if (a.def.id === milestone?.id) return -1;
+            if (b.def.id === milestone?.id) return 1;
             if (a.canBuy && !b.canBuy) return -1;
             if (!a.canBuy && b.canBuy) return 1;
 
@@ -1556,12 +1643,12 @@ class UIManager {
         });
 
         // Render Available
-        availableUpgrades.forEach(({ def, level, canBuy, reason, isPrereqLocked, nextCost, balance }) => {
+        availableUpgrades.forEach(({ def, level, canBuy, reason, isPrereqLocked, nextCost, balance }, index) => {
             const availCard = document.createElement('div');
             availCard.className = `upgrade-card${isPrereqLocked ? ' locked' : ''}`;
 
             const aTitle = document.createElement('div');
-            aTitle.textContent = `${def.name} (Lv ${level + 1})`;
+            aTitle.textContent = `${def.name}${(def.maxLevel ?? 1) > 1 ? ` (${level + 1}/${def.maxLevel})` : ''}`;
             availCard.appendChild(aTitle);
 
             const aDesc = document.createElement('div');
@@ -1575,22 +1662,30 @@ class UIManager {
                 availCard.appendChild(aLock);
             } else {
                 const btn = document.createElement('button');
-                const currencyIcon = def.currency === 'sparkles' ? ICONS.SPARKLE_SVG : ICONS.GOLD_SVG;
+                const costDisplay = Object.entries(progression.getUpgradeCosts(def.id)).map(([currency, cost]) => {
+                    const icon = currency === 'sparkles' ? ICONS.SPARKLE_SVG : ICONS.GOLD_SVG;
+                    return `<span class="btn-cost">${icon}<span>${cost.toLocaleString()}</span></span>`;
+                }).join(' + ');
                 
                 btn.className = 'upgrade-buy-button';
                 btn.setAttribute('data-upgrade-id', def.id);
-                btn.innerHTML = `<span class="btn-cost">${currencyIcon}<span>${nextCost.toLocaleString()}</span></span>Buy`;
-                btn.disabled = balance < nextCost;
+                btn.innerHTML = `${costDisplay}${def.action ?? 'Upgrade'}`;
+                btn.disabled = !canBuy;
                 btn.addEventListener('click', () => this.game.buyUpgrade(def.id));
                 availCard.appendChild(btn);
             }
 
-            availableContainer.appendChild(availCard);
+            (index < 4 || !extraContainer ? availableContainer : extraContainer).appendChild(availCard);
         });
+
+        if (extraSection) extraSection.hidden = availableUpgrades.length <= 4;
+        const extraTitle = document.getElementById('upgrades-extra-title');
+        if (extraTitle) extraTitle.textContent = `More upgrades (${Math.max(0, availableUpgrades.length - 4)})`;
 
         // Restore scroll positions
         availableContainer.scrollTop = availableScroll;
         ownedContainer.scrollTop = ownedScroll;
+        this._upgradeStateSignature = this.getUpgradeAvailabilitySignature();
     }
 
 
@@ -1831,7 +1926,7 @@ class UIManager {
         }
 
         const baseRate = BUILDING_TYPES.RESOURCE_GENERATOR.baseProductionRate;
-        const productionRate = baseRate * (this.game.generatorStats?.productionRateMultiplier ?? 1);
+        const productionRate = baseRate * (this.game.generatorStats?.productionRateMultiplier ?? 1) * this.game.baseSparkleMultiplier;
         const totalRate = productionRate * generators.length;
         statsDiv.innerHTML = `
             <div class="launcher-details">
@@ -1882,18 +1977,10 @@ class UIManager {
                 const balance = this.game.resourceManager.resources[type.currency]?.amount ?? 0;
                 const unaffordable = balance < cost;
                 
-                let limitReached = false;
-                if (key === 'CATAPULT') {
-                    const count = this.game.buildingManager.getBuildingsByType('CATAPULT').length;
-                    limitReached = count >= (this.game.catapultStats?.maxCatapults ?? 1);
-                    
-                    if (limitReached) {
-                        const costEl = document.getElementById(`${type.id}-cost`);
-                        if (costEl) costEl.textContent = 'MAX';
-                    }
-                }
-
-                btn.disabled = unaffordable || limitReached;
+                const count = this.game.buildingManager.getBuildingsByType(key).length;
+                const limitReached = count >= this.game.buildingManager.getBuildingLimit(key);
+                if (limitReached && el) el.textContent = 'MAX';
+                btn.disabled = unaffordable || limitReached || !this.game.isBuildingTypeUnlocked(key);
             }
         }
     }

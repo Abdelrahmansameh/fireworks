@@ -53,11 +53,16 @@ class BuildingManager {
             return null;
         }
 
+        if (!this.game.isBuildingTypeUnlocked(buildingType)) {
+            this.game.showNotification(`${config.name} has not unlocked yet.`);
+            return null;
+        }
+
         const count = this.getBuildingsByType(buildingType).length;
 
-        // Enforce catapult limit
-        if (buildingType === 'CATAPULT' && count >= (this.game.catapultStats?.maxCatapults ?? 1)) {
-            this.game.showNotification(`Maximum catapults reached (${this.game.catapultStats.maxCatapults})!`);
+        const limit = this.getBuildingLimit(buildingType);
+        if (count >= limit) {
+            this.game.showNotification(`Maximum ${config.name} count reached (${limit}).`);
             return null;
         }
 
@@ -71,6 +76,21 @@ class BuildingManager {
 
         resource.subtract(cost);
 
+        const x = this.getNewBuildingX(buildingType);
+        const y = config.y;
+
+        const building = this.createBuilding(buildingType, x, y, { purchaseCost: cost });
+
+        if (building) {
+            this.game.showNotification(`${config.name} purchased!`);
+        }
+
+        return building;
+    }
+
+    getNewBuildingX(buildingType) {
+        const config = BUILDING_TYPES[buildingType];
+        const count = this.getBuildingsByType(buildingType).length;
         let x;
 
         // Stack catapults horizontally within their dedicated bounds: the first
@@ -83,10 +103,9 @@ class BuildingManager {
             const maxX = GAME_BOUNDS.CATAPULT_MAX_X;
             x = Math.max(minX, Math.min(x, maxX));
         } else {
-            const existing = this.getBuildingsByType(buildingType);
             const spacing = 350;
             const startX = GAME_BOUNDS.LAUNCHER_MIN_X + spacing;
-            x = startX + existing.length * spacing;
+            x = startX + count * spacing;
 
             // Keep new building inside launcher world bounds
             const halfWidth = config.width / 2;
@@ -94,15 +113,23 @@ class BuildingManager {
             if (x + halfWidth > GAME_BOUNDS.LAUNCHER_MAX_X) x = GAME_BOUNDS.LAUNCHER_MAX_X - halfWidth;
         }
 
-        let y = BUILDING_TYPES[buildingType].y;
+        return x;
+    }
 
-        const building = this.createBuilding(buildingType, x, y);
-
-        if (building) {
-            this.game.showNotification(`${config.name} purchased!`);
+    getBuildingLimit(buildingType) {
+        const config = BUILDING_TYPES[buildingType];
+        if (!config) return 0;
+        if (buildingType === 'CATAPULT') return this.game.catapultStats?.maxCatapults ?? 1;
+        if (buildingType === 'DRONE_HUB') {
+            const lifetime = config.baseDroneLifetime * (this.game.droneStats?.lifetimeMultiplier ?? 1);
+            const interval = config.baseSpawnInterval * (this.game.droneHubStats?.spawnIntervalMultiplier ?? 1);
+            const maxDrones = this.game.droneStats?.maxDrones ?? Infinity;
+            // A hub is useful only while its overlapping flights can increase
+            // the airborne fleet. Count the final partly useful hub once.
+            const usefulHubs = Math.ceil(maxDrones / (lifetime / interval));
+            return Math.min(config.maxCount ?? Infinity, usefulHubs);
         }
-
-        return building;
+        return config.maxCount ?? Infinity;
     }
 
     removeBuilding(building) {
@@ -191,8 +218,9 @@ class BuildingManager {
         for (let i = buildings.length - 1; i >= 0; i--) {
             const building = buildings[i];
 
-            const purchaseCost = Building.getPurchaseCost(buildingType, 0);
-            refundAmount += purchaseCost;
+            if (!building.grantUpgradeId) {
+                refundAmount += building.purchaseCost ?? Building.getPurchaseCost(buildingType, i);
+            }
 
             this.removeBuilding(building);
         }

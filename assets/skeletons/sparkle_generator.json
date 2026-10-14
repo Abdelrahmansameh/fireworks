@@ -1,122 +1,66 @@
 {
   "parts": [
-    {
-      "id": "base",
-      "parentId": null,
-      "width": 1.8211938418386648,
-      "height": 0.38986723249642197,
-      "anchorX": 0,
-      "anchorY": -0.5,
-      "relX": 0.0038343836566049347,
-      "relY": -0.03150706083576775,
-      "color": "9697cf",
-      "z": 15
-    },
-    {
-      "id": "body",
-      "parentId": "base",
-      "width": 1.427225730451705,
-      "height": 1.0990638143703855,
-      "anchorX": 0,
-      "anchorY": -0.5,
-      "relX": 0,
-      "relY": 1,
-      "color": "17184a",
-      "z": 6
-    },
-    {
-      "id": "glow",
-      "parentId": "body",
-      "width": 1.5391640138408305,
-      "height": 0.001,
-      "color": "3c3fc3",
-      "anchorX": 0,
-      "anchorY": 1,
-      "relX": -0.0015190179621645322,
-      "relY": 0.9227926370073432,
-      "z": 100,
-      "baseRotation": 0
-    },
-    {
-      "id": "base_outline",
-      "parentId": "base",
-      "width": 2.221193841838665,
-      "height": 0.789867232496422,
-      "color": "000000",
-      "anchorX": 0,
-      "anchorY": -0.24679288901770463,
-      "relX": 0,
-      "relY": 0,
-      "baseRotation": 0,
-      "z": 10
-    },
-    {
-      "id": "body_outline",
-      "parentId": "body",
-      "width": 1.8272257304517052,
-      "height": 1.4990638143703854,
-      "color": "000000",
-      "anchorX": 0,
-      "anchorY": -0.3665833981964263,
-      "relX": 0,
-      "relY": 0,
-      "baseRotation": 0,
-      "z": -94
-    }
+    { "id": "base", "parentId": null, "width": 2.4, "height": 0.4, "color": "17184a", "anchorX": 0, "anchorY": 0, "relX": 0, "relY": 0, "z": 5 },
+    { "id": "base_outline", "parentId": "base", "width": 2.64, "height": 0.64, "color": "000000", "anchorX": 0, "anchorY": 0, "relX": 0, "relY": 0, "z": 0 },
+    { "id": "body", "parentId": "base", "width": 1.76, "height": 1.48, "color": "8d99bf", "anchorX": 0, "anchorY": 0, "relX": 0, "relY": 2.65, "z": 10 },
+    { "id": "body_outline", "parentId": "body", "width": 2, "height": 1.72, "color": "000000", "anchorX": 0, "anchorY": 0, "relX": 0, "relY": 0, "z": 2 },
+    { "id": "charge_window", "parentId": "body", "width": 0.7, "height": 0.94, "color": "0f102e", "anchorX": 0, "anchorY": 0, "relX": 0, "relY": -0.02, "z": 12 },
+    { "id": "charge_low", "parentId": "charge_window", "width": 0.42, "height": 0.13, "color": "ffe8a6", "anchorX": 0, "anchorY": 0, "relX": 0, "relY": -0.29, "z": 13 },
+    { "id": "charge_mid", "parentId": "charge_window", "width": 0.42, "height": 0.13, "color": "ffe8a6", "anchorX": 0, "anchorY": 0, "relX": 0, "relY": 0, "z": 13 },
+    { "id": "charge_high", "parentId": "charge_window", "width": 0.42, "height": 0.13, "color": "ffe8a6", "anchorX": 0, "anchorY": 0, "relX": 0, "relY": 0.29, "z": 13 },
+    { "id": "outlet", "parentId": "body", "width": 1.48, "height": 0.08, "color": "000000", "anchorX": 0, "anchorY": 0, "relX": 0, "relY": 0.53, "z": 14 },
+    { "id": "jaw_left", "parentId": "body", "width": 0.72, "height": 0.24, "color": "a4abc1", "anchorX": 0, "anchorY": 0, "relX": -0.2557, "relY": 0.615, "z": 16 },
+    { "id": "jaw_left_outline", "parentId": "jaw_left", "width": 0.96, "height": 0.48, "color": "000000", "anchorX": 0, "anchorY": 0, "relX": 0, "relY": 0, "z": 15 },
+    { "id": "jaw_right", "parentId": "body", "width": 0.72, "height": 0.24, "color": "a4abc1", "anchorX": 0, "anchorY": 0, "relX": 0.2557, "relY": 0.615, "z": 16 },
+    { "id": "jaw_right_outline", "parentId": "jaw_right", "width": 0.96, "height": 0.48, "color": "000000", "anchorX": 0, "anchorY": 0, "relX": 0, "relY": 0, "z": 15 },
+    { "id": "glow", "parentId": "outlet", "width": 0.32, "height": 0.18, "color": "fff6d9", "anchorX": 0, "anchorY": 0, "relX": 0, "relY": 1.64, "z": 17 },
+    { "id": "emitter", "parentId": "body", "width": 0.001, "height": 0.001, "color": "ffffff", "alpha": 0, "anchorX": 0, "anchorY": 0, "relX": 0, "relY": 0.7297297297297297, "z": 17 }
   ],
   "animations": {
     "idle": {
-      "duration": 3,
-      "loop": true,
+      "duration": 1, "loop": true,
       "tracks": {
-        "body": [
-          {
-            "time": 0,
-            "rotation": 0,
-            "offsetX": 0,
-            "offsetY": 0
-          },
-          {
-            "time": 3,
-            "rotation": 0,
-            "offsetX": 0,
-            "offsetY": 0
-          }
-        ]
+        "charge_low": [{ "time": 0, "a": 0.23 }, { "time": 1, "a": 0.23 }],
+        "charge_mid": [{ "time": 0, "a": 0.23 }, { "time": 1, "a": 0.23 }],
+        "charge_high": [{ "time": 0, "a": 0.23 }, { "time": 1, "a": 0.23 }],
+        "glow": [{ "time": 0, "a": 0 }, { "time": 1, "a": 0 }]
       }
     },
     "shooting": {
-      "duration": 1,
-      "loop": true,
+      "duration": 1, "loop": true,
       "tracks": {
-        "glow": [
-          {
-            "time": 0.0015625,
-            "rotation": 0,
-            "offsetX": 0,
-            "offsetY": -0.81,
-            "scaleX": 1,
-            "scaleY": 1,
-            "r": 1,
-            "g": 1,
-            "b": 1,
-            "a": 1
-          },
-          {
-            "time": 1,
-            "rotation": 0,
-            "offsetX": 0,
-            "offsetY": -0.37,
-            "scaleX": 1,
-            "scaleY": 900,
-            "r": 1,
-            "g": 1,
-            "b": 1,
-            "a": 1
-          }
-        ]
-      },
-      "props": []
+        "body": [
+          { "time": 0, "offsetY": -0.06 },
+          { "time": 0.04, "offsetY": -0.1 },
+          { "time": 0.13, "offsetY": 0.03 },
+          { "time": 0.24, "offsetY": 0 },
+          { "time": 0.85, "offsetY": 0 },
+          { "time": 0.96, "offsetY": -0.06 },
+          { "time": 1, "offsetY": -0.06 }
+        ],
+        "jaw_left": [
+          { "time": 0, "offsetX": -0.02, "offsetY": -0.07 },
+          { "time": 0.04, "offsetX": -0.17, "offsetY": 0.2, "rotation": 0.08 },
+          { "time": 0.13, "offsetX": -0.08, "offsetY": 0.09, "rotation": 0.03 },
+          { "time": 0.24 },
+          { "time": 0.86 },
+          { "time": 0.96, "offsetX": -0.02, "offsetY": -0.07 },
+          { "time": 1, "offsetX": -0.02, "offsetY": -0.07 }
+        ],
+        "jaw_right": [
+          { "time": 0, "offsetX": 0.02, "offsetY": -0.07 },
+          { "time": 0.04, "offsetX": 0.17, "offsetY": 0.2, "rotation": -0.08 },
+          { "time": 0.13, "offsetX": 0.08, "offsetY": 0.09, "rotation": -0.03 },
+          { "time": 0.24 },
+          { "time": 0.86 },
+          { "time": 0.96, "offsetX": 0.02, "offsetY": -0.07 },
+          { "time": 1, "offsetX": 0.02, "offsetY": -0.07 }
+        ],
+        "charge_low": [{ "time": 0, "a": 1 }, { "time": 0.08, "a": 0.23 }, { "time": 0.3, "a": 0.23 }, { "time": 0.32, "a": 1 }, { "time": 1, "a": 1 }],
+        "charge_mid": [{ "time": 0, "a": 1 }, { "time": 0.08, "a": 0.23 }, { "time": 0.53, "a": 0.23 }, { "time": 0.55, "a": 1 }, { "time": 1, "a": 1 }],
+        "charge_high": [{ "time": 0, "a": 1 }, { "time": 0.08, "a": 0.23 }, { "time": 0.75, "a": 0.23 }, { "time": 0.77, "a": 1 }, { "time": 1, "a": 1 }],
+        "glow": [{ "time": 0, "a": 1, "scaleX": 1 }, { "time": 0.04, "a": 1, "scaleX": 1.5 }, { "time": 0.09, "a": 0 }, { "time": 0.96, "a": 0 }, { "time": 1, "a": 1 }]
+      }
     }
   }
 }

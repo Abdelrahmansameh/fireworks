@@ -1,5 +1,5 @@
 export const FIREWORK_CONFIG = {
-    maxParticles: 500000,
+    maxParticles: 24000,
     baseSpeed: 800,
     baseFriction: 4.0,
     verticalFrictionMultiplier: .9,
@@ -49,12 +49,12 @@ export const FIREWORK_CONFIG = {
 
     trails: {
         enabled: true,
-        spawnRate: 0.025,           // seconds between trail spawns
-        lifetime: 1.25,             // trail particle lifetime
+        spawnRate: 0.05,           // seconds between trail spawns
+        lifetime: 0.65,             // trail particle lifetime
         size: 1.5,                 // size multiplier (relative to parent)
         gravity: 0,              // gravity for trail particles
         friction: 1,             // air resistance
-        maxCount: 50,              // max trails per particle
+        maxCount: 18,              // finite trail budget for a dense late show
         alphaMultiplier: .8,      // transparency of trails
         shape: 'sphere',           // shape for trail particles
         velocitySpread: 15       // random velocity spread (pixels/sec)

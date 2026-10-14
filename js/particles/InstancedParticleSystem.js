@@ -44,7 +44,8 @@ class InstancedParticleSystem {
         this.trailTimerIdx = 28;           // accumulator for spawn timing
         this.particleTypeIdx = 29;         // PARTICLE_TYPES int (0=default,1=firework explosion,2=trail,3=rocket trail,4=ui,5=resgen)
         this.trailCurrentCountIdx = 30;
-        this.strideFloats = 31;
+        this.sparkleValueIdx = 31;
+        this.strideFloats = 32;
 
         const geometries = {
             sphere: Renderer2D.buildCircle(1),
@@ -130,8 +131,9 @@ class InstancedParticleSystem {
         gradientFinalColor = null,
         gradientStartTime = 0.0,
         gradientDuration = 1.0,
-        particleType = PARTICLE_TYPES.DEFAULT) {
-        if (!this.meshes[shape]) shape = 'circle';
+        particleType = PARTICLE_TYPES.DEFAULT,
+        sparkleValue = 0) {
+        if (!this.meshes[shape]) shape = 'sphere';
         const idx = this.activeCounts[shape];
         if (idx >= this.maxParticles) return -1;
 
@@ -189,6 +191,7 @@ class InstancedParticleSystem {
         d[base + this.trailTimerIdx] = 0.0;
         d[base + this.particleTypeIdx] = particleType;
         d[base + this.trailCurrentCountIdx] = 0.0;
+        d[base + this.sparkleValueIdx] = Math.max(0, sparkleValue);
 
         this.particleUpdateFns[shape][idx] = updateFn;
         this.activeCounts[shape]++;

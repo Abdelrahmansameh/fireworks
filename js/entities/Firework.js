@@ -11,11 +11,12 @@ function _ascentSpeedMult(t) {
 }
 
 class Firework {
-    constructor(x, y, components, renderer, particleSystem, targetY = null, audioManager = null, initialTiltRad = null) {
+    constructor(x, y, components, renderer, particleSystem, targetY = null, audioManager = null, initialTiltRad = null, recoveryBudget = 0) {
         this.components = components;
         this.renderer = renderer;
         this.particleSystem = particleSystem;
         this.audioManager = audioManager;
+        this.recoveryBudget = Number.isFinite(recoveryBudget) ? Math.max(0, recoveryBudget) : 0;
         this.exploded = false;
         this.alive = true;
         this.particles = {};
@@ -198,8 +199,6 @@ class Firework {
                             FIREWORK_CONFIG.rocketTrails.shape,
                             new Renderer2D.Vector2(0, 0),
                             FIREWORK_CONFIG.rocketTrails.friction,
-                            0, // no glow
-                            0, // no blur
                             null, // no update function
                             false, // no gradient
                             null,
@@ -257,6 +256,14 @@ class Firework {
 
 
 
+        // Cosmetic patterns and extra recipe components share the recovery pool.
+        const recoveryParticleCount = this.components.reduce((sum, component) => {
+            if (!recipeMap[component.pattern]) return sum;
+            return sum + Math.floor(FIREWORK_CONFIG.patternParticleCounts[component.pattern]
+                || FIREWORK_CONFIG.patternParticleCounts.default);
+        }, 0);
+        const sparkleValue = recoveryParticleCount > 0 ? this.recoveryBudget / recoveryParticleCount : 0;
+
         this.components.forEach(component => {
             const pattern = component.pattern;
             const particleCount = Math.floor(FIREWORK_CONFIG.patternParticleCounts[pattern] || FIREWORK_CONFIG.patternParticleCounts.default);
@@ -281,7 +288,7 @@ class Firework {
             const rocketPos = this.rocket.position.clone();
             const velocity = new Renderer2D.Vector2();
             const acceleration = new Renderer2D.Vector2();
-            const shape = component.shape;
+            const shape = FIREWORK_CONFIG.supportedShapes.includes(component.shape) ? component.shape : 'sphere';
             const spread = component.spread;
             const randomSeed = Math.random() * 2 - 1;
             const sharedCtx = {
@@ -326,7 +333,8 @@ class Firework {
                         gradientFinalColor,
                         component.gradientStartTime,
                         component.gradientDuration,
-                        PARTICLE_TYPES.FIREWORK_EXPLOSION
+                        PARTICLE_TYPES.FIREWORK_EXPLOSION,
+                        sparkleValue
                     );
 
                     if (index !== -1) this.particles[shape].add(index);
@@ -346,7 +354,8 @@ class Firework {
                         gradientFinalColor,
                         component.gradientStartTime,
                         component.gradientDuration,
-                        PARTICLE_TYPES.FIREWORK_EXPLOSION
+                        PARTICLE_TYPES.FIREWORK_EXPLOSION,
+                        sparkleValue
                     );*/
                 }
                 return;

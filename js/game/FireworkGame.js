@@ -1,3 +1,5 @@
+import { gameStorage } from '../platform/GameStorage.js';
+import { fireworksForCrowd } from '../systems/ProductionRates.js';
 import { FIREWORK_CONFIG, GAME_BOUNDS, PROCEDURAL_BACKGROUND_CONFIG, DEFAULT_RECIPE_COMPONENTS, GENERIC_RECIPE_NAMES, PREDEFINED_RECIPES, AUTO_LAUNCHER_COST_BASE, DRONE_CONFIG, CROWD_CONFIG } from '../config/config.js';
 import GameCore from './GameCore.js';
 import InstancedParticleSystem from '../particles/InstancedParticleSystem.js';
@@ -37,10 +39,10 @@ class FireworkGame extends GameCore {
         this.cinematicManager = new CinematicManager(this);
         this.grandFinaleManager = new GrandFinaleManager(this);
 
-        this.hasSeenFirstCrowdCinematic = JSON.parse(localStorage.getItem('hasSeenFirstCrowdCinematic') || 'false');
+        this.hasSeenFirstCrowdCinematic = JSON.parse(gameStorage.getItem('hasSeenFirstCrowdCinematic') || 'false');
         this.isInputDisabled = false;
         this.hideFloatingSparkles = false;
-        this.advancedCreatorUnlocked = JSON.parse(localStorage.getItem('advancedCreatorUnlocked') || 'false');
+        this.advancedCreatorUnlocked = JSON.parse(gameStorage.getItem('advancedCreatorUnlocked') || 'false');
 
         this.cameraTransitionSpeed = 2.0;
 
@@ -48,11 +50,11 @@ class FireworkGame extends GameCore {
     }
 
     init() {
-        const savedCount = parseInt(localStorage.getItem('fireworkCount')) || 0;
+        const savedCount = parseInt(gameStorage.getItem('fireworkCount')) || 0;
         this.fireworkSystem.init(savedCount);
-        this.autoLauncherCost = parseInt(localStorage.getItem('autoLauncherCost')) || AUTO_LAUNCHER_COST_BASE;
+        this.autoLauncherCost = parseInt(gameStorage.getItem('autoLauncherCost')) || AUTO_LAUNCHER_COST_BASE;
 
-        const savedResources = localStorage.getItem('resources');
+        const savedResources = gameStorage.getItem('resources');
         if (savedResources) {
             try {
                 const resourceData = JSON.parse(savedResources);
@@ -64,12 +66,12 @@ class FireworkGame extends GameCore {
 
         this.statsTracker.load();
 
-        const savedGameState = JSON.parse(localStorage.getItem('gameState'));
+        const savedGameState = JSON.parse(gameStorage.getItem('gameState'));
 
         this.initRenderer2D();
         this.initBackgroundColor();
 
-        const savedBuildingData = localStorage.getItem('buildingManagerData');
+        const savedBuildingData = gameStorage.getItem('buildingManagerData');
         if (savedBuildingData) {
             try {
                 const buildingData = JSON.parse(savedBuildingData);
@@ -154,6 +156,8 @@ class FireworkGame extends GameCore {
             const correctedCrowd = this._calculateTargetCrowdCount(this.fireworkSystem.fireworkCount);
             this.crowd.setCount(correctedCrowd);
         }
+        this._isRestoring = false;
+        this.saveProgress();
     }
 
     initRenderer2D() {
@@ -335,11 +339,16 @@ class FireworkGame extends GameCore {
         // The play-bot (js/bot/GameBot.js) can fast-forward by running the
         // simulation multiple times per rendered frame. Sub-stepping (rather
         // than scaling delta) keeps particle/crowd physics stable at high speed.
-        const steps = this.bot?.enabled ? this.bot.speedMultiplier : 1;
+        const botRunning = this.bot?.enabled;
+        const frameDelta = Math.min(Math.max(delta, 0), 0.05);
+        const steps = botRunning ? this.bot.speedMultiplier : Math.max(1, Math.ceil(frameDelta * 60));
+        const stepDelta = botRunning ? 1 / 60 : frameDelta / steps;
         for (let i = 0; i < steps; i++) {
             const isFinalStep = i === steps - 1;
-            this._stepSimulation(delta, isFinalStep);
-            if (this.bot?.enabled) this.bot.tick(delta);
+            this.elapsedGameTime += stepDelta;
+            this._stepSimulation(stepDelta, isFinalStep);
+            if (this.bot?.enabled) this.bot.tick(stepDelta);
+            if (botRunning && !this.bot.enabled) break;
         }
 
         // Update skeleton outline for cursor particles (crowd grab or building drag)
@@ -384,6 +393,10 @@ class FireworkGame extends GameCore {
         this.recipes = [];
         this.currentRecipeComponents = [...DEFAULT_RECIPE_COMPONENTS];
         this.baseSparkleMultiplier = 1;
+        this.elapsedGameTime = 0;
+        this.gameCompleted = false;
+        this.grandFinaleUnlocked = false;
+        this.grandFinaleManager.reset();
         this.droneStats = {
             lifetimeMultiplier: 1,
             speedMultiplier: 1,
@@ -460,14 +473,14 @@ class FireworkGame extends GameCore {
 
         this.autoLauncherCost = AUTO_LAUNCHER_COST_BASE;
 
-        localStorage.clear();
+        gameStorage.clear();
         this.loadRecipes();
         this.statsTracker.reset();
 
         this.ui.initializeUnlockStates();
 
         this.updateComponentsList();
-        this.showNotification("Game has been reset.");
+        this.showNotification("Game reset.");
 
         this.initBackgroundColor();
 
@@ -476,9 +489,9 @@ class FireworkGame extends GameCore {
 
     eraseAllRecipes() {
         this.recipes = [];
-        localStorage.removeItem('fireworkRecipes');
+        gameStorage.removeItem('fireworkRecipes');
         this.updateRecipeList();
-        this.showNotification("All recipes have been erased.");
+        this.showNotification("Recipes erased.");
     }
 
     updateComponentsList(containerId = 'components-list') {
@@ -488,12 +501,12 @@ class FireworkGame extends GameCore {
     }
 
     saveCurrentRecipeComponents() {
-        localStorage.setItem('currentRecipeComponents', JSON.stringify(this.currentRecipeComponents));
+        gameStorage.setItem('currentRecipeComponents', JSON.stringify(this.currentRecipeComponents));
     }
 
     loadCurrentRecipe() {
-        const savedRecipeComponents = localStorage.getItem('currentRecipeComponents');
-        const savedRecipeName = localStorage.getItem('currentRecipeName');
+        const savedRecipeComponents = gameStorage.getItem('currentRecipeComponents');
+        const savedRecipeName = gameStorage.getItem('currentRecipeName');
         if (savedRecipeComponents) {
             this.currentRecipeComponents = JSON.parse(savedRecipeComponents);
             this.currentRecipeComponents.forEach(component => {
@@ -539,7 +552,7 @@ class FireworkGame extends GameCore {
         }
 
         if (this.currentRecipeComponents.length === 0) {
-            this.showNotification("Add at least one component before saving!");
+            this.showNotification("Add a component first.");
             return;
         }
 
@@ -547,17 +560,17 @@ class FireworkGame extends GameCore {
 
         if (existingIndex !== -1) {
             this.recipes[existingIndex].components = this.currentRecipeComponents.map(component => ({ ...component }));
-            this.showNotification("Recipe overwritten successfully!");
+            this.showNotification("Recipe updated.");
         } else {
             const recipe = {
                 name: recipeName,
                 components: this.currentRecipeComponents.map(component => ({ ...component }))
             };
             this.recipes.push(recipe);
-            this.showNotification("Recipe saved successfully!");
+            this.showNotification("Recipe saved.");
         }
 
-        localStorage.setItem('fireworkRecipes', JSON.stringify(this.recipes));
+        gameStorage.setItem('fireworkRecipes', JSON.stringify(this.recipes));
         this.updateRecipeList();
     }
 
@@ -582,7 +595,7 @@ class FireworkGame extends GameCore {
         };
 
         // If user already has saved recipes, use them synchronously (no fetch needed)
-        const savedRaw = localStorage.getItem('fireworkRecipes');
+        const savedRaw = gameStorage.getItem('fireworkRecipes');
         if (savedRaw) {
             try {
                 const savedRecipes = JSON.parse(savedRaw);
@@ -604,7 +617,7 @@ class FireworkGame extends GameCore {
             const predef = PREDEFINED_RECIPES;
             this.recipes = (Array.isArray(predef) ? predef : []).map(r => ({ ...r }));
             normalizeRecipes(this.recipes);
-            localStorage.setItem('fireworkRecipes', JSON.stringify(this.recipes));
+            gameStorage.setItem('fireworkRecipes', JSON.stringify(this.recipes));
             this.updateRecipeList();
             this.assignSequentialRecipesToLaunchers();
             this.updateLauncherList();
@@ -647,7 +660,7 @@ class FireworkGame extends GameCore {
         this.updateComponentsList();
         this.saveCurrentRecipeComponents();
         document.getElementById('recipe-name').value = this.recipes[index].name;
-        this.showNotification(`Loaded Recipe "${this.recipes[index].name}"`);
+        this.showNotification(`Loaded "${this.recipes[index].name}"`);
     }
 
     updateLauncherList() {
@@ -676,6 +689,8 @@ class FireworkGame extends GameCore {
     serializeGameData() {
         const data = {
             fireworkCount: this.fireworkSystem.fireworkCount,
+            elapsedGameTime: this.elapsedGameTime,
+            gameCompleted: this.gameCompleted,
             autoLauncherCost: this.autoLauncherCost,
             sparkles: this.getSparkles(),
             recipes: this.recipes,
@@ -702,16 +717,18 @@ class FireworkGame extends GameCore {
         if (data.resources) {
             const resourceData = typeof data.resources === 'string' ? JSON.parse(data.resources) : data.resources;
             this.resourceManager.load(resourceData);
-            localStorage.setItem('resources', JSON.stringify(resourceData));
+            gameStorage.setItem('resources', JSON.stringify(resourceData));
         }
 
         this.fireworkSystem.init(data.fireworkCount || 0);
+        this.elapsedGameTime = Math.max(0, Number(data.elapsedGameTime) || 0);
+        this.gameCompleted = !!data.gameCompleted;
         this.autoLauncherCost = data.autoLauncherCost || AUTO_LAUNCHER_COST_BASE;
         this.recipes = data.recipes || [];
         this.currentRecipeComponents = data.currentRecipeComponents || [...DEFAULT_RECIPE_COMPONENTS];
 
         this.initBackgroundColor();
-        localStorage.setItem('backgroundColor', PROCEDURAL_BACKGROUND_CONFIG.bodyBackgroundColor);
+        gameStorage.setItem('backgroundColor', PROCEDURAL_BACKGROUND_CONFIG.bodyBackgroundColor);
 
         if (data.buildingManagerData) {
             this.buildingManager.deserialize(data.buildingManagerData);
@@ -746,6 +763,7 @@ class FireworkGame extends GameCore {
 
         this.ui.initializeUnlockStates();
         this.progression.applyAll(this);
+        this.saveProgress();
     }
 
     updateCameraPosition(deltaTime) {
@@ -802,26 +820,22 @@ class FireworkGame extends GameCore {
             currentSpsElement.textContent = Math.floor(currentFireworks).toLocaleString();
         }
 
-        const config = CROWD_CONFIG.scaling;
-        const A = (typeof config.formulaA === 'number') ? config.formulaA : 1;
-        const exp = (typeof config.formulaExp === 'number') ? config.formulaExp : 0.5;
-        const B = (typeof config.formulaB === 'number') ? config.formulaB : 0;
-        const offset = config.formulaOffset ?? 0;
-        const bonus = this.crowdStats?.countBonus ?? 0;
-
-        // Fireworks needed to reach a crowd of `n` (inverse of the scaling formula).
-        const inverseThreshold = (n) => {
-            if (A === 0 || exp === 0) return Infinity;
-            return Math.pow(Math.max(0, (n - bonus - B) / A), 1 / exp) + offset;
-        };
-
-        const nextThresholdFireworks = inverseThreshold(currentCrowd + 1);
+        const nextThresholdFireworks = fireworksForCrowd(currentCrowd + 1, this);
+        const full = !Number.isFinite(nextThresholdFireworks);
         if (nextThresholdElement) {
-            nextThresholdElement.textContent = Math.ceil(nextThresholdFireworks).toLocaleString();
+            nextThresholdElement.textContent = full ? '—' : Math.ceil(nextThresholdFireworks).toLocaleString();
+            nextThresholdElement.parentElement.hidden = full;
         }
+        const fullLabel = document.getElementById('crowd-full');
+        if (fullLabel) fullLabel.hidden = !full;
 
         if (progressBar) {
-            const currentThresholdFireworks = inverseThreshold(currentCrowd);
+            progressBar.parentElement.hidden = full;
+            if (full) {
+                progressBar.style.width = '100%';
+                return;
+            }
+            const currentThresholdFireworks = fireworksForCrowd(currentCrowd, this);
             const base = Math.max(0, currentThresholdFireworks);
             const denom = Math.max(1e-6, nextThresholdFireworks - base);
             const progress = ((currentFireworks - base) / denom) * 100;
@@ -842,7 +856,7 @@ class FireworkGame extends GameCore {
 
         this.updateLauncherList();
         this.saveProgress();
-        this.showNotification("All auto-launchers are now shooting random recipes!");
+        this.showNotification("Launcher recipes shuffled!");
     }
 
     openAdvancedCreator() {
@@ -890,6 +904,7 @@ class FireworkGame extends GameCore {
     }
 
     updateCreator(delta) {
+        this.fireworkSystem.update(delta);
         this.updateGame(delta);
 
         if (this.previewParticleSystem) {
@@ -923,7 +938,7 @@ class FireworkGame extends GameCore {
 
         if (!this.previewFirework && !this.previewFireworkTimer) {
             const y = GAME_BOUNDS.WORLD_LAUNCHER_Y;
-            this.previewFirework = new Firework(0, y, this.currentRecipeComponents, this.previewRenderer, this.previewParticleSystem, y, this.audioManager);
+            this.previewFirework = new Firework(0, y, this.currentRecipeComponents, this.previewRenderer, this.previewParticleSystem, 100, this.audioManager);
             this.previewFireworkTimer = lifetime;
         }
     }
@@ -979,12 +994,10 @@ class FireworkGame extends GameCore {
      */
     _unlockGrandFinale() {
         super._unlockGrandFinale();
-        // On initial load this runs from applyAll() inside the GameCore base
-        // constructor — before grandFinaleManager exists. Just set the flag then;
-        // the manager auto-fires once it's constructed and the update loop runs.
-        if (!this.grandFinaleManager) return;
-        this.showNotification('Grand Finale unlocked — the sky is about to erupt!');
-        this.grandFinaleManager.trigger();
+    }
+
+    triggerGrandFinale() {
+        return this.grandFinaleManager.trigger();
     }
 
     /** Cheat / dev: force-unlock and trigger a Grand Finale now. */
@@ -1004,7 +1017,8 @@ class FireworkGame extends GameCore {
     }
 
     playFirstCrowdCinematic() {
-        this.cinematicManager.play(async (game, cm) => {
+        return this.cinematicManager.play(async (game, cm) => {
+            const originalCameraX = game.renderer2D.cameraX;
             // Camera scrolls to the left edge
             await cm.panCameraTo(GAME_BOUNDS.SCROLL_MIN_X, 3000);
 
@@ -1019,6 +1033,9 @@ class FireworkGame extends GameCore {
             // Crowd member spawns
             game.crowd.setCount(1);
             const person = game.crowd.people[0];
+            // Prevent normal crowd income while he walks into the cinematic.
+            // The only toss during this sequence is the scripted one below.
+            person.cinematicCoinTossDisabled = true;
 
             // Register arrival listener NOW before he can reach his spot
             const arrivalPromise = cm.waitForEvent('firstCrowdArrival');
@@ -1065,6 +1082,7 @@ class FireworkGame extends GameCore {
             this.crowd.requestPoseBlend(person, CROWD_CONFIG.blending?.cinematicRelease);
             person.cinematicIdle = false;
             person.cinematicLookFn = null;
+            person.cinematicCoinTossDisabled = false;
             person.coinTossTimer = 5; // force immediate toss
 
             // Brief pause, then zoom back out to where we were
@@ -1072,7 +1090,15 @@ class FireworkGame extends GameCore {
             await cm.zoomCamera(1.0, CINEMATIC_CONFIG.ZOOM_OUT_DURATION_MS, null, originalCameraY);
 
             cm.stopFollowing();
+            await cm.panCameraTo(originalCameraX, 2000);
             await cm.wait(500);
+        }).then(() => {
+            if (this.crowdUnlocked && this.progression.getUpgradeLevel('crowd_fireworks') === 0) {
+                this.ui.renderCrowdGoldUpgrade();
+                this.ui.showTab('crowd');
+                const panel = document.querySelector('#crowd-content .panel');
+                if (panel) panel.scrollTop = 0;
+            }
         });
     }
 }

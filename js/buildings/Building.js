@@ -13,6 +13,8 @@ class Building {
         }
 
         this.id = data.id || `building_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        this.grantUpgradeId = typeof data.grantUpgradeId === 'string' ? data.grantUpgradeId : null;
+        this.purchaseCost = Number.isFinite(data.purchaseCost) ? Math.max(0, data.purchaseCost) : null;
         
         this.x = x;
         this.y = y;
@@ -142,6 +144,8 @@ class Building {
             y: this.y,
             rotation: this.rotation,
             scale: this.scale,
+            grantUpgradeId: this.grantUpgradeId,
+            purchaseCost: this.purchaseCost,
         };
     }
 

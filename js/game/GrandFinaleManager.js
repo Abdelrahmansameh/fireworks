@@ -1,19 +1,7 @@
 import { GRAND_FINALE_CONFIG } from '../config/GrandFinaleConfig.js';
 import { GAME_BOUNDS } from '../config/config.js';
 
-/**
- * GrandFinaleManager — the live-game climax event (unlocked ~15 min).
- *
- * While active it floods the sky with fireworks, refilling the particle count
- * each frame toward `targetFillFraction × maxParticles` and holding it there for
- * `durationSec`. Every finale firework pays out launcher sparkles (source
- * 'grand_finale'), so the launcher — the particle supply all game — gets a
- * spectacular income encore.
- *
- * Lives only in the live FireworkGame (it needs the particle system + Firework
- * entities). The headless simulator models the same income burst analytically
- * in GameCore.stepHeadless so balance stays honest.
- */
+/** Time-based live finale; the first completed show persists the festival finish. */
 export default class GrandFinaleManager {
     constructor(game, config = GRAND_FINALE_CONFIG) {
         this.game = game;
@@ -23,6 +11,15 @@ export default class GrandFinaleManager {
         this.elapsed = 0;        // seconds since this finale started
         this.cooldown = 0;       // seconds remaining before it can fire again
         this.timesFired = 0;
+        this._launchAccumulator = 0;
+    }
+
+    reset() {
+        this.active = false;
+        this.elapsed = 0;
+        this.cooldown = 0;
+        this.timesFired = 0;
+        this._launchAccumulator = 0;
     }
 
     /** Whether a finale can start right now. */
@@ -38,7 +35,11 @@ export default class GrandFinaleManager {
         if (!this.canTrigger()) return false;
         this.active = true;
         this.elapsed = 0;
+        this._launchAccumulator = 0;
         this.timesFired++;
+        const r = this.game.renderer2D;
+        this._cameraStart = { x: r.cameraX, y: r.cameraY, zoom: r.cameraZoom };
+        this.game.cameraTargetX = null;
         this.game.showNotification('🎆 GRAND FINALE! 🎆');
         return true;
     }
@@ -48,16 +49,30 @@ export default class GrandFinaleManager {
 
         if (this.active) {
             this.elapsed += deltaTime;
+            const r = this.game.renderer2D;
+            const t = Math.min(1, this.elapsed / 2);
+            const ease = t * t * (3 - 2 * t);
+            const zoom = this._cameraStart.zoom + (0.75 - this._cameraStart.zoom) * ease;
+            const targetX = (GAME_BOUNDS.LAUNCHER_MIN_X + GAME_BOUNDS.LAUNCHER_MAX_X) / 2;
+            const targetY = GAME_BOUNDS.WORLD_GROUND_Y + r.virtualHeight / (2 * 0.75);
+            r.setCamera({ x: this._cameraStart.x + (targetX - this._cameraStart.x) * ease,
+                y: this._cameraStart.y + (targetY - this._cameraStart.y) * ease, zoom });
             this._spawnTowardTarget(deltaTime);
             if (this.elapsed >= this.config.durationSec) {
                 this.active = false;
                 this.cooldown = this.config.cooldownSec;
+                if (!this.game.gameCompleted) {
+                    this.game.gameCompleted = true;
+                    this.game.saveProgress();
+                    this.game.ui.renderUpgrades?.();
+                    this.game.showNotification('🎆 What a show!');
+                }
             }
             return;
         }
 
-        // Idle: auto-fire on cadence once unlocked.
-        if (this.config.autoTrigger && this.canTrigger()) {
+        // Start the first show automatically; encores are manual.
+        if (this.config.autoTrigger && !this.game.gameCompleted && this.canTrigger()) {
             this.trigger();
         }
     }
@@ -67,18 +82,12 @@ export default class GrandFinaleManager {
         const ps = this.game.particleSystem;
         if (!ps) return;
 
-        const cap = ps.maxParticles * this.config.targetFillFraction;
-        // Ease the target from 0 → cap over rampUpSec, then hold at cap.
         const ramp = Math.min(1, this.elapsed / Math.max(0.0001, this.config.rampUpSec));
-        const target = cap * ramp;
-
-        const current = ps.getTotalActiveParticles();
-        const gap = target - current;
-        if (gap <= 0) return;
-
-        let n = Math.ceil(gap / this.config.avgParticlesPerFirework);
-        n = Math.min(n, this.config.maxFireworksPerFrame);
-
+        this._launchAccumulator += deltaTime * this.config.fireworksPerSecond * (0.25 + 0.75 * ramp);
+        const n = Math.floor(this._launchAccumulator);
+        this._launchAccumulator -= n;
+        // Launch rate builds the show; the buffer cap is only a safety ceiling.
+        if (ps.getTotalActiveParticles() >= this.config.maxActiveParticles) return;
         for (let i = 0; i < n; i++) this._launchOne();
     }
 
@@ -91,8 +100,9 @@ export default class GrandFinaleManager {
         const y = GAME_BOUNDS.WORLD_LAUNCHER_Y;
 
         // Explode high in the sky, spread across the vertical band.
-        const lo = GAME_BOUNDS.WORLD_MIN_EXPLOSION_Y
-        const hi = GAME_BOUNDS.WORLD_MAX_EXPLOSION_Y ?? (lo - 1200);
+        const lo = GAME_BOUNDS.WORLD_MIN_EXPLOSION_Y + 120;
+        const hi = Math.max(GAME_BOUNDS.WORLD_MAX_EXPLOSION_Y,
+            game.renderer2D.getVisibleWorldBounds().top - 180);
         const targetY = lo + Math.random() * (hi - lo);
 
         // Pick a random known recipe so the finale is colourful and varied.

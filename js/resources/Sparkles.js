@@ -16,6 +16,12 @@ export default class Sparkles extends Resource {
         this._perSecond = this.levelRate;
     }
 
+    update() {
+        // Buildings award production using game time. This rate is display-only;
+        // Resource.update's wall-clock accrual would pay generators a second time.
+        this._lastUpdate = performance.now();
+    }
+
     formatAmount() {
         if (this._amount >= 1000000) {
             return `${(this._amount / 1000000).toFixed(2)}M sp`;

@@ -1,7 +1,7 @@
 import Building from './Building.js';
 import * as Renderer2D from '../rendering/Renderer.js';
 import { PARTICLE_TYPES } from '../config/config.js';
-import { SkeletonData, hexToRgb } from '../animation/SkeletonData.js';
+import { SkeletonData } from '../animation/SkeletonData.js';
 import { AnimationData } from '../animation/AnimationData.js';
 import { computePose, applyPoseToInstances, computeSkeletonOutlinePoints } from '../animation/SkeletonAnimator.js';
 
@@ -10,12 +10,11 @@ class ResourceGenerator extends Building {
         super(game, 'RESOURCE_GENERATOR', x, y, data);
 
         this.resourceType = data.resourceType || this.config.resourceType;
-        this.accumulator = Math.random() ;
+        this.accumulator = data.accumulator ?? 0;
 
         this._skeleton = null;
         this._animData = null;
         this._instancedGroup = null;
-        this._animTimer = Math.random() * 3;
 
         this._loadSkeleton();
     }
@@ -28,21 +27,17 @@ class ResourceGenerator extends Building {
     }
 
     calculateProductionRate() {
-        return this.config.baseProductionRate * (this.game.generatorStats?.productionRateMultiplier ?? 1);
+        return this.config.baseProductionRate * (this.game.baseSparkleMultiplier ?? 1)
+            * (this.game.generatorStats?.productionRateMultiplier ?? 1);
     }
 
     update(deltaTime) {
         super.update(deltaTime);
 
-        this._animTimer += deltaTime;
-        if (this._skeleton && this._instancedGroup) {
-            this._renderFrame();
-        }
-
         this.accumulator += deltaTime;
         this.accumulator = Math.min(this.accumulator, this.config.maxAccumulator); 
 
-        if (this.accumulator >= 1.0) {
+        while (this.accumulator >= 1.0) {
             const resource = this.game.resourceManager.resources[this.resourceType];
             if (resource) {
                 const amount = this.productionRate;
@@ -61,6 +56,8 @@ class ResourceGenerator extends Building {
             }
             this.accumulator -= 1.0;
         }
+
+        this._renderFrame();
     }
 
     async _loadSkeleton() {
@@ -122,88 +119,48 @@ class ResourceGenerator extends Building {
     emitSparkleTrailBurst() {
         if (!this.game.particleSystem) return;
 
-        const particleLifetime = 1;
-        const baseCount = this.config.sparkleTrailBaseCount ?? 15;
+        const scale = this.config.skeletonScale || 1;
+        const particleLifetime = 0.53;
+        const baseCount = this.config.sparkleTrailBaseCount ?? 8;
         const scalingRatio = this.config.sparkleTrailScalingRatio ?? 1.0;
         const productionMultiplier = (this.config.baseProductionRate > 0)
             ? (this.productionRate / this.config.baseProductionRate)
             : (this.game.generatorStats?.productionRateMultiplier ?? 1);
         const burstCount = Math.min(this.config.maxSparkleTrailBurstCount, Math.max(1, Math.round(baseCount * (1 + (productionMultiplier - 1) * scalingRatio))));
 
-        const particleSize = 1.5;
-        const velocitySpread = 100;
-
-
-        // Compute spawn center from the skeleton's `roof` bone when available.
-        // Fallback to the old heuristic if skeleton data isn't ready.
+        // The emission anchor sits between the jaws at the start of the pop.
         let centerX = this.x;
-        let centerY = this.y + (this.config.skeletonScale) - 20;
+        let centerY = this.y + 2.08 * scale;
 
         if (this._skeleton && this._animData) {
-            const clipName = 'shooting';
-            const clip = this._animData ? this._animData.getClip(clipName) : null;
-            const time = clip
-                ? (clip.loop ? this.accumulator % clip.duration : Math.min(this.accumulator, clip.duration))
-                : 0;
-            const pose = computePose(this._skeleton, clip, time);
-
-            const roofPart = this._skeleton.getPart ? this._skeleton.getPart('body') : null;
-            const roofTf = pose.get && pose.get('body');
-            if (roofPart && roofTf) {
-                const anchorOffX = roofPart.anchorX * roofPart.width;
-                const anchorOffY = roofPart.anchorY * roofPart.height;
-                const cosR = Math.cos(roofTf.rotation);
-                const sinR = Math.sin(roofTf.rotation);
-
-                const meshDrawX = roofTf.x - (anchorOffX * cosR - anchorOffY * sinR);
-                const meshDrawY = roofTf.y - (anchorOffX * sinR + anchorOffY * cosR);
-
-                const scale = this.config.skeletonScale || 1;
-                const flipX = 1;
-
-                centerX = this.x + meshDrawX * flipX * scale;
-                centerY = this.y + meshDrawY * scale;
-
-                // Move the spawn point above the roof by an amount equal to the roof's height (in world units).
-                const worldPartHeight = roofPart.height * scale * (roofTf.scaleY ?? 1);
-                centerY += worldPartHeight - 10;
+            const pose = computePose(this._skeleton, this._animData.getClip('shooting'), 0);
+            const emitter = pose.get('emitter');
+            if (emitter) {
+                centerX = this.x + emitter.x * scale;
+                centerY = this.y + emitter.y * scale;
             }
         }
 
         for (let i = 0; i < burstCount; i++) {
-            // Choose a color from a random recipe's first component color when available.
-            let particleColor = null;
-            try {
-                const recipes = Array.isArray(this.game?.recipes) ? this.game.recipes : null;
-                if (recipes && recipes.length > 0) {
-                    const ri = Math.floor(Math.random() * recipes.length);
-                    const recipe = recipes[ri];
-                    const comp = (recipe && Array.isArray(recipe.components) && recipe.components.length > 0) ? recipe.components[0] : null;
-                    if (comp && typeof comp.color === 'string') {
-                        const rgb = hexToRgb(comp.color);
-                        particleColor = new Renderer2D.Color(rgb.r, rgb.g, rgb.b, 0.8);
-                    }
-                }
-            } catch (e) {
-                // fall back to random color below
-            }
+            const red = Math.random(), green = Math.random(), blue = Math.random();
+            const brightest = Math.max(red, green, blue, 0.001);
+            const particleColor = new Renderer2D.Color(
+                0.2 + 0.8 * red / brightest,
+                0.2 + 0.8 * green / brightest,
+                0.2 + 0.8 * blue / brightest,
+                1
+            );
 
-            if (!particleColor) {
-                particleColor = new Renderer2D.Color(Math.random(), Math.random(), Math.random(), 0.8);
-            }
-
-            const angle = Math.random() * Math.PI * 2;
-            const randomSpread = Math.random() * velocitySpread;
-            const risingSpeed = (Math.random() + 0.5) * 100;
+            // Evenly spaced lanes make a short fan with a taller center.
+            const lane = burstCount === 1 ? 0 : 2 * i / (burstCount - 1) - 1;
+            const risingSpeed = 4 + (1 - Math.abs(lane)) * 2.2 + (i % 3) * 0.28;
             const velocity = new Renderer2D.Vector2(
-                Math.cos(angle) * randomSpread,
-                risingSpeed - Math.random() * risingSpeed * 0.2
+                lane * 3.6 * scale,
+                risingSpeed * scale
             );
-
-            const position = new Renderer2D.Vector2(
-                centerX + (Math.random() - 0.5) * 10,
-                centerY
-            );
+            const position = new Renderer2D.Vector2(centerX, centerY);
+            // Sphere geometry has radius 1; match the preview's square diameters.
+            const particleSize = (i % 3 === 0 ? 0.08 : 0.06) * scale;
 
             this.game.particleSystem.addParticle(
                 position,
@@ -211,12 +168,10 @@ class ResourceGenerator extends Building {
                 particleColor,
                 particleSize,
                 particleLifetime,
-                50, // gravity
+                10.4 * scale,
                 'sphere',
                 new Renderer2D.Vector2(0, 0),
-                2.0, // friction
-                0, //  glow
-                0, //  blur
+                0, // keep the fan's ballistic arc
                 null, //  update function
                 false, //  gradient
                 null,

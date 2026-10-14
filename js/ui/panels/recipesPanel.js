@@ -19,14 +19,15 @@ export function render(container) {
         <fieldset class="recipe-settings">
             <legend>Name</legend>
             <div class="recipes-option">
-                <input type="text" id="recipe-name" placeholder="Enter recipe name">
+                <input type="text" id="recipe-name" placeholder="Name your firework">
             </div>
         </fieldset>
 
         <fieldset class="recipe-actions">
-            <button id="save-recipe">Save Recipe</button>
-            <button id="randomize-recipe">Randomize Recipe</button>
-            <button id="erase-recipes" class="danger-button">Erase All Recipes</button>
+            <button id="save-recipe">Save</button>
+            <button id="randomize-recipe">Shuffle</button>
+            <button id="open-advanced-creator" hidden>Preview</button>
+            <button id="erase-recipes" class="danger-button">Erase all recipes</button>
         </fieldset>
 
         <div class="saved-recipes">
@@ -36,4 +37,29 @@ export function render(container) {
     `;
 
     container.appendChild(panel);
+
+    // The preview methods already exist in FireworkGame. Build their missing
+    // scene here so the Firework Studio purchase opens the editor.
+    const creator = document.createElement('section');
+    creator.id = 'creator-scene';
+    creator.className = 'advanced-creator-scene';
+    creator.style.display = 'none';
+    creator.innerHTML = `
+        <header class="creator-header">
+            <h2>Firework Studio</h2>
+            <button id="close-advanced-creator">Back</button>
+        </header>
+        <div class="creator-workspace">
+            <div class="creator-preview"><canvas id="creator-canvas" aria-label="Firework preview"></canvas></div>
+            <div class="panel scrollable-panel creator-controls">
+                <label for="creator-recipe-name">Name</label>
+                <input type="text" id="creator-recipe-name" placeholder="Name your firework">
+                <div id="creator-components-list"></div>
+                <button id="creator-add-component">Add component</button>
+                <button id="creator-randomize-recipe">Shuffle</button>
+                <button id="creator-save-recipe">Save</button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(creator);
 }

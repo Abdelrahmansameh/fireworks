@@ -9,10 +9,16 @@ export function render(container) {
     panel.className = 'panel scrollable-panel';
 
     panel.innerHTML = `
-        <h3>Available</h3>
+        <div id="show-progression-goal" class="show-progression-goal" aria-live="polite" hidden></div>
         <div id="upgrades-available" class="upgrade-grid"></div>
-        <h3>Owned</h3>
-        <div id="upgrades-owned" class="upgrade-grid"></div>
+        <details id="upgrades-extra-section" hidden>
+            <summary id="upgrades-extra-title">More upgrades</summary>
+            <div id="upgrades-extra" class="upgrade-grid"></div>
+        </details>
+        <details>
+            <summary>Owned</summary>
+            <div id="upgrades-owned" class="upgrade-grid"></div>
+        </details>
     `;
 
     container.appendChild(panel);

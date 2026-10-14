@@ -1035,6 +1035,14 @@ legend {
     background: hsla(220, 18%, 14%, 0.4);
 }
 
+.upgrade-card[hidden] {
+    display: none;
+}
+
+#crowd-gold-upgrade {
+    margin-bottom: var(--sp-4);
+}
+
 .upgrade-buy-button {
     display: flex;
     align-items: center;
@@ -1262,7 +1270,7 @@ legend {
     -webkit-backdrop-filter: blur(20px);
     border: 1px solid var(--glass-border-hi);
     border-radius: var(--radius-xl);
-    box-shadow: var(--shadow-lg), var(--shadow-glow);
+    box-shadow: var(--shadow-lg);
     padding: var(--sp-6);
     display: none;
 }
@@ -1334,9 +1342,7 @@ legend {
     font-size: var(--fs-xl);
     font-weight: 900;
     color: var(--accent, hsl(180, 70%, 65%));
-    text-shadow:
-        0 0 6px currentColor,
-        0 1px 3px hsla(0, 0%, 0%, 0.6);
+    text-shadow: 0 1px 3px hsla(0, 0%, 0%, 0.6);
     white-space: nowrap;
     padding: var(--sp-1);
     background: hsla(220, 25%, 8%, 0.5);
@@ -1749,4 +1755,36 @@ legend {
     font-size: var(--fs-md);
     font-weight: 700;
     color: var(--text-accent);
+}
+/* Live recipe preview unlocked with the drone crew. */
+.advanced-creator-scene {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    flex-direction: column;
+    background: #080c16;
+    color: var(--text-primary, #f0e4cf);
+}
+.creator-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    padding: 12px 24px;
+}
+.creator-header h2 { margin: 0; font-size: 20px; }
+.creator-workspace { display: flex; flex: 1; min-height: 0; }
+.creator-preview { flex: 1; min-width: 0; min-height: 240px; }
+#creator-canvas { width: 100%; height: 100%; display: block; }
+.creator-controls { flex: 0 0 360px; overflow-y: auto; max-height: none; padding: 20px; }
+.creator-controls input { max-width: 100%; }
+.show-progression-goal { border-bottom: 1px solid rgba(255, 200, 87, 0.2); padding-bottom: 10px; margin-bottom: 14px; }
+.show-progression-goal p { margin: 6px 0; }
+#upgrades-content details summary { cursor: pointer; padding: 14px 0; }
+@media (max-width: 700px) {
+    .creator-workspace { flex-direction: column; }
+    .creator-preview { flex: 0 0 42vh; }
+    .creator-controls { flex: 1; min-height: 0; }
+    .creator-header { padding: 10px 14px; }
+    .creator-header h2 { font-size: 16px; }
 }
