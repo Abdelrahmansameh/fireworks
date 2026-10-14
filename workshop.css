@@ -277,7 +277,7 @@ body.workshop-open::after { content: ''; position: fixed; inset: 0; z-index: 90;
     .workshop-preview-photo { max-height: calc(100dvh - 340px); }
 }
 @media (max-width: 700px) {
-    #recipes-content, #recipes-content.sheet-full { left: 0; right: 0; width: auto; padding: 8px 14px 14px; top: 48px; bottom: max(12px, env(safe-area-inset-bottom)); height: auto !important; max-height: none; }
+    #recipes-content, #recipes-content.sheet-full { left: 0; right: 0; width: auto; padding: 8px 14px 14px; top: calc(var(--mobile-status-top) + 40px); bottom: max(12px, env(safe-area-inset-bottom)); height: auto !important; max-height: none; }
     body.workshop-open .resource-counter { opacity: 0; transform: translateY(-16px); pointer-events: none; }
     body.workshop-open .tab-bar { opacity: 0; transform: translateY(130px); pointer-events: none; }
     #recipes-content > .panel-header { display: none; }
