@@ -49,7 +49,7 @@ body.menu-tucked .menu-expand-icon { display: inline-flex; }
 .dev-divider { margin: 0; border-top: 1px dashed #817b99; padding-top: 4px; text-align: center; font-size: 10px; font-weight: 700; color: #c7bfd9; letter-spacing: 1px; }
 #cheats-tab, #bot-tab { min-height: 44px; padding: 2px; font-size: 10px; gap: 2px; }
 #cheats-tab .doodle-icon, #bot-tab .doodle-icon { width: 20px; height: 20px; }
-.resource-counter { position: absolute; top: 16px; left: 104px; width: 288px; pointer-events: auto; }
+.resource-counter { position: absolute; top: 16px; right: 16px; width: 288px; pointer-events: auto; }
 .ressource-count { display: flex; gap: 8px; }
 .wallet-card { flex: 1; min-width: 0; height: 52px; display: flex; align-items: center; gap: 8px; padding: 0 10px; color: var(--ink); background: var(--paper); border: 2px solid var(--ink); border-radius: var(--sticker); box-shadow: 3px 3px 0 var(--shadow-deep); }
 .wallet-card:nth-child(2) { border-radius: 8px 12px 9px 12px / 12px 8px 12px 9px; }
