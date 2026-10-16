@@ -28,10 +28,10 @@ try {
         game.checkUnlockConditions();
         game.resourceManager.resources.sparkles.amount = 2000;
         game.resourceManager.resources.gold.amount = 0;
-        for (const id of ['base_mult_1', 'auto_launcher', 'launcher_spawn_rate']) {
+        for (const id of ['base_mult_1', 'unlock_recipes_tab', 'auto_launcher', 'launcher_spawn_rate']) {
             if (!game.buyUpgrade(id)) throw new Error(`Could not buy ${id}`);
         }
-        for (let i = 0; i < 2; i++) {
+        for (let i = 0; i < 3; i++) {
             if (!game.buildingManager.buyBuilding('AUTO_LAUNCHER')) throw new Error('Could not buy a launcher');
         }
         game.ui.showTab('upgrades');
@@ -41,13 +41,14 @@ try {
             firstUpgrade: document.querySelector('#upgrades-available .upgrade-buy-button[data-upgrade-id="crowd_fireworks"]')?.dataset.upgradeId,
             firstSavingUpgrade: document.querySelector('#upgrades-available .upgrade-card.saving .upgrade-buy-button')?.dataset.upgradeId,
             cardVisible: !card.hidden, disabled: document.getElementById('crowd-gold-upgrade-buy').disabled,
-            recipes: game.progression.isUnlocked('recipes_tab') };
+            recipes: game.progression.isUnlocked('recipes_tab'),
+            burst: game.recipes.some(recipe => recipe.name === 'Burst' && recipe.components[0].pattern === 'burst') };
         game.resume();
         return result;
     });
     assert(initial.firstUpgrade === 'crowd_fireworks' && initial.firstSavingUpgrade === 'crowd_fireworks' && initial.cardVisible && initial.disabled,
         `Opening Night did not immediately show the first gold purchase: ${JSON.stringify(initial)}`);
-    assert(initial.gold === 0 && !initial.recipes, 'Crowd unlock granted free gold or recipes.');
+    assert(initial.gold === 0 && initial.recipes && initial.burst, 'Crowd unlock granted free gold or lost the earlier Creator and Burst.');
     await page.waitForFunction(() => game.hasSeenFirstCrowdCinematic && !game.cinematicManager.isPlaying
         && document.querySelector('.tab-content.active')?.id === 'crowd-content'
         && game.resourceManager.resources.gold.amount > 0, { timeout: 60000 });
@@ -64,8 +65,8 @@ try {
     });
     assert(introduction.activePanel === 'crowd-content' && introduction.cardVisible && introduction.panelScroll === 0,
         `The first crowd cinematic did not return to its purchase card: ${JSON.stringify(introduction)}`);
-    assert(introduction.gold === introduction.earnedGold && !introduction.recipes,
-        'The introduction added a free gold reward or recipe access.');
+    assert(introduction.gold === introduction.earnedGold && introduction.recipes,
+        'The introduction added a free gold reward or lost Creator access.');
     assert(introduction.crowdLabel === 'fan', 'The first crowd member did not use the singular label.');
     assert(introduction.card.toLowerCase().includes('80 gold') && introduction.card.includes('+25% launcher sparkles.'),
         `The first gold card did not show its price and effect: ${introduction.card}`);
@@ -114,13 +115,13 @@ try {
             hidden: document.getElementById('crowd-gold-upgrade').hidden,
             cinematic: game.cinematicManager.isPlaying, recipes: game.progression.isUnlocked('recipes_tab') };
     });
-    assert(reload.level === 1 && reload.multiplier === 1.25 && reload.hidden && !reload.cinematic && !reload.recipes,
+    assert(reload.level === 1 && reload.multiplier === 1.25 && reload.hidden && !reload.cinematic && reload.recipes,
         `Reload did not preserve the maxed purchase: ${JSON.stringify(reload)}`);
     const reset = await page.evaluate(() => {
         const refund = game.resetUpgrades();
         const hiddenAfterReset = document.getElementById('crowd-gold-upgrade').hidden;
         const gold = game.resourceManager.resources.gold.amount;
-        for (const id of ['base_mult_1', 'auto_launcher', 'launcher_spawn_rate', 'crowd_spark_1']) {
+        for (const id of ['base_mult_1', 'unlock_recipes_tab', 'auto_launcher', 'launcher_spawn_rate', 'crowd_spark_1']) {
             if (!game.buyUpgrade(id)) throw new Error(`Reset could not rebuy ${id}`);
         }
         return { refund, hiddenAfterReset, goldBeforeCrowd: gold, goldAfterCrowd: game.resourceManager.resources.gold.amount,

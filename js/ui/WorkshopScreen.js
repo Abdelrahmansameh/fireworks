@@ -26,6 +26,12 @@ export class WorkshopScreen {
         this.panel.addEventListener('click', (event) => this.onClick(event));
         this.preview.addEventListener('click', (event) => { event.stopPropagation(); this.onClick(event); });
         this.panel.addEventListener('input', (event) => this.onInput(event));
+        const create = document.createElement('button');
+        create.type = 'button';
+        create.id = 'workshop-new-recipe';
+        create.className = 'workshop-new-recipe';
+        create.textContent = 'New firework';
+        this.panel.querySelector('.workshop-collection').insertBefore(create, document.getElementById('workshop-saved-list'));
         document.getElementById('recipe-name').addEventListener('input', (event) => {
             gameStorage.setItem('currentRecipeName', event.target.value);
         });
@@ -109,6 +115,17 @@ export class WorkshopScreen {
             this.changed();
         } else if (button.dataset.savedRecipe !== undefined) {
             this.game.selectRecipe(Number(button.dataset.savedRecipe));
+            this.selectedLayer = 0;
+            this.setMode('editor');
+            this.changed();
+        } else if (button.dataset.deleteRecipe !== undefined) {
+            this.game.deleteRecipe(Number(button.dataset.deleteRecipe));
+            this.refresh();
+        } else if (button.id === 'workshop-new-recipe') {
+            this.game.selectedRecipeIndex = null;
+            this.game.currentRecipeComponents = DEFAULT_RECIPE_COMPONENTS.map((component) => ({ ...component }));
+            document.getElementById('recipe-name').value = '';
+            gameStorage.setItem('currentRecipeName', '');
             this.selectedLayer = 0;
             this.setMode('editor');
             this.changed();
@@ -283,10 +300,13 @@ export class WorkshopScreen {
             list.appendChild(empty);
         }
         this.game.recipes.forEach((recipe, index) => {
+            const entry = document.createElement('div');
+            entry.className = 'workshop-saved-entry';
             const button = document.createElement('button');
             button.type = 'button';
             button.className = 'workshop-saved-card';
             button.dataset.savedRecipe = index;
+            button.setAttribute('aria-label', `Edit ${recipe.name}`);
             button.innerHTML = `<span class="workshop-saved-photo">${recipe.components.map((component) => miniature(component, 184, 88, 34, 3.6, 44)).join('')}</span><span class="workshop-saved-text"></span>`;
             const text = button.querySelector('.workshop-saved-text');
             const name = document.createElement('strong');
@@ -294,7 +314,14 @@ export class WorkshopScreen {
             const info = document.createElement('small');
             info.textContent = `${patternDisplayNames[recipe.components[0]?.pattern] ?? 'Firework'} · ${(sparkNames[recipe.components[0]?.shape] ?? 'Dot').toLowerCase()} sparks${recipe.components.length > 1 ? ` · ${recipe.components.length} layers` : ''}`;
             text.append(name, info);
-            list.appendChild(button);
+            const remove = document.createElement('button');
+            remove.type = 'button';
+            remove.className = 'workshop-delete-recipe';
+            remove.dataset.deleteRecipe = index;
+            remove.textContent = 'Delete';
+            remove.setAttribute('aria-label', `Delete ${recipe.name}`);
+            entry.append(button, remove);
+            list.appendChild(entry);
         });
     }
 }

@@ -174,12 +174,12 @@ export default class GameBot {
             firstGenerator: this._count('RESOURCE_GENERATOR') > 0,
             recipes: game.progression.isUnlocked('recipes_tab'),
             unlock_recipes_tab: game.progression.getUpgradeLevel('unlock_recipes_tab') > 0,
-            unlock_advanced_creator: game.progression.getUpgradeLevel('unlock_advanced_creator') > 0,
+            creator: game.advancedCreatorUnlocked,
             finaleUnlocked: !!game.grandFinaleUnlocked,
             finaleStarted: (game.grandFinaleManager?.timesFired ?? 0) > this._finalesAtStart,
         };
         for (const definition of game.progression.getAllUpgradeDefs()) {
-            if (!definition.id.startsWith('unlock_') || definition.id === 'unlock_recipes_tab' || definition.id === 'unlock_advanced_creator') continue;
+            if (!definition.patternKey) continue;
             states[definition.id] = game.progression.getUpgradeLevel(definition.id) > 0;
         }
         for (const [id, met] of Object.entries(states)) {

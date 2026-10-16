@@ -22,12 +22,12 @@ export default class LivePurchasePolicy {
     _count(game, type) { return game.buildingManager.getBuildingsByType(type).length; }
 
     _nextBeat(game) {
+        if (game.progression.getUpgradeLevel('unlock_recipes_tab') === 0) return { upgrade: 'unlock_recipes_tab', label: 'Open the Firework Creator' };
         if (this._count(game, 'AUTO_LAUNCHER') === 0) return { building: 'AUTO_LAUNCHER', label: 'First auto launcher' };
         // The crowd's economic introduction comes before either collection system.
         const crowdUnlock = game.progression.getUpgradeDef('crowd_unlock') ? 'crowd_unlock' : 'crowd_spark_1';
         if (game.progression.getUpgradeLevel(crowdUnlock) === 0) return { upgrade: crowdUnlock, label: 'Welcome the crowd' };
         if (this._count(game, 'CATAPULT') === 0) return { building: 'CATAPULT', label: 'First catapult' };
-        if (game.progression.getUpgradeDef('unlock_recipes_tab') && game.progression.getUpgradeLevel('unlock_recipes_tab') === 0) return { upgrade: 'unlock_recipes_tab', label: 'Create firework recipes' };
         if (this._count(game, 'DRONE_HUB') === 0) return { building: 'DRONE_HUB', label: 'First drone hub' };
         return { upgrade: 'grand_finale', label: 'Grand finale' };
     }
@@ -109,7 +109,6 @@ export default class LivePurchasePolicy {
         // choices the player should exercise when gold is plentiful.
         if (id === 'resource_generator') return 1.1;
         if (id.startsWith('generator_')) return 0.9;
-        if (id === 'unlock_advanced_creator') return 0.8;
         if (candidate.definition.onPurchase) return 1.25;
         if (candidate.definition.botOptional || id.startsWith('unlock_')) return 0.15;
         if (id.startsWith('crowd_gold')) return 2.0;

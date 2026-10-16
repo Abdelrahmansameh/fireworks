@@ -25,7 +25,7 @@ try {
         game.checkUnlockConditions();
         game.resourceManager.resources.sparkles.amount = 100000;
         game.resourceManager.resources.gold.amount = 100000;
-        for (const id of ['base_mult_1', 'auto_launcher', 'launcher_spawn_rate']) game.buyUpgrade(id);
+        for (const id of ['base_mult_1', 'unlock_recipes_tab', 'auto_launcher', 'launcher_spawn_rate']) game.buyUpgrade(id);
         game.ui.expandAllTabs();
         game.ui.showTab('upgrades');
         game.ui.renderUpgrades();
@@ -68,13 +68,14 @@ try {
                 savingBackground: getComputedStyle(saving).backgroundColor,
                 savingFillBackground: getComputedStyle(saving.querySelector('.upgrade-saving-fill')).backgroundColor,
                 savingStatus: saving.querySelector('.upgrade-saving-status')?.textContent,
+                savingHeight: saving.getBoundingClientRect().height,
                 savingProgress: saving.querySelector('.upgrade-saving-track').getAttribute('aria-valuenow'),
                 owned: owned.classList.contains('purchased') && !owned.querySelector('.upgrade-saving-status'),
             };
         });
         assert(cues.ready && cues.readyEnabled, `${name}: Affordable upgrade lost its enabled purchase button.`);
         assert(cues.saving && cues.savingDisabled, `${name}: Unaffordable upgrade is not disabled.`);
-        assert(cues.savingStatus === 'Not enough resources', `${name}: Missing explicit affordability cue.`);
+        assert(!cues.savingStatus, `${name}: Unaffordable upgrade includes an unnecessary status label.`);
         assert(cues.savingBackground !== cues.readyBackground, `${name}: Affordable and unaffordable tiles use the same background.`);
         assert(cues.savingFillBackground !== cues.readyButtonBackground, `${name}: Savings still looks like an enabled purchase.`);
         assert(cues.savingProgress === '50', `${name}: Savings no longer tracks wallet balances.`);
@@ -85,16 +86,22 @@ try {
             game.resourceManager.resources.gold.amount = game.progression.getUpgradeCost('crowd_fireworks');
             game.updateUI();
         });
-        assert(await page.locator('[data-upgrade-card="crowd_fireworks"]').evaluate(card =>
-            card.classList.contains('ready') && !card.querySelector('button').disabled && !card.querySelector('.upgrade-saving-status')),
-        `${name}: Reaching the price did not remove the insufficient resources cue.`);
+        const funded = await page.locator('[data-upgrade-card="crowd_fireworks"]').evaluate(card => ({
+            ready: card.classList.contains('ready') && !card.querySelector('button').disabled,
+            height: card.getBoundingClientRect().height,
+            status: Boolean(card.querySelector('.upgrade-saving-status')),
+        }));
+        assert(funded.ready && !funded.status, `${name}: Reaching the price did not enable the upgrade.`);
+        assert(funded.height === cues.savingHeight, `${name}: Affordability changed card height from ${cues.savingHeight} to ${funded.height}.`);
         await page.evaluate(() => {
             game.resourceManager.resources.gold.amount = 40;
             game.updateUI();
         });
         assert(await page.locator('[data-upgrade-card="crowd_fireworks"]').evaluate(card =>
-            card.classList.contains('saving') && card.querySelector('button').disabled && card.querySelector('.upgrade-saving-status')),
-        `${name}: Spending resources did not restore the insufficient resources cue.`);
+            card.classList.contains('saving') && card.querySelector('button').disabled && !card.querySelector('.upgrade-saving-status')),
+        `${name}: Spending resources did not disable the upgrade cleanly.`);
+        assert(await page.locator('[data-upgrade-card="crowd_fireworks"]').evaluate(card => card.getBoundingClientRect().height) === funded.height,
+            `${name}: Disabling the upgrade changed its height.`);
     }
     await page.evaluate(() => {
         game.resourceManager.resources.gold.amount = 80;

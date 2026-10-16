@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Preview the real early-game menu after crowds, before the later recipe chapter.
+// Preview the real early-game menu after Creator, launchers, and the first crowd.
 import { createRequire } from 'node:module';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
@@ -25,17 +25,20 @@ try {
         game.checkUnlockConditions();
         game.resourceManager.resources.sparkles.amount = 2000;
         game.resourceManager.resources.gold.amount = 1000;
-        for (const id of ['base_mult_1', 'auto_launcher', 'launcher_spawn_rate']) {
+        for (const id of ['base_mult_1', 'unlock_recipes_tab', 'auto_launcher', 'launcher_spawn_rate']) {
             if (!game.buyUpgrade(id)) throw new Error(`Preview could not buy ${id}`);
         }
-        for (let i = 0; i < 2; i++) {
+        for (let i = 0; i < 3; i++) {
             if (!game.buildingManager.buyBuilding('AUTO_LAUNCHER')) throw new Error('Preview could not buy a launcher');
         }
         for (const id of ['crowd_spark_1', 'crowd_fireworks']) {
             if (!game.buyUpgrade(id)) throw new Error(`Preview could not buy ${id}`);
         }
-        if (game.progression.isUnlocked('recipes_tab')) throw new Error('Opening Night bundled recipe access');
-        if (game.progression.isVisible('unlock_recipes_tab', game).visible) throw new Error('Recipes appeared before the catapult chapter');
+        if (!game.progression.isUnlocked('recipes_tab')) throw new Error('The earlier Creator purchase lost recipe access');
+        if (game.progression.getUpgradeLevel('unlock_recipes_tab') !== 1
+            || !game.recipes.some(recipe => recipe.name === 'Burst' && recipe.components[0].pattern === 'burst')) {
+            throw new Error('The earlier Creator purchase did not retain its Burst recipe');
+        }
         game.ui.renderUpgrades();
         game.ui.expandAllTabs();
         game.ui.hideActiveTab();

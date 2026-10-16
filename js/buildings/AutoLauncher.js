@@ -1,6 +1,4 @@
 import Building from './Building.js';
-import Firework from '../entities/Firework.js';
-import { GAME_BOUNDS } from '../config/config.js';
 import { SkeletonData, hexToRgb } from '../animation/SkeletonData.js';
 import { AnimationData } from '../animation/AnimationData.js';
 import { computePose, applyPoseToInstances, computeSkeletonOutlinePoints } from '../animation/SkeletonAnimator.js';
@@ -283,32 +281,38 @@ class AutoLauncher extends Building {
             }
         }
 
-        // Always apply the recipe color (no last-resolved fallback)
-        let currentColor = null;
-        const recipe = (typeof this.assignedRecipeIndex === 'number') ? this.game.recipes[this.assignedRecipeIndex] : null;
-        currentColor = recipe ? recipe.components[0]?.color : null;
-        this._updateSkeletonColors(currentColor);
+        const recipe = this._getAssignedRecipe();
+        this._updateSkeletonColors(recipe?.components[0]?.color ?? null);
 
         this._renderFrame();
     }
 
+    _getAssignedRecipe() {
+        const index = this.assignedRecipeIndex;
+        const recipe = Number.isInteger(index) && index >= 0 ? this.game.recipes?.[index] : null;
+        if (Array.isArray(recipe?.components) && recipe.components.length > 0) return recipe;
+
+        this.assignedRecipeIndex = null;
+        return null;
+    }
+
     spawnFirework() {
-        // Fire the recoil as an additive overlay so idle keeps playing
+        let recipe = this._getAssignedRecipe();
+        if (!recipe) {
+            const recipes = (this.game.recipes ?? []).filter(saved =>
+                Array.isArray(saved?.components) && saved.components.length > 0);
+            if (recipes.length === 0) return;
+
+            const random = this.game.rng?.() ?? Math.random();
+            recipe = recipes[Math.floor(random * recipes.length)];
+        }
+        const components = recipe.components.map(component => ({ ...component }));
+
+        // Fire the recoil as an additive overlay so idle keeps playing.
         this._startOverlay('firing');
 
         const x = this.x;
         const launchY = this.y;
-
-        let components;
-
-        const recipe = this.game.recipes[this.assignedRecipeIndex];
-        if (recipe?.components?.length) {
-            components = recipe.components.map(c => ({ ...c }));
-        } 
-        else {
-            components = this.game.currentRecipeComponents.map(c => ({ ...c }));
-            if (components.length === 0) return;
-        }
 
         const spawnX = x + (Math.random() * 0.2 - 0.15) * this.config.width;
 
@@ -364,6 +368,7 @@ class AutoLauncher extends Building {
     }
 
     getSparklesPerSecond() {
+        if (!this.game.recipes?.some(recipe => Array.isArray(recipe?.components) && recipe.components.length > 0)) return 0;
         const yieldMulti = this.game.launcherStats?.sparkleYieldMultiplier ?? 1;
         return (this.game.baseSparkleMultiplier * yieldMulti) / this.spawnInterval;
     }

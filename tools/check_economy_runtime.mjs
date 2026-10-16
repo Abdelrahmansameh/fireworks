@@ -189,9 +189,12 @@ try {
                     for (const currency of ['sparkles', 'gold']) charged[currency] += before[currency] - wallets[currency].amount;
                 };
                 purchase('base_mult_1');
+                purchase('unlock_recipes_tab');
+                const launcherCountBeforeUnlock = game.buildingManager.getBuildingsByType('AUTO_LAUNCHER').length;
                 purchase('auto_launcher');
-                assert(game.buildingManager.buildings.some(building => building.grantUpgradeId === 'auto_launcher'),
-                    'Auto Launcher grant was not tagged with its purchased upgrade');
+                assert(game.isBuildingTypeUnlocked('AUTO_LAUNCHER')
+                    && game.buildingManager.getBuildingsByType('AUTO_LAUNCHER').length === launcherCountBeforeUnlock,
+                'Auto Launcher upgrade did not unlock purchases without granting a launcher');
                 if (cycle === 0) {
                     const paidBuilding = game.buildingManager.buyBuilding('AUTO_LAUNCHER');
                     assert(paidBuilding && !paidBuilding.grantUpgradeId, 'Separately purchased launcher was tagged as a grant');
@@ -205,7 +208,7 @@ try {
                 purchase('grand_finale');
                 await ready(() => game.buildingManager.buildings.every(building => building._instancedGroup));
                 const saved = JSON.parse(JSON.stringify(game.buildingManager.serialize()));
-                assert(saved.buildings.filter(building => building.grantUpgradeId).length === 3,
+                assert(saved.buildings.filter(building => building.grantUpgradeId).length === 2,
                     'Save did not preserve every included building marker');
                 game.buildingManager.deserialize(saved);
                 await ready(() => game.buildingManager.buildings.every(building => building._instancedGroup));
@@ -217,7 +220,7 @@ try {
                 }
                 assert(game.buildingManager.buildings.length === 1 && game.buildingManager.buildings[0].id === paidBuildingId,
                     'Reset kept included units or removed the separately paid building');
-                resetCycles.push({ cycle: cycle + 1, refund, includedBuildingsReturned: 3, paidBuildingsRetained: 1 });
+                resetCycles.push({ cycle: cycle + 1, refund, includedBuildingsReturned: 2, paidBuildingsRetained: 1 });
             }
             results.reset = { markerPreservedAfterDeserialize: true, cycles: resetCycles, noGrantedUnitGrowth: true };
             const paidLauncherRefund = game.resetAutoLaunchers();
@@ -226,17 +229,23 @@ try {
             const beforeGrant = wallets.sparkles.amount;
             const starterCost = game.progression.getUpgradeCost('base_mult_1');
             assert(game.buyUpgrade('base_mult_1'), 'Could not repurchase the starter for launcher reset accounting');
+            const creatorCost = game.progression.getUpgradeCost('unlock_recipes_tab');
+            assert(game.buyUpgrade('unlock_recipes_tab'), 'Could not repurchase Creator before the launcher license');
             const licenseCost = game.progression.getUpgradeCost('auto_launcher');
             assert(game.buyUpgrade('auto_launcher'), 'Could not repurchase launcher license for reset accounting check');
+            assert(game.buildingManager.getBuildingsByType('AUTO_LAUNCHER').length === 0,
+                'Repurchasing the launcher license granted a free launcher');
             const firstPaid = game.buildingManager.buyBuilding('AUTO_LAUNCHER');
             const secondPaid = game.buildingManager.buyBuilding('AUTO_LAUNCHER');
             const expectedPaidRefund = firstPaid.purchaseCost + secondPaid.purchaseCost;
+            // Preserve accounting for included launchers retained in older saves.
+            game.grantMilestoneBuilding('AUTO_LAUNCHER', 'auto_launcher');
             const buildingSave = JSON.parse(JSON.stringify(game.buildingManager.serialize()));
             game.buildingManager.deserialize(buildingSave);
             const launcherRefund = game.resetAutoLaunchers();
             assert(launcherRefund === expectedPaidRefund, 'Launcher refund included the grant or lost a paid purchase price');
             const licenseRefund = game.resetUpgrades();
-            assert(licenseRefund.sparkles === starterCost + licenseCost && wallets.sparkles.amount === beforeGrant,
+            assert(licenseRefund.sparkles === starterCost + creatorCost + licenseCost && wallets.sparkles.amount === beforeGrant,
                 'Launcher reset followed by upgrade reset manufactured currency');
             results.reset.launcherReset = { paidPurchaseRefund: launcherRefund, includedLauncherRefund: 0,
                 starterAndLicenseRefund: licenseRefund.sparkles, currencyGrowth: 0, purchasePricesPreservedAfterDeserialize: true };

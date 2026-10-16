@@ -29,20 +29,6 @@ class BuildingManager {
         const building = new BuildingClass(this.game, x, y, data);
         this.buildings.push(building);
 
-        // If this is an AutoLauncher and recipes are available, assign a sequential recipe index.
-        // Requirement: the first 20 auto-launchers should be assigned recipes 0..19 in order.
-        if (buildingType === 'AUTO_LAUNCHER') {
-            try {
-                const launchers = this.getBuildingsByType('AUTO_LAUNCHER');
-                const idx = launchers.indexOf(building);
-                if (idx >= 0 && this.game && Array.isArray(this.game.recipes) && this.game.recipes.length > 0 && (building.assignedRecipeIndex == null)) {
-                    building.assignedRecipeIndex = idx % this.game.recipes.length;
-                }
-            } catch (e) {
-                // ignore assignment errors
-            }
-        }
-
         return building;
     }
 
@@ -151,6 +137,7 @@ class BuildingManager {
     }
 
     getTheoreticalAutoLauncherFPS() {
+        if (!this.game.recipes.some(recipe => recipe?.components?.length)) return 0;
         const launchers = this.getBuildingsByType('AUTO_LAUNCHER');
 
         let totalFPS = 0;

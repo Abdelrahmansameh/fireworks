@@ -1,12 +1,12 @@
 import { gameStorage } from '../platform/GameStorage.js';
 import { fireworksForCrowd, getCrowdArrivalProgress } from '../systems/ProductionRates.js';
-import { FIREWORK_CONFIG, GAME_BOUNDS, PROCEDURAL_BACKGROUND_CONFIG, DEFAULT_RECIPE_COMPONENTS, GENERIC_RECIPE_NAMES, PREDEFINED_RECIPES, AUTO_LAUNCHER_COST_BASE, DRONE_CONFIG, CROWD_CONFIG } from '../config/config.js';
+import { FIREWORK_CONFIG, GAME_BOUNDS, PROCEDURAL_BACKGROUND_CONFIG, DEFAULT_RECIPE_COMPONENTS, GENERIC_RECIPE_NAMES, AUTO_LAUNCHER_COST_BASE, DRONE_CONFIG, CROWD_CONFIG } from '../config/config.js';
 import GameCore from './GameCore.js';
 import InstancedParticleSystem from '../particles/InstancedParticleSystem.js';
 import InstancedDroneSystem from '../entities/InstancedDroneSystem.js';
 import Crowd from '../entities/Crowd.js';
 import Firework from '../entities/Firework.js';
-import { patternKeys, patternDefinitions, patternDisplayNames } from '../entities/patterns/index.js';
+import { patternKeys } from '../entities/patterns/index.js';
 import CinematicManager, { CINEMATIC_CONFIG } from './CinematicManager.js';
 import GrandFinaleManager from './GrandFinaleManager.js';
 import UIManager from '../ui/UIManager.js';
@@ -390,7 +390,9 @@ class FireworkGame extends GameCore {
         this.ui.hideActiveTab();
         this.fireworkSystem.init(0);
         this.recipes = [];
-        this.currentRecipeComponents = [...DEFAULT_RECIPE_COMPONENTS];
+        this.grantedRecipePatterns = new Set();
+        this.selectedRecipeIndex = null;
+        this.currentRecipeComponents = DEFAULT_RECIPE_COMPONENTS.map(component => ({ ...component }));
         this.baseSparkleMultiplier = 1;
         this.elapsedGameTime = 0;
         this.clearCrowdArrival();
@@ -489,9 +491,35 @@ class FireworkGame extends GameCore {
 
     eraseAllRecipes() {
         this.recipes = [];
-        gameStorage.removeItem('fireworkRecipes');
+        this.selectedRecipeIndex = null;
+        for (const launcher of this.buildingManager.getBuildingsByType('AUTO_LAUNCHER')) {
+            launcher.assignedRecipeIndex = null;
+        }
+        this.persistRecipes();
+        this.saveCurrentRecipeComponents();
         this.updateRecipeList();
+        this.updateLauncherList();
+        this.saveProgress();
         this.showNotification("Recipes erased.");
+    }
+
+    deleteRecipe(index) {
+        if (!Number.isInteger(index) || !this.recipes[index]) return false;
+        this.recipes.splice(index, 1);
+        for (const launcher of this.buildingManager.getBuildingsByType('AUTO_LAUNCHER')) {
+            if (launcher.assignedRecipeIndex === index) launcher.assignedRecipeIndex = null;
+            else if (launcher.assignedRecipeIndex > index) launcher.assignedRecipeIndex--;
+        }
+        if (this.selectedRecipeIndex === index) this.selectedRecipeIndex = null;
+        else if (this.selectedRecipeIndex > index) this.selectedRecipeIndex--;
+        this.cursorRecipeIndex = 0;
+        this.persistRecipes();
+        this.saveCurrentRecipeComponents();
+        this.updateRecipeList();
+        this.updateLauncherList();
+        this.saveProgress();
+        this.showNotification('Recipe deleted.');
+        return true;
     }
 
     updateComponentsList(containerId = 'components-list') {
@@ -502,9 +530,12 @@ class FireworkGame extends GameCore {
 
     saveCurrentRecipeComponents() {
         gameStorage.setItem('currentRecipeComponents', JSON.stringify(this.currentRecipeComponents));
+        gameStorage.setItem('selectedRecipeIndex', JSON.stringify(this.selectedRecipeIndex));
     }
 
     loadCurrentRecipe() {
+        const selected = JSON.parse(gameStorage.getItem('selectedRecipeIndex') ?? 'null');
+        this.selectedRecipeIndex = Number.isInteger(selected) && this.recipes[selected] ? selected : null;
         const savedRecipeComponents = gameStorage.getItem('currentRecipeComponents');
         const savedRecipeName = gameStorage.getItem('currentRecipeName');
         if (savedRecipeComponents) {
@@ -521,7 +552,7 @@ class FireworkGame extends GameCore {
                 }
             });
         } else {
-            this.currentRecipeComponents = [...DEFAULT_RECIPE_COMPONENTS];
+            this.currentRecipeComponents = DEFAULT_RECIPE_COMPONENTS.map(component => ({ ...component }));
         }
         if (savedRecipeName) {
             document.getElementById('recipe-name').value = savedRecipeName;
@@ -556,74 +587,36 @@ class FireworkGame extends GameCore {
             return;
         }
 
-        const existingIndex = this.recipes.findIndex(recipe => recipe.name.toLowerCase() === recipeName.toLowerCase());
-
+        const selected = Number.isInteger(this.selectedRecipeIndex) && this.recipes[this.selectedRecipeIndex]
+            ? this.selectedRecipeIndex : null;
+        const existingIndex = this.recipes.findIndex((recipe, index) => index !== selected && recipe.name.toLowerCase() === recipeName.toLowerCase());
         if (existingIndex !== -1) {
-            this.recipes[existingIndex].components = this.currentRecipeComponents.map(component => ({ ...component }));
+            this.showNotification('That name is already in your collection. Choose another name.');
+            return false;
+        }
+        const recipe = { name: recipeName, components: this.currentRecipeComponents.map(component => ({ ...component })) };
+        if (selected !== null) {
+            this.recipes[selected] = recipe;
             this.showNotification("Recipe updated.");
         } else {
-            const recipe = {
-                name: recipeName,
-                components: this.currentRecipeComponents.map(component => ({ ...component }))
-            };
             this.recipes.push(recipe);
+            this.selectedRecipeIndex = this.recipes.length - 1;
             this.showNotification("Recipe saved.");
         }
 
-        gameStorage.setItem('fireworkRecipes', JSON.stringify(this.recipes));
+        this.persistRecipes();
+        this.saveCurrentRecipeComponents();
+        gameStorage.setItem('currentRecipeName', recipeName);
         this.updateRecipeList();
+        this.updateLauncherList();
+        this.saveProgress();
+        return true;
     }
 
     loadRecipes() {
-        const normalizeRecipes = (recipes) => {
-            recipes.forEach((recipe, index) => {
-                if (!recipe.name || typeof recipe.name !== 'string' || recipe.name.trim() === '') {
-                    recipe.name = `Recipe ${index + 1}`;
-                }
-                recipe.components.forEach(component => {
-                    if (!component.shape || !FIREWORK_CONFIG.supportedShapes.includes(component.shape)) {
-                        component.shape = 'sphere';
-                    }
-                    if (typeof component.spread !== 'number') {
-                        component.spread = 1.0;
-                    }
-                    if (!('secondaryColor' in component)) {
-                        component.secondaryColor = '#00ff00';
-                    }
-                });
-            });
-        };
-
-        // If user already has saved recipes, use them synchronously (no fetch needed)
-        const savedRaw = gameStorage.getItem('fireworkRecipes');
-        if (savedRaw) {
-            try {
-                const savedRecipes = JSON.parse(savedRaw);
-                if (Array.isArray(savedRecipes) && savedRecipes.length > 0) {
-                    this.recipes = savedRecipes;
-                    normalizeRecipes(this.recipes);
-                    this.updateRecipeList();
-                    this.assignSequentialRecipesToLaunchers();
-                    this.updateLauncherList();
-                    return;
-                }
-            } catch (e) {
-                // fall through to fetch
-            }
-        }
-
-        // First launch or post-reset: use embedded predefined recipes and persist them
-        try {
-            const predef = PREDEFINED_RECIPES;
-            this.recipes = (Array.isArray(predef) ? predef : []).map(r => ({ ...r }));
-            normalizeRecipes(this.recipes);
-            gameStorage.setItem('fireworkRecipes', JSON.stringify(this.recipes));
-            this.updateRecipeList();
-            this.assignSequentialRecipesToLaunchers();
-            this.updateLauncherList();
-        } catch (err) {
-            console.error('Failed to load predefined recipes:', err);
-        }
+        this.restoreRecipes();
+        this.updateRecipeList();
+        this.updateLauncherList();
     }
 
     updateRecipeList() {
@@ -633,20 +626,18 @@ class FireworkGame extends GameCore {
     }
 
     /**
-     * Launch a firework using the next recipe in the cursor-cycle (includes the default recipe).
+     * Launch a firework using the next saved recipe, or the starter when the collection is empty.
      * Returns the same result object as `fireworkSystem.launchFireworkAt`.
      */
     launchCursorCyclingFireworkAt(x, targetY = null) {
-        const recipeCount = this.getCursorRecipeCount();
-        const launcherCount = this.buildingManager.getBuildingsByType('AUTO_LAUNCHER').length;
-        const count = Math.min(recipeCount, launcherCount + 1); // only cycle through as many recipes as the player has launchers (plus default)
+        const count = this.getCursorRecipeCount();
 
         if (count <= 0) {
-            return this.fireworkSystem.launchFireworkAt(x, targetY);
+            return this.fireworkSystem.launchFireworkAt(x, targetY, null, DEFAULT_RECIPE_COMPONENTS.map(component => ({ ...component })));
         }
         if (typeof this.cursorRecipeIndex !== 'number')
             this.cursorRecipeIndex = 0;
-        const usedIndex = this.cursorRecipeIndex;
+        const usedIndex = this.cursorRecipeIndex % count;
         const components = this.getCursorRecipeComponentsAt(usedIndex);
 
         // advance index for next click
@@ -656,10 +647,13 @@ class FireworkGame extends GameCore {
     }
 
     selectRecipe(index) {
+        if (!Number.isInteger(index) || !this.recipes[index]) return;
+        this.selectedRecipeIndex = index;
         this.currentRecipeComponents = this.recipes[index].components.map(component => ({ ...component }));
         this.updateComponentsList();
         this.saveCurrentRecipeComponents();
         document.getElementById('recipe-name').value = this.recipes[index].name;
+        gameStorage.setItem('currentRecipeName', this.recipes[index].name);
         this.showNotification(`Loaded "${this.recipes[index].name}"`);
     }
 
@@ -697,6 +691,9 @@ class FireworkGame extends GameCore {
             autoLauncherCost: this.autoLauncherCost,
             sparkles: this.getSparkles(),
             recipes: this.recipes,
+            grantedRecipePatterns: [...this.grantedRecipePatterns],
+            selectedRecipeIndex: this.selectedRecipeIndex,
+            currentRecipeName: document.getElementById('recipe-name').value,
             buildingManagerData: this.buildingManager.serialize(),
             currentRecipeComponents: this.currentRecipeComponents,
             backgroundColor: '#f13b3b',
@@ -729,6 +726,10 @@ class FireworkGame extends GameCore {
         this.gameCompleted = !!data.gameCompleted;
         this.autoLauncherCost = data.autoLauncherCost || AUTO_LAUNCHER_COST_BASE;
         this.recipes = data.recipes || [];
+        this.selectedRecipeIndex = Number.isInteger(data.selectedRecipeIndex) && this.recipes[data.selectedRecipeIndex]
+            ? data.selectedRecipeIndex : null;
+        document.getElementById('recipe-name').value = data.currentRecipeName ?? '';
+        gameStorage.setItem('currentRecipeName', data.currentRecipeName ?? '');
         this.currentRecipeComponents = data.currentRecipeComponents || [...DEFAULT_RECIPE_COMPONENTS];
 
         this.initBackgroundColor();
@@ -757,13 +758,17 @@ class FireworkGame extends GameCore {
         this.baseSparkleMultiplier = (typeof data.baseSparkleMultiplier === 'number' && !isNaN(data.baseSparkleMultiplier)) ? data.baseSparkleMultiplier : 1;
 
         if (data.progression && typeof data.progression === 'object') {
-            this.progression.loadState(data.progression);
+            this.progression.loadState(data.progression, data.unlockedPatternKeys);
             if (data.progression.firstClicks) {
                 this.firstClickStates = { ...this.firstClickStates, ...data.progression.firstClicks };
             }
         }
 
         this.hasSeenFirstCrowdCinematic = !!data.hasSeenFirstCrowdCinematic;
+        this.grantedRecipePatterns = new Set(Array.isArray(data.grantedRecipePatterns)
+            ? data.grantedRecipePatterns : this.getOwnedPatternKeys());
+        this.persistRecipes();
+        this.saveCurrentRecipeComponents();
 
         this.ui.initializeUnlockStates();
         this.progression.applyAll(this);
@@ -878,7 +883,7 @@ class FireworkGame extends GameCore {
 
         this.updateLauncherList();
         this.saveProgress();
-        this.showNotification("Launcher recipes shuffled!");
+        this.showNotification('All launchers set to Random.');
     }
 
     openAdvancedCreator() {
@@ -958,6 +963,7 @@ class FireworkGame extends GameCore {
         // 3. Upgrades (max level)
         for (const def of this.progression.getAllUpgradeDefs()) {
             this.progression.forceSetLevel(def.id, def.maxLevel ?? 1);
+            if (def.patternKey) this.grantPatternRecipe(def.patternKey);
         }
 
         // 4. Pattern keys
@@ -1016,15 +1022,29 @@ class FireworkGame extends GameCore {
     }
 
     playFirstCrowdCinematic() {
+        const showCrowdUpgrade = () => {
+            if (this.crowdUnlocked && this.progression.getUpgradeLevel('crowd_fireworks') === 0) {
+                this.ui.renderCrowdGoldUpgrade();
+                this.ui.showTab('crowd');
+                const panel = document.querySelector('#crowd-content .panel');
+                if (panel) panel.scrollTop = 0;
+            }
+        };
+        let crowdPanelShown = false;
         return this.cinematicManager.play(async (game, cm) => {
+            const mobile = game.chrome?.mobile.matches ?? window.matchMedia('(max-width: 700px)').matches;
             const originalCameraX = game.renderer2D.cameraX;
-            // Camera scrolls to the left edge
-            await cm.panCameraTo(GAME_BOUNDS.SCROLL_MIN_X, 3000);
-
-            // Zoom in on the empty spawn area before anyone appears
             const originalCameraY = game.renderer2D.cameraY;
-            const zoomTargetY = GAME_BOUNDS.CROWD_Y + CINEMATIC_CONFIG.ZOOM_Y_OFFSET;
-            await cm.zoomCamera(CINEMATIC_CONFIG.ZOOM_IN_LEVEL, CINEMATIC_CONFIG.ZOOM_IN_DURATION_MS, null, zoomTargetY);
+            if (mobile) {
+                // Begin at the fan's entrance, outside normal scroll bounds.
+                // The same fitted shot then follows him all the way to his spot.
+                const entrance = { x: GAME_BOUNDS.SCROLL_MIN_X - 800, y: GAME_BOUNDS.CROWD_Y };
+                await cm.frameCamera(() => cm.getMobileCrowdFrame(entrance), CINEMATIC_CONFIG.ZOOM_IN_DURATION_MS);
+            } else {
+                await cm.panCameraTo(GAME_BOUNDS.SCROLL_MIN_X, 3000);
+                const zoomTargetY = GAME_BOUNDS.CROWD_Y + CINEMATIC_CONFIG.ZOOM_Y_OFFSET;
+                await cm.zoomCamera(CINEMATIC_CONFIG.ZOOM_IN_LEVEL, CINEMATIC_CONFIG.ZOOM_IN_DURATION_MS, null, zoomTargetY);
+            }
 
             // Hold on the empty shot
             await cm.wait(CINEMATIC_CONFIG.ZOOM_IN_DELAY_MS);
@@ -1039,65 +1059,91 @@ class FireworkGame extends GameCore {
             // Register arrival listener NOW before he can reach his spot
             const arrivalPromise = cm.waitForEvent('firstCrowdArrival');
 
-            await cm.wait(CINEMATIC_CONFIG.FOLLOW_DELAY_MS);
-            
-            // Camera follows him as he walks to his spot
-            cm.followEntity(person);
-
-            // Wait until he stops walking at his spot
-            await arrivalPromise;
-
-            // Freeze his coin toss timer so he can't toss naturally during the cinematic
-            person.coinTossTimer = -9999;
-
-            // Take procedural control of his skeleton: settle into an idle pose
-            // (eyes neutral for now) until the firework gives them something to follow.
-            // Cross-fade from his current cheering pose into the idle clip.
-            this.crowd.requestPoseBlend(person, CROWD_CONFIG.blending?.cinematicTakeover);
-            person.cinematicIdle = true;
-
-            // Small beat after arrival, then launch a firework in front of and above the person
-            await cm.wait(CINEMATIC_CONFIG.FIREWORK_SPAWN_DELAY_MS);
-            const fwX = person.x + CINEMATIC_CONFIG.FIREWORK_OFFSET_X;
-            const fwTargetY = person.y - CINEMATIC_CONFIG.FIREWORK_OFFSET_Y;
-            game.fireworkSystem.launch(fwX, GAME_BOUNDS.WORLD_LAUNCHER_Y, game.currentRecipeComponents, fwTargetY);
-            const firework = game.fireworkSystem.fireworks[game.fireworkSystem.fireworks.length - 1];
-
-            // Steer his pupils toward the rocket as it climbs; once it bursts,
-            // keep his gaze locked on the explosion point.
-            person.cinematicLookFn = () => {
-                if (firework.rocket && !firework.exploded) {
-                    return { x: firework.rocket.position.x, y: firework.rocket.position.y };
+            try {
+                if (mobile) {
+                    await cm.frameCamera(() => cm.getMobileCrowdFrame(person), 0);
+                } else {
+                    await cm.wait(CINEMATIC_CONFIG.FOLLOW_DELAY_MS);
+                    cm.followEntity(person);
                 }
-                return { x: fwX, y: fwTargetY };
-            };
 
-            // Wait for it to explode, then a beat before the coin toss
-            await cm.waitForExplosion(firework);
-            await cm.wait(CINEMATIC_CONFIG.POST_EXPLOSION_DELAY_MS);
+                // Wait until he stops walking at his spot
+                await arrivalPromise;
 
-            // Hand the skeleton back to the normal state machine for the coin toss.
-            // Cross-fade out of the idle clip back into his state animation.
-            this.crowd.requestPoseBlend(person, CROWD_CONFIG.blending?.cinematicRelease);
-            person.cinematicIdle = false;
-            person.cinematicLookFn = null;
-            person.cinematicCoinTossDisabled = false;
-            person.coinTossTimer = 5; // force immediate toss
+                // Freeze his coin toss timer so he can't toss naturally during the cinematic
+                person.coinTossTimer = -9999;
 
-            // Brief pause, then zoom back out to where we were
-            await cm.wait(CINEMATIC_CONFIG.ZOOM_OUT_DELAY_MS);
-            await cm.zoomCamera(1.0, CINEMATIC_CONFIG.ZOOM_OUT_DURATION_MS, null, originalCameraY);
+                // Take procedural control of his skeleton: settle into an idle pose
+                // (eyes neutral for now) until the firework gives them something to follow.
+                // Cross-fade from his current cheering pose into the idle clip.
+                this.crowd.requestPoseBlend(person, CROWD_CONFIG.blending?.cinematicTakeover);
+                person.cinematicIdle = true;
 
-            cm.stopFollowing();
-            await cm.panCameraTo(originalCameraX, 2000);
-            await cm.wait(500);
-        }).then(() => {
-            if (this.crowdUnlocked && this.progression.getUpgradeLevel('crowd_fireworks') === 0) {
-                this.ui.renderCrowdGoldUpgrade();
-                this.ui.showTab('crowd');
-                const panel = document.querySelector('#crowd-content .panel');
-                if (panel) panel.scrollTop = 0;
+                if (mobile) {
+                    // Widen before launch so both his reaction and the entire burst
+                    // remain in view. Refit on every frame if the phone rotates.
+                    await cm.frameCamera(() => cm.getMobileCrowdFrame(person, true), CINEMATIC_CONFIG.MOBILE.SHOT_TRANSITION_MS);
+                }
+                // Small beat after arrival, then launch a firework in front of and above the person
+                await cm.wait(CINEMATIC_CONFIG.FIREWORK_SPAWN_DELAY_MS);
+                const fwX = person.x + (mobile ? CINEMATIC_CONFIG.MOBILE.FIREWORK_OFFSET_X : CINEMATIC_CONFIG.FIREWORK_OFFSET_X);
+                const fwTargetY = person.y + (mobile ? CINEMATIC_CONFIG.MOBILE.FIREWORK_HEIGHT : -CINEMATIC_CONFIG.FIREWORK_OFFSET_Y);
+                game.fireworkSystem.launch(fwX, GAME_BOUNDS.WORLD_LAUNCHER_Y, game.currentRecipeComponents, fwTargetY, mobile ? 0 : null);
+                const firework = game.fireworkSystem.fireworks[game.fireworkSystem.fireworks.length - 1];
+
+                // Steer his pupils toward the rocket as it climbs; once it bursts,
+                // keep his gaze locked on the explosion point.
+                person.cinematicLookFn = () => {
+                    if (firework.rocket && !firework.exploded) {
+                        return { x: firework.rocket.position.x, y: firework.rocket.position.y };
+                    }
+                    return { x: fwX, y: fwTargetY };
+                };
+
+                // Wait for it to explode, then a beat before the coin toss
+                await cm.waitForExplosion(firework);
+                await cm.wait(CINEMATIC_CONFIG.POST_EXPLOSION_DELAY_MS);
+
+                if (mobile) {
+                    // Return to the fan for the coin toss, after the burst has read.
+                    await cm.frameCamera(() => cm.getMobileCrowdFrame(person), CINEMATIC_CONFIG.MOBILE.SHOT_TRANSITION_MS);
+                }
+
+                // Hand the skeleton back to the normal state machine for the coin toss.
+                // Cross-fade out of the idle clip back into his state animation.
+                this.crowd.requestPoseBlend(person, CROWD_CONFIG.blending?.cinematicRelease);
+                person.cinematicIdle = false;
+                person.cinematicLookFn = null;
+                person.cinematicCoinTossDisabled = false;
+                person.coinTossTimer = 5; // force immediate toss
+
+                // Brief pause, then zoom back out to where we were
+                await cm.wait(CINEMATIC_CONFIG.ZOOM_OUT_DELAY_MS);
+                cm.stopFollowing();
+                if (mobile) {
+                    // Prepare the destination UI while hidden. Return to its current
+                    // camera target before handing control back to mobile chrome.
+                    game.ui.collapseForCinematic(false);
+                    showCrowdUpgrade();
+                    crowdPanelShown = true;
+                    await cm.frameCamera(() => ({ x: originalCameraX, ...game.chrome.getCameraFraming() }), CINEMATIC_CONFIG.ZOOM_OUT_DURATION_MS);
+                } else {
+                    cm.followEntity(person);
+                    await cm.zoomCamera(1.0, CINEMATIC_CONFIG.ZOOM_OUT_DURATION_MS, null, originalCameraY);
+                    cm.stopFollowing();
+                    await cm.panCameraTo(originalCameraX, 2000);
+                    await cm.wait(500);
+                }
+            } finally {
+                // Always release the pose and income locks if a sequence fails.
+                if (person.cinematicIdle) this.crowd.requestPoseBlend(person, CROWD_CONFIG.blending?.cinematicRelease);
+                person.cinematicIdle = false;
+                person.cinematicLookFn = null;
+                person.cinematicCoinTossDisabled = false;
+                if (person.coinTossTimer < 0) person.coinTossTimer = 0;
             }
+        }).then(() => {
+            if (!crowdPanelShown) showCrowdUpgrade();
         });
     }
 }

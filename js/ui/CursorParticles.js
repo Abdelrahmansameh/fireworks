@@ -3,6 +3,8 @@ const { BlendMode, buildTexturedSquare } = R;
 import cfg from './CursorParticlesConfig.js';
 import { getGlowTexture, ready as textureReady } from '../rendering/TextureManager.js';
 
+// The desktop workshop preview is mounted outside #ui-root.
+const UI_SELECTOR = '#ui-root, #creator-scene, #overlay, #confirmation-dialog, #notification';
 
 class CursorParticles {
     constructor(renderer) {
@@ -30,7 +32,7 @@ class CursorParticles {
             this.mouseX = e.clientX;
             this.mouseY = e.clientY;
 
-            const overUI = !!e.target.closest('#ui-root, #overlay, #confirmation-dialog, #notification');
+            const overUI = !!e.target.closest(UI_SELECTOR);
             if (overUI && !this._overUI) {
                 this._prevX = null;
                 this._prevY = null;
@@ -43,7 +45,7 @@ class CursorParticles {
 
         // Pointer down: create a small burst and trigger a pulse
         window.addEventListener('pointerdown', (e) => {
-            const overUI = !!e.target.closest('#ui-root, #overlay, #confirmation-dialog, #notification');
+            const overUI = !!e.target.closest(UI_SELECTOR);
             if (overUI) return;
             const wp = this._toWorld(e.clientX, e.clientY);
             this._spawnClick(wp.x, wp.y);

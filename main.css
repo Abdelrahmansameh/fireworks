@@ -29,6 +29,7 @@ h2, h3 { font-size: 20px; line-height: 24px; }
 #game-container { position: fixed; inset: 0; z-index: 0; }
 #game-canvas { display: block; width: 100%; height: 100%; touch-action: none; }
 #ui-root { position: fixed; inset: 0; z-index: 100; pointer-events: none; }
+body.mobile-cinematic #ui-root, body.mobile-cinematic .notification { visibility: hidden; }
 .top-bar-container { position: fixed; inset: 0; pointer-events: none; }
 .tab-bar { position: absolute; left: 16px; top: 84px; bottom: 16px; width: 80px; display: flex; flex-direction: column; padding: 8px; gap: 8px; background-color: var(--indigo); background-image: radial-gradient(rgba(255,243,218,.09) 1.1px, transparent 1.4px); background-size: 14px 14px; border: 2px solid var(--cream); border-radius: 18px 22px 16px 20px / 20px 16px 22px 18px; box-shadow: 5px 5px 0 var(--shadow-deep); pointer-events: auto; transition: transform 240ms, opacity 170ms; }
 .tab-bar::after { content: ''; position: absolute; inset: 4px; border: 1px solid #77718c; border-radius: 13px 17px 11px 15px; pointer-events: none; }
@@ -50,11 +51,22 @@ body.menu-tucked .menu-expand-icon { display: inline-flex; }
 #cheats-tab, #bot-tab { min-height: 44px; padding: 2px; font-size: 10px; gap: 2px; }
 #cheats-tab .doodle-icon, #bot-tab .doodle-icon { width: 20px; height: 20px; }
 .resource-counter { position: absolute; top: 16px; right: 16px; width: 288px; pointer-events: auto; }
-.ressource-count { display: flex; gap: 8px; }
+.ressource-count { position: relative; width: 100%; min-height: 0; display: flex; align-items: center; gap: 8px; margin: 0; padding: 0 38px 0 0; border: 0; background: transparent; color: var(--cream); text-align: left; box-shadow: none; }
+.ressource-count:hover:not(:disabled), .ressource-count:active:not(:disabled) { background: transparent; transform: none; box-shadow: none; }
+.wallet-chevron { position: absolute; right: 12px; width: 18px; height: 18px; color: #c9bfa8; transition: transform 180ms; }
+.ressource-count.expanded .wallet-chevron { transform: rotate(180deg); }
+.resource-counter:has(.ressource-count:not(.expanded)) { width: max-content; max-width: calc(100vw - 32px); }
+.ressource-count:not(.expanded) { width: max-content; max-width: 100%; height: 40px; gap: 14px; padding: 0 38px 0 12px; background: rgba(31,34,70,.92); border: 2px solid rgba(244,234,213,.6); border-radius: 24px 22px 23px 21px; box-shadow: 3px 3px 0 var(--shadow-deep); }
+.ressource-count:not(.expanded):hover { background: #2a2e55; }
+.ressource-count:not(.expanded) .wallet-card { flex: 0 1 auto; height: auto; padding: 0; border: 0; background: transparent; color: inherit; box-shadow: none; gap: 6px; }
+.ressource-count:not(.expanded) .wallet-rate { display: none; }
+.ressource-count:not(.expanded) .wallet-card > .doodle-icon { width: 20px; height: 20px; }
+.ressource-count:not(.expanded) .rc-num { font-size: 22px; }
+.ressource-count:not(.expanded) .wallet-chevron { right: 10px; }
 .wallet-card { flex: 1; min-width: 0; height: 52px; display: flex; align-items: center; gap: 8px; padding: 0 10px; color: var(--ink); background: var(--paper); border: 2px solid var(--ink); border-radius: var(--sticker); box-shadow: 3px 3px 0 var(--shadow-deep); }
 .wallet-card:nth-child(2) { border-radius: 8px 12px 9px 12px / 12px 8px 12px 9px; }
 .wallet-card > .doodle-icon { width: 24px; height: 24px; }
-.wallet-card > div { display: flex; flex-direction: column; min-width: 0; }
+.wallet-value { display: flex; flex-direction: column; min-width: 0; }
 .rc-num { font-family: 'Chewy', cursive; font-size: 21px; line-height: 1; white-space: nowrap; font-variant-numeric: tabular-nums; }
 .wallet-rate { font-size: 11px; font-weight: 700; line-height: 1.3; color: #4f4970; }
 .tab-content { position: fixed; top: 76px; left: 104px; width: 288px; max-height: calc(100dvh - 92px); display: none; flex-direction: column; padding: 14px; gap: 20px; color: var(--cream); background-color: var(--indigo); background-image: radial-gradient(rgba(255,243,218,.09) 1.1px, transparent 1.4px); background-size: 14px 14px; border: 2px solid var(--cream); border-radius: 18px 22px 16px 20px / 20px 16px 22px 18px; box-shadow: 6px 6px 0 var(--shadow-deep); overflow: hidden; pointer-events: auto; }
@@ -102,10 +114,10 @@ input[type='checkbox'] { accent-color: var(--teal); width: 20px; height: 20px; v
 .upgrade-costs { display: flex; gap: 8px; }
 .upgrade-card.saving { border-style: dashed; }
 .upgrade-card.saving > .upgrade-buy-button { display: none; }
-.upgrade-saving { position: relative; margin-top: 8px; height: 28px; border: 2px solid var(--ink); border-radius: 7px 5px 8px 6px; overflow: hidden; }
+.upgrade-saving { position: relative; margin-top: 8px; height: 44px; border: 2px solid var(--ink); border-radius: 7px 5px 8px 6px; overflow: hidden; }
 .upgrade-saving-track { position: absolute; inset: 0; background: #faf5e9; }
 .upgrade-saving-fill { display: block; height: 100%; background: var(--teal); border-right: 2px solid var(--ink); transition: width 250ms linear; }
-.upgrade-saving-meta { position: relative; z-index: 1; display: flex; align-items: center; gap: 4px; padding: 3px 6px; font: 400 15px 'Chewy', cursive; white-space: nowrap; }
+.upgrade-saving-meta { position: relative; z-index: 1; height: 100%; display: flex; align-items: center; justify-content: center; gap: 4px; padding: 0 8px; font: 400 20px 'Chewy', cursive; white-space: nowrap; }
 .upgrade-saving-balance { overflow: hidden; text-overflow: ellipsis; font-size: 12px; }
 .upgrade-card.purchased { background: #dbdfc5; box-shadow: none; }
 .upgrade-owned-status { display: flex; align-items: center; gap: 4px; color: #4f5d42; font-size: 11px; margin-top: 4px; }
@@ -126,10 +138,6 @@ input[type='checkbox'] { accent-color: var(--teal); width: 20px; height: 20px; v
 .launcher-card > select { flex: 1; width: 0; min-width: 0; height: 44px; min-height: 44px; padding: 6px; background: transparent; color: var(--ink); border: 0; border-radius: 6px; box-shadow: none; font-size: 12px; font-weight: 600; cursor: pointer; }
 .launcher-card > select:hover { background: #f5ecd9; }
 .launcher-card > select:focus-visible { outline-offset: 0; }
-.launcher-color-input { width: 36px; height: 36px; flex-shrink: 0; padding: 3px; border: 1.5px solid var(--ink); border-radius: 8px 6px 7px 5px; background: #fffaf0; cursor: pointer; }
-.launcher-color-input::-webkit-color-swatch-wrapper { padding: 0; }
-.launcher-color-input::-webkit-color-swatch { border: 0; border-radius: 4px; }
-.launcher-color-input::-moz-color-swatch { border: 0; border-radius: 4px; }
 .launcher-details { font-size: 12px; color: #c7bfd9; }
 .stats-group, .stats-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 8px; }
 .stats-value { font-family: 'Chewy', cursive; font-size: 17px; text-align: right; flex-shrink: 0; }
@@ -147,7 +155,7 @@ input[type='checkbox'] { accent-color: var(--teal); width: 20px; height: 20px; v
 .notification { position: fixed; left: 50%; bottom: 32px; max-width: min(440px, calc(100vw - 32px)); padding: 12px 18px; border: 2px solid var(--ink); border-radius: var(--sticker); box-shadow: 4px 5px 0 var(--shadow-deep); color: var(--ink); background: var(--green); font-size: 15px; font-weight: 800; z-index: 1900; pointer-events: none; opacity: 0; transform: translate(-50%,30px) rotate(-2deg); transition: opacity 170ms, transform 320ms cubic-bezier(.2,.8,.2,1.15); }
 .notification.show { opacity: 1; pointer-events: auto; transform: translate(-50%,0) rotate(-2deg); cursor: pointer; }
 @media (min-width: 701px) {
-    .notification { top: 24px; right: 24px; bottom: auto; left: auto; transform: translate(24px, -8px) rotate(-2deg); }
+    .notification { top: 84px; right: 24px; bottom: auto; left: auto; transform: translate(24px, -8px) rotate(-2deg); }
     .notification.show { transform: translate(0, 0) rotate(-2deg); }
 }
 .floating-sparkle { position: fixed; z-index: 150; pointer-events: none; font-family: 'Chewy', cursive; font-size: 24px; color: var(--gold); text-shadow: 2px 2px 0 var(--ink); transform: scale(var(--fsn-scale, .85)); transform-origin: left center; transition: left 120ms ease-out, top 120ms ease-out, opacity 120ms ease-out, transform 200ms ease-out; }
@@ -234,8 +242,8 @@ body.menu-tucked .tab-bar { opacity: 0; transform: translateX(-110px); pointer-e
 #cheats-tab, #bot-tab { width: 52px; height: 44px; min-height: 44px; }
 .wallet-rate { font-size: 12px; }
 .wallet-card:first-child { border-radius: 12px 8px 12px 9px / 8px 12px 9px 12px; }
-.upgrade-saving-balance { display: inline-flex; align-items: center; gap: 4px; font-size: 15px; }
-.upgrade-saving-balance .doodle-icon { width: 15px; height: 15px; }
+.upgrade-saving-balance { display: inline-flex; align-items: center; gap: 4px; font-size: 20px; }
+.upgrade-saving-balance .doodle-icon { width: 18px; height: 18px; }
 .upgrade-card.saving:has(.upgrade-saving-balance .currency-gold) .upgrade-saving-fill { background: var(--gold); }
 @media (max-width:700px) {
     .tab-bar { align-items: stretch; padding: 6px; }
@@ -262,10 +270,6 @@ body.menu-tucked .tab-bar { opacity: 0; transform: translateX(-110px); pointer-e
 @media (max-width:700px) {
     .resource-counter { top:var(--mobile-status-top); left:12px; right:12px; width:auto; transition:opacity 240ms, transform 240ms; }
     .wallet-rate { font-size:11.5px; }
-    body.menu-tucked .ressource-count { width:max-content; height:36px; align-items:center; gap:6px; padding:0 12px 0 8px; background:rgba(31,34,70,.88); color:#fff3da; border:2px solid rgba(244,234,213,.6); border-radius:18px 14px 16px 15px; }
-    body.menu-tucked .wallet-card { flex:0; padding:0; height:auto; border:0; background:transparent; box-shadow:none; color:inherit; gap:6px; }
-    body.menu-tucked .wallet-rate { display:none; }
-    body.menu-tucked .wallet-card > .doodle-icon { width:18px; height:18px; }
-    body.menu-tucked .rc-num { font-size:17px; }
+    .resource-counter:has(.ressource-count:not(.expanded)) { left: 12px; right: auto; max-width: calc(100vw - 24px); }
     .tab-content:not(#recipes-content) > .panel-header { position:absolute; width:1px; height:1px; min-height:0; overflow:hidden; clip:rect(0,0,0,0); padding:0; }
 }

@@ -25,6 +25,7 @@ function countBuildings(state, type) {
 
 /** Total fireworks-per-second from all auto launchers. Mirrors BuildingManager.getTheoreticalAutoLauncherFPS. */
 export function launcherFPS(state) {
+    if (Array.isArray(state.recipes) && !state.recipes.some(recipe => recipe?.components?.length)) return 0;
     const launchers = countBuildings(state, 'AUTO_LAUNCHER');
     if (launchers === 0) return 0;
     const baseInterval = BUILDING_TYPES.AUTO_LAUNCHER.baseSpawnInterval;

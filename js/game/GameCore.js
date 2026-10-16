@@ -2,6 +2,7 @@ import {
     AUTO_LAUNCHER_COST_BASE,
     AUTO_LAUNCHER_COST_RATIO,
     DEFAULT_RECIPE_COMPONENTS,
+    PATTERN_RECIPE_COMPONENTS,
     DRONE_CONFIG,
     CROWD_CATCHER_CONFIG,
     CROWD_CONFIG,
@@ -14,7 +15,7 @@ import ResourceManager from '../resources/ResourceManager.js';
 import BuildingManager from '../buildings/BuildingManager.js';
 import GameMetrics from '../metrics/GameMetrics.js';
 import FireworkSystem from '../systems/FireworkSystem.js';
-import { patternKeys, patternDefinitions, patternDisplayNames } from '../entities/patterns/index.js';
+import { patternDisplayNames } from '../entities/patterns/index.js';
 import { expectedGPS, BASE_GOLD_PER_TOSS, targetCrowdCount } from '../systems/ProductionRates.js';
 import { gameStorage } from '../platform/GameStorage.js';
 import { GRAND_FINALE_CONFIG } from '../config/GrandFinaleConfig.js';
@@ -26,7 +27,7 @@ import MemoryStorage from '../platform/MemoryStorage.js';
 import HeadlessCrowd from '../platform/HeadlessCrowd.js';
 import { roundUpToStep } from '../utils/costRounding.js';
 
-export const SAVE_VERSION = '4';
+export const SAVE_VERSION = '5';
 
 /**
  * GameCore — the headless-capable game-logic engine.
@@ -78,13 +79,14 @@ class GameCore extends Engine {
         this.fireworkSystem = new FireworkSystem(this);
 
         this.recipes = [];
-        this.currentRecipeComponents = [...DEFAULT_RECIPE_COMPONENTS];
+        this.grantedRecipePatterns = new Set();
+        this.currentRecipeComponents = DEFAULT_RECIPE_COMPONENTS.map(component => ({ ...component }));
+        this.selectedRecipeIndex = null;
         this.cursorRecipeIndex = 0;
         this.autoLauncherCost = AUTO_LAUNCHER_COST_BASE;
         this.selectedLauncherIndex = null;
 
-        const firstAuto = (patternDefinitions.find(p => !p.unlockId) || patternDefinitions[0]).key;
-        this.unlockedPatternKeys = [firstAuto];
+        this.unlockedPatternKeys = ['spherical'];
 
         this.firstClickStates = {
             tabMenu: false,
@@ -136,15 +138,11 @@ class GameCore extends Engine {
         this.emergentModel = this.headless ? new EmergentYieldModel() : null;
         this.crowd = this.headless ? new HeadlessCrowd() : null;
 
-        if (this.headless) {
-            // Launchers gate firing on having a recipe; seed one so the economy runs.
-            this.recipes = [{ name: 'sim', components: DEFAULT_RECIPE_COMPONENTS.map(c => ({ ...c })) }];
-        }
-
         // Restore persisted progression state (no-op in a fresh headless run).
+        const savedPatterns = JSON.parse(this.storage.getItem('unlockedPatternKeys') || 'null');
         try {
             const pState = JSON.parse(this.storage.getItem('progressionState') || '{}');
-            this.progression.loadState(pState);
+            this.progression.loadState(pState, savedPatterns);
             if (pState.firstClicks && typeof pState.firstClicks === 'object') {
                 this.firstClickStates = { ...this.firstClickStates, ...pState.firstClicks };
             }
@@ -152,11 +150,11 @@ class GameCore extends Engine {
             console.error('Failed to load progression state:', e);
         }
 
-        const savedPatterns = JSON.parse(this.storage.getItem('unlockedPatternKeys') || 'null');
         if (Array.isArray(savedPatterns) && savedPatterns.length > 0) {
-            this.unlockedPatternKeys = savedPatterns;
+            this.unlockedPatternKeys = savedPatterns.filter(key => patternDisplayNames[key]);
         }
 
+        this.restoreRecipes();
         this.progression.applyAll(this);
     }
 
@@ -301,25 +299,9 @@ class GameCore extends Engine {
     buyAutoLauncher() {
         const building = this.buildingManager.buyBuilding('AUTO_LAUNCHER');
         if (building) {
-            if (!this.progression.isUnlocked('recipes_tab')) {
-                const autoUnlockable = patternDefinitions.filter(p => !p.unlockId).map(p => p.key);
-                const remaining = autoUnlockable.filter(k => !this.unlockedPatternKeys.includes(k));
-                let patternToAssign;
-                if (remaining.length > 0) {
-                    patternToAssign = remaining[0];
-                    this.unlockedPatternKeys.push(patternToAssign);
-                } else if (this.unlockedPatternKeys.length > 0) {
-                    patternToAssign = this.unlockedPatternKeys[Math.floor(this.rng() * this.unlockedPatternKeys.length)];
-                } else {
-                    patternToAssign = patternKeys[0];
-                }
-                if (typeof building.assignedRecipeIndex === 'number' && this.recipes[building.assignedRecipeIndex]) {
-                    this.recipes[building.assignedRecipeIndex].components[0].pattern = patternToAssign;
-                }
-                this.saveProgress();
-            }
             this.updateLauncherList();
         }
+        return building;
     }
 
     buyBuilding(buildingType) {
@@ -331,17 +313,6 @@ class GameCore extends Engine {
             this.ui.updateBuildingCounts();
             this.ui.updateBuildingCosts();
             this.ui.updateBuildingListByType(buildingType);
-        }
-    }
-
-    assignSequentialRecipesToLaunchers() {
-        if (!Array.isArray(this.recipes) || this.recipes.length === 0) return;
-        const launchers = this.buildingManager.getBuildingsByType('AUTO_LAUNCHER');
-        for (let i = 0; i < launchers.length; i++) {
-            const launcher = launchers[i];
-            if (launcher.assignedRecipeIndex == null) {
-                launcher.assignedRecipeIndex = i % this.recipes.length;
-            }
         }
     }
 
@@ -387,8 +358,7 @@ class GameCore extends Engine {
 
         this.progression.resetUpgradesState();
         this.clearCrowdArrival();
-        this.unlockedPatternKeys = this.unlockedPatternKeys.filter(key =>
-            !patternDefinitions.find(pattern => pattern.key === key)?.unlockId);
+        this.unlockedPatternKeys = ['spherical'];
         this.progression.applyAll(this);
         this.crowd?.setCount(0);
 
@@ -413,6 +383,9 @@ class GameCore extends Engine {
             const maxLevel = def.maxLevel ?? 1;
             if (this.progression.getUpgradeLevel(def.id) < maxLevel) {
                 this.progression.forceSetLevel(def.id, maxLevel);
+                for (const key of def.patternKeys ?? (def.patternKey ? [def.patternKey] : [])) {
+                    this.grantPatternRecipe(key);
+                }
                 changed = true;
             }
         }
@@ -517,14 +490,71 @@ class GameCore extends Engine {
     //  Recipe helpers (data only)
     // ════════════════════════════════════════════════════════════════════════
 
+    getOwnedPatternKeys() {
+        return ['spherical', ...this.progression.getAllUpgradeDefs()
+            .filter(def => this.progression.getUpgradeLevel(def.id) > 0)
+            .flatMap(def => def.patternKeys ?? (def.patternKey ? [def.patternKey] : []))];
+    }
+
+    restoreRecipes() {
+        let savedRecipes = null;
+        let savedGrants = null;
+        try {
+            const value = JSON.parse(this.storage.getItem('fireworkRecipes') ?? 'null');
+            if (Array.isArray(value)) savedRecipes = value;
+        } catch { /* A damaged collection starts empty. */ }
+        try {
+            const value = JSON.parse(this.storage.getItem('grantedRecipePatterns') ?? 'null');
+            if (Array.isArray(value)) savedGrants = value;
+        } catch { /* Older saves did not track gifts separately. */ }
+
+        this.recipes = (savedRecipes ?? []).filter(recipe => recipe && Array.isArray(recipe.components))
+            .map((recipe, index) => ({
+                ...recipe,
+                name: typeof recipe.name === 'string' && recipe.name.trim() ? recipe.name : `Recipe ${index + 1}`,
+                components: recipe.components.filter(component => component && typeof component === 'object')
+                    .map(component => {
+                        const normalized = { ...component };
+                        for (const [key, value] of Object.entries(DEFAULT_RECIPE_COMPONENTS[0])) {
+                            if (normalized[key] === undefined) normalized[key] = value;
+                        }
+                        return normalized;
+                    }),
+            }));
+        // Existing collections, including an explicitly empty collection, belong
+        // to the player. Migration must never refill deleted or renamed gifts.
+        this.grantedRecipePatterns = new Set(savedGrants ?? (savedRecipes ? this.getOwnedPatternKeys() : []));
+        if (savedRecipes === null) {
+            for (const key of this.getOwnedPatternKeys()) this.grantPatternRecipe(key);
+        }
+        this.persistRecipes();
+    }
+
+    persistRecipes() {
+        this.storage.setItem('fireworkRecipes', JSON.stringify(this.recipes));
+        this.storage.setItem('grantedRecipePatterns', JSON.stringify([...this.grantedRecipePatterns]));
+    }
+
+    grantPatternRecipe(key) {
+        if (this.grantedRecipePatterns.has(key) || !PATTERN_RECIPE_COMPONENTS[key]) return false;
+        this.grantedRecipePatterns.add(key);
+        this.recipes.push({
+            name: patternDisplayNames[key],
+            components: PATTERN_RECIPE_COMPONENTS[key].map(component => ({ ...component })),
+        });
+        this.persistRecipes();
+        this.updateRecipeList?.();
+        this.updateLauncherList();
+        return true;
+    }
+
     getCursorRecipeCount() {
-        return (Array.isArray(this.recipes) ? this.recipes.length : 0) + 1; // +1 for default
+        return this.recipes.length;
     }
 
     getCursorRecipeComponentsAt(index) {
         try {
-            if (index === 0) return JSON.parse(JSON.stringify(DEFAULT_RECIPE_COMPONENTS));
-            const recipe = this.recipes[index - 1];
+            const recipe = this.recipes[index];
             if (recipe && Array.isArray(recipe.components)) return JSON.parse(JSON.stringify(recipe.components));
         } catch (e) {
             console.error('Failed to clone recipe components for cursor cycle:', e);
@@ -549,6 +579,7 @@ class GameCore extends Engine {
         this.storage.setItem('autoLauncherCost', this.autoLauncherCost);
         this.storage.setItem('sparkles', this.getSparkles());
         this.storage.setItem('fireworkRecipes', JSON.stringify(this.recipes));
+        this.storage.setItem('grantedRecipePatterns', JSON.stringify([...this.grantedRecipePatterns]));
 
         this.storage.setItem('buildingManagerData', JSON.stringify(this.buildingManager.serialize()));
 

@@ -2,7 +2,7 @@ import { BUILDING_TYPES, DRONE_CONFIG } from '../config/config.js';
 import { SKILL_TREE_CONFIG, SHOW_MILESTONES } from '../ui/SkillTreeConfig.js';
 import { roundUpClean } from '../utils/costRounding.js';
 
-const PROGRESSION_SCHEMA_VERSION = 2;
+const PROGRESSION_SCHEMA_VERSION = 3;
 // Historical charges for saves written before purchase ledgers existed.
 const LEGACY_BASE_COSTS = {
     auto_launcher: 45,
@@ -107,12 +107,13 @@ class ProgressionManager {
      * Restore state from a previously serialized object.
      * Safe to call with null / undefined / empty object (no-op).
      */
-    loadState(data) {
+    loadState(data, savedPatterns = []) {
         if (!data || typeof data !== 'object') return;
         const savedUpgrades = data.upgrades && typeof data.upgrades === 'object'
             ? { ...data.upgrades } : { ...this._upgradeLevels };
         const upgrades = { ...savedUpgrades };
-        const legacy = (Number(data.schemaVersion) || 0) < PROGRESSION_SCHEMA_VERSION;
+        const schemaVersion = Number(data.schemaVersion) || 0;
+        const legacy = schemaVersion < 2;
         const unlocked = Array.isArray(data.unlocked)
             ? new Set(data.unlocked.filter(id => typeof id === 'string')) : new Set(this._unlockedSet);
         const inherit = (id, level) => {
@@ -129,6 +130,19 @@ class ProgressionManager {
             for (const bundle of LEGACY_BUNDLES) {
                 const level = this._savedLevel(bundle.id, savedUpgrades[bundle.id]);
                 bundle.targets.forEach(id => inherit(id, level));
+            }
+        }
+
+        if (schemaVersion < 3) {
+            // Former launcher-earned patterns become owned upgrades, with no
+            // charge attached. Player recipes and assignments stay untouched.
+            for (const key of Array.isArray(savedPatterns) ? savedPatterns : []) {
+                const def = [...this._upgrades.values()].find(upgrade => upgrade.patternKey === key);
+                if (def) unlocked.add(def.unlockId);
+            }
+            if (savedUpgrades.auto_launcher > 0 || savedUpgrades.unlock_advanced_creator > 0
+                || unlocked.has('recipes_tab') || unlocked.has('advanced_creator')) {
+                inherit('unlock_recipes_tab', 1);
             }
         }
 
@@ -169,6 +183,17 @@ class ProgressionManager {
                         remaining -= amount;
                     });
                 }
+            }
+        }
+        // The late Studio purchase is now part of the early Creator. Retain
+        // its original charge so resetting upgrades refunds the actual spend.
+        if (schemaVersion < 3 && savedUpgrades.unlock_advanced_creator > 0
+            && (!legacy || !(savedUpgrades.drone_efficiency > 0))) {
+            const charge = !legacy && data.purchaseCosts?.unlock_advanced_creator?.[0];
+            const costs = charge && typeof charge === 'object' ? this._cleanCosts(charge) : { gold: 3000 };
+            const creatorCosts = this._purchaseCosts.unlock_recipes_tab?.[0];
+            if (creatorCosts) {
+                for (const [currency, amount] of Object.entries(costs)) creatorCosts[currency] = (creatorCosts[currency] ?? 0) + amount;
             }
         }
     }
@@ -340,6 +365,7 @@ class ProgressionManager {
         this._upgradeLevels[id] = newLevel;
         this.applyAll(game);
         def.onPurchase?.(game, newLevel, def.id);
+        for (const key of def.patternKeys ?? (def.patternKey ? [def.patternKey] : [])) game.grantPatternRecipe(key);
         game.syncCrowdStats();
 
         game.saveProgress();
@@ -370,6 +396,10 @@ class ProgressionManager {
         }
         this._unlockedSet.delete('crowd');
         this._unlockedSet.delete('crowds_tab');
+        this._unlockedSet.delete('advanced_creator');
+        for (const id of this._unlockedSet) {
+            if (id.startsWith('pattern_')) this._unlockedSet.delete(id);
+        }
     }
 
     /** Clear the entire unlock set (preserves upgrade levels). */
@@ -417,6 +447,7 @@ class ProgressionManager {
         game.crowdUnlocked = false;
         game.grandFinaleUnlocked = false;
         game.advancedCreatorUnlocked = false;
+        game.unlockedPatternKeys = game.getOwnedPatternKeys();
 
         for (const def of this._upgrades.values()) {
             const level = this.getUpgradeLevel(def.id);

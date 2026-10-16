@@ -121,10 +121,6 @@ export function createUpgradeCard({ def, level, canBuy, reason, isPrereqLocked, 
     }
 
     if (!canBuy) {
-        const status = document.createElement('p');
-        status.className = 'upgrade-saving-status';
-        status.textContent = 'Not enough resources';
-        card.appendChild(status);
         const savings = document.createElement('div');
         savings.className = 'upgrade-saving';
         savings.innerHTML = `

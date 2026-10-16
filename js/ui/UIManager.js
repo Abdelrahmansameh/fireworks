@@ -10,6 +10,8 @@ import { FloatingSparkleNumber } from './FloatingSparkleNumber.js';
 import { doodleIcon } from './doodleIcons.js';
 import { createUpgradeCard, refreshUpgradeSavings } from './upgradeCards.js';
 
+const compactResourceNumber = new Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 1 });
+
 class UIManager {
     constructor(game) {
         this.game = game;
@@ -263,6 +265,17 @@ class UIManager {
 
     bindEvents() {
         document.getElementById('collapse-button').addEventListener('click', this.handleCollapseButton.bind(this));
+
+        const wallet = document.getElementById('ressource-count');
+        const expanded = gameStorage.getItem('walletExpanded') !== 'false';
+        wallet.classList.toggle('expanded', expanded);
+        wallet.setAttribute('aria-expanded', String(expanded));
+        wallet.addEventListener('click', () => {
+            const expanded = wallet.classList.toggle('expanded');
+            wallet.setAttribute('aria-expanded', String(expanded));
+            gameStorage.setItem('walletExpanded', String(expanded));
+            this.game.updateUI();
+        });
 
         document.getElementById('save-progress').addEventListener('click', () => {
             const data = this.game.serializeGameData();
@@ -809,12 +822,7 @@ class UIManager {
         const isDetail = sparklesElement.classList.contains('expanded');
 
         // Icon provides context — no unit suffix needed
-        const formatPill = (num) => {
-            if (num >= 1e9) return (num / 1e9).toFixed(1) + 'B';
-            if (num >= 1e6) return (num / 1e6).toFixed(1) + 'M';
-            if (num >= 1e3) return (num / 1e3).toFixed(1) + 'K';
-            return String(num);
-        };
+        const formatPill = num => compactResourceNumber.format(Math.floor(Math.max(0, Number(num) || 0)));
 
         // Full compact-formatted number with suffix and max 5 significant digits
         const formatDetail = num => {
@@ -839,6 +847,9 @@ class UIManager {
                 ? formatDetail(gold.amount)
                 : formatPill(Math.floor(gold.amount));
         });
+        const walletAction = isDetail ? 'Show less' : 'Show more';
+        sparklesElement.title = walletAction;
+        sparklesElement.setAttribute('aria-label', `Sparkles ${Math.floor(sparklesCount).toLocaleString()}, gold ${Math.floor(gold.amount).toLocaleString()}. ${walletAction}`);
 
         const formatRate = value => {
             const numeric = Number(value) || 0;
@@ -1315,13 +1326,16 @@ class UIManager {
         recipes.forEach((recipe, index) => {
             const recipeDiv = document.createElement('div');
             recipeDiv.classList.add('recipe-item');
-            recipeDiv.innerHTML = `
-                <span>${recipe.name}</span>
-                <button class="select-recipe" data-index="${index}">Select</button>
-            `;
+            const name = document.createElement('span');
+            name.textContent = recipe.name;
+            const selectButton = document.createElement('button');
+            selectButton.type = 'button';
+            selectButton.className = 'select-recipe';
+            selectButton.dataset.index = index;
+            selectButton.textContent = 'Select';
+            recipeDiv.append(name, selectButton);
             recipeList.appendChild(recipeDiv);
 
-            const selectButton = recipeDiv.querySelector('.select-recipe');
             selectButton.addEventListener('click', () => onSelect(index));
         });
     }
@@ -1337,7 +1351,6 @@ class UIManager {
             if (button) button.style.display = hasLaunchers ? '' : 'none';
         }
         launcherList.replaceChildren();
-        const recipesUnlocked = this.game.progression.isUnlocked('recipes_tab');
         const locate = launcher => {
             onSelect(launcher.id);
             this.game.setCameraTarget(launcher.x);
@@ -1350,7 +1363,7 @@ class UIManager {
         };
         for (const [index, launcher] of launchers.entries()) {
             const assignedRecipe = this.game.recipes[launcher.assignedRecipeIndex];
-            const component = assignedRecipe?.components?.[0] ?? this.game.currentRecipeComponents[0];
+            const component = assignedRecipe?.components?.[0];
             const row = document.createElement('div');
             row.className = `launcher-card${launcher.id === selectedBuildingId ? ' selected' : ''}`;
             row.dataset.buildingId = launcher.id;
@@ -1380,55 +1393,19 @@ class UIManager {
                 event.preventDefault();
                 locate(launcher);
             });
-            if (recipesUnlocked) {
-                const select = document.createElement('select');
-                select.className = 'recipe-select';
-                select.dataset.buildingId = launcher.id;
-                select.setAttribute('aria-label', `Firework for launcher ${index + 1}`);
-                select.add(new Option('Random mix', ''));
-                this.game.recipes.forEach((recipe, recipeIndex) => select.add(new Option(recipe.name, String(recipeIndex))));
-                select.value = typeof launcher.assignedRecipeIndex === 'number' ? String(launcher.assignedRecipeIndex) : '';
-                select.addEventListener('change', () => {
-                    launcher.assignedRecipeIndex = select.value === '' ? null : Number(select.value);
-                    row.style.setProperty('--launcher-color', this.game.recipes[launcher.assignedRecipeIndex]?.components?.[0]?.color ?? '#ffffff');
-                    this.game.saveProgress();
-                });
-                row.appendChild(select);
-            } else {
-                const color = document.createElement('input');
-                color.type = 'color';
-                color.className = 'launcher-color-input';
-                color.dataset.buildingId = launcher.id;
-                color.setAttribute('aria-label', `Color for launcher ${index + 1}`);
-                color.value = component?.color ?? '#ffffff';
-                const patterns = document.createElement('select');
-                patterns.className = 'launcher-pattern-select';
-                patterns.dataset.buildingId = launcher.id;
-                patterns.setAttribute('aria-label', `Shape for launcher ${index + 1}`);
-                for (const key of this.game.unlockedPatternKeys || []) patterns.add(new Option(patternDisplayNames[key] || key, key));
-                patterns.value = component?.pattern ?? '';
-                if (!patterns.value && patterns.options.length) patterns.selectedIndex = 0;
-                const assign = () => {
-                    const name = `Launcher ${index + 1}`;
-                    const recipe = { name, components: (assignedRecipe?.components ?? this.game.currentRecipeComponents).map(part => ({ ...part, color: color.value, pattern: patterns.value })) };
-                    let recipeIndex = launcher._customRecipeIndex;
-                    if (recipeIndex == null && this.game.recipes[launcher.assignedRecipeIndex]?.name === name) recipeIndex = launcher.assignedRecipeIndex;
-                    if (recipeIndex == null || !this.game.recipes[recipeIndex]) recipeIndex = this.game.recipes.push(recipe) - 1;
-                    else this.game.recipes[recipeIndex] = recipe;
-                    launcher._customRecipeIndex = recipeIndex;
-                    launcher.assignedRecipeIndex = recipeIndex;
-                    row.style.setProperty('--launcher-color', color.value);
-                    gameStorage.setItem('fireworkRecipes', JSON.stringify(this.game.recipes));
-                    this.game.updateRecipeList();
-                    this.game.saveProgress();
-                };
-                color.addEventListener('input', () => {
-                    row.style.setProperty('--launcher-color', color.value);
-                });
-                color.addEventListener('change', assign);
-                patterns.addEventListener('change', assign);
-                row.append(color, patterns);
-            }
+            const select = document.createElement('select');
+            select.className = 'recipe-select';
+            select.dataset.buildingId = launcher.id;
+            select.setAttribute('aria-label', `Firework for launcher ${index + 1}`);
+            select.add(new Option('Random', ''));
+            this.game.recipes.forEach((recipe, recipeIndex) => select.add(new Option(recipe.name, String(recipeIndex))));
+            select.value = assignedRecipe ? String(launcher.assignedRecipeIndex) : '';
+            select.addEventListener('change', () => {
+                launcher.assignedRecipeIndex = select.value === '' ? null : Number(select.value);
+                row.style.setProperty('--launcher-color', this.game.recipes[launcher.assignedRecipeIndex]?.components?.[0]?.color ?? '#ffffff');
+                this.game.saveProgress();
+            });
+            row.appendChild(select);
             launcherList.appendChild(row);
         }
     }

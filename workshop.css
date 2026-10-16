@@ -262,9 +262,12 @@
 .workshop-actions .workshop-launch:hover:not(:disabled) { background: #85ecec; }
 .workshop-collection { gap: 8px; }
 .workshop-collection-heading { display: none; }
+.workshop-new-recipe { flex-shrink: 0; align-self: flex-start; background: #5fe0e0; }
 #workshop-saved-list { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 8px; }
+.workshop-saved-entry { display: flex; min-width: 0; flex-direction: column; gap: 6px; }
 .workshop-saved-card { display: flex; min-width: 0; flex-direction: column; gap: 6px; padding: 8px; text-align: left; border-radius: 12px 9px 13px 8px / 9px 13px 8px 12px; box-shadow: 3px 3px 0 #0a0918; transform: rotate(-.6deg); }
-.workshop-saved-card:nth-child(even) { transform: rotate(.6deg); }
+.workshop-saved-entry:nth-child(even) .workshop-saved-card { transform: rotate(.6deg); }
+.workshop-delete-recipe { align-self: flex-end; padding: 0 12px; background: transparent; color: #ff9a8a; border: 2px dashed #ff9a8a; box-shadow: none; font-size: 13px; }
 .workshop-saved-photo { position: relative; display: block; width: 184px; height: 88px; max-width: 100%; overflow: hidden; background: #12142e; border-radius: 8px 6px 9px 6px; }
 .workshop-saved-text { display: flex; flex-direction: column; gap: 6px; }
 .workshop-saved-text strong { font-size: 15px; font-weight: 800; line-height: 1.15; }

@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Exercise opening purchases, crowd arrivals, and the later recipe gate in the real browser game.
+// Exercise Creator before launchers, staged patterns, and crowd arrivals in the real browser game.
 import { createRequire } from 'node:module';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
@@ -46,14 +46,69 @@ try {
         return { manualAward: game.getSparkles() - before, multiplier: game.baseSparkleMultiplier,
             buildings: game.buildingManager.buildings.length, recipes: game.progression.isUnlocked('recipes_tab'),
             autoVisible: game.progression.isVisible('auto_launcher', game).visible,
+            creatorVisible: game.progression.isVisible('unlock_recipes_tab', game).visible,
+            firstLauncherCost: game.buildingManager.getBuyCost('AUTO_LAUNCHER'),
             secondStarterCost: game.progression.getUpgradeCost('base_mult_1') };
     });
     assert(starter.manualAward === 1.75 && starter.multiplier === 1.75 && starter.buildings === 0
-        && !starter.recipes && starter.autoVisible && starter.secondStarterCost === 240,
-    `The starter did not give its one useful effect before launchers: ${JSON.stringify(starter)}`);
+        && !starter.recipes && !starter.autoVisible && starter.creatorVisible && starter.secondStarterCost === 240,
+    `The starter did not lead to the Creator before launchers: ${JSON.stringify(starter)}`);
+    await page.locator('[data-upgrade-card="unlock_recipes_tab"] .upgrade-buy-button').click();
+    const creator = await page.evaluate(() => {
+        const result = { recipes: game.progression.isUnlocked('recipes_tab'),
+            advancedCreator: game.advancedCreatorUnlocked,
+            burst: game.progression.isUnlocked('pattern_burst'),
+            patterns: [...game.unlockedPatternKeys],
+            recipesNamed: game.recipes.map(recipe => recipe.name),
+            buildings: game.buildingManager.buildings.length,
+            autoVisible: game.progression.isVisible('auto_launcher', game).visible };
+        game.resourceManager.resources.sparkles.amount = game.progression.getUpgradeCost('auto_launcher');
+        game.updateUI();
+        return result;
+    });
+    assert(creator.recipes && creator.advancedCreator && creator.burst && creator.buildings === 0 && creator.autoVisible
+        && JSON.stringify(creator.patterns) === JSON.stringify(['spherical', 'burst'])
+        && creator.recipesNamed.filter(name => name === 'Burst').length === 1,
+    `The second upgrade did not bundle Creator with Burst and its recipe: ${JSON.stringify(creator)}`);
     await page.evaluate(() => { game.ui.dismissNotification(); game.updateUI(); });
     await page.screenshot({ path: join(screenshotDirectory, 'early-first-launcher.png'), animations: 'disabled' });
     await page.locator('[data-upgrade-card="auto_launcher"] .upgrade-buy-button').click();
+    const launcherUnlock = await page.evaluate(() => {
+        game.progression.applyAll(game);
+        game.ui.showTab('buildings');
+        game.updateUI();
+        game.saveProgress();
+        return { unlocked: game.progression.isUnlocked('buildings_tab'),
+            count: game.buildingManager.getBuildingsByType('AUTO_LAUNCHER').length,
+            firstCost: game.buildingManager.getBuyCost('AUTO_LAUNCHER'),
+            buyDisabled: document.getElementById('buy-auto_launcher').disabled };
+    });
+    assert(launcherUnlock.unlocked && launcherUnlock.count === 0 && launcherUnlock.firstCost === starter.firstLauncherCost && launcherUnlock.buyDisabled,
+        `Launcher unlock granted a free unit or changed its first price: ${JSON.stringify(launcherUnlock)}`);
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await page.waitForFunction(() => window.game?.particleSystem && !window.game._isRestoring);
+    const launcherReload = await page.evaluate(firstCost => {
+        game.pause();
+        game.ui.showTab('buildings');
+        game.resourceManager.resources.sparkles.amount = firstCost - 1;
+        game.updateUI();
+        const blocked = !game.buildingManager.buyBuilding('AUTO_LAUNCHER');
+        const result = { count: game.buildingManager.getBuildingsByType('AUTO_LAUNCHER').length,
+            blocked, balance: game.getSparkles(), disabled: document.getElementById('buy-auto_launcher').disabled };
+        game.resourceManager.resources.sparkles.amount = firstCost;
+        game.updateUI();
+        return result;
+    }, launcherUnlock.firstCost);
+    assert(launcherReload.count === 0 && launcherReload.blocked && launcherReload.balance === launcherUnlock.firstCost - 1 && launcherReload.disabled,
+        `Loading or an unaffordable purchase granted a launcher: ${JSON.stringify(launcherReload)}`);
+    await page.locator('#buy-auto_launcher').click();
+    const firstLauncher = await page.evaluate(() => {
+        const launchers = game.buildingManager.getBuildingsByType('AUTO_LAUNCHER');
+        return { count: launchers.length, balance: game.getSparkles(),
+            paid: launchers[0]?.purchaseCost, grant: launchers[0]?.grantUpgradeId ?? null };
+    });
+    assert(firstLauncher.count === 1 && firstLauncher.balance === 0 && firstLauncher.paid === launcherUnlock.firstCost && firstLauncher.grant === null,
+        `The first launcher was not a separate paid purchase: ${JSON.stringify(firstLauncher)}`);
     const arrivals = await page.evaluate(async () => {
         const { fireworksForCrowd, getCrowdArrivalProgress } = await import('/js/systems/ProductionRates.js');
         const ensure = (condition, message) => { if (!condition) throw new Error(message); };
@@ -120,41 +175,46 @@ try {
     }
     assert(persistence.reset.fireworks === null && persistence.reset.time === null && persistence.reset.target === 0,
         `Upgrade reset retained crowd progress: ${JSON.stringify(persistence.reset)}`);
-    const recipes = await page.evaluate(() => {
+    const patterns = await page.evaluate(() => {
         const ensure = (condition, message) => { if (!condition) throw new Error(message); };
         const buy = id => ensure(game.buyUpgrade(id), `Could not buy ${id}`);
         game.resourceManager.resources.sparkles.amount = 10000000;
         game.resourceManager.resources.gold.amount = 10000000;
-        for (const id of ['base_mult_1', 'auto_launcher', 'launcher_spawn_rate', 'crowd_spark_1', 'crowd_fireworks']) buy(id);
-        const beforeCatapult = game.progression.isVisible('unlock_recipes_tab', game).visible;
-        buy('crowd_gold_1');
-        buy('crowd_gold_1');
-        for (const id of ['crowd_invite_1', 'crowd_catcher_unlock', 'base_mult_1', 'launcher_spawn_rate']) buy(id);
-        while (game.buildingManager.getBuildingsByType('AUTO_LAUNCHER').length < 7) {
-            ensure(game.buildingManager.buyBuilding('AUTO_LAUNCHER'), 'Could not buy a launcher');
-        }
-        buy('catapult');
-        const beforeReload = game.progression.isVisible('unlock_recipes_tab', game).visible;
-        buy('catapult_spawn_rate');
-        const beforeTen = game.progression.canPurchase('unlock_recipes_tab', game).ok;
+        for (const id of ['base_mult_1', 'unlock_recipes_tab', 'auto_launcher']) buy(id);
+        const beforeLaunchers = { patterns: [...game.unlockedPatternKeys], recipes: JSON.stringify(game.recipes) };
         while (game.buildingManager.getBuildingsByType('AUTO_LAUNCHER').length < 10) {
             ensure(game.buildingManager.buyBuilding('AUTO_LAUNCHER'), 'Could not buy a launcher');
         }
-        const availableAtTen = game.progression.canPurchase('unlock_recipes_tab', game).ok;
+        const launchersUnchanged = JSON.stringify(game.unlockedPatternKeys) === JSON.stringify(beforeLaunchers.patterns)
+            && JSON.stringify(game.recipes) === beforeLaunchers.recipes;
+        const starBeforePalm = game.progression.canPurchase('unlock_star', game).ok;
         const before = { sparkles: game.getSparkles(), gold: game.resourceManager.resources.gold.amount,
-            patterns: [...game.unlockedPatternKeys] };
-        buy('unlock_recipes_tab');
-        return { beforeCatapult, beforeReload, beforeTen, availableAtTen,
-            sparkleCharge: before.sparkles - game.getSparkles(), goldCharge: before.gold - game.resourceManager.resources.gold.amount,
-            recipes: game.progression.isUnlocked('recipes_tab'),
-            patternsUnchanged: JSON.stringify(before.patterns) === JSON.stringify(game.unlockedPatternKeys) };
+            recipes: game.recipes.length };
+        buy('unlock_palm');
+        const palm = { sparkleCharge: before.sparkles - game.getSparkles(),
+            goldCharge: before.gold - game.resourceManager.resources.gold.amount,
+            recipeAdded: game.recipes.length === before.recipes + 1 && game.recipes.at(-1).name === 'Palm' };
+        const starBeforeRapidFire = game.progression.canPurchase('unlock_star', game).ok;
+        buy('launcher_spawn_rate');
+        const starAfterRapidFire = game.progression.canPurchase('unlock_star', game).ok;
+        buy('unlock_star');
+        const willowBeforeCrowd = game.progression.canPurchase('unlock_willow', game).ok;
+        buy('crowd_spark_1');
+        const willowAfterCrowd = game.progression.canPurchase('unlock_willow', game).ok;
+        buy('unlock_willow');
+        return { launchersUnchanged, starBeforePalm, palm, starBeforeRapidFire, starAfterRapidFire,
+            willowBeforeCrowd, willowAfterCrowd, unlocked: [...game.unlockedPatternKeys],
+            newRecipes: game.recipes.slice(before.recipes).map(recipe => recipe.name) };
     });
-    assert(!recipes.beforeCatapult && !recipes.beforeReload && !recipes.beforeTen && recipes.availableAtTen
-        && recipes.sparkleCharge === 600 && recipes.goldCharge === 0 && recipes.recipes && recipes.patternsUnchanged,
-    `Recipes did not arrive as a separate later purchase: ${JSON.stringify(recipes)}`);
+    assert(patterns.launchersUnchanged && !patterns.starBeforePalm && patterns.palm.sparkleCharge === 90
+        && patterns.palm.goldCharge === 0 && patterns.palm.recipeAdded
+        && !patterns.starBeforeRapidFire && patterns.starAfterRapidFire && !patterns.willowBeforeCrowd && patterns.willowAfterCrowd
+        && JSON.stringify(patterns.unlocked) === JSON.stringify(['spherical', 'burst', 'palm', 'star', 'willow'])
+        && JSON.stringify(patterns.newRecipes) === JSON.stringify(['Palm', 'Star', 'Willow']),
+    `Pattern upgrades did not follow their staged order and grant named recipes: ${JSON.stringify(patterns)}`);
     assert(errors.length === 0, errors.join('\n'));
-    console.log(JSON.stringify({ passed: true, validation: 'actual-browser-game', opening, starter,
-        arrivals, persistence, recipes }, null, 2));
+    console.log(JSON.stringify({ passed: true, validation: 'actual-browser-game', opening, starter, creator, launcherUnlock, launcherReload, firstLauncher,
+        arrivals, persistence, patterns }, null, 2));
 } catch (error) {
     if (errors.length) console.error('Browser errors:', errors.join('\n'));
     throw error;

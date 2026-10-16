@@ -154,8 +154,9 @@ try {
     await page.locator('#recipe-name').fill('Shuffled preview regression');
     const countBeforeShuffleSave = await page.evaluate(() => game.recipes.length);
     await page.locator('#save-recipe').click();
-    assert(await page.evaluate(() => game.recipes.length) === countBeforeShuffleSave + 1,
-        'Save stopped working after restoring and shuffling the editor.');
+    assert(await page.evaluate(() => game.recipes.length) === countBeforeShuffleSave
+        && await page.evaluate(index => game.recipes[index].name === 'Shuffled preview regression', recipeIndex),
+    'Save did not update the selected recipe after restoring and shuffling the editor.');
     await editor('save after shuffle keeps editor preview', { fade: false });
     assert(errors.length === 0, `Browser errors: ${errors.join('\n')}`);
     console.log(JSON.stringify({ passed: true, checks: results.length, screenshots, results, browserErrors: errors }, null, 2));

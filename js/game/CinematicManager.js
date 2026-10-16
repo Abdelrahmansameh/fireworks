@@ -18,6 +18,19 @@ export const CINEMATIC_CONFIG = {
     // First crowd cinematic zoom-out (after coin toss)
     ZOOM_OUT_DELAY_MS:    1500,  // ms after coin toss before zoom-out starts
     ZOOM_OUT_DURATION_MS: 900,  // ms for zoom-out animation
+
+    // Mobile shots fit the fan and the burst into the actual CSS viewport.
+    MOBILE: {
+        MAX_ZOOM: 3.0,
+        FRAME_PADDING_PX: 24,
+        PERSON_HALF_WIDTH: 65,
+        FEET_PADDING: 40,
+        ARRIVAL_TOP_OFFSET: 150,
+        FIREWORK_OFFSET_X: 110,
+        FIREWORK_HEIGHT: 440,
+        BURST_RADIUS: 200,
+        SHOT_TRANSITION_MS: 500,
+    },
 };
 
 export default class CinematicManager {
@@ -34,6 +47,7 @@ export default class CinematicManager {
 
         // Active zoom tween state
         this._zoomTween = null;
+        this._cameraFraming = null;
     }
 
     /**
@@ -41,7 +55,13 @@ export default class CinematicManager {
      * @param {Function} sequenceFn async function(game, cm)
      */
     async play(sequenceFn) {
+        if (this.isPlaying) return;
+        const r = this.game.renderer2D;
+        const originalCamera = { x: r.cameraX, y: r.cameraY, zoom: r.cameraZoom };
         this.isPlaying = true;
+        document.body.classList.add('cinematic-active');
+        document.body.classList.toggle('mobile-cinematic', this.game.chrome?.mobile.matches
+            ?? window.matchMedia('(max-width: 700px)').matches);
         
         // Disable game interactions and freeze UI
         this.game.ui.collapseForCinematic(true);
@@ -52,21 +72,21 @@ export default class CinematicManager {
             await sequenceFn(this.game, this);
         } catch(error) {
             console.error('Cinematic sequence failed:', error);
+            const framing = this.game.chrome?.getCameraFraming() ?? originalCamera;
+            r.setCamera({ x: originalCamera.x, y: framing.y, zoom: framing.zoom });
+        } finally {
+            // Release the camera at the sequence's final framing. Mobile chrome
+            // shares that target, so it does not have to undo a desktop zoom.
+            this.stopFollowing();
+            this._zoomTween = null;
+            this._eventResolvers.clear();
+            this._pendingWaits.length = 0;
+            this.isPlaying = false;
+            this.game.isInputDisabled = false;
+            this.game.hideFloatingSparkles = false;
+            this.game.ui.collapseForCinematic(false);
+            document.body.classList.remove('cinematic-active', 'mobile-cinematic');
         }
-
-        // Cleanup after sequence completes
-        this.stopFollowing();
-        this._zoomTween = null;
-        this.game.renderer2D.cameraZoom = 1.0;
-        this.game.renderer2D.setCamera({
-            x: this.game.renderer2D.cameraX,
-            y: this.game.renderer2D.cameraY,
-            zoom: 1.0,
-        });
-        this.isPlaying = false;
-        this.game.isInputDisabled = false;
-        this.game.hideFloatingSparkles = false;
-        this.game.ui.collapseForCinematic(false);
     }
 
     /**
@@ -97,12 +117,46 @@ export default class CinematicManager {
      * Utility: Make the camera update tick track an entity's X.
      */
     followEntity(entity) {
+        this._cameraFraming = null;
         this.followedEntity = entity;
     }
 
     stopFollowing() {
         this.followedEntity = null;
+        this._cameraFraming = null;
         this.game.cameraTargetX = null;
+    }
+
+    /** Tween into a responsive shot, then hold it until the next camera command. */
+    frameCamera(getCamera, durationMs) {
+        this.stopFollowing();
+        const target = getCamera();
+        const transition = this.zoomCamera(target.zoom, durationMs, target.x, target.y);
+        this._cameraFraming = getCamera;
+        return transition;
+    }
+
+    /** Keep the full fan, rocket ascent, and burst inside a phone-sized shot. */
+    getMobileCrowdFrame(person, includeFirework = false) {
+        const r = this.game.renderer2D;
+        const config = CINEMATIC_CONFIG.MOBILE;
+        const canvas = r.canvas.getBoundingClientRect();
+        const left = person.x - (includeFirework
+            ? Math.max(config.PERSON_HALF_WIDTH, config.BURST_RADIUS - config.FIREWORK_OFFSET_X)
+            : config.PERSON_HALF_WIDTH);
+        const right = person.x + (includeFirework
+            ? config.FIREWORK_OFFSET_X + config.BURST_RADIUS : config.PERSON_HALF_WIDTH);
+        const bottom = person.y - config.FEET_PADDING;
+        const top = person.y + (includeFirework
+            ? config.FIREWORK_HEIGHT + config.BURST_RADIUS : config.ARRIVAL_TOP_OFFSET);
+        const unitsPerPixel = r.virtualHeight / Math.max(1, canvas.height);
+        const usableWidth = Math.max(1, canvas.width - config.FRAME_PADDING_PX * 2) * unitsPerPixel;
+        const usableHeight = Math.max(1, canvas.height - config.FRAME_PADDING_PX * 2) * unitsPerPixel;
+        return {
+            x: (left + right) / 2,
+            y: (bottom + top) / 2,
+            zoom: Math.min(config.MAX_ZOOM, usableWidth / (right - left), usableHeight / (top - bottom)),
+        };
     }
 
     /**
@@ -141,6 +195,7 @@ export default class CinematicManager {
      * targetX/targetY: world position to center the zoom on. If null, keeps current position.
      */
     zoomCamera(targetZoom, durationMs, targetX = null, targetY = null) {
+        this._cameraFraming = null;
         return new Promise(resolve => {
             const r = this.game.renderer2D;
             this._zoomTween = {
@@ -177,10 +232,14 @@ export default class CinematicManager {
         }
 
         if (this._zoomTween) {
-            const { startZoom, targetZoom, startX, startY, targetX, targetY, durationMs, resolve } = this._zoomTween;
+            const { startZoom, startX, startY, durationMs, resolve } = this._zoomTween;
+            const target = this._cameraFraming?.();
+            const targetZoom = target?.zoom ?? this._zoomTween.targetZoom;
+            const targetX = target?.x ?? this._zoomTween.targetX;
+            const targetY = target?.y ?? this._zoomTween.targetY;
             this._zoomTween.elapsed += deltaTime * 1000;
             const elapsed = this._zoomTween.elapsed;
-            const t = Math.min(elapsed / durationMs, 1.0);
+            const t = durationMs > 0 ? Math.min(elapsed / durationMs, 1.0) : 1;
             const ease = t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
 
             const zoom = startZoom + (targetZoom - startZoom) * ease;
@@ -203,6 +262,11 @@ export default class CinematicManager {
                 this._zoomTween = null;
                 resolve();
             }
+        } else if (this._cameraFraming) {
+            // Cinematic tracking deliberately bypasses normal scroll bounds:
+            // the fan enters beyond the left edge of the playable camera area.
+            this.game.cameraTargetX = null;
+            this.game.renderer2D.setCamera(this._cameraFraming());
         }
     }
 }

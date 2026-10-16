@@ -10,7 +10,16 @@ const node = (id, parent, branch, name, desc, cost, currency, extra = {}) => ({
     offset: { x: branch === 'CROWD' ? 200 : branch === 'LAUNCHER' ? -200 : 0, y: -180 },
     name, desc, baseCost: cost, currency, costRatio: 1, maxLevel: 1, ...extra,
 });
-export const SHOW_MILESTONES = ['base_mult_1', 'auto_launcher', 'crowd_spark_1', 'catapult', 'drone_hub', 'launcher_sparkle_2', 'grand_finale'];
+// Pattern upgrades form their own ordered branch. Upgrade prerequisites place
+// each new shape at a different point in the show without relying on buildings.
+const pattern = (key, parent, name, desc, cost, stage, extra = {}) =>
+    node(`unlock_${key}`, parent, 'BASE', name, desc, cost, 'sparkles', {
+        action: 'Unlock', unlockId: `pattern_${key}`, patternKey: key, botOptional: true,
+        requires: { upgrades: { [stage]: 1 } },
+        apply: game => unlock(game, `pattern_${key}`),
+        ...extra,
+    });
+export const SHOW_MILESTONES = ['base_mult_1', 'unlock_recipes_tab', 'auto_launcher', 'crowd_spark_1', 'catapult', 'drone_hub', 'launcher_sparkle_2', 'grand_finale'];
 export const SKILL_TREE_CONFIG = {
     branches: {
         BASE: { color: '#FFC857', label: 'Fireworks' },
@@ -25,10 +34,20 @@ export const SKILL_TREE_CONFIG = {
                 offset: { x: 0, y: 0 }, milestone: true,
                 maxLevel: 2, costRatio: 8, apply: game => { game.baseSparkleMultiplier *= 1.75; },
             }),
-        auto_launcher: node('auto_launcher', 'base_mult_1', 'LAUNCHER', 'Auto Launcher',
-            'Fires a firework every 5s.', 45, 'sparkles', {
-                offset: { x: 0, y: -180 }, milestone: true, action: 'Build', unlockId: 'buildings_tab',
-                apply: game => unlock(game, 'buildings_tab'), onPurchase: grant('AUTO_LAUNCHER'),
+        unlock_recipes_tab: node('unlock_recipes_tab', 'base_mult_1', 'BASE', 'Firework Creator',
+            'Design your own fireworks.', 40, 'sparkles', {
+                milestone: true, action: 'Unlock', unlockId: 'recipes_tab', patternKey: 'burst',
+                apply: game => {
+                    game.advancedCreatorUnlocked = true;
+                    unlock(game, 'recipes_tab');
+                    unlock(game, 'advanced_creator');
+                    unlock(game, 'pattern_burst');
+                },
+            }),
+        auto_launcher: node('auto_launcher', 'unlock_recipes_tab', 'LAUNCHER', 'Auto Launcher',
+            'Unlock auto launchers', 45, 'sparkles', {
+                offset: { x: 0, y: -180 }, milestone: true, action: 'Unlock', unlockId: 'buildings_tab',
+                apply: game => unlock(game, 'buildings_tab'),
             }),
         launcher_spawn_rate: node('launcher_spawn_rate', 'auto_launcher', 'LAUNCHER', 'Rapid Fire',
             '+33% launcher fire rate.', 150, 'sparkles', {
@@ -49,47 +68,36 @@ export const SKILL_TREE_CONFIG = {
                 maxLevel: 2, costRatio: 4,
                 apply: game => { game.crowdStats.goldRateMultiplier *= 1.75; },
             }),
-        unlock_recipes_tab: node('unlock_recipes_tab', 'catapult_spawn_rate', 'BASE', 'Firework Recipes',
-            'Create your own fireworks.', 600, 'sparkles', {
-                action: 'Unlock', unlockId: 'recipes_tab', botOptional: true,
-                requires: { stats: { launcherCount: 10 } },
-                apply: game => unlock(game, 'recipes_tab'),
-            }),
-        unlock_brokenHeart: node('unlock_brokenHeart', 'unlock_recipes_tab', 'BASE', 'Broken Heart',
-            'A heart that bursts apart.', 120, 'sparkles', {
-                action: 'Unlock', unlockId: 'pattern_brokenHeart', botOptional: true,
-                apply: game => unlock(game, 'pattern_brokenHeart'),
-            }),
-        unlock_christmasTree: node('unlock_christmasTree', 'unlock_brokenHeart', 'BASE', 'Christmas Tree',
-            'Light up a sparkling tree.', 160, 'sparkles', {
-                action: 'Unlock', unlockId: 'pattern_christmasTree', botOptional: true,
-                requires: { upgrades: { catapult: 1 } },
-                apply: game => unlock(game, 'pattern_christmasTree'),
-            }),
-        unlock_spinner: node('unlock_spinner', 'unlock_christmasTree', 'BASE', 'Spinner',
-            'A spinning burst of color.', 240, 'sparkles', {
-                action: 'Unlock', unlockId: 'pattern_spinner', botOptional: true,
-                requires: { upgrades: { catapult_spawn_rate: 1 } },
-                apply: game => unlock(game, 'pattern_spinner'),
-            }),
-        unlock_helix: node('unlock_helix', 'unlock_spinner', 'BASE', 'Helix',
-            'Twisting trails of light.', 480, 'sparkles', {
-                action: 'Unlock', unlockId: 'pattern_helix', botOptional: true,
-                requires: { upgrades: { catapult_max: 1 } },
-                apply: game => unlock(game, 'pattern_helix'),
-            }),
-        unlock_snowflake: node('unlock_snowflake', 'unlock_helix', 'BASE', 'Snowflake',
-            'A glittering six-pointed burst.', 900, 'sparkles', {
-                action: 'Unlock', unlockId: 'pattern_snowflake', botOptional: true,
-                requires: { upgrades: { drone_hub: 1 } },
-                apply: game => unlock(game, 'pattern_snowflake'),
-            }),
-        unlock_dragonsBreath: node('unlock_dragonsBreath', 'unlock_snowflake', 'BASE', "Dragon's Breath",
-            'Roaring trails of fire.', 1500, 'sparkles', {
-                action: 'Unlock', unlockId: 'pattern_dragonsBreath', botOptional: true,
-                requires: { upgrades: { drone_lifetime: 1 } },
-                apply: game => unlock(game, 'pattern_dragonsBreath'),
-            }),
+        unlock_palm: pattern('palm', 'auto_launcher', 'Palm',
+            'Broad, graceful palm fronds.', 90, 'auto_launcher', { offset: { x: -600, y: -180 } }),
+        unlock_star: pattern('star', 'unlock_palm', 'Star',
+            'A bright five-pointed burst.', 180, 'launcher_spawn_rate'),
+        unlock_willow: pattern('willow', 'unlock_star', 'Willow',
+            'Long trails that fall like willow branches.', 300, 'crowd_spark_1'),
+        unlock_ring: pattern('ring', 'unlock_willow', 'Ring',
+            'A glowing circle of sparks.', 450, 'crowd_gold_1'),
+        unlock_solidsphere: pattern('solidsphere', 'unlock_ring', 'Solid Sphere',
+            'A dense globe of light.', 600, 'crowd_catcher_unlock'),
+        unlock_brocade: pattern('brocade', 'unlock_solidsphere', 'Brocade',
+            'A canopy of glittering trails.', 900, 'catapult'),
+        unlock_heart: pattern('heart', 'unlock_brocade', 'Heart',
+            'A heart written in sparks.', 1200, 'catapult_spawn_rate'),
+        unlock_pistil: pattern('pistil', 'unlock_heart', 'Pistil',
+            'A bright center inside a larger burst.', 1600, 'catapult_max'),
+        unlock_saturn: pattern('saturn', 'unlock_pistil', 'Saturn',
+            'A sparkling planet with a colored ring.', 2400, 'crowd_gold_2'),
+        unlock_brokenHeart: pattern('brokenHeart', 'unlock_saturn', 'Broken Heart',
+            'A heart that bursts apart.', 120, 'drone_hub'),
+        unlock_christmasTree: pattern('christmasTree', 'unlock_brokenHeart', 'Christmas Tree',
+            'Light up a sparkling tree.', 160, 'drone_lifetime'),
+        unlock_spinner: pattern('spinner', 'unlock_christmasTree', 'Spinner',
+            'A spinning burst of color.', 240, 'drone_speed'),
+        unlock_helix: pattern('helix', 'unlock_spinner', 'Helix',
+            'Twisting trails of light.', 480, 'drone_efficiency'),
+        unlock_snowflake: pattern('snowflake', 'unlock_helix', 'Snowflake',
+            'A glittering six-pointed burst.', 900, 'launcher_overclock'),
+        unlock_dragonsBreath: pattern('dragonsBreath', 'unlock_snowflake', "Dragon's Breath",
+            'Roaring trails of fire.', 1500, 'spark_core_3'),
         crowd_invite_1: node('crowd_invite_1', 'crowd_gold_1', 'CROWD', 'Extra Tickets',
             '+4 fans.', 1050, 'sparkles', {
                 offset: { x: 200, y: 0 }, apply: game => { game.crowdStats.countBonus += 4; },
@@ -190,12 +198,6 @@ export const SKILL_TREE_CONFIG = {
             '+43% drone launches.', 22500, 'gold', {
                 requires: { upgrades: { drone_max: 1, drone_sparkle_yield: 1, drone_radius: 1, drone_speed: 1 }, buildingCounts: { DRONE_HUB: 2 } },
                 apply: game => { game.droneHubStats.spawnIntervalMultiplier *= 0.7; },
-            }),
-        unlock_advanced_creator: node('unlock_advanced_creator', 'drone_efficiency', 'BASE', 'Firework Studio',
-            'Design custom bursts.', 3000, 'gold', {
-                action: 'Unlock', unlockId: 'advanced_creator', botOptional: true,
-                requires: { upgrades: { unlock_recipes_tab: 1 } },
-                apply: game => { game.advancedCreatorUnlocked = true; unlock(game, 'advanced_creator'); },
             }),
         launcher_overclock: node('launcher_overclock', 'drone_efficiency', 'LAUNCHER', 'Full Salvo',
             '+54% launcher fire rate.', 55000, 'sparkles', {

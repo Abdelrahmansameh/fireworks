@@ -142,22 +142,28 @@ a{color:#ff7a59}a:hover{color:#ffd04a}
     </div>
   </nav>
 
-  <div style="position: absolute; left: 104px; top: 16px; width: 288px; display: flex; gap: 8px">
-    <div role="group" aria-label="Sparkles" style="flex: 1; min-width: 0; height: 52px; box-sizing: border-box; display: flex; align-items: center; gap: 8px; padding: 0 10px; background: #fff3da; color: #1a1733; border: 2px solid #1a1733; border-radius: 12px 8px 12px 9px / 8px 12px 9px 12px; box-shadow: 3px 3px 0 #0a0918">
-      <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><path d="M12.8 2 C13 6.4 13.6 8.6 14.8 9.6 C16.2 10.6 18.4 11.4 22 12.8 C17.6 13 15.4 13.6 14.4 14.8 C13.4 16.2 12.6 18.4 11.2 22 C11 17.6 10.4 15.4 9.2 14.4 C7.8 13.4 5.6 12.6 2 11.2 C6.4 11 8.6 10.4 9.6 9.2 C10.6 7.8 11.4 5.6 12.8 2 Z" fill="#5fe0e0" stroke="#1a1733" stroke-width="1.8" stroke-linejoin="round"></path><circle cx="12" cy="12" r="1.5" fill="#fff3da" stroke="none"></circle><circle cx="19.6" cy="4.6" r="1.3" fill="#1a1733" stroke="none"></circle></svg>
-      <div style="display: flex; flex-direction: column">
-        <span style="font-family: 'Chewy', cursive; font-size: 21px; line-height: 1">{{sparklesLabel}}</span>
-        <span style="font-size: 12px; font-weight: 700; line-height: 1.2; color: #4f4970">{{spsLabel}}</span>
-      </div>
-    </div>
-    <div role="group" aria-label="Gold" style="flex: 1; min-width: 0; height: 52px; box-sizing: border-box; display: flex; align-items: center; gap: 8px; padding: 0 10px; background: #fff3da; color: #1a1733; border: 2px solid #1a1733; border-radius: 8px 12px 9px 12px / 12px 8px 12px 9px; box-shadow: 3px 3px 0 #0a0918">
-      <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="#ffd04a" stroke="#1a1733" stroke-width="1.8"></circle><circle cx="12" cy="12" r="5" fill="none" stroke="#1a1733" stroke-width="1.5" stroke-dasharray="2 2.2"></circle></svg>
-      <div style="display: flex; flex-direction: column">
-        <span style="font-family: 'Chewy', cursive; font-size: 21px; line-height: 1">{{goldLabel}}</span>
-        <span style="font-size: 12px; font-weight: 700; line-height: 1.2; color: #4f4970">{{gpsLabel}}</span>
-      </div>
-    </div>
-  </div>
+  <sc-if value="{{walletFull}}" hint-placeholder-val="{{ true }}">
+    <button aria-label="{{walletAria}}" aria-expanded="true" onClick="{{toggleWallet}}" style="position: absolute; left: 104px; top: 16px; width: 288px; display: flex; gap: 8px; padding: 0; margin: 0; background: transparent; border: none; cursor: pointer; font-family: inherit; color: #1a1733; text-align: left; animation: dropIn 220ms ease-out both;">
+      <span style="flex: 1; min-width: 0; height: 52px; box-sizing: border-box; display: flex; align-items: center; gap: 8px; padding: 0 10px; background: #fff3da; border: 2px solid #1a1733; border-radius: 12px 8px 12px 9px / 8px 12px 9px 12px; box-shadow: 3px 3px 0 #0a0918">
+        <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><path d="M12.8 2 C13 6.4 13.6 8.6 14.8 9.6 C16.2 10.6 18.4 11.4 22 12.8 C17.6 13 15.4 13.6 14.4 14.8 C13.4 16.2 12.6 18.4 11.2 22 C11 17.6 10.4 15.4 9.2 14.4 C7.8 13.4 5.6 12.6 2 11.2 C6.4 11 8.6 10.4 9.6 9.2 C10.6 7.8 11.4 5.6 12.8 2 Z" fill="#5fe0e0" stroke="#1a1733" stroke-width="1.8" stroke-linejoin="round"></path><circle cx="12" cy="12" r="1.5" fill="#fff3da" stroke="none"></circle><circle cx="19.6" cy="4.6" r="1.3" fill="#1a1733" stroke="none"></circle></svg>
+        <span style="display: flex; flex-direction: column"><span style="font-family: 'Chewy', cursive; font-size: 21px; line-height: 1">{{sparklesLabel}}</span><span style="font-size: 12px; font-weight: 700; line-height: 1.2; color: #4f4970">{{spsLabel}}</span></span>
+      </span>
+      <span style="flex: 1; min-width: 0; height: 52px; box-sizing: border-box; display: flex; align-items: center; gap: 8px; padding: 0 10px; background: #fff3da; border: 2px solid #1a1733; border-radius: 8px 12px 9px 12px / 12px 8px 12px 9px; box-shadow: 3px 3px 0 #0a0918">
+        <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="#ffd04a" stroke="#1a1733" stroke-width="1.8"></circle><circle cx="12" cy="12" r="5" fill="none" stroke="#1a1733" stroke-width="1.5" stroke-dasharray="2 2.2"></circle></svg>
+        <span style="display: flex; flex-direction: column"><span style="font-family: 'Chewy', cursive; font-size: 21px; line-height: 1">{{goldLabel}}</span><span style="font-size: 12px; font-weight: 700; line-height: 1.2; color: #4f4970">{{gpsLabel}}</span></span>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#4f4970" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="margin-left: auto; flex-shrink: 0"><path d="M6 15 C8 13 10 11 12 9 C14 11 16 13 18 15"></path></svg>
+      </span>
+    </button>
+  </sc-if>
+  <sc-if value="{{walletMini}}" hint-placeholder-val="{{ false }}">
+    <button aria-label="{{walletAria}}" aria-expanded="false" onClick="{{toggleWallet}}" style="position: absolute; left: 104px; top: 16px; height: 36px; box-sizing: border-box; display: flex; align-items: center; gap: 6px; padding: 0 10px 0 8px; margin: 0; background: rgba(31,34,70,0.88); color: #fff3da; border: 2px solid rgba(244,234,213,0.6); border-radius: 18px 14px 16px 15px; box-shadow: 2px 2px 0 #0a0918; cursor: pointer; font-family: inherit; animation: dropIn 220ms ease-out both">
+      <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M12.8 2 C13 6.4 13.6 8.6 14.8 9.6 C16.2 10.6 18.4 11.4 22 12.8 C17.6 13 15.4 13.6 14.4 14.8 C13.4 16.2 12.6 18.4 11.2 22 C11 17.6 10.4 15.4 9.2 14.4 C7.8 13.4 5.6 12.6 2 11.2 C6.4 11 8.6 10.4 9.6 9.2 C10.6 7.8 11.4 5.6 12.8 2 Z" fill="#5fe0e0" stroke="#1a1733" stroke-width="2" stroke-linejoin="round"></path><circle cx="12" cy="12" r="1.5" fill="#fff3da" stroke="none"></circle><circle cx="19.6" cy="4.6" r="1.3" fill="#1a1733" stroke="none"></circle></svg>
+      <span style="font-family: 'Chewy', cursive; font-size: 17px; line-height: 1">{{sparklesShort}}</span>
+      <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true" style="margin-left: 4px"><circle cx="12" cy="12" r="9" fill="#ffd04a" stroke="#1a1733" stroke-width="2"></circle><circle cx="12" cy="12" r="5" fill="none" stroke="#1a1733" stroke-width="1.5" stroke-dasharray="2 2.2"></circle></svg>
+      <span style="font-family: 'Chewy', cursive; font-size: 17px; line-height: 1">{{goldShort}}</span>
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff3da" stroke-opacity="0.75" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="margin-left: 2px"><path d="M6 9.4 C8 11.2 10 13 12 15 C14 13 16 11.2 18 9.2"></path></svg>
+    </button>
+  </sc-if>
 
   <sc-if value="{{panelOpen}}" hint-placeholder-val="{{ true }}">
     <section aria-label="{{panelTitle}}" style="position: absolute; left: 104px; top: 76px; box-sizing: border-box; display: flex; flex-direction: column; gap: 12px; background-color: #1f2246; background-image: radial-gradient(rgba(255,243,218,0.09) 1.1px, transparent 1.4px); background-size: 14px 14px; border: 2px solid #f4ead5; border-radius: 18px 22px 16px 20px / 20px 16px 22px 18px; box-shadow: 6px 6px 0 #0a0918; overflow: hidden; transform-origin: left top; {{panelGeom}} {{panelAnim}}">
@@ -932,6 +938,7 @@ function fmt(n) {
   return n.toLocaleString('en-US');
 }
 function fmtRate(n) { return n >= 100 ? fmt(n) : (Math.round(n * 10) / 10).toString(); }
+function fmtShort(n) { n = Math.max(0, Math.floor(n)); if (n >= 1e9) return (n / 1e9).toFixed(1) + 'B'; if (n >= 1e6) return (n / 1e6).toFixed(1) + 'M'; if (n >= 1e3) return (n / 1e3).toFixed(1) + 'K'; return String(n); }
 function fmtTime(s) { s = Math.floor(s); const m = Math.floor(s / 60), sec = s % 60; return m >= 60 ? Math.floor(m / 60) + 'h ' + (m % 60) + 'm' : m + 'm ' + String(sec).padStart(2, '0') + 's'; }
 function eta(sec) { if (!isFinite(sec) || sec > 359999) return '…'; if (sec < 60) return Math.ceil(sec) + 's'; if (sec < 3600) return Math.ceil(sec / 60) + 'm'; return Math.round(sec / 3600) + 'h'; }
 function rates(st) {
@@ -951,7 +958,7 @@ class Component extends DCLogic {
     this.timers = [];
     const start = props.startTab || 'upgrades';
     this.state = {
-      tab: start === 'none' ? null : start, closing: false, panelAnim: 'panelInA', railHidden: false,
+      tab: start === 'none' ? null : start, closing: false, panelAnim: 'panelInA', railHidden: false, walletCompact: false,
       sparkles: 6420, gold: 2135,
       totals: { sparkles: 182400, gold: 31200, fireworks: 3912, caught: 8240 }, time: 872,
       ups: UPGRADES.map((u) => Object.assign({}, u)), owned: OWNED.map((o) => Object.assign({}, o)), ownedOpen: false,
@@ -1224,6 +1231,11 @@ class Component extends DCLogic {
       rs: rs, rb: rb, on: on, go: go,
       readyCount: readyUps.length, hasReady: readyUps.length > 0, noReady: readyUps.length === 0,
       sparklesLabel: fmt(st.sparkles), goldLabel: fmt(st.gold),
+      walletFull: !st.walletCompact,
+      walletAria: 'Sparkles ' + fmt(st.sparkles) + ', gold ' + fmt(st.gold) + (st.walletCompact ? '. Show more' : '. Show less'),
+      sparklesShort: fmtShort(st.sparkles), goldShort: fmtShort(st.gold),
+      toggleWallet: () => this.setState({ walletCompact: !st.walletCompact }),
+      walletMini: st.walletCompact,
       spsLabel: '+' + fmtRate(r.sps) + '/s', gpsLabel: '+' + fmtRate(r.gps) + '/s',
 
       panelOpen: !!tab, panelTitle: tab ? TITLES[tab] : '', accent: tab ? ACCENTS[tab] : '#ff7a59',

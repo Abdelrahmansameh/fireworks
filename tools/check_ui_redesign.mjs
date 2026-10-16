@@ -26,7 +26,7 @@ try {
         game.checkUnlockConditions();
         game.resourceManager.resources.sparkles.amount = 100000;
         game.resourceManager.resources.gold.amount = 100000;
-        for (const id of ['auto_launcher', 'base_mult_1', 'launcher_spawn_rate', 'crowd_spark_1', 'crowd_fireworks', 'unlock_recipes_tab']) {
+        for (const id of ['base_mult_1', 'unlock_recipes_tab', 'auto_launcher', 'launcher_spawn_rate', 'crowd_spark_1', 'crowd_fireworks']) {
             if (id === 'crowd_spark_1') {
                 while (game.buildingManager.getBuildingsByType('AUTO_LAUNCHER').length < 3) game.buyBuilding('AUTO_LAUNCHER');
             }

@@ -41,18 +41,22 @@ try {
     assert(afterBuy.length === beforeBuy.length + 1, 'Buy button did not add a launcher.');
     assert(unchanged(beforeBuy, afterBuy), 'Regular purchase moved existing launchers.');
     await page.evaluate(() => {
-        game.progression.loadState({ upgrades: {}, unlocked: ['upgrades_tab'] });
+        game.progression.loadState({ schemaVersion: 2, upgrades: { base_mult_1: 1 }, unlocked: ['upgrades_tab'] });
+        if (!game.buyUpgrade('unlock_recipes_tab')) throw new Error('Could not buy Creator before launcher unlock');
         game.ui.showTab('upgrades');
         game.ui.renderUpgrades();
     });
-    console.log('Buying upgrade launcher');
+    console.log('Unlocking launcher purchases');
     await page.locator('.upgrade-buy-button[data-upgrade-id="auto_launcher"]').click();
     const afterUpgrade = await positions(page);
     console.log(JSON.stringify({ beforeBuy, afterBuy, afterUpgrade }, null, 2));
-    assert(afterUpgrade.length === afterBuy.length + 1, 'Upgrade purchase did not add a launcher.');
+    assert(afterUpgrade.length === afterBuy.length, 'Upgrade purchase granted a free launcher.');
+    assert(await page.evaluate(() => game.isBuildingTypeUnlocked('AUTO_LAUNCHER')),
+        'Upgrade purchase did not unlock launcher purchases.');
     assert(unchanged(afterBuy, afterUpgrade), 'Upgrade purchase rearranged existing launchers.');
     await page.evaluate(() => game.grantMilestoneBuilding('AUTO_LAUNCHER'));
     const afterGrant = await positions(page);
+    assert(afterGrant.length === afterUpgrade.length + 1, 'Explicit milestone grant did not add a launcher.');
     assert(unchanged(afterUpgrade, afterGrant), 'Granted launcher moved existing launchers.');
     assert(new Set(afterGrant.map(launcher => launcher.x)).size === afterGrant.length,
         'New launcher overlapped an existing launcher.');
