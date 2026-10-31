@@ -146,11 +146,6 @@ export class WorkshopScreen {
             this.game.ui.toggleTab('recipes');
         } else if (button.id === 'workshop-replay') {
             this.restartPreview();
-        } else if (button.id === 'workshop-launch') {
-            const bounds = this.game.renderer2D.getVisibleWorldBounds();
-            this.game.fireworkSystem.launchFireworkAt(bounds.left + (bounds.right - bounds.left) * 0.7, 100, null, this.game.currentRecipeComponents.map((component) => ({ ...component })));
-            this.restartPreview();
-            this.game.showNotification('Your firework is in the sky!');
         }
     }
 
@@ -286,7 +281,7 @@ export class WorkshopScreen {
         remove.hidden = components.length <= 1;
         remove.textContent = `Remove ${this.selectedLayer + 1}`;
         remove.setAttribute('aria-label', `Remove layer ${this.selectedLayer + 1}`);
-        ['save-recipe', 'workshop-launch'].forEach((id) => { document.getElementById(id).disabled = components.length === 0; });
+        document.getElementById('save-recipe').disabled = components.length === 0;
     }
 
     refreshSaved() {
@@ -318,7 +313,7 @@ export class WorkshopScreen {
             remove.type = 'button';
             remove.className = 'workshop-delete-recipe';
             remove.dataset.deleteRecipe = index;
-            remove.textContent = 'Delete';
+            remove.textContent = '×';
             remove.setAttribute('aria-label', `Delete ${recipe.name}`);
             entry.append(button, remove);
             list.appendChild(entry);

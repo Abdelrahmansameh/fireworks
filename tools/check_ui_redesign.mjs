@@ -66,9 +66,7 @@ try {
     assert(await page.evaluate(() => game.workshop.component.shape) === 'star', 'Spark selection did not reach the recipe.');
     await page.locator('#save-recipe').click();
     assert(await page.evaluate(() => game.recipes.some(recipe => recipe.name === 'UI smoke test')), 'Workshop Save did not persist the recipe.');
-    const fireworks = await page.evaluate(() => game.fireworkSystem.fireworkCount);
-    await page.locator('#workshop-launch').click();
-    assert(await page.evaluate(() => game.fireworkSystem.fireworkCount) > fireworks, 'Workshop Launch did not fire into the main sky.');
+    assert(await page.locator('#workshop-launch').count() === 0, 'Workshop still exposes a Launch button.');
     await page.evaluate(() => { for (let i = 0; i < 180; i++) game.update(1 / 60); game.render(); });
     assert(await page.evaluate(() => game.previewParticleSystem.getTotalActiveParticles()) > 0, 'Live preview has no engine particles.');
     await page.screenshot({ animations: 'disabled', path: join(screenshots, 'desktop-workshop.png') });

@@ -828,6 +828,9 @@ class Shape2D {
         zIndex = 0,
         blendMode = BlendMode.NORMAL,
         isStroke = false,
+        reflectsInWater = false,
+        reflectionOpacity = 1,
+        isWaterSurface = false,
     }) {
         this.vertices = vertices;
         this.indices = indices;
@@ -840,6 +843,9 @@ class Shape2D {
         this.zIndex = zIndex;
         this.blendMode = blendMode;
         this.isStroke = isStroke;
+        this.reflectsInWater = reflectsInWater;
+        this.reflectionOpacity = reflectionOpacity;
+        this.isWaterSurface = isWaterSurface;
 
         // GPU buffers
         this._vbo = null;
@@ -1048,6 +1054,8 @@ export default class Renderer2D {
         this.cameraX = 0;
         this.cameraY = 0;
         this.cameraZoom = 1.0;
+        this.waterReflection = null;
+        this._frameId = 0;
 
         const gl = this.gl;
 
@@ -1072,6 +1080,9 @@ export default class Renderer2D {
         this.u_color_Normal = gl.getUniformLocation(this.normalProgram, 'u_color');
         this.u_texture_Normal = gl.getUniformLocation(this.normalProgram, 'u_texture');
         this.u_useTexture_Normal = gl.getUniformLocation(this.normalProgram, 'u_useTexture'); this.instancedProgram = this._initProgram(this._instancedVS(), this._instancedFS());
+        this.u_model_Normal = gl.getUniformLocation(this.normalProgram, 'u_model');
+        this.u_proj_Normal = gl.getUniformLocation(this.normalProgram, 'u_proj');
+        this._waterUniformsNormal = this._getWaterUniforms(this.normalProgram);
         this.a_position_Inst = gl.getAttribLocation(this.instancedProgram, 'a_position');
         this.a_texCoord_Inst = gl.getAttribLocation(this.instancedProgram, 'a_texCoord');
         this.a_offset_Inst = gl.getAttribLocation(this.instancedProgram, 'a_offset');
@@ -1084,6 +1095,7 @@ export default class Renderer2D {
         this.u_useTexture_Inst = gl.getUniformLocation(this.instancedProgram, 'u_useTexture');
         this.u_useSpriteSheet_Inst = gl.getUniformLocation(this.instancedProgram, 'u_useSpriteSheet');
         this.u_spriteSheetSize_Inst = gl.getUniformLocation(this.instancedProgram, 'u_spriteSheetSize');
+        this._waterUniformsInstanced = this._getWaterUniforms(this.instancedProgram);
 
         this.virtualWidth = opts.virtualWidth || 1920;
         this.virtualHeight = opts.virtualHeight || 1080;
@@ -1416,8 +1428,58 @@ export default class Renderer2D {
         }
     }
 
+    /** Reflect only opted-in emitters, clipped to the lake in world coordinates. */
+    setWaterReflection(settings) {
+        if (!settings) {
+            this.waterReflection = null;
+            return;
+        }
+        const { left, right, surfaceY, bottomY } = settings;
+        if (![left, right, surfaceY, bottomY].every(Number.isFinite)
+            || right <= left || surfaceY <= bottomY) {
+            this.waterReflection = null;
+            return;
+        }
+        this.waterReflection = {
+            left, right, surfaceY, bottomY,
+            zIndex: Number.isFinite(settings.zIndex) ? settings.zIndex : -1975,
+            verticalScale: Math.max(0.01, settings.verticalScale ?? 0.25),
+            opacity: Math.max(0, Math.min(1, settings.opacity ?? 0.4)),
+            time: Number.isFinite(settings.time) ? settings.time : 0,
+        };
+    }
+
+    _getWaterUniforms(program) {
+        const gl = this.gl;
+        return {
+            enabled: gl.getUniformLocation(program, 'u_waterReflection'),
+            surface: gl.getUniformLocation(program, 'u_waterSurface'),
+            bounds: gl.getUniformLocation(program, 'u_waterBounds'),
+            params: gl.getUniformLocation(program, 'u_waterParams'),
+        };
+    }
+
+    _setWaterUniforms(uniforms, reflecting, opacity = 1, surface = false) {
+        const gl = this.gl;
+        const water = this.waterReflection;
+        gl.uniform1i(uniforms.enabled, reflecting ? 1 : 0);
+        gl.uniform1i(uniforms.surface, surface && water && !reflecting ? 1 : 0);
+        if ((!reflecting && !surface) || !water) return;
+        gl.uniform4f(uniforms.bounds, water.left, water.bottomY, water.right, water.surfaceY);
+        gl.uniform3f(uniforms.params, water.verticalScale, water.opacity * opacity, water.time);
+    }
+
+    _drawWaterReflections(items) {
+        for (const item of items) {
+            if (!item.data.reflectsInWater) continue;
+            if (item.type === 'normal') this._drawNormalShape(item.data, true);
+            else this._drawInstancedGroup(item.data, true);
+        }
+    }
+
     drawFrame() {
         this._resizeIfNeeded();
+        this._frameId++;
         this._drawFrameDirect();
     }
 
@@ -1439,13 +1501,19 @@ export default class Renderer2D {
         }
         items.sort((a, b) => a.zIndex - b.zIndex);
 
+        let reflectionDrawn = !this.waterReflection;
         for (const item of items) {
+            if (!reflectionDrawn && item.zIndex >= this.waterReflection.zIndex) {
+                this._drawWaterReflections(items);
+                reflectionDrawn = true;
+            }
             if (item.type === 'normal') {
                 this._drawNormalShape(item.data);
             } else {
                 this._drawInstancedGroup(item.data);
             }
         }
+        if (!reflectionDrawn) this._drawWaterReflections(items);
     }
 
     screenToCanvas(eventX, eventY) {
@@ -1475,7 +1543,7 @@ export default class Renderer2D {
         return { x: sx, y: sy };
     }
 
-    _drawNormalShape(shape) {
+    _drawNormalShape(shape, reflecting = false) {
         const gl = this.gl;
         if (shape.blendMode !== this._lastBlendMode) {
             switch (shape.blendMode) {
@@ -1504,6 +1572,11 @@ export default class Renderer2D {
         const mvp = this._multiplyMat4(this._projectionMatrix, model);
 
         gl.uniformMatrix4fv(this.u_matrix_Normal, false, mvp);
+        this._setWaterUniforms(this._waterUniformsNormal, reflecting, shape.reflectionOpacity ?? 1, shape.isWaterSurface);
+        if (reflecting || shape.isWaterSurface) {
+            gl.uniformMatrix4fv(this.u_model_Normal, false, model);
+            gl.uniformMatrix4fv(this.u_proj_Normal, false, this._projectionMatrix);
+        }
         this._colorScratch[0] = shape.color.r;
         this._colorScratch[1] = shape.color.g;
         this._colorScratch[2] = shape.color.b;
@@ -1547,9 +1620,11 @@ export default class Renderer2D {
     }
 
 
-    _drawInstancedGroup(group) {
+    _drawInstancedGroup(group, reflecting = false) {
         const gl = this.gl;
-        if (group.instanceCount <= 0) return;
+        const filteredReflection = reflecting && !!group.reflectionInstanceData;
+        const instanceCount = filteredReflection ? group.reflectionInstanceCount : group.instanceCount;
+        if (instanceCount <= 0) return;
 
         if (group.blendMode !== this._lastBlendMode) {
             switch (group.blendMode) {
@@ -1588,6 +1663,7 @@ export default class Renderer2D {
             gl.uniform1i(this.u_texture_Inst, 0);
         }
         gl.uniformMatrix4fv(this.u_proj_Inst, false, this._projectionMatrix);
+        this._setWaterUniforms(this._waterUniformsInstanced, reflecting, group.reflectionOpacity ?? 1, group.isWaterSurface);
 
         // Sprite-sheet uniforms
         if (group.spriteSheet) {
@@ -1597,9 +1673,16 @@ export default class Renderer2D {
             gl.uniform1i(this.u_useSpriteSheet_Inst, 0);
         }
 
-        gl.bindBuffer(gl.ARRAY_BUFFER, group._instanceBuffer);
-        const subData = group.instanceData.subarray(0, group.instanceCount * group.instanceStrideFloats);
-        gl.bufferSubData(gl.ARRAY_BUFFER, 0, subData);
+        // Unfiltered passes share an upload. Particle reflections may supply a
+        // smaller staging buffer so UI and resource particles stay out of water.
+        if (group._uploadedFrame !== this._frameId || group._uploadedReflection !== filteredReflection) {
+            gl.bindBuffer(gl.ARRAY_BUFFER, group._instanceBuffer);
+            const data = filteredReflection ? group.reflectionInstanceData : group.instanceData;
+            const subData = data.subarray(0, instanceCount * group.instanceStrideFloats);
+            gl.bufferSubData(gl.ARRAY_BUFFER, 0, subData);
+            group._uploadedFrame = this._frameId;
+            group._uploadedReflection = filteredReflection;
+        }
 
         gl.bindVertexArray(group._vao);
 
@@ -1609,17 +1692,64 @@ export default class Renderer2D {
                 group.baseGeometry.numIndices,
                 gl.UNSIGNED_SHORT,
                 0,
-                group.instanceCount
+                instanceCount
             );
         } else {
             gl.drawArraysInstanced(
                 gl.TRIANGLES,
                 0,
                 group.baseGeometry.numVerts,
-                group.instanceCount
+                instanceCount
             );
         }
         gl.bindVertexArray(null);
+    }
+
+    _waterVertexFunctions() {
+        return `
+        vec2 reflectWaterPosition(vec2 world) {
+            world.y = u_waterBounds.w - (world.y - u_waterBounds.w) * u_waterParams.x;
+            float depth = clamp((u_waterBounds.w - world.y) / (u_waterBounds.w - u_waterBounds.y), 0.0, 1.0);
+            float flow = world.x * 0.012 - u_waterParams.z * 0.65;
+            // Broad, sideways ripples get looser toward the foreground.
+            world.x += (sin(world.y * 0.25 + sin(flow) * 0.8 - u_waterParams.z * 2.1) * 3.4
+                      + sin(world.y * 0.61 + flow * 0.5 + u_waterParams.z * 1.2) * 1.5)
+                       * (0.55 + depth * 1.1);
+            return world;
+        }
+        `;
+    }
+
+    _waterFragmentFunctions() {
+        return `
+        vec4 shadeWaterReflection(vec4 base, vec2 world) {
+            float depth = clamp((u_waterBounds.w - world.y) / (u_waterBounds.w - u_waterBounds.y), 0.0, 1.0);
+            float flow = world.x - u_waterParams.z * 22.0;
+            float wave = sin(world.y * 0.83 + sin(flow * 0.018) * 0.95 - u_waterParams.z * 1.9);
+            float crest = smoothstep(-0.25, 0.75, wave);
+            float breaks = 0.62 + 0.38 * sin(flow * 0.075 + sin(world.y * 0.13) * 1.8);
+            float ripples = 0.1 + crest * (0.48 + breaks * 0.42);
+            // A little neutral sky light softens neon colors without losing the firework's hue.
+            float luminance = dot(base.rgb, vec3(0.2126, 0.7152, 0.0722));
+            base.rgb = mix(base.rgb, vec3(luminance) * vec3(0.93, 0.98, 1.04), 0.16);
+            base.a *= u_waterParams.y * (1.0 - depth * 0.74) * ripples;
+            return base;
+        }
+
+        vec4 shadeWaterSurface(vec4 base, vec2 world) {
+            float flow = world.x - u_waterParams.z * 22.0;
+            float meander = sin(flow * 0.009 + sin(world.y * 0.031)) * 1.7
+                           + sin(flow * 0.026 - world.y * 0.019) * 0.75;
+            float wave = sin(world.y * 0.48 + meander - u_waterParams.z * 1.2);
+            float crest = smoothstep(0.87, 1.0, wave);
+            float breaks = smoothstep(0.3, 0.9,
+                sin(flow * 0.057 + sin(world.y * 0.17) * 2.3));
+            // Restrained, broad strokes keep the water in the scenery's flat visual style.
+            base.rgb *= 0.985 + wave * 0.012;
+            base.rgb += vec3(0.005, 0.01, 0.013) * crest * breaks;
+            return base;
+        }
+        `;
     }
 
     _normalVS() {
@@ -1627,27 +1757,61 @@ export default class Renderer2D {
         attribute vec2 a_position;
         attribute vec2 a_texCoord;
         uniform mat4 u_matrix;
+        uniform mat4 u_model;
+        uniform mat4 u_proj;
+        uniform bool u_waterReflection;
+        uniform bool u_waterSurface;
+        uniform vec4 u_waterBounds;
+        uniform vec3 u_waterParams;
         varying vec2 v_texCoord;
+        varying vec2 v_worldPosition;
+        varying float v_sourceY;
+        ${this._waterVertexFunctions()}
         void main(){
-            gl_Position = u_matrix * vec4(a_position, 0.0, 1.0);
+            if (u_waterReflection) {
+                vec2 world = (u_model * vec4(a_position, 0.0, 1.0)).xy;
+                v_sourceY = world.y;
+                world = reflectWaterPosition(world);
+                v_worldPosition = world;
+                gl_Position = u_proj * vec4(world, 0.0, 1.0);
+            } else {
+                v_worldPosition = u_waterSurface ? (u_model * vec4(a_position, 0.0, 1.0)).xy : vec2(0.0);
+                v_sourceY = 0.0;
+                gl_Position = u_matrix * vec4(a_position, 0.0, 1.0);
+            }
             v_texCoord = a_texCoord;
         }
         `;
     }
     _normalFS() {
         return `
-        precision mediump float;
+        precision highp float;
         uniform vec4 u_color;
         uniform sampler2D u_texture;
         uniform bool u_useTexture;
+        uniform bool u_waterReflection;
+        uniform bool u_waterSurface;
+        uniform vec4 u_waterBounds;
+        uniform vec3 u_waterParams;
         varying vec2 v_texCoord;
+        varying vec2 v_worldPosition;
+        varying float v_sourceY;
+        ${this._waterFragmentFunctions()}
         void main(){
+            vec4 base;
             if (u_useTexture) {
                 vec4 texColor = texture2D(u_texture, v_texCoord);
-                gl_FragColor = texColor * u_color;
+                base = texColor * u_color;
             } else {
-                gl_FragColor = u_color;
+                base = u_color;
             }
+            if (u_waterReflection) {
+                if (v_sourceY < u_waterBounds.w || v_worldPosition.x < u_waterBounds.x
+                    || v_worldPosition.x > u_waterBounds.z || v_worldPosition.y < u_waterBounds.y
+                    || v_worldPosition.y > u_waterBounds.w) discard;
+                base = shadeWaterReflection(base, v_worldPosition);
+            } else if (u_waterSurface) base = shadeWaterSurface(base, v_worldPosition);
+            gl_FragColor = base;
         }
         `;
     } _instancedVS() {
@@ -1663,9 +1827,16 @@ export default class Renderer2D {
         uniform mat4 u_proj;
         uniform bool u_useSpriteSheet;
         uniform vec2 u_spriteSheetSize; // (columns, rows)
+        uniform bool u_waterReflection;
+        uniform vec4 u_waterBounds;
+        uniform vec3 u_waterParams;
 
         out vec4 v_color;
         out vec2 v_uv;
+        out vec2 v_worldPosition;
+        out float v_sourceY;
+
+        ${this._waterVertexFunctions()}
 
         void main(){
             if (u_useSpriteSheet) {
@@ -1683,26 +1854,45 @@ export default class Renderer2D {
             rotated.x = c * scaled.x - s * scaled.y;
             rotated.y = s * scaled.x + c * scaled.y;
             vec2 finalPos = rotated + a_offset;
+            v_sourceY = finalPos.y;
+            if (u_waterReflection) {
+                finalPos = reflectWaterPosition(finalPos);
+            }
+            v_worldPosition = finalPos;
             gl_Position = u_proj * vec4(finalPos, 0.0, 1.0);
             v_color = a_color;
         }
         `;
     } _instancedFS() {
         return `#version 300 es
-        precision mediump float;
+        precision highp float;
 
         in  vec4  v_color;
         in  vec2  v_uv;
+        in vec2 v_worldPosition;
+        in float v_sourceY;
 
         uniform sampler2D u_texture;
         uniform bool      u_useTexture;
+        uniform bool u_waterReflection;
+        uniform bool u_waterSurface;
+        uniform vec4 u_waterBounds;
+        uniform vec3 u_waterParams;
 
         out vec4 outColor;
+
+        ${this._waterFragmentFunctions()}
 
         void main() {
             vec4 base = u_useTexture ? texture(u_texture, v_uv) * v_color
                                     : v_color;
 
+            if (u_waterReflection) {
+                if (v_sourceY < u_waterBounds.w || v_worldPosition.x < u_waterBounds.x
+                    || v_worldPosition.x > u_waterBounds.z || v_worldPosition.y < u_waterBounds.y
+                    || v_worldPosition.y > u_waterBounds.w) discard;
+                base = shadeWaterReflection(base, v_worldPosition);
+            } else if (u_waterSurface) base = shadeWaterSurface(base, v_worldPosition);
             outColor = base;
         }
         `;

@@ -254,8 +254,6 @@ class FireworkGame extends GameCore {
     updateGame(deltaTime, isFinalStep = true) {
         this.profiler.startFrame();
 
-        this.procduralBackground?.update(deltaTime);
-
         this.particleSystem.update(deltaTime);
         this.droneSystem?.update(deltaTime, (sparkles, particleCount = 1) => {
             const multiplied = sparkles * (this.droneStats.sparklesPerParticleMultiplier ?? 1);
@@ -348,6 +346,8 @@ class FireworkGame extends GameCore {
             if (this.bot?.enabled) this.bot.tick(stepDelta);
             if (botRunning && !this.bot.enabled) break;
         }
+        // Scenery follows rendered time, including during bot fast-forward.
+        this.procduralBackground?.update(frameDelta, this.particleSystem, this.fireworkSystem.fireworks);
         if (this.previewActive) this.updateCreator(frameDelta);
 
         // Update skeleton outline for cursor particles (crowd grab or building drag)
@@ -472,6 +472,8 @@ class FireworkGame extends GameCore {
             this.droneSystem = new InstancedDroneSystem(this.renderer2D, this.particleSystem);
             this.droneSystem.maxDrones = this.droneStats.maxDrones;
         }
+
+        this.procduralBackground?.resetLighting();
 
         this.autoLauncherCost = AUTO_LAUNCHER_COST_BASE;
 

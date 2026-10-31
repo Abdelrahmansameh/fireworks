@@ -256,20 +256,20 @@
 .workshop-actions { display: flex; gap: 8px; }
 .workshop-actions button { display: flex; flex: 1; align-items: center; justify-content: center; gap: 7px; height: 52px; padding: 0 4px; color: #1a1733; border: 2.5px solid #1a1733; box-shadow: 3px 4px 0 #0a0918; font: 400 20px 'Chewy', cursive; white-space: nowrap; }
 .workshop-actions .workshop-save { flex: 1.35; background: #ff7a59; font-size: 22px; }
-.workshop-actions .workshop-launch { background: #5fe0e0; border-radius: 10px 15px 9px 14px / 15px 9px 14px 10px; }
 .workshop-actions .workshop-shuffle { background: #fff3da; }
 .workshop-actions .workshop-save:hover:not(:disabled) { background: #ff916f; }
-.workshop-actions .workshop-launch:hover:not(:disabled) { background: #85ecec; }
 .workshop-collection { gap: 8px; }
 .workshop-collection-heading { display: none; }
 .workshop-new-recipe { flex-shrink: 0; align-self: flex-start; background: #5fe0e0; }
 #workshop-saved-list { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 8px; }
-.workshop-saved-entry { display: flex; min-width: 0; flex-direction: column; gap: 6px; }
-.workshop-saved-card { display: flex; min-width: 0; flex-direction: column; gap: 6px; padding: 8px; text-align: left; border-radius: 12px 9px 13px 8px / 9px 13px 8px 12px; box-shadow: 3px 3px 0 #0a0918; transform: rotate(-.6deg); }
+.workshop-saved-entry { position: relative; display: flex; min-width: 0; flex-direction: column; gap: 6px; }
+.workshop-saved-card { display: flex; width: 100%; min-width: 0; box-sizing: border-box; flex-direction: column; gap: 6px; padding: 8px; text-align: left; border-radius: 12px 9px 13px 8px / 9px 13px 8px 12px; box-shadow: 3px 3px 0 #0a0918; transform: rotate(-.6deg); }
 .workshop-saved-entry:nth-child(even) .workshop-saved-card { transform: rotate(.6deg); }
-.workshop-delete-recipe { align-self: flex-end; padding: 0 12px; background: transparent; color: #ff9a8a; border: 2px dashed #ff9a8a; box-shadow: none; font-size: 13px; }
-.workshop-saved-photo { position: relative; display: block; width: 184px; height: 88px; max-width: 100%; overflow: hidden; background: #12142e; border-radius: 8px 6px 9px 6px; }
-.workshop-saved-text { display: flex; flex-direction: column; gap: 6px; }
+.workshop-delete-recipe { position: absolute; right: 7px; bottom: 7px; z-index: 1; display: grid; width: 22px !important; min-width: 22px; height: 22px !important; min-height: 22px !important; padding: 0 !important; place-items: center; background: #fff3da; color: #1a1733; border: 1.5px solid #1a1733; border-radius: 4px; box-shadow: 1px 1px 0 #0a0918; font: 800 15px/1 sans-serif; }
+.workshop-delete-recipe:hover { background: #ff916f; color: #1a1733; }
+.workshop-delete-recipe:focus-visible { outline: 2px solid #5fe0e0; outline-offset: 2px; }
+.workshop-saved-photo { position: relative; display: block; width: 100%; height: 88px; overflow: hidden; background: #12142e; border-radius: 8px 6px 9px 6px; }
+.workshop-saved-text { display: flex; min-width: 0; padding-right: 28px; flex-direction: column; gap: 6px; }
 .workshop-saved-text strong { font-size: 15px; font-weight: 800; line-height: 1.15; }
 .workshop-saved-text small { font-size: 12.5px; font-weight: 600; color: #4f4970; }
 .workshop-erase-button { align-self: flex-start; margin-top: 16px; height: 44px; padding: 0 14px; background: transparent; color: #ff9a8a; border: 2px dashed #ff9a8a; border-radius: 10px 8px 11px 7px; box-shadow: none; font-size: 13.5px; }

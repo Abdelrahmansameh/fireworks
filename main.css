@@ -51,18 +51,15 @@ body.menu-tucked .menu-expand-icon { display: inline-flex; }
 #cheats-tab, #bot-tab { min-height: 44px; padding: 2px; font-size: 10px; gap: 2px; }
 #cheats-tab .doodle-icon, #bot-tab .doodle-icon { width: 20px; height: 20px; }
 .resource-counter { position: absolute; top: 16px; right: 16px; width: 288px; pointer-events: auto; }
-.ressource-count { position: relative; width: 100%; min-height: 0; display: flex; align-items: center; gap: 8px; margin: 0; padding: 0 38px 0 0; border: 0; background: transparent; color: var(--cream); text-align: left; box-shadow: none; }
+.ressource-count { position: relative; width: 100%; min-height: 0; display: flex; align-items: center; gap: 8px; margin: 0; padding: 0; border: 0; background: transparent; color: var(--cream); text-align: left; box-shadow: none; }
 .ressource-count:hover:not(:disabled), .ressource-count:active:not(:disabled) { background: transparent; transform: none; box-shadow: none; }
-.wallet-chevron { position: absolute; right: 12px; width: 18px; height: 18px; color: #c9bfa8; transition: transform 180ms; }
-.ressource-count.expanded .wallet-chevron { transform: rotate(180deg); }
 .resource-counter:has(.ressource-count:not(.expanded)) { width: max-content; max-width: calc(100vw - 32px); }
-.ressource-count:not(.expanded) { width: max-content; max-width: 100%; height: 40px; gap: 14px; padding: 0 38px 0 12px; background: rgba(31,34,70,.92); border: 2px solid rgba(244,234,213,.6); border-radius: 24px 22px 23px 21px; box-shadow: 3px 3px 0 var(--shadow-deep); }
+.ressource-count:not(.expanded) { width: max-content; max-width: 100%; height: 40px; gap: 14px; padding: 0 12px; background: rgba(31,34,70,.92); border: 2px solid rgba(244,234,213,.6); border-radius: 24px 22px 23px 21px; box-shadow: 3px 3px 0 var(--shadow-deep); }
 .ressource-count:not(.expanded):hover { background: #2a2e55; }
 .ressource-count:not(.expanded) .wallet-card { flex: 0 1 auto; height: auto; padding: 0; border: 0; background: transparent; color: inherit; box-shadow: none; gap: 6px; }
 .ressource-count:not(.expanded) .wallet-rate { display: none; }
 .ressource-count:not(.expanded) .wallet-card > .doodle-icon { width: 20px; height: 20px; }
 .ressource-count:not(.expanded) .rc-num { font-size: 22px; }
-.ressource-count:not(.expanded) .wallet-chevron { right: 10px; }
 .wallet-card { flex: 1; min-width: 0; height: 52px; display: flex; align-items: center; gap: 8px; padding: 0 10px; color: var(--ink); background: var(--paper); border: 2px solid var(--ink); border-radius: var(--sticker); box-shadow: 3px 3px 0 var(--shadow-deep); }
 .wallet-card:nth-child(2) { border-radius: 8px 12px 9px 12px / 12px 8px 12px 9px; }
 .wallet-card > .doodle-icon { width: 24px; height: 24px; }

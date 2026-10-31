@@ -27,7 +27,6 @@ export function buildChrome() {
             <button type="button" id="ressource-count" class="ressource-count expanded" aria-label="Resource counter. Show less" aria-expanded="true" aria-controls="wallet-sparkles-rate wallet-gold-rate">
                 <span class="wallet-card">${doodleIcon('sparkle')}<span class="wallet-value"><span class="sparkle-total rc-num">0</span><span id="wallet-sparkles-rate" class="wallet-rate">+0/s</span></span></span>
                 <span class="wallet-card">${doodleIcon('gold')}<span class="wallet-value"><span class="gold-total rc-num">0</span><span id="wallet-gold-rate" class="wallet-rate">+0/s</span></span></span>
-                <svg class="wallet-chevron" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 7.5 10 12.5 15 7.5"/></svg>
             </button>
         </div>
         <button id="show-menu" class="show-menu" aria-label="Show the menu" aria-controls="tab-list">${doodleIcon('show-menu')}</button>`;

@@ -108,6 +108,7 @@ class Firework {
             rotation: -this.currentTiltRad,
             scale: new Renderer2D.Vector2(FIREWORK_CONFIG.rocketSize, FIREWORK_CONFIG.rocketSize),
             zIndex: -20,
+            reflectsInWater: true,
             blendMode: Renderer2D.BlendMode.ADDITIVE,
             isStroke: false,
         });
@@ -122,6 +123,7 @@ class Firework {
             rotation: -this.currentTiltRad,
             scale: new Renderer2D.Vector2(FIREWORK_CONFIG.rocketSize, FIREWORK_CONFIG.rocketSize),
             zIndex: -21,
+            reflectsInWater: true,
             blendMode: Renderer2D.BlendMode.ADDITIVE,
             isStroke: false,
         });

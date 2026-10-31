@@ -67,6 +67,10 @@ class InstancedParticleSystem {
                 blendMode: BlendMode.ADDITIVE,
                 zIndex: -20,
             });
+            // Reflection staging excludes UI/resource particles that share these meshes.
+            this.meshes[shape].reflectsInWater = true;
+            this.meshes[shape].reflectionInstanceData = new Float32Array(this.maxParticles * this.meshes[shape].instanceStrideFloats);
+            this.meshes[shape].reflectionInstanceCount = 0;
             if (shape === 'glow') {
                 const tex = getGlowTexture();
                 if (tex) {
@@ -195,7 +199,25 @@ class InstancedParticleSystem {
 
         this.particleUpdateFns[shape][idx] = updateFn;
         this.activeCounts[shape]++;
+        if (this._isWaterReflectionParticle(particleType)) {
+            this._appendWaterReflectionInstance(this.meshes[shape], idx * this.meshes[shape].instanceStrideFloats);
+        }
         return idx;
+    }
+
+    _isWaterReflectionParticle(particleType) {
+        return particleType === PARTICLE_TYPES.FIREWORK_EXPLOSION
+            || particleType === PARTICLE_TYPES.TRAIL
+            || particleType === PARTICLE_TYPES.ROCKET_TRAIL;
+    }
+
+    _appendWaterReflectionInstance(group, sourceBase) {
+        const stride = group.instanceStrideFloats;
+        const targetBase = group.reflectionInstanceCount * stride;
+        for (let i = 0; i < stride; i++) {
+            group.reflectionInstanceData[targetBase + i] = group.instanceData[sourceBase + i];
+        }
+        group.reflectionInstanceCount++;
     }
 
     update(delta) {
@@ -210,6 +232,7 @@ class InstancedParticleSystem {
 
             const d = this.instanceData[shape];
             const grp = this.meshes[shape];
+            grp.reflectionInstanceCount = 0;
             const gpu = grp.instanceData;
             const sStr = this.strideFloats;
             const gStr = grp.instanceStrideFloats;
@@ -351,6 +374,9 @@ class InstancedParticleSystem {
                 gpu[gBase + 6] = d[sBase + this.colorIdx + 1];
                 gpu[gBase + 7] = d[sBase + this.colorIdx + 2];
                 gpu[gBase + 8] = d[sBase + this.colorIdx + 3];
+                if (this._isWaterReflectionParticle(particleType)) {
+                    this._appendWaterReflectionInstance(grp, gBase);
+                }
             }
 
             this.activeCounts[shape] = count;
@@ -419,6 +445,7 @@ class InstancedParticleSystem {
         Object.keys(this.activeCounts).forEach(shape => {
             this.activeCounts[shape] = 0;
             if (this.meshes[shape]) this.meshes[shape].instanceCount = 0;
+            if (this.meshes[shape]) this.meshes[shape].reflectionInstanceCount = 0;
             if (this.particleUpdateFns[shape]) {
                 this.particleUpdateFns[shape].fill(null);
             }

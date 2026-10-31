@@ -1,6 +1,7 @@
 import { PROCEDURAL_BACKGROUND_CONFIG } from '../config/config.js';
 import * as Renderer2D from '../rendering/Renderer.js';
 import { createRng } from '../utils/random.js';
+import BackgroundScenery from './BackgroundScenery.js';
 
 class ProcduralBackground {
     constructor(renderer, config = PROCEDURAL_BACKGROUND_CONFIG) {
@@ -11,6 +12,8 @@ class ProcduralBackground {
         this.coverageBounds = null;
         this.twinkleStars = [];
         this.twinkleTime = 0;
+        this.scenery = null;
+        this.lightSurfaces = [];
     }
 
     generate() {
@@ -27,12 +30,18 @@ class ProcduralBackground {
 
         this._buildSky();
         this._buildStars();
+        this.scenery = new BackgroundScenery(this);
+        this.scenery.build();
+        this.lightSurfaces = this.scenery.lightSurfaces;
         this._buildTrees();
         this._buildGround();
         this.ensureCoverage();
     }
 
     dispose() {
+        this.scenery?.dispose();
+        this.scenery = null;
+        this.lightSurfaces = [];
         for (const shape of this.shapes) {
             this.renderer.removeNormalShape(shape);
         }
@@ -71,9 +80,11 @@ class ProcduralBackground {
         }
         this._setRectBounds(this.groundShape, left, bottom, right, world.groundY);
         this._setRectBounds(this.groundRimShape, left, bottom, right, world.groundY + ground.rimHeight);
+        this.scenery?.ensureCoverage(bounds);
     }
 
-    update(deltaTime) {
+    update(deltaTime, particleSystem = null, fireworks = []) {
+        this.scenery?.update(deltaTime, particleSystem, fireworks);
         const stars = this.config.stars;
         if (!stars?.twinkleEnabled || this.twinkleStars.length === 0) {
             return;
@@ -94,6 +105,10 @@ class ProcduralBackground {
             twinkle.shape.color.b = this._clamp01(twinkle.baseBrightness * brightnessScale);
             twinkle.shape.color.a = this._clamp01(twinkle.baseAlpha * alphaScale);
         }
+    }
+
+    resetLighting() {
+        this.scenery?.resetLighting();
     }
 
     _buildSky() {
