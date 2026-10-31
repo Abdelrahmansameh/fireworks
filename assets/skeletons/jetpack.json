@@ -1,0 +1,423 @@
+{
+  "parts": [
+    {
+      "id": "jetpack_root",
+      "parentId": null,
+      "width": 4,
+      "height": 4,
+      "anchorX": 0,
+      "anchorY": 0,
+      "relX": 0,
+      "relY": 0,
+      "color": "8d99bf",
+      "z": 2,
+      "alpha": 0
+    },
+    {
+      "id": "tank_l_outline",
+      "parentId": "jetpack_root",
+      "width": 1.45,
+      "height": 3.35,
+      "color": "171b2c",
+      "anchorX": 0,
+      "anchorY": 0,
+      "relX": -0.51,
+      "relY": -0.18,
+      "z": -4
+    },
+    {
+      "id": "tank_l",
+      "parentId": "jetpack_root",
+      "width": 1.12,
+      "height": 3.0,
+      "color": "748499",
+      "anchorX": 0,
+      "anchorY": 0,
+      "relX": -0.51,
+      "relY": -0.18,
+      "z": -3
+    },
+    {
+      "id": "tank_band_l",
+      "parentId": "jetpack_root",
+      "width": 1.18,
+      "height": 0.35,
+      "color": "e8ab47",
+      "anchorX": 0,
+      "anchorY": 0,
+      "relX": -0.51,
+      "relY": -0.24,
+      "z": -2
+    },
+    {
+      "id": "nozzle_l",
+      "parentId": "jetpack_root",
+      "width": 0.95,
+      "height": 0.52,
+      "color": "303747",
+      "anchorX": 0,
+      "anchorY": 0,
+      "relX": -0.51,
+      "relY": -0.6,
+      "z": -3
+    },
+    {
+      "id": "flame_outer_l",
+      "parentId": "jetpack_root",
+      "width": 0.672,
+      "height": 1.365,
+      "color": "ff8b27",
+      "anchorX": 0,
+      "anchorY": 0.5,
+      "relX": -0.51,
+      "relY": -0.63,
+      "z": -5,
+      "alpha": 0.8
+    },
+    {
+      "id": "flame_inner_l",
+      "parentId": "jetpack_root",
+      "width": 0.336,
+      "height": 0.945,
+      "color": "fff19c",
+      "anchorX": 0,
+      "anchorY": 0.5,
+      "relX": -0.51,
+      "relY": -0.64,
+      "z": -4,
+      "alpha": 0.8
+    },
+    {
+      "id": "tank_r_outline",
+      "parentId": "jetpack_root",
+      "width": 1.45,
+      "height": 3.35,
+      "color": "171b2c",
+      "anchorX": 0,
+      "anchorY": 0,
+      "relX": 0.51,
+      "relY": -0.18,
+      "z": -4
+    },
+    {
+      "id": "tank_r",
+      "parentId": "jetpack_root",
+      "width": 1.12,
+      "height": 3.0,
+      "color": "748499",
+      "anchorX": 0,
+      "anchorY": 0,
+      "relX": 0.51,
+      "relY": -0.18,
+      "z": -3
+    },
+    {
+      "id": "tank_band_r",
+      "parentId": "jetpack_root",
+      "width": 1.18,
+      "height": 0.35,
+      "color": "e8ab47",
+      "anchorX": 0,
+      "anchorY": 0,
+      "relX": 0.51,
+      "relY": -0.24,
+      "z": -2
+    },
+    {
+      "id": "nozzle_r",
+      "parentId": "jetpack_root",
+      "width": 0.95,
+      "height": 0.52,
+      "color": "303747",
+      "anchorX": 0,
+      "anchorY": 0,
+      "relX": 0.51,
+      "relY": -0.6,
+      "z": -3
+    },
+    {
+      "id": "flame_outer_r",
+      "parentId": "jetpack_root",
+      "width": 0.672,
+      "height": 1.365,
+      "color": "ff8b27",
+      "anchorX": 0,
+      "anchorY": 0.5,
+      "relX": 0.51,
+      "relY": -0.63,
+      "z": -5,
+      "alpha": 0.8
+    },
+    {
+      "id": "flame_inner_r",
+      "parentId": "jetpack_root",
+      "width": 0.336,
+      "height": 0.945,
+      "color": "fff19c",
+      "anchorX": 0,
+      "anchorY": 0.5,
+      "relX": 0.51,
+      "relY": -0.64,
+      "z": -4,
+      "alpha": 0.8
+    }
+  ],
+  "animations": {
+    "fly": {
+      "duration": 0.8,
+      "loop": true,
+      "tracks": {
+        "flame_outer_l": [
+          {
+            "time": 0,
+            "scaleY": 1
+          },
+          {
+            "time": 0.2,
+            "scaleY": 0.68
+          },
+          {
+            "time": 0.4,
+            "scaleY": 1.15
+          },
+          {
+            "time": 0.6,
+            "scaleY": 0.8
+          },
+          {
+            "time": 0.8,
+            "scaleY": 1
+          }
+        ],
+        "flame_inner_l": [
+          {
+            "time": 0,
+            "scaleY": 1
+          },
+          {
+            "time": 0.2,
+            "scaleY": 0.68
+          },
+          {
+            "time": 0.4,
+            "scaleY": 1.15
+          },
+          {
+            "time": 0.6,
+            "scaleY": 0.8
+          },
+          {
+            "time": 0.8,
+            "scaleY": 1
+          }
+        ],
+        "flame_outer_r": [
+          {
+            "time": 0,
+            "scaleY": 1
+          },
+          {
+            "time": 0.2,
+            "scaleY": 0.68
+          },
+          {
+            "time": 0.4,
+            "scaleY": 1.15
+          },
+          {
+            "time": 0.6,
+            "scaleY": 0.8
+          },
+          {
+            "time": 0.8,
+            "scaleY": 1
+          }
+        ],
+        "flame_inner_r": [
+          {
+            "time": 0,
+            "scaleY": 1
+          },
+          {
+            "time": 0.2,
+            "scaleY": 0.68
+          },
+          {
+            "time": 0.4,
+            "scaleY": 1.15
+          },
+          {
+            "time": 0.6,
+            "scaleY": 0.8
+          },
+          {
+            "time": 0.8,
+            "scaleY": 1
+          }
+        ]
+      }
+    },
+    "descent": {
+      "duration": 0.3,
+      "loop": true,
+      "tracks": {
+        "flame_outer_l": [
+          {
+            "time": 0,
+            "scaleY": 0,
+            "a": 0
+          },
+          {
+            "time": 0.3,
+            "scaleY": 0,
+            "a": 0
+          }
+        ],
+        "flame_inner_l": [
+          {
+            "time": 0,
+            "scaleY": 0,
+            "a": 0
+          },
+          {
+            "time": 0.3,
+            "scaleY": 0,
+            "a": 0
+          }
+        ],
+        "flame_outer_r": [
+          {
+            "time": 0,
+            "scaleY": 0,
+            "a": 0
+          },
+          {
+            "time": 0.3,
+            "scaleY": 0,
+            "a": 0
+          }
+        ],
+        "flame_inner_r": [
+          {
+            "time": 0,
+            "scaleY": 0,
+            "a": 0
+          },
+          {
+            "time": 0.3,
+            "scaleY": 0,
+            "a": 0
+          }
+        ]
+      }
+    },
+    "ignite": {
+      "duration": 0.3,
+      "loop": false,
+      "tracks": {
+        "flame_outer_l": [
+          {
+            "time": 0,
+            "scaleY": 0,
+            "a": 0
+          },
+          {
+            "time": 0.3,
+            "scaleY": 1,
+            "a": 1
+          }
+        ],
+        "flame_inner_l": [
+          {
+            "time": 0,
+            "scaleY": 0,
+            "a": 0
+          },
+          {
+            "time": 0.3,
+            "scaleY": 1,
+            "a": 1
+          }
+        ],
+        "flame_outer_r": [
+          {
+            "time": 0,
+            "scaleY": 0,
+            "a": 0
+          },
+          {
+            "time": 0.3,
+            "scaleY": 1,
+            "a": 1
+          }
+        ],
+        "flame_inner_r": [
+          {
+            "time": 0,
+            "scaleY": 0,
+            "a": 0
+          },
+          {
+            "time": 0.3,
+            "scaleY": 1,
+            "a": 1
+          }
+        ]
+      }
+    },
+    "extinguish": {
+      "duration": 0.3,
+      "loop": false,
+      "tracks": {
+        "flame_outer_l": [
+          {
+            "time": 0,
+            "scaleY": 1,
+            "a": 1
+          },
+          {
+            "time": 0.3,
+            "scaleY": 0,
+            "a": 0
+          }
+        ],
+        "flame_inner_l": [
+          {
+            "time": 0,
+            "scaleY": 1,
+            "a": 1
+          },
+          {
+            "time": 0.3,
+            "scaleY": 0,
+            "a": 0
+          }
+        ],
+        "flame_outer_r": [
+          {
+            "time": 0,
+            "scaleY": 1,
+            "a": 1
+          },
+          {
+            "time": 0.3,
+            "scaleY": 0,
+            "a": 0
+          }
+        ],
+        "flame_inner_r": [
+          {
+            "time": 0,
+            "scaleY": 1,
+            "a": 1
+          },
+          {
+            "time": 0.3,
+            "scaleY": 0,
+            "a": 0
+          }
+        ]
+      }
+    }
+  }
+}

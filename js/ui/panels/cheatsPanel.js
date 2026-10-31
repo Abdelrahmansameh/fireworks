@@ -30,11 +30,11 @@ export function render(container) {
         </fieldset>
 
         <fieldset>
-            <legend>Drones</legend>
+            <legend>Jetpack fans</legend>
             <div class="recipes-option">
                 <label>Count:</label>
                 <input type="number" id="cheat-drone-count" value="1" step="1" min="1" max="20">
-                <button id="cheat-spawn-drone">Spawn Drone(s)</button>
+                <button id="cheat-spawn-drone">Spawn jetpack fans</button>
             </div>
         </fieldset>
 

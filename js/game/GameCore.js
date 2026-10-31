@@ -115,6 +115,7 @@ class GameCore extends Engine {
 
         // Stat multiplier buckets (recomputed by progression.applyAll).
         this.baseSparkleMultiplier = 1;
+        this.jetpackCount = Math.min(128, Math.max(0, Number(this.storage.getItem('jetpackCount')) || 0));
         this.droneStats = {
             lifetimeMultiplier: 1,
             speedMultiplier: 1,
@@ -200,13 +201,8 @@ class GameCore extends Engine {
         this.statsTracker.record('gold', amount, source);
     }
 
-    spawnDrone(x, y) {
-        if (!this.droneSystem) return;
-        const spawnX = x ?? (GAME_BOUNDS.LAUNCHER_MIN_X
-            + this.rng() * (GAME_BOUNDS.LAUNCHER_MAX_X - GAME_BOUNDS.LAUNCHER_MIN_X));
-        const spawnY = y ?? (GAME_BOUNDS.WORLD_LAUNCHER_Y
-            + this.rng() * (GAME_BOUNDS.WORLD_MAX_EXPLOSION_Y - GAME_BOUNDS.WORLD_LAUNCHER_Y));
-        this.droneSystem.spawnDrone(spawnX, spawnY);
+    spawnDrone() {
+        if (this.grantJetpack()) this.saveProgress();
     }
 
     // ════════════════════════════════════════════════════════════════════════
@@ -280,9 +276,30 @@ class GameCore extends Engine {
             case 'AUTO_LAUNCHER': return this.progression.isUnlocked('buildings_tab');
             case 'RESOURCE_GENERATOR': return this.progression.isUnlocked('resource_generator');
             case 'CATAPULT': return this.progression.isUnlocked('catapult');
-            case 'DRONE_HUB': return this.progression.isUnlocked('drone_hub');
+            case 'DRONE_HUB': return false;
             default: return false;
         }
+    }
+
+    getJetpackCost() {
+        return Math.ceil(1350 * Math.pow(1.8, Math.max(0, this.jetpackCount - 1)));
+    }
+
+    grantJetpack() {
+        if (this.jetpackCount >= 128) return false;
+        this.jetpackCount++;
+        this.droneSystem?.setCount(this.jetpackCount, this.droneStats);
+        return true;
+    }
+
+    purchaseJetpack() {
+        const cost = this.getJetpackCost();
+        const resource = this.resourceManager.resources.gold;
+        if (this.jetpackCount >= 128 || !resource || resource.amount < cost) return false;
+        resource.subtract(cost);
+        this.grantJetpack();
+        this.saveProgress();
+        return true;
     }
 
     grantMilestoneBuilding(type, grantUpgradeId = null) {
@@ -356,6 +373,8 @@ class GameCore extends Engine {
             }
         }
 
+        this.jetpackCount = Math.max(0, this.jetpackCount - (this.progression.getUpgradeLevel('drone_hub') > 0 ? 1 : 0) - this.progression.getUpgradeLevel('drone_max'));
+        this.droneSystem?.setCount(this.jetpackCount, this.droneStats);
         this.progression.resetUpgradesState();
         this.clearCrowdArrival();
         this.unlockedPatternKeys = ['spherical'];
@@ -447,7 +466,7 @@ class GameCore extends Engine {
                 this.ui.updateBuildingTypeVisibility();
                 break;
             case 'drone_hub':
-                this.showNotification('Drone Hub unlocked!');
+                this.showNotification('Jetpack fans unlocked!');
                 this.ui.updateBuildingTypeVisibility();
                 break;
             case 'catapult':
@@ -570,6 +589,7 @@ class GameCore extends Engine {
         // Headless runs never persist (and must not clobber the player's save).
         if (this.headless || this._isRestoring) return;
 
+        this.storage.setItem('jetpackCount', this.jetpackCount);
         this.storage.setItem('elapsedGameTime', this.elapsedGameTime);
         this.storage.setItem('gameCompleted', this.gameCompleted);
         this.storage.setItem('crowdStartFireworks', JSON.stringify(this.crowdStartFireworks));

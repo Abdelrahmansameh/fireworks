@@ -224,7 +224,7 @@ class UIManager {
                 for (let i = 0; i < count; i++) {
                     this.game.spawnDrone();
                 }
-                this.showNotification(`Spawned ${count} drone${count !== 1 ? 's' : ''}!`);
+                this.showNotification(`Spawned ${count} jetpack fan${count !== 1 ? 's' : ''}!`);
             });
         }
 
@@ -927,7 +927,7 @@ class UIManager {
         let buildingsAvailable = false;
         if (progression.isUnlocked('buildings_tab')) {
             for (const [key, type] of Object.entries(BUILDING_TYPES)) {
-                if (!this.game.isBuildingTypeUnlocked(key)) continue;
+                if (key === 'DRONE_HUB' || !this.game.isBuildingTypeUnlocked(key)) continue;
                 const count = this.game.buildingManager.getBuildingsByType(key).length;
                 if (count >= this.game.buildingManager.getBuildingLimit(key)) continue;
 
@@ -1065,7 +1065,7 @@ class UIManager {
         const getBldCount = (type) => g.buildingManager.getBuildingsByType(type).length;
         set('stat-bld-auto', getBldCount('AUTO_LAUNCHER'));
         set('stat-bld-gen', getBldCount('RESOURCE_GENERATOR'));
-        set('stat-bld-drone', getBldCount('DRONE_HUB'));
+        set('stat-bld-drone', g.jetpackCount ?? 0);
 
         // ── Session totals ──────────────────────────────────────────────────
         set('stat-session-time', GameMetrics.formatDuration(st.getSessionDurationSeconds()));

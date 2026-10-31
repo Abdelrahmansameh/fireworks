@@ -5,13 +5,10 @@ import { AnimationData } from '../animation/AnimationData.js';
 import { computePose } from '../animation/SkeletonAnimator.js';
 const { BlendMode } = Renderer2D;
 
-// Each drone is rendered as a multi-part skeleton (a neon quadcopter). Every
-// part of the skeleton is one instance in a shared instanced group — so a drone
-// consumes `partsPerDrone` instances, exactly like the crowd renders people.
-const DRONE_SKELETON_URL = 'assets/skeletons/drone.json';
-// Number of distinct phase-shifted poses computed per frame. Each drone is
-// assigned one bucket so rotors/cores aren't all perfectly synchronized, while
-// the per-frame pose cost stays O(PHASE_BUCKETS) instead of O(drones).
+// Permanent jetpack crowd members share an instanced, animated skeleton.
+const CROWD_SKELETON_URL = 'assets/skeletons/crowd.json';
+const JETPACK_SKELETON_URL = 'assets/skeletons/jetpack.json';
+// Phase-shift animations to keep flyers from moving in lockstep.
 const PHASE_BUCKETS = 6;
 
 // CPU buffer layout (strideFloats = 19)
@@ -25,10 +22,11 @@ class InstancedDroneSystem {
         this.particleSystem = particleSystem;
 
         this.maxDrones = DRONE_CONFIG.maxDrones;
-        // Buffers are sized to a fixed hard capacity (≥ any upgraded maxDrones),
-        // so raising the soft cap (this.maxDrones) at runtime can never overflow
-        // the CPU arrays or the GL instance buffer.
-        this.capacity = Math.max(this.maxDrones, DRONE_CONFIG.maxDroneCapacity ?? this.maxDrones);
+        // Match the maximum number of purchasable jetpacks.
+        this.capacity = Math.max(128, this.maxDrones);
+        this.desiredCount = 0;
+        this._upgradeStats = {};
+        this._disposed = false;
         this.strideFloats = 19;
         this.data = new Float32Array(this.capacity * this.strideFloats);
         this.count = 0;
@@ -60,7 +58,7 @@ class InstancedDroneSystem {
 
         // ── Skeleton rendering ──────────────────────────────────────
         // The instanced group + per-part metadata are created once the skeleton
-        // JSON loads. Until then `this.mesh` is null and spawns are ignored.
+        // JSON loads. Owned jetpacks are queued until the mesh is ready.
         this.mesh = null;
         this.skeleton = null;
         this.animData = null;
@@ -96,17 +94,27 @@ class InstancedDroneSystem {
      */
     async _initSkeleton() {
         try {
-            const { skeleton, rawAnimations } = await SkeletonData.load(DRONE_SKELETON_URL);
-            this.skeleton = skeleton;
-            this.animData = new AnimationData(rawAnimations);
+            const [crowd, prop] = await Promise.all([
+                SkeletonData.load(CROWD_SKELETON_URL),
+                SkeletonData.load(JETPACK_SKELETON_URL),
+            ]);
+            // Attach the reusable prop to the same body used by ordinary fans.
+            const propParts = prop.skeleton.parts.filter(part => part.id !== 'jetpack_root')
+                .map(part => ({ ...part, parentId: part.parentId === 'jetpack_root' ? 'body' : part.parentId }));
+            this.skeleton = new SkeletonData([...crowd.skeleton.parts, ...propParts]);
+            const fly = crowd.rawAnimations.fly;
+            this.animData = new AnimationData({ fly: {
+                ...fly, tracks: { ...fly.tracks, ...prop.rawAnimations.fly.tracks },
+            } });
         } catch (e) {
-            console.warn('drone skeleton failed to load, using minimal fallback:', e);
+            console.warn('jetpack crowd skeleton failed to load, using minimal fallback:', e);
             this.skeleton = new SkeletonData([
                 { id: 'body', parentId: null, width: 1.4, height: 0.6, anchorX: 0, anchorY: 0, relX: 0, relY: 0, color: '63ffe4' }
             ]);
             this.animData = new AnimationData({ fly: { duration: 1, loop: true, tracks: {} } });
         }
 
+        if (this._disposed) return;
         this.flyClip = this.animData.getClip('fly');
         this.partsPerDrone = this.skeleton.partCount;
 
@@ -138,6 +146,7 @@ class InstancedDroneSystem {
             blendMode: BlendMode.NORMAL,
             zIndex: 2000,
         });
+        this.setCount(this.desiredCount, this._upgradeStats);
     }
 
     /**
@@ -155,7 +164,7 @@ class InstancedDroneSystem {
      * @param {number} scale — drone render scale
      * @param {number} baseInstanceIndex — first instance slot for this drone
      */
-    _writeDronePose(basePose, flipX, tilt, wx, wy, scale, baseInstanceIndex) {
+    _writeDronePose(basePose, flipX, tilt, wx, wy, scale, baseInstanceIndex, thrust = 1) {
         const meta = this._partMeta;
         const gpu = this.mesh.instanceData;
         const gStr = this.mesh.instanceStrideFloats;
@@ -184,11 +193,11 @@ class InstancedDroneSystem {
             gpu[base + 1] = wy + dmy * scale;
             gpu[base + 2] = localRot * flipX + tilt;
             gpu[base + 3] = m.width * scale * (tf.scaleX ?? 1);
-            gpu[base + 4] = m.height * scale * (tf.scaleY ?? 1);
+            gpu[base + 4] = m.height * scale * (tf.scaleY ?? 1) * (m.id.startsWith('flame_') ? thrust : 1);
             gpu[base + 5] = m.r * (tf.r ?? 1);
             gpu[base + 6] = m.g * (tf.g ?? 1);
             gpu[base + 7] = m.b * (tf.b ?? 1);
-            gpu[base + 8] = m.a * (tf.a ?? 1);
+            gpu[base + 8] = m.a * (tf.a ?? 1) * (m.id.startsWith('flame_') ? thrust : 1);
         }
     }
 
@@ -255,8 +264,7 @@ class InstancedDroneSystem {
      * Returns the drone index, or -1 if at capacity.
      */
     spawnDrone(x, y, options = {}) {
-        // Skeleton still loading — drones are ephemeral, so dropping the handful
-        // of spawns during the initial fetch is harmless.
+        // Owned flyers are queued by setCount until the skeleton finishes loading.
         if (!this.mesh) return -1;
         if (this.count >= Math.min(this.maxDrones, this.capacity)) return -1;
 
@@ -265,14 +273,10 @@ class InstancedDroneSystem {
         const d = this.data;
         const cfg = DRONE_CONFIG;
 
-        const lifetime = options.lifetime ?? cfg.defaultLifetime;
+        const lifetime = Infinity;
         const color = options.color ?? cfg.color;
-        // Render scale, mirroring the crowd: baseScale + random·scaleVariance.
-        // Callers may pass options.scaleMultiplier (e.g. per-hub sizing) which
-        // scales the config base; an explicit options.scale (absolute) overrides
-        // everything and is kept for legacy callers/tests.
-        const sc = cfg.scaling;
-        const baseScale = sc ? sc.baseScale + Math.random() * (sc.scaleVariance || 0) : cfg.defaultScale;
+        // Match the scale and small size variation of ground crowd members.
+        const baseScale = 6.7 + Math.random() * 0.4;
         const scale = options.scale ?? (baseScale * (options.scaleMultiplier ?? 1));
         const radius = options.collectionRadius ?? cfg.collectionRadius;
         const speed = options.speed ?? cfg.wanderSpeed;
@@ -323,17 +327,31 @@ class InstancedDroneSystem {
         return i;
     }
 
-    /** Apply a purchase immediately to drones already visible in the sky. */
+    /** Keep the visible permanent flyers in sync with the owned jetpack count. */
+    setCount(count, stats = this._upgradeStats) {
+        this.desiredCount = Math.min(this.capacity, Math.max(0, Math.floor(Number(count) || 0)));
+        this._upgradeStats = stats || {};
+        this.maxDrones = this.capacity;
+        if (!this.mesh) return;
+        while (this.count > this.desiredCount) {
+            const ref = this.droneRefs[--this.count];
+            if (ref) ref.active = false;
+            this.droneRefs[this.count] = null;
+        }
+        while (this.count < this.desiredCount) {
+            const x = GAME_BOUNDS.LAUNCHER_MIN_X + Math.random() * (GAME_BOUNDS.LAUNCHER_MAX_X - GAME_BOUNDS.LAUNCHER_MIN_X);
+            if (this.spawnDrone(x, GAME_BOUNDS.WORLD_LAUNCHER_Y) < 0) break;
+        }
+        this.mesh.instanceCount = this.count * this.partsPerDrone;
+        this.applyUpgradeStats(this._upgradeStats);
+    }
+
+    /** Apply speed and collection upgrades to flyers already in the sky. */
     applyUpgradeStats(stats) {
-        this.maxDrones = stats.maxDrones;
+        this._upgradeStats = stats || {};
         for (let i = 0; i < this.count; i++) {
             const base = i * this.strideFloats;
             const ref = this.droneRefs[i];
-            const lifetime = ref.baseLifetime * (stats.lifetimeMultiplier ?? 1);
-            const change = lifetime - this.data[base + this.INITIAL_LIFETIME];
-            this.data[base + this.INITIAL_LIFETIME] = lifetime;
-            this.data[base + this.LIFETIME] = Math.max(0, this.data[base + this.LIFETIME] + change);
-            ref.lifetime = this.data[base + this.LIFETIME];
             this.data[base + this.SPEED] = ref.baseSpeed * (stats.speedMultiplier ?? 1);
             this.data[base + this.RADIUS] = ref.baseRadius * (stats.collectionRadiusMultiplier ?? 1);
         }
@@ -428,63 +446,22 @@ class InstancedDroneSystem {
                 }
             }
 
-            const distToTarget = Math.sqrt(dx * dx + dy * dy);
-
-            // ── Vehicular speed & steering ───────────────────────────
+            // Jetpack flight has inertia: steer sideways gradually and pulse the
+            // motor against gravity to gain height, coasting when descending.
             const maxSpeed = d[base + this.SPEED];
-            let currentSpeed = d[base + this.CURRENT_SPEED];
-            const invDist = distToTarget > 0.01 ? 1 / distToTarget : 0;
+            const vx0 = d[base + this.VX];
+            const vy0 = d[base + this.VY];
+            const targetVX = Math.max(-maxSpeed, Math.min(maxSpeed, dx * 0.65));
+            const horizontalAccel = Math.max(-320, Math.min(320, (targetVX - vx0) * 1.4));
+            d[base + this.VX] += horizontalAccel * delta;
 
-            // Desired unit direction toward target
-            const desiredDirX = dx * invDist;
-            const desiredDirY = dy * invDist;
-
-            // Current heading unit vector derived from actual velocity
-            const curVX = d[base + this.VX];
-            const curVY = d[base + this.VY];
-            const curSpeedMag = Math.sqrt(curVX * curVX + curVY * curVY);
-            const headingX = curSpeedMag > 0.5 ? curVX / curSpeedMag : desiredDirX;
-            const headingY = curSpeedMag > 0.5 ? curVY / curSpeedMag : desiredDirY;
-
-            // Dot product: how aligned is current heading with desired direction?
-            const alignDot = headingX * desiredDirX + headingY * desiredDirY;
-
-            // Brake when a large direction change is needed, cruise otherwise
-            const isTurning = alignDot < cfg.turnThresholdDot;
-            const targetSpeed = isTurning ? cfg.minTurnSpeed : maxSpeed;
-
-            // Accelerate or decelerate toward target speed
-            if (currentSpeed < targetSpeed) {
-                currentSpeed = Math.min(currentSpeed + cfg.acceleration * delta, targetSpeed);
-            } else {
-                currentSpeed = Math.max(currentSpeed - cfg.deceleration * delta, targetSpeed);
-            }
-            d[base + this.CURRENT_SPEED] = currentSpeed;
-
-            const steerRate = isOutOfBounds ? cfg.steerRateHigh : cfg.steerRateLow;
-            const steerK = 1 - Math.exp(-steerRate * delta);
-
-            // ── Sine-wave oscillation (perpendicular to heading) ────
-            d[base + this.OSC_PHASE] += delta * cfg.oscillationFrequency * Math.PI * 2;
-            // Perpendicular unit vector to desired direction: (-y, x)
-            const perpX = -desiredDirY;
-            const perpY = desiredDirX;
-            // Suppress oscillation mid-turn so it doesn't fight the steering
-            const oscScale = isTurning ? 0.0 : Math.sin(d[base + this.OSC_PHASE]);
-            const oscVX = perpX * oscScale * cfg.oscillationAmplitude;
-            const oscVY = perpY * oscScale * cfg.oscillationAmplitude;
-
-            // Drive velocity toward (desiredDir * currentSpeed) + oscillation
-            let targetVX = desiredDirX * currentSpeed;
-            let targetVY = desiredDirY * currentSpeed;
-            // safety in case current speed is close to 0
-            if (currentSpeed < 20) {
-                targetVX = desiredDirX * 1;
-                targetVY = desiredDirY * 1;
-            }
-
-            d[base + this.VX] += (targetVX - d[base + this.VX]) * steerK + oscVX * delta;
-            d[base + this.VY] += (targetVY - d[base + this.VY]) * steerK + oscVY * delta;
+            // Aim for a vertical speed based on distance, with hysteresis to
+            // avoid rapidly switching the engine around the target altitude.
+            const targetVY = Math.max(-maxSpeed * 0.65, Math.min(maxSpeed * 0.8, dy * 0.55));
+            if (vy0 < targetVY - 25) ref.engineActive = true;
+            else if (vy0 > targetVY + 25) ref.engineActive = false;
+            d[base + this.VY] = Math.max(-maxSpeed * 0.8, Math.min(maxSpeed, vy0 + ((ref.engineActive ? 480 : 0) - 240) * delta));
+            const isTurning = Math.abs(targetVX - vx0) > maxSpeed * 0.7;
 
             // Integrate position
             d[base + this.PX] += d[base + this.VX] * delta;
@@ -496,12 +473,23 @@ class InstancedDroneSystem {
             d[base + this.PY] = Math.max(GAME_BOUNDS.WORLD_LAUNCHER_Y,
                 Math.min(d[base + this.PY], GAME_BOUNDS.WORLD_MAX_EXPLOSION_Y));
 
+            if ((d[base + this.PX] <= GAME_BOUNDS.LAUNCHER_MIN_X && d[base + this.VX] < 0)
+                || (d[base + this.PX] >= GAME_BOUNDS.LAUNCHER_MAX_X && d[base + this.VX] > 0)) d[base + this.VX] = 0;
+            if ((d[base + this.PY] <= GAME_BOUNDS.WORLD_LAUNCHER_Y && d[base + this.VY] < 0)
+                || (d[base + this.PY] >= GAME_BOUNDS.WORLD_MAX_EXPLOSION_Y && d[base + this.VY] > 0)) d[base + this.VY] = 0;
+
             // ── Upright facing + lean ─────────────────────────────────
             // Side-view drone: don't tumble to the heading. Mirror left/right
             // to face travel (with a dead-band so it doesn't flicker near zero
             // horizontal speed) and lean slightly into horizontal motion.
             const vx = d[base + this.VX];
             const vy = d[base + this.VY];
+            // A small dead band prevents flickering around level flight. The
+            // 0.3 second ramp is the ignition/extinguishing transition.
+            if (vy < -10) ref.thrustOn = false;
+            else if (vy > 10) ref.thrustOn = true;
+            const thrustTarget = ref.thrustOn === false ? 0 : 1;
+            ref.thrust = Math.max(0, Math.min(1, (ref.thrust ?? 1) + (thrustTarget ? 1 : -1) * delta / 0.3));
             let flipX = ref.flipX || 1;
             if (vx > 30) flipX = 1;
             else if (vx < -30) flipX = -1;
@@ -517,7 +505,7 @@ class InstancedDroneSystem {
             // ── Drone trail ──────────────────────────────────────────
             // Trails act as thrusters: suppress them while the drone is turning
             const trailCfg = cfg.droneTrails;
-            if (trailCfg.enabled) {
+            if (trailCfg.enabled && ref.thrust > 0.5) {
                 d[base + this.TRAIL_TIMER] -= delta;
                 if (d[base + this.TRAIL_TIMER] <= 0 && !isTurning) {
                     d[base + this.TRAIL_TIMER] += trailCfg.spawnRate;
@@ -610,14 +598,6 @@ class InstancedDroneSystem {
                             let pullElapsed = 0;
                             const pullFn = (state, delta) => {
                             if (!droneRef.active) return;
-                            // todo, if you have very low fps you wont get
-                            if (droneRef.lifetime <= 0.2) 
-                            {                                
-                                droneRef.collected++;
-                                droneRef.collectedValue += sparkleValue;
-                                state.lifetime = 0;
-                                return;
-                            }
                             pullElapsed += delta;
 
                             const ex = droneRef.x - state.position.x;
@@ -653,30 +633,6 @@ class InstancedDroneSystem {
                 }
             }  // doScan
 
-            // ── Lifetime ─────────────────────────────────────────────
-            d[base + this.LIFETIME] -= delta;
-            // Mirrored onto the ref so pull closures can insta-collect their
-            // particle when the drone is about to despawn.
-            ref.lifetime = d[base + this.LIFETIME];
-            if (d[base + this.LIFETIME] <= 0) {
-                ref.active = false;
-
-                // Swap-remove (CPU state only). The GPU part-instances for every
-                // live drone are rewritten below each frame, so there's no GPU
-                // buffer copy to do here — just keep the physics/ref arrays packed.
-                const lastIdx = this.count - 1;
-                if (i !== lastIdx) {
-                    const lastBase = lastIdx * this.strideFloats;
-                    d.set(d.subarray(lastBase, lastBase + this.strideFloats), base);
-                    this.droneRefs[i] = this.droneRefs[lastIdx];
-                }
-                this.droneRefs[lastIdx] = null;
-                this.count--;
-                i--;
-                continue;
-            }
-
-            // ── Write skeleton part-instances ─────────────────────────
             // Pose the drone upright, flipped to face travel and leaning into it.
             const pose = this._phasePoses[ref.phaseBucket] || this._phasePoses[0];
             this._writeDronePose(
@@ -686,7 +642,8 @@ class InstancedDroneSystem {
                 d[base + this.PX],
                 d[base + this.PY],
                 ref.scale,
-                i * this.partsPerDrone
+                i * this.partsPerDrone,
+                ref.thrust
             );
         }
 
@@ -701,6 +658,7 @@ class InstancedDroneSystem {
      * Despawn all drones instantly (e.g. on game reset).
      */
     clear() {
+        this.desiredCount = 0;
         for (let i = 0; i < this.count; i++) {
             if (this.droneRefs[i]) this.droneRefs[i].active = false;
         }
@@ -709,6 +667,7 @@ class InstancedDroneSystem {
     }
 
     dispose() {
+        this._disposed = true;
         this.clear();
         if (this.mesh) this.renderer.removeInstancedGroup(this.mesh);
         this.mesh = null;

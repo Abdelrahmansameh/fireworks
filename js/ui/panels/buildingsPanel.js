@@ -16,7 +16,7 @@ export function render(container) {
     tabs.setAttribute('role', 'tablist');
     tabs.setAttribute('aria-label', 'Building types');
 
-    Object.entries(BUILDING_TYPES).forEach(([key, type], index) => {
+    Object.entries(BUILDING_TYPES).filter(([key]) => key !== 'DRONE_HUB').forEach(([key, type], index) => {
         const display = DISPLAY[key];
         const button = document.createElement('button');
         button.type = 'button';
@@ -31,7 +31,7 @@ export function render(container) {
     });
     panel.appendChild(tabs);
 
-    Object.entries(BUILDING_TYPES).forEach(([key, type], index) => {
+    Object.entries(BUILDING_TYPES).filter(([key]) => key !== 'DRONE_HUB').forEach(([key, type], index) => {
         const display = DISPLAY[key];
         const section = document.createElement('div');
         section.className = `building-section${index === 0 ? ' active' : ''}`;

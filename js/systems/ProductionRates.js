@@ -143,19 +143,9 @@ export function expectedSPS(state, rates = {}) {
     const genMult = state.generatorStats?.productionRateMultiplier ?? 1;
     const generators = genCount * genBase * genMult * baseSparkleMult;
 
-    // Drones: steady-state active count ≈ spawnRate × lifetime, capped by maxDrones.
-    let drones = 0;
-    const droneHubs = countBuildings(state, 'DRONE_HUB');
-    if (droneHubs > 0) {
-        const hubCfg = BUILDING_TYPES.DRONE_HUB;
-        const hubInterval = hubCfg.baseSpawnInterval * (state.droneHubStats?.spawnIntervalMultiplier ?? 1);
-        const droneLifetime = hubCfg.baseDroneLifetime * (state.droneStats?.lifetimeMultiplier ?? 1);
-        const steadyActive = Math.min(
-            state.droneStats?.maxDrones ?? Infinity,
-            droneHubs * (droneLifetime / hubInterval)
-        );
-        drones = steadyActive * baseDroneYield * (state.droneStats?.sparklesPerParticleMultiplier ?? 1);
-    }
+    // Each purchased jetpack provides one permanent collector.
+    const drones = (state.jetpackCount ?? 0) * baseDroneYield
+        * (state.droneStats?.sparklesPerParticleMultiplier ?? 1);
 
     // Crowd catching: rough estimate — assume each catapult engages ~2 people.
     let crowdCatching = 0;

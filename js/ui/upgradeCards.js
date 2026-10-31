@@ -5,7 +5,7 @@ const BRANCH_STYLES = {
     LAUNCHER: { icon: 'launcher', color: '#ff7a59' },
     CROWD: { icon: 'crowd', color: '#ffd04a' },
     GENERATOR: { icon: 'generator', color: '#86e38f' },
-    DRONE: { icon: 'drone', color: '#5fe0e0' },
+    DRONE: { icon: 'crowd', color: '#5fe0e0' },
 };
 
 const formatAmount = amount => Math.floor(Math.max(0, amount)).toLocaleString();

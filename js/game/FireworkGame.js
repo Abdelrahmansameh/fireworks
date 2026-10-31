@@ -75,6 +75,10 @@ class FireworkGame extends GameCore {
         if (savedBuildingData) {
             try {
                 const buildingData = JSON.parse(savedBuildingData);
+                if (gameStorage.getItem('jetpackCount') === null) {
+                    this.jetpackCount = Math.min(128, (buildingData.buildings || []).filter(b => b.type === 'DRONE_HUB').length);
+                }
+                buildingData.buildings = (buildingData.buildings || []).filter(b => b.type !== 'DRONE_HUB');
                 this.buildingManager.deserialize(buildingData);
             } catch (e) {
                 console.error('Failed to load building data:', e);
@@ -104,7 +108,7 @@ class FireworkGame extends GameCore {
 
         this.particleSystem = new InstancedParticleSystem(this.renderer2D, this.profiler);
         this.droneSystem = new InstancedDroneSystem(this.renderer2D, this.particleSystem);
-        this.droneSystem.maxDrones = this.droneStats.maxDrones;
+        this.droneSystem.setCount(this.jetpackCount, this.droneStats);
         this.crowd = new Crowd(this.renderer2D);
         this.crowd.onCoinDrop = (amount, source) => this.addGold(amount, source);
         this.crowd.particleSystem = this.particleSystem;
@@ -399,6 +403,7 @@ class FireworkGame extends GameCore {
         this.gameCompleted = false;
         this.grandFinaleUnlocked = false;
         this.grandFinaleManager.reset();
+        this.jetpackCount = 0;
         this.droneStats = {
             lifetimeMultiplier: 1,
             speedMultiplier: 1,
@@ -697,6 +702,7 @@ class FireworkGame extends GameCore {
             selectedRecipeIndex: this.selectedRecipeIndex,
             currentRecipeName: document.getElementById('recipe-name').value,
             buildingManagerData: this.buildingManager.serialize(),
+            jetpackCount: this.jetpackCount,
             currentRecipeComponents: this.currentRecipeComponents,
             backgroundColor: '#f13b3b',
             resources: this.resourceManager.save(),
@@ -738,7 +744,10 @@ class FireworkGame extends GameCore {
         gameStorage.setItem('backgroundColor', PROCEDURAL_BACKGROUND_CONFIG.bodyBackgroundColor);
 
         if (data.buildingManagerData) {
-            this.buildingManager.deserialize(data.buildingManagerData);
+            const buildingData = data.buildingManagerData;
+            this.jetpackCount = Math.min(128, Math.max(0, Number(data.jetpackCount ?? (buildingData.buildings || []).filter(b => b.type === 'DRONE_HUB').length) || 0));
+            buildingData.buildings = (buildingData.buildings || []).filter(b => b.type !== 'DRONE_HUB');
+            this.buildingManager.deserialize(buildingData);
         } else if (data.gameState && data.gameState.autoLaunchers) {
             console.log('Migrating old save format to building system...');
             data.gameState.autoLaunchers.forEach(launcherData => {
@@ -774,6 +783,7 @@ class FireworkGame extends GameCore {
 
         this.ui.initializeUnlockStates();
         this.progression.applyAll(this);
+        this.droneSystem?.setCount(this.jetpackCount, this.droneStats);
         this.crowd.setCount(this._calculateTargetCrowdCount(this.fireworkSystem.fireworkCount));
         this.updateCrowdDisplay();
         this.saveProgress();

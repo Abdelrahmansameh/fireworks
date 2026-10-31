@@ -28,7 +28,7 @@ export default class LivePurchasePolicy {
         const crowdUnlock = game.progression.getUpgradeDef('crowd_unlock') ? 'crowd_unlock' : 'crowd_spark_1';
         if (game.progression.getUpgradeLevel(crowdUnlock) === 0) return { upgrade: crowdUnlock, label: 'Welcome the crowd' };
         if (this._count(game, 'CATAPULT') === 0) return { building: 'CATAPULT', label: 'First catapult' };
-        if (this._count(game, 'DRONE_HUB') === 0) return { building: 'DRONE_HUB', label: 'First drone hub' };
+        if (game.progression.getUpgradeLevel('drone_hub') === 0) return { upgrade: 'drone_hub', label: 'First jetpack fan' };
         return { upgrade: 'grand_finale', label: 'Grand finale' };
     }
 
@@ -91,7 +91,7 @@ export default class LivePurchasePolicy {
         if (id === 'grand_finale' || id === 'auto_launcher' || id === 'resource_generator' || id === 'catapult' || id === 'drone_hub') return true;
         if (id.startsWith('launcher_') && this._count(game, 'AUTO_LAUNCHER') === 0) return false;
         if (id.startsWith('generator_') && this._count(game, 'RESOURCE_GENERATOR') === 0) return false;
-        if (id.startsWith('drone_') && this._count(game, 'DRONE_HUB') === 0) return false;
+        if (id.startsWith('drone_') && (game.jetpackCount ?? 0) === 0) return false;
         if (id.startsWith('catapult_') && this._count(game, 'CATAPULT') === 0) return false;
         if (id.startsWith('crowd_catcher_') && id !== 'crowd_catcher_unlock' && !game.crowdStats?.catchingEnabled) return false;
         return true;
@@ -116,13 +116,6 @@ export default class LivePurchasePolicy {
         if (id.startsWith('launcher_spawn') || id.startsWith('launcher_overclock')) return 1.5;
         if (id.startsWith('launcher_sparkle')) return 1.3;
         if (id.startsWith('crowd_invite')) return 1.25;
-        if (id === 'drone_max') {
-            const hubs = this._count(game, 'DRONE_HUB');
-            const definition = BUILDING_TYPES.DRONE_HUB;
-            const expected = hubs * definition.baseDroneLifetime * (game.droneStats?.lifetimeMultiplier ?? 1)
-                / (definition.baseSpawnInterval * (game.droneHubStats?.spawnIntervalMultiplier ?? 1));
-            return expected >= (game.droneStats?.maxDrones ?? Infinity) * 0.75 ? 0.9 : 0;
-        }
         return 1;
     }
 

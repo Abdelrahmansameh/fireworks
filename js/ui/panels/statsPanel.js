@@ -34,7 +34,7 @@ export function render(container) {
                 <div class="stats-legend-row"><span><i class="source-generators"></i>Generators</span><strong data-source-rate="resource_generator">0</strong><span id="stat-sps-gen" hidden>0</span></div>
                 <div class="stats-legend-row"><span><i class="source-fans"></i>Fans</span><strong data-source-rate="crowd_catch">0</strong><span id="stat-sps-crowd-catch" hidden>0</span></div>
                 <div class="stats-legend-row"><span><i class="source-clicks"></i>Clicks</span><strong data-source-rate="manual">0</strong><span id="stat-sps-manual" hidden>0</span></div>
-                <div class="stats-legend-row" id="stats-drones-row" hidden><span><i class="source-drones"></i>Drones</span><strong data-source-rate="drone">0</strong><span id="stat-sps-drone" hidden>0</span></div>
+                <div class="stats-legend-row" id="stats-drones-row" hidden><span><i class="source-drones"></i>Jetpack fans</span><strong data-source-rate="drone">0</strong><span id="stat-sps-drone" hidden>0</span></div>
                 <div class="stats-legend-row" id="stats-other-row" hidden><span><i class="source-other"></i>Other</span><strong id="stats-other-rate">0</strong></div>
             </div>
           </div>

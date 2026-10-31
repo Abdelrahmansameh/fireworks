@@ -6,7 +6,7 @@ const unlock = (game, id) => {
 const grant = type => (game, _level, upgradeId) => game.grantMilestoneBuilding(type, upgradeId);
 const node = (id, parent, branch, name, desc, cost, currency, extra = {}) => ({
     id, treeParent: parent, group: branch, branch,
-    icon: branch === 'DRONE' ? 'drone' : branch === 'CROWD' ? 'crowd' : branch === 'LAUNCHER' ? 'launcher' : 'base',
+    icon: branch === 'DRONE' ? 'crowd' : branch === 'CROWD' ? 'crowd' : branch === 'LAUNCHER' ? 'launcher' : 'base',
     offset: { x: branch === 'CROWD' ? 200 : branch === 'LAUNCHER' ? -200 : 0, y: -180 },
     name, desc, baseCost: cost, currency, costRatio: 1, maxLevel: 1, ...extra,
 });
@@ -26,7 +26,7 @@ export const SKILL_TREE_CONFIG = {
         LAUNCHER: { color: '#FF7043', label: 'Launchers' },
         CROWD: { color: '#F06292', label: 'Crowd & catapults' },
         GENERATOR: { color: '#66BB6A', label: 'Workshop' },
-        DRONE: { color: '#29B6F6', label: 'Drones' },
+        DRONE: { color: '#29B6F6', label: 'Jetpacks' },
     },
     nodes: {
         base_mult_1: node('base_mult_1', 'ROOT', 'BASE', 'Brighter Sparks',
@@ -164,40 +164,39 @@ export const SKILL_TREE_CONFIG = {
             '+6 fans.', 4500, 'gold', {
                 action: 'Invite', apply: game => { game.crowdStats.countBonus += 6; },
             }),
-        drone_hub: node('drone_hub', 'crowd_invite_2', 'DRONE', 'Drone Hub',
-            'Launches drones that chase sparkles.', 21000, 'gold', {
-                milestone: true, action: 'Build', unlockId: 'drone_hub',
+        drone_hub: node('drone_hub', 'crowd_invite_2', 'DRONE', 'Jetpack Fans',
+            'Give a fan a jetpack to catch sparkles.', 21000, 'gold', {
+                milestone: true, action: 'Equip', unlockId: 'drone_hub',
                 requires: { stats: { launcherCount: 14 }, upgrades: { spark_core_2: 2, crowd_catcher_yield: 1, crowd_catcher_radius: 1, catapult_range_1: 1 } },
-                apply: game => unlock(game, 'drone_hub'), onPurchase: grant('DRONE_HUB'),
+                apply: game => unlock(game, 'drone_hub'), onPurchase: game => game.grantJetpack(),
             }),
-        drone_lifetime: node('drone_lifetime', 'drone_hub', 'DRONE', 'Long Flight',
-            '+50% flight time.', 6750, 'gold', {
-                apply: game => { game.droneStats.lifetimeMultiplier *= 1.5; },
+        drone_lifetime: node('drone_lifetime', 'drone_hub', 'DRONE', 'Helping Hands',
+            '+25% jetpack fan reach.', 6750, 'gold', {
+                apply: game => { game.droneStats.collectionRadiusMultiplier *= 1.25; },
             }),
         drone_speed: node('drone_speed', 'drone_lifetime', 'DRONE', 'Fast Flyers',
-            '+35% drone speed.', 3000, 'gold', {
+            '+35% jetpack fan speed.', 3000, 'gold', {
                 apply: game => { game.droneStats.speedMultiplier *= 1.35; },
             }),
-        drone_max: node('drone_max', 'drone_speed', 'DRONE', 'Drone Team',
-            '+2 drone slots.', 15000, 'gold', {
+        drone_max: node('drone_max', 'drone_speed', 'DRONE', 'Jetpack Team',
+            '+1 jetpack fan.', 15000, 'gold', {
                 maxLevel: 2, costRatio: 3,
-                requires: { buildingCounts: { DRONE_HUB: 2 }, stats: { droneCoverage: 1 } },
-                apply: game => { game.droneStats.maxDrones += 2; },
+                onPurchase: game => game.grantJetpack(),
             }),
         drone_sparkle_yield: node('drone_sparkle_yield', 'drone_lifetime', 'DRONE', 'Particle Magnets',
-            '+75% drone sparkles.', 9750, 'gold', {
+            '+75% jetpack fan sparkles.', 9750, 'gold', {
                 maxLevel: 2, costRatio: 3.5, offset: { x: -200, y: 0 },
                 apply: game => { game.droneStats.sparklesPerParticleMultiplier *= 1.75; },
             }),
         drone_radius: node('drone_radius', 'drone_sparkle_yield', 'DRONE', 'Wide Sweep',
-            '+25% drone reach.', 3000, 'gold', {
+            '+25% jetpack fan reach.', 3000, 'gold', {
                 maxLevel: 2, costRatio: 3.5,
                 apply: game => { game.droneStats.collectionRadiusMultiplier *= 1.25; },
             }),
         drone_efficiency: node('drone_efficiency', 'drone_max', 'DRONE', 'Air Show',
-            '+43% drone launches.', 22500, 'gold', {
-                requires: { upgrades: { drone_max: 1, drone_sparkle_yield: 1, drone_radius: 1, drone_speed: 1 }, buildingCounts: { DRONE_HUB: 2 } },
-                apply: game => { game.droneHubStats.spawnIntervalMultiplier *= 0.7; },
+            '+35% jetpack fan speed.', 22500, 'gold', {
+                requires: { upgrades: { drone_max: 1, drone_sparkle_yield: 1, drone_radius: 1, drone_speed: 1 } },
+                apply: game => { game.droneStats.speedMultiplier *= 1.35; },
             }),
         launcher_overclock: node('launcher_overclock', 'drone_efficiency', 'LAUNCHER', 'Full Salvo',
             '+54% launcher fire rate.', 55000, 'sparkles', {

@@ -15,7 +15,7 @@ export const DRONE_CONFIG = {
     wanderTargetChangeTime: 4.0, // seconds between wander target changes
     spawnLaunchAngleDeg: 30,     // degrees from vertical for initial hub-spawn launch direction
     pullForce: 9000,             // world-units/sec² acceleration toward drone
-    arrivalThreshold: 25,        // world-units — particle "collected" within this dist
+    arrivalThreshold: 5,        // world-units — particle "collected" within this dist
     maxCaptureTime: 1.0,         // seconds before a targeted particle is force-collected
     defaultScale: 20,            // render scale of the drone mesh (fallback / legacy)
     // Skeleton render scale, mirroring CROWD_CONFIG: each drone's scale is
