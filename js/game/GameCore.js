@@ -25,7 +25,7 @@ import NullAudio from '../platform/NullAudio.js';
 import makeNullUI from '../platform/NullUI.js';
 import MemoryStorage from '../platform/MemoryStorage.js';
 import HeadlessCrowd from '../platform/HeadlessCrowd.js';
-import { roundUpClean, roundUpToStep } from '../utils/costRounding.js';
+import { roundUpCost } from '../utils/costRounding.js';
 import CultistRituals from '../systems/CultistRituals.js';
 import { cultistSparklesPerSecond } from '../config/CultistRitual.js';
 import { CULTIST_CONFIG } from '../config/CultistConfig.js';
@@ -280,8 +280,8 @@ class GameCore extends Engine {
     // ════════════════════════════════════════════════════════════════════════
 
     calculateAutoLauncherCost(numLaunchers) {
-        // Mirror Building.getPurchaseCost('AUTO_LAUNCHER', …): clean ending, round up to a multiple of 25.
-        return roundUpToStep(AUTO_LAUNCHER_COST_BASE * Math.pow(AUTO_LAUNCHER_COST_RATIO, numLaunchers), 25);
+        // Mirror Building.getPurchaseCost('AUTO_LAUNCHER', …): clean ending, always rounded up.
+        return roundUpCost(AUTO_LAUNCHER_COST_BASE * Math.pow(AUTO_LAUNCHER_COST_RATIO, numLaunchers));
     }
 
     isBuildingTypeUnlocked(buildingType) {
@@ -293,7 +293,7 @@ class GameCore extends Engine {
     }
 
     getJetpackCost() {
-        return Math.ceil(1350 * Math.pow(1.8, Math.max(0, this.jetpackCount - 1)));
+        return roundUpCost(1350 * Math.pow(1.8, Math.max(0, this.jetpackCount - 1)));
     }
 
     grantJetpack() {
@@ -305,7 +305,7 @@ class GameCore extends Engine {
     }
 
     getCultistCost() {
-        return roundUpClean(CULTIST_CONFIG.baseCost * Math.pow(CULTIST_CONFIG.costRatio, this.cultistCount));
+        return roundUpCost(CULTIST_CONFIG.baseCost * Math.pow(CULTIST_CONFIG.costRatio, this.cultistCount));
     }
 
     setCultistCount(count) {

@@ -43,7 +43,7 @@ export const CROWD_CONFIG = {
     // Physics
     gravity: 2200,                  // world-units / s²
     friction: 1.0,                  // air-resistance damping factor (v *= e^(-friction*dt))
-    walkSpeed: 600,                 // world-units / s
+    walkSpeed: 300,                 // world-units / s (tuned with the walking clip's stride/cadence)
     landingSnapDistance: 5,         // close-enough to resume cheering after fall
     walkArrivalDistance: 3,         // close-enough to stop walking
 

@@ -1,6 +1,6 @@
 import { BUILDING_TYPES } from '../config/config.js';
 import { SKILL_TREE_CONFIG } from '../ui/SkillTreeConfig.js';
-import { roundUpClean } from '../utils/costRounding.js';
+import { roundUpCost } from '../utils/costRounding.js';
 
 const PROGRESSION_SCHEMA_VERSION = 3;
 // Historical charges for saves written before purchase ledgers existed.
@@ -175,7 +175,7 @@ class ProgressionManager {
                 const level = this._savedLevel(bundle.id, savedUpgrades[bundle.id]);
                 const targets = bundle.targets.filter(id => this._upgrades.has(id));
                 for (let index = 0; index < level; index++) {
-                    let remaining = roundUpClean(bundle.baseCost * Math.pow(bundle.costRatio, index));
+                    let remaining = roundUpCost(bundle.baseCost * Math.pow(bundle.costRatio, index));
                     targets.forEach((id, targetIndex) => {
                         if (!this._purchaseCosts[id] || index >= this.getUpgradeLevel(id)) return;
                         const amount = targetIndex === targets.length - 1 ? remaining
@@ -240,7 +240,7 @@ class ProgressionManager {
     getUpgradeCost(id) {
         const def = this._upgrades.get(id);
         if (!def) return Infinity;
-        return roundUpClean(def.baseCost * Math.pow(def.costRatio, this.getUpgradeLevel(id)));
+        return roundUpCost(def.baseCost * Math.pow(def.costRatio, this.getUpgradeLevel(id)));
     }
 
     /** All wallets charged together by the next purchase. */
@@ -514,7 +514,7 @@ class ProgressionManager {
         if (!def) return {};
         const baseCost = legacy ? LEGACY_BASE_COSTS[id] ?? def.baseCost : def.baseCost;
         const costRatio = legacy && id === 'base_mult_1' ? 2.6 : def.costRatio;
-        const costs = { [def.currency]: roundUpClean(baseCost * Math.pow(costRatio, index)) };
+        const costs = { [def.currency]: roundUpCost(baseCost * Math.pow(costRatio, index)) };
         const secondaryCost = legacy && id === 'grand_finale' ? { gold: 15000 } : def.secondaryCost;
         for (const [currency, amount] of Object.entries(secondaryCost ?? {})) {
             costs[currency] = (costs[currency] ?? 0) + amount;

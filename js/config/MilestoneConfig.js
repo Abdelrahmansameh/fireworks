@@ -30,13 +30,13 @@ export const MILESTONES = [
     },
     {
         id: 'creator', chapter: 0,
-        goal: { type: 'sparkles', target: 40 },
+        goal: { type: 'sparkles', target: 50 },
         hint: 'Keep launching fireworks.',
         reward: { title: 'Firework Creator', desc: 'Design your own fireworks.', icon: 'fireworks', upgrades: ['unlock_recipes_tab'] },
     },
     {
         id: 'first_machine', chapter: 0,
-        goal: { type: 'sparkles', target: 60 },
+        goal: { type: 'sparkles', target: 100 },
         hint: 'Keep launching. Every burst pays sparkles.',
         reward: { title: 'Auto Launcher', desc: 'Build launchers that fire on their own.', icon: 'launcher', upgrades: ['auto_launcher'] },
     },
@@ -50,7 +50,7 @@ export const MILESTONES = [
     // ── 2. Opening Night ────────────────────────────────────────────────────
     {
         id: 'tip_jar', chapter: 1,
-        goal: { type: 'gold', target: 1600 },
+        goal: { type: 'gold', target: 1750 },
         hint: 'Spend gold on crowd upgrades to grow tips.',
         reward: { title: 'Sparkle Cult', desc: 'Recruit cultists whose rituals conjure sparkles.', icon: 'cultist', upgrades: ['cultist_unlock'] },
     },
@@ -58,7 +58,7 @@ export const MILESTONES = [
     // ── 3. Festival Ground ──────────────────────────────────────────────────
     {
         id: 'first_catapult', chapter: 2,
-        goal: { type: 'gold', target: 1800 },
+        goal: { type: 'gold', target: 2000 },
         hint: 'Bigger crowds toss more gold.',
         reward: { title: 'Catapult', desc: 'Build catapults that fling fans into fireworks.', icon: 'catapult', upgrades: ['catapult'] },
     },
