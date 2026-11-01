@@ -10,6 +10,8 @@
 export default class HeadlessCrowd {
     constructor() {
         this.people = [];
+        this.naturalCount = 0;
+        this.jetpackCount = 0;
         this.catchingEnabled = false;
         this.collectionRadius = 0;
         this.goldPerCoinToss = 1;
@@ -17,8 +19,13 @@ export default class HeadlessCrowd {
 
     /** Resize the crowd to `count`. We only ever read `people.length`. */
     setCount(count) {
-        const n = Math.max(0, Math.floor(count));
-        this.people.length = n;
+        this.naturalCount = Math.max(0, Math.floor(count));
+        this.people.length = this.naturalCount + this.jetpackCount;
+    }
+
+    setJetpackCount(count) {
+        this.jetpackCount = Math.max(0, Math.floor(count));
+        this.people.length = this.naturalCount + this.jetpackCount;
     }
 
     // ── Catapult interaction stubs ──────────────────────────────────────────

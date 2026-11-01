@@ -109,6 +109,7 @@ class Firework {
             scale: new Renderer2D.Vector2(FIREWORK_CONFIG.rocketSize, FIREWORK_CONFIG.rocketSize),
             zIndex: -20,
             reflectsInWater: true,
+            waterReflectionRises: true,
             blendMode: Renderer2D.BlendMode.ADDITIVE,
             isStroke: false,
         });
@@ -124,6 +125,7 @@ class Firework {
             scale: new Renderer2D.Vector2(FIREWORK_CONFIG.rocketSize, FIREWORK_CONFIG.rocketSize),
             zIndex: -21,
             reflectsInWater: true,
+            waterReflectionRises: true,
             blendMode: Renderer2D.BlendMode.ADDITIVE,
             isStroke: false,
         });

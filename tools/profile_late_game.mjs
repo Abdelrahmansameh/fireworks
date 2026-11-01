@@ -64,7 +64,7 @@ try {
             g.crowdStartFireworks = 0;
             g.crowdStartedAt = 0;
             g.fireworkSystem.fireworkCount = 100000;
-            for (const type of ['AUTO_LAUNCHER', 'RESOURCE_GENERATOR', 'CATAPULT', 'DRONE_HUB']) {
+            for (const type of ['AUTO_LAUNCHER', 'RESOURCE_GENERATOR', 'CATAPULT']) {
                 const limit = g.buildingManager.getBuildingLimit(type);
                 if (!Number.isFinite(limit)) throw new Error(`Missing building limit for ${type}`);
                 while (g.buildingManager.getBuildingsByType(type).length < limit) g.grantMilestoneBuilding(type);
@@ -77,7 +77,8 @@ try {
             });
             g.crowd.setCount(g._calculateTargetCrowdCount(g.fireworkSystem.fireworkCount));
             g.syncCrowdStats();
-            g.droneSystem.applyUpgradeStats(g.droneStats);
+            g.jetpackCount = 6;
+            g.crowd.setJetpackCount(g.jetpackCount, g.jetpackStats);
             if (scenario === 'stress') {
                 const { FIREWORK_CONFIG } = await import('/js/config/config.js');
                 const originalRecipes = structuredClone(g.recipes);
@@ -98,7 +99,7 @@ try {
             rockets: g.fireworkSystem.fireworks.length,
             crowd: g.crowd.people.length,
             crowdStates: g.crowd.people.reduce((all, person) => { all[person.state] = (all[person.state] ?? 0) + 1; return all; }, {}),
-            drones: g.droneSystem.count,
+            jetpacks: g.crowd.jetpackCount,
             buildings: g.buildingManager.buildings.reduce((all, building) => { all[building.type] = (all[building.type] ?? 0) + 1; return all; }, {}),
             recipes: g.recipes.length,
             patterns: g.unlockedPatternKeys.length,
@@ -111,7 +112,7 @@ try {
         const gl = g.renderer2D.gl;
         const debug = gl.getExtension('WEBGL_debug_renderer_info');
         return { ...window.__profileSnapshot(), launcherStats: g.launcherStats,
-            droneStats: g.droneStats, catapultStats: g.catapultStats,
+            jetpackStats: g.jetpackStats, catapultStats: g.catapultStats,
             gpu: debug ? gl.getParameter(debug.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.RENDERER),
             viewport: { width: innerWidth, height: innerHeight, dpr: devicePixelRatio },
             browser: navigator.userAgent,
@@ -119,14 +120,7 @@ try {
         };
     }, { scenario });
     await page.waitForFunction(() => game.buildingManager.buildings.every(b => b._instancedGroup)
-        && game.droneSystem.mesh && game.crowd.instancedGroup);
-    if (scenario !== 'baseline') await page.evaluate(() => {
-        const hubs = game.buildingManager.getBuildingsByType('DRONE_HUB');
-        let attempts = 0;
-        while (game.droneSystem.count < game.droneStats.maxDrones && attempts++ < 20) {
-            hubs[attempts % hubs.length]._spawnDrone();
-        }
-    });
+        && game.crowd.instancedGroup && game.crowd.jetpackInstancedGroup);
     await page.evaluate(() => game.resume());
     console.log(JSON.stringify({ stage: 'warmup', scenario, mode, variant, warmup, setup }));
     await sleep(warmup * 1000);
@@ -220,8 +214,7 @@ try {
         if (mode === 'timing') {
             for (const [owner, method, name] of [
                 [g, 'updateGame', 'simulation'], [g.fireworkSystem, 'update', 'fireworks'],
-                [g.particleSystem, 'update', 'particles'], [g.droneSystem, 'update', 'drones'],
-                [g.droneSystem, '_buildSpatialGrid', 'droneGrid'],
+                [g.particleSystem, 'update', 'particles'],
                 [g.buildingManager, 'update', 'buildings'], [g.crowd, 'update', 'crowd'],
                 [g.crowd, '_scanParticlesForPerson', 'crowdScan'],
                 [g.crowd, '_updateProceduralAnimation', 'crowdAnimation'],

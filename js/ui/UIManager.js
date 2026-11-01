@@ -215,14 +215,14 @@ class UIManager {
             });
         }
 
-        // Cheat: spawn drones
-        const cheatSpawnDroneBtn = document.getElementById('cheat-spawn-drone');
-        if (cheatSpawnDroneBtn) {
-            cheatSpawnDroneBtn.addEventListener('click', () => {
-                const countInput = document.getElementById('cheat-drone-count');
+        // Cheat: spawn jetpacks
+        const cheatSpawnJetpackBtn = document.getElementById('cheat-spawn-jetpack');
+        if (cheatSpawnJetpackBtn) {
+            cheatSpawnJetpackBtn.addEventListener('click', () => {
+                const countInput = document.getElementById('cheat-jetpack-count');
                 const count = Math.max(1, parseInt(countInput?.value) || 1);
                 for (let i = 0; i < count; i++) {
-                    this.game.spawnDrone();
+                    this.game.spawnJetpack();
                 }
                 this.showNotification(`Spawned ${count} jetpack fan${count !== 1 ? 's' : ''}!`);
             });
@@ -927,7 +927,7 @@ class UIManager {
         let buildingsAvailable = false;
         if (progression.isUnlocked('buildings_tab')) {
             for (const [key, type] of Object.entries(BUILDING_TYPES)) {
-                if (key === 'DRONE_HUB' || !this.game.isBuildingTypeUnlocked(key)) continue;
+                if (!this.game.isBuildingTypeUnlocked(key)) continue;
                 const count = this.game.buildingManager.getBuildingsByType(key).length;
                 if (count >= this.game.buildingManager.getBuildingLimit(key)) continue;
 
@@ -1017,7 +1017,7 @@ class UIManager {
         const spsTot = st.getRollingRate('sparkles');
         const spsAuto = st.getRollingRate('sparkles', 'auto_launcher');
         const spsGen = st.getRollingRate('sparkles', 'resource_generator');
-        const spsDrn = st.getRollingRate('sparkles', 'drone');
+        const spsJetpack = st.getRollingRate('sparkles', 'jetpack');
         const spsCrowdCatch = st.getRollingRate('sparkles', 'crowd_catch');
         const spsMnl = st.getRollingRate('sparkles', 'manual');
         const spsCheat = st.getRollingRate('sparkles', 'cheat');
@@ -1033,7 +1033,7 @@ class UIManager {
         set('stat-sps-total', fmtRate(spsTot) + ' /s');
         set('stat-sps-auto', fmtRate(spsAuto) + ' /s');
         set('stat-sps-gen', fmtRate(spsGen) + ' /s');
-        set('stat-sps-drone', fmtRate(spsDrn) + ' /s');
+        set('stat-sps-jetpack', fmtRate(spsJetpack) + ' /s');
         set('stat-sps-crowd-catch', fmtRate(spsCrowdCatch) + ' /s');
         set('stat-sps-manual', fmtRate(spsMnl) + ' /s');
         set('stat-sps-cheat', fmtRate(spsCheat) + ' /s');
@@ -1065,7 +1065,7 @@ class UIManager {
         const getBldCount = (type) => g.buildingManager.getBuildingsByType(type).length;
         set('stat-bld-auto', getBldCount('AUTO_LAUNCHER'));
         set('stat-bld-gen', getBldCount('RESOURCE_GENERATOR'));
-        set('stat-bld-drone', g.jetpackCount ?? 0);
+        set('stat-bld-jetpack', g.jetpackCount ?? 0);
 
         // ── Session totals ──────────────────────────────────────────────────
         set('stat-session-time', GameMetrics.formatDuration(st.getSessionDurationSeconds()));
@@ -1073,7 +1073,7 @@ class UIManager {
         set('stat-sess-sparkles', fmt(st.sessionSparkles));
         set('stat-sess-sp-auto', fmt(st.sessionSparklesBySource['auto_launcher'] ?? 0));
         set('stat-sess-sp-gen', fmt(st.sessionSparklesBySource['resource_generator'] ?? 0));
-        set('stat-sess-sp-drone', fmt(st.sessionSparklesBySource['drone'] ?? 0));
+        set('stat-sess-sp-jetpack', fmt(st.sessionSparklesBySource['jetpack'] ?? 0));
         set('stat-sess-sp-crowd-catch', fmt(st.sessionSparklesBySource['crowd_catch'] ?? 0));
         set('stat-sess-sp-manual', fmt(st.sessionSparklesBySource['manual'] ?? 0));
 
@@ -1084,7 +1084,7 @@ class UIManager {
         set('stat-sess-fw-manual', fmt(st.sessionFireworksBySource['manual'] ?? 0));
         set('stat-sess-fw-auto', fmt(st.sessionFireworksBySource['auto_launcher'] ?? 0));
 
-        set('stat-sess-drone-parts', fmt(st.sessionDroneParticles));
+        set('stat-sess-jetpack-parts', fmt(st.sessionJetpackParticles));
         set('stat-sess-crowd-parts', fmt(st.sessionCrowdCatchParticles));
 
         // ── Lifetime records ────────────────────────────────────────────────
@@ -1092,12 +1092,12 @@ class UIManager {
         set('stat-life-sparkles', fmt(st.lifetimeSparkles));
         set('stat-life-sp-auto', fmt(st.lifetimeSparklesBySource['auto_launcher'] ?? 0));
         set('stat-life-sp-gen', fmt(st.lifetimeSparklesBySource['resource_generator'] ?? 0));
-        set('stat-life-sp-drone', fmt(st.lifetimeSparklesBySource['drone'] ?? 0));
+        set('stat-life-sp-jetpack', fmt(st.lifetimeSparklesBySource['jetpack'] ?? 0));
         set('stat-life-sp-crowd-catch', fmt(st.lifetimeSparklesBySource['crowd_catch'] ?? 0));
         set('stat-life-sp-manual', fmt(st.lifetimeSparklesBySource['manual'] ?? 0));
 
         set('stat-life-gold', fmt(st.lifetimeGold));
-        set('stat-life-drone-parts', fmt(st.lifetimeDroneParticles));
+        set('stat-life-jetpack-parts', fmt(st.lifetimeJetpackParticles));
         set('stat-life-crowd-parts', fmt(st.lifetimeCrowdCatchParticles));
 
         set('stat-peak-sps', fmtRate(st.peakSPS) + ' /s');
@@ -1763,10 +1763,6 @@ class UIManager {
             this.updateGeneratorList(buildings, this.game.selectedBuildingId,
                 (id) => this.game.selectLauncher(id)
             );
-        } else if (buildingType === 'DRONE_HUB') {
-            this.updateDroneHubList(buildings, this.game.selectedBuildingId,
-                (id) => this.game.selectLauncher(id)
-            );
         }
 
         // Update counts
@@ -1789,28 +1785,6 @@ class UIManager {
             <div class="launcher-details">
                 <p>Production per generator: ${productionRate.toFixed(1)} sparkles/s</p>
                 <p>Total production: ${totalRate.toFixed(1)} sparkles/s</p>
-            </div>
-        `;
-    }
-
-    updateDroneHubList(hubs, selectedBuildingId, onSelect) {
-        const statsDiv = document.getElementById('drone_hub-stats');
-        if (!statsDiv) return;
-
-        if (hubs.length === 0) {
-            statsDiv.innerHTML = '';
-            return;
-        }
-
-        const baseInterval = BUILDING_TYPES.DRONE_HUB.baseSpawnInterval;
-        const spawnInterval = baseInterval * (this.game.droneHubStats?.spawnIntervalMultiplier ?? 1);
-        const droneLifetime = BUILDING_TYPES.DRONE_HUB.baseDroneLifetime * (this.game.droneStats?.lifetimeMultiplier ?? 1);
-        const droneSpeed = BUILDING_TYPES.DRONE_HUB.baseDroneSpeed * (this.game.droneStats?.speedMultiplier ?? 1);
-        statsDiv.innerHTML = `
-            <div class="launcher-details">
-                <p>Spawn interval: ${spawnInterval.toFixed(1)}s</p>
-                <p>Drone lifetime: ${droneLifetime.toFixed(1)}s</p>
-                <p>Drone speed: ${droneSpeed.toFixed(0)}</p>
             </div>
         `;
     }

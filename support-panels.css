@@ -101,7 +101,7 @@
 .source-generators { background: var(--teal); }
 .source-fans { background: var(--green); }
 .source-clicks { background: var(--gold); }
-.source-drones { background: #b9a3ff; }
+.source-jetpacks { background: #b9a3ff; }
 .source-other { background: #ff9cc8; }
 .stats-production-legend { display: flex; flex-direction: column; gap: 4px; }
 .stats-legend-row { display: flex; justify-content: space-between; align-items: center; gap: 8px; min-height: 20px; font-size: 13px; font-weight: 700; }

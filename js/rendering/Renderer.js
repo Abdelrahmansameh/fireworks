@@ -830,6 +830,7 @@ class Shape2D {
         isStroke = false,
         reflectsInWater = false,
         reflectionOpacity = 1,
+        waterReflectionRises = false,
         isWaterSurface = false,
     }) {
         this.vertices = vertices;
@@ -845,6 +846,7 @@ class Shape2D {
         this.isStroke = isStroke;
         this.reflectsInWater = reflectsInWater;
         this.reflectionOpacity = reflectionOpacity;
+        this.waterReflectionRises = waterReflectionRises;
         this.isWaterSurface = isWaterSurface;
 
         // GPU buffers
@@ -1456,14 +1458,16 @@ export default class Renderer2D {
             surface: gl.getUniformLocation(program, 'u_waterSurface'),
             bounds: gl.getUniformLocation(program, 'u_waterBounds'),
             params: gl.getUniformLocation(program, 'u_waterParams'),
+            rises: gl.getUniformLocation(program, 'u_waterReflectionRises'),
         };
     }
 
-    _setWaterUniforms(uniforms, reflecting, opacity = 1, surface = false) {
+    _setWaterUniforms(uniforms, reflecting, opacity = 1, surface = false, rises = false) {
         const gl = this.gl;
         const water = this.waterReflection;
         gl.uniform1i(uniforms.enabled, reflecting ? 1 : 0);
         gl.uniform1i(uniforms.surface, surface && water && !reflecting ? 1 : 0);
+        gl.uniform1i(uniforms.rises, reflecting && rises ? 1 : 0);
         if ((!reflecting && !surface) || !water) return;
         gl.uniform4f(uniforms.bounds, water.left, water.bottomY, water.right, water.surfaceY);
         gl.uniform3f(uniforms.params, water.verticalScale, water.opacity * opacity, water.time);
@@ -1572,7 +1576,7 @@ export default class Renderer2D {
         const mvp = this._multiplyMat4(this._projectionMatrix, model);
 
         gl.uniformMatrix4fv(this.u_matrix_Normal, false, mvp);
-        this._setWaterUniforms(this._waterUniformsNormal, reflecting, shape.reflectionOpacity ?? 1, shape.isWaterSurface);
+        this._setWaterUniforms(this._waterUniformsNormal, reflecting, shape.reflectionOpacity ?? 1, shape.isWaterSurface, shape.waterReflectionRises);
         if (reflecting || shape.isWaterSurface) {
             gl.uniformMatrix4fv(this.u_model_Normal, false, model);
             gl.uniformMatrix4fv(this.u_proj_Normal, false, this._projectionMatrix);
@@ -1663,7 +1667,7 @@ export default class Renderer2D {
             gl.uniform1i(this.u_texture_Inst, 0);
         }
         gl.uniformMatrix4fv(this.u_proj_Inst, false, this._projectionMatrix);
-        this._setWaterUniforms(this._waterUniformsInstanced, reflecting, group.reflectionOpacity ?? 1, group.isWaterSurface);
+        this._setWaterUniforms(this._waterUniformsInstanced, reflecting, group.reflectionOpacity ?? 1, group.isWaterSurface, group.waterReflectionRises);
 
         // Sprite-sheet uniforms
         if (group.spriteSheet) {
@@ -1707,8 +1711,9 @@ export default class Renderer2D {
 
     _waterVertexFunctions() {
         return `
-        vec2 reflectWaterPosition(vec2 world) {
-            world.y = u_waterBounds.w - (world.y - u_waterBounds.w) * u_waterParams.x;
+        vec2 reflectWaterPosition(vec2 world, bool rises) {
+            float height = (world.y - u_waterBounds.w) * u_waterParams.x;
+            world.y = rises ? u_waterBounds.y + height : u_waterBounds.w - height;
             float depth = clamp((u_waterBounds.w - world.y) / (u_waterBounds.w - u_waterBounds.y), 0.0, 1.0);
             float flow = world.x * 0.012 - u_waterParams.z * 0.65;
             // Broad, sideways ripples get looser toward the foreground.
@@ -1761,6 +1766,7 @@ export default class Renderer2D {
         uniform mat4 u_proj;
         uniform bool u_waterReflection;
         uniform bool u_waterSurface;
+        uniform bool u_waterReflectionRises;
         uniform vec4 u_waterBounds;
         uniform vec3 u_waterParams;
         varying vec2 v_texCoord;
@@ -1771,7 +1777,7 @@ export default class Renderer2D {
             if (u_waterReflection) {
                 vec2 world = (u_model * vec4(a_position, 0.0, 1.0)).xy;
                 v_sourceY = world.y;
-                world = reflectWaterPosition(world);
+                world = reflectWaterPosition(world, u_waterReflectionRises);
                 v_worldPosition = world;
                 gl_Position = u_proj * vec4(world, 0.0, 1.0);
             } else {
@@ -1828,6 +1834,7 @@ export default class Renderer2D {
         uniform bool u_useSpriteSheet;
         uniform vec2 u_spriteSheetSize; // (columns, rows)
         uniform bool u_waterReflection;
+        uniform bool u_waterReflectionRises;
         uniform vec4 u_waterBounds;
         uniform vec3 u_waterParams;
 
@@ -1856,7 +1863,7 @@ export default class Renderer2D {
             vec2 finalPos = rotated + a_offset;
             v_sourceY = finalPos.y;
             if (u_waterReflection) {
-                finalPos = reflectWaterPosition(finalPos);
+                finalPos = reflectWaterPosition(finalPos, u_waterReflectionRises);
             }
             v_worldPosition = finalPos;
             gl_Position = u_proj * vec4(finalPos, 0.0, 1.0);

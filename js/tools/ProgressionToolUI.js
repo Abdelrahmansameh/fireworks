@@ -73,11 +73,11 @@ export function initializeProgressionTool() {
     createInput('simDuration', 'Simulation Duration (Minutes)', 60);
     createInput('simClicks', 'Clicks per Second', 4);
 
-    // Drone / crowd-catch yields are emergent in the live game; the headless
+    // Jetpack / crowd-catch yields are emergent in the live game; the headless
     // sim estimates them via a data-driven model. Tune those knobs in
     // js/config/SimulationConfig.js.
     const note = document.createElement('div');
-    note.innerText = 'Drone / crowd-catch tuning lives in js/config/SimulationConfig.js';
+    note.innerText = 'Jetpack / crowd-catch tuning lives in js/config/SimulationConfig.js';
     Object.assign(note.style, { fontSize: '10px', color: '#888', lineHeight: '1.4' });
     controlsPanel.appendChild(note);
 
@@ -213,7 +213,7 @@ export function initializeProgressionTool() {
             if (b_sparklesTotal > 0) {
                 makeRow(`Launchers: ${fmt(sparkles.launchers)} (${(sparkles.launchers/b_sparklesTotal*100).toFixed(1)}%)`, true);
                 makeRow(`Generators: ${fmt(sparkles.generators)} (${(sparkles.generators/b_sparklesTotal*100).toFixed(1)}%)`, true);
-                makeRow(`Drones: ${fmt(sparkles.drones)} (${(sparkles.drones/b_sparklesTotal*100).toFixed(1)}%)`, true);
+                makeRow(`Jetpack fans: ${fmt(sparkles.jetpacks)} (${(sparkles.jetpacks/b_sparklesTotal*100).toFixed(1)}%)`, true);
                 makeRow(`Crowd Catching: ${fmt(sparkles.crowdCatching)} (${(sparkles.crowdCatching/b_sparklesTotal*100).toFixed(1)}%)`, true);
                 makeRow(`Clicks: ${fmt(sparkles.clicks)} (${(sparkles.clicks/b_sparklesTotal*100).toFixed(1)}%)`, true);
             }

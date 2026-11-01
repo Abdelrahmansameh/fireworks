@@ -1,10 +1,10 @@
-import { BUILDING_TYPES, DRONE_CONFIG, CROWD_CATCHER_CONFIG } from '../config/config.js';
+import { JETPACK_CONFIG, CROWD_CATCHER_CONFIG } from '../config/config.js';
 import { SIMULATION_CONFIG } from '../config/SimulationConfig.js';
 import { launcherFPS } from '../systems/ProductionRates.js';
 
 /**
  * EmergentYieldModel — coarse, data-driven estimate of the two income sources
- * that are emergent (particle-physics-driven) in the live game: drone
+ * that are emergent (particle-physics-driven) in the live game: jetpack
  * collection and crowd catching.
  *
  * Used ONLY in headless mode. The live game keeps its real particle physics
@@ -18,45 +18,39 @@ export default class EmergentYieldModel {
         this.config = config;
     }
 
-    /** Estimated number of drones airborne given the current DRONE_HUBs. */
-    static estimateActiveDrones(game) {
-        const hubs = game.buildingManager.getBuildingsByType('DRONE_HUB').length;
-        if (hubs === 0) return 0;
-        const cfg = BUILDING_TYPES.DRONE_HUB;
-        const interval = cfg.baseSpawnInterval * (game.droneHubStats?.spawnIntervalMultiplier ?? 1);
-        const lifetime = cfg.baseDroneLifetime * (game.droneStats?.lifetimeMultiplier ?? 1);
-        const maxDrones = game.droneStats?.maxDrones ?? DRONE_CONFIG.maxDrones;
-        return Math.min(maxDrones, hubs * (lifetime / interval));
+    /** Owned jetpacks each provide one permanent collector. */
+    static estimateActiveJetpackFans(game) {
+        return game.crowd?.jetpackCount ?? game.jetpackCount ?? 0;
     }
 
     /**
-     * Sparkles/sec from drones and crowd catching, given the current state.
-     * @returns {{ drones: number, crowdCatching: number, particlesPerSec: number }}
+     * Sparkles/sec from jetpacks and crowd catching, given the current state.
+     * @returns {{ jetpacks: number, crowdCatching: number, particlesPerSec: number }}
      */
     rates(game, clicksPerSec = 0) {
         const cfg = this.config;
         const fireworksPerSec = launcherFPS(game) + clicksPerSec;
         const particlesPerSec = fireworksPerSec * cfg.avgParticlesPerFirework;
 
-        // ── Drones ──────────────────────────────────────────────────────────
-        let drones = 0;
-        const activeDrones = EmergentYieldModel.estimateActiveDrones(game);
-        if (activeDrones > 0 && particlesPerSec > 0) {
+        // ── Jetpack fans ──────────────────────────────────────────────────────────
+        let jetpacks = 0;
+        const activeJetpackFans = EmergentYieldModel.estimateActiveJetpackFans(game);
+        if (activeJetpackFans > 0 && particlesPerSec > 0) {
             const frac = Math.min(
-                cfg.drone.maxCatchFractionTotal,
-                activeDrones * cfg.drone.catchFractionPerDrone
+                cfg.jetpack.maxCatchFractionTotal,
+                activeJetpackFans * cfg.jetpack.catchFractionPerFan
             );
             const caught = particlesPerSec * frac;
-            drones = caught
-                * DRONE_CONFIG.sparklesPerParticle
-                * (game.droneStats?.sparklesPerParticleMultiplier ?? 1);
+            jetpacks = caught
+                * JETPACK_CONFIG.sparklesPerParticle
+                * (game.jetpackStats?.sparklesPerParticleMultiplier ?? 1);
         }
 
         // ── Crowd catching ──────────────────────────────────────────────────
         let crowdCatching = 0;
         const catapults = game.buildingManager.getBuildingsByType('CATAPULT').length;
         if (game.crowdStats?.catchingEnabled && catapults > 0 && particlesPerSec > 0) {
-            const crowdSize = game.crowd?.people?.length ?? 0;
+            const crowdSize = game.crowd?.naturalCount ?? game.crowd?.people?.length ?? 0;
             const activeCatchers = Math.min(crowdSize, catapults * cfg.crowd.catchersPerCatapult);
             if (activeCatchers > 0) {
                 const frac = Math.min(
@@ -71,7 +65,7 @@ export default class EmergentYieldModel {
             }
         }
 
-        return { drones, crowdCatching, particlesPerSec };
+        return { jetpacks, crowdCatching, particlesPerSec };
     }
 
     /**
@@ -79,10 +73,10 @@ export default class EmergentYieldModel {
      * addSparkles sinks (and metric sources) the live game uses.
      */
     applyTick(game, dt, clicksPerSec = 0) {
-        const { drones, crowdCatching } = this.rates(game, clicksPerSec);
-        if (drones > 0) {
-            game.addSparkles(drones * dt, 'drone');
-            game.statsTracker.recordDroneParticle();
+        const { jetpacks, crowdCatching } = this.rates(game, clicksPerSec);
+        if (jetpacks > 0) {
+            game.addSparkles(jetpacks * dt, 'jetpack');
+            game.statsTracker.recordJetpackParticle();
         }
         if (crowdCatching > 0) {
             game.addSparkles(crowdCatching * dt, 'crowd_catch');

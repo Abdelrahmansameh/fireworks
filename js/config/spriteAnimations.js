@@ -14,6 +14,6 @@
 export const SPRITE_ANIMATIONS = {
 
     // Add more sprite-sheet definitions here for other entities, e.g.:
-    // drone: { texture: '…', columns: …, rows: …, animations: { … } },
+    // jetpack: { texture: '…', columns: …, rows: …, animations: { … } },
 };
 

@@ -1,6 +1,5 @@
 import AutoLauncher from './AutoLauncher.js';
 import ResourceGenerator from './ResourceGenerator.js';
-import DroneHub from './DroneHub.js';
 import Catapult from './Catapult.js';
 import Building from './Building.js';
 import { BUILDING_TYPES, GAME_BOUNDS } from '../config/config.js';
@@ -15,7 +14,6 @@ class BuildingManager {
             'AUTO_LAUNCHER': AutoLauncher,
             'RESOURCE_GENERATOR': ResourceGenerator,
             'CATAPULT': Catapult,
-            'DRONE_HUB': DroneHub,
         };
     }
 
@@ -106,15 +104,6 @@ class BuildingManager {
         const config = BUILDING_TYPES[buildingType];
         if (!config) return 0;
         if (buildingType === 'CATAPULT') return this.game.catapultStats?.maxCatapults ?? 1;
-        if (buildingType === 'DRONE_HUB') {
-            const lifetime = config.baseDroneLifetime * (this.game.droneStats?.lifetimeMultiplier ?? 1);
-            const interval = config.baseSpawnInterval * (this.game.droneHubStats?.spawnIntervalMultiplier ?? 1);
-            const maxDrones = this.game.droneStats?.maxDrones ?? Infinity;
-            // A hub is useful only while its overlapping flights can increase
-            // the airborne fleet. Count the final partly useful hub once.
-            const usefulHubs = Math.ceil(maxDrones / (lifetime / interval));
-            return Math.min(config.maxCount ?? Infinity, usefulHubs);
-        }
         return config.maxCount ?? Infinity;
     }
 

@@ -7,7 +7,7 @@ import PurchasePolicy from './PurchasePolicy.js';
  * Instead of re-deriving launcher FPS / costs / crowd scaling (as the old
  * ProgressionSimulator did), it constructs a headless {@link GameCore} and
  * steps it, so the simulated economy IS the game's economy. The only modelled
- * pieces are drone collection and crowd catching, which are emergent from
+ * pieces are jetpack collection and crowd catching, which are emergent from
  * particle physics in the live game (see EmergentYieldModel + SimulationConfig).
  *
  * Returns the same result shape the original simulator produced, so the
@@ -74,7 +74,7 @@ export class HeadlessSimulator {
                     `clicks ${Math.round(s.manual || 0)}`,
                     `launchers ${Math.round(s.auto_launcher || 0)}`,
                     `generators ${Math.round(s.resource_generator || 0)}`,
-                    `drones ${Math.round(s.drone || 0)}`,
+                    `jetpacks ${Math.round(s.jetpack || 0)}`,
                     `crowdCatch ${Math.round(s.crowd_catch || 0)}`,
                     `finale ${Math.round(s.grand_finale || 0)}`,
                 ].join(', ');
@@ -126,7 +126,7 @@ export class HeadlessSimulator {
                 clicks: bs.manual || 0,
                 launchers: bs.auto_launcher || 0,
                 generators: bs.resource_generator || 0,
-                drones: bs.drone || 0,
+                jetpacks: bs.jetpack || 0,
                 crowdCatching: bs.crowd_catch || 0,
                 grandFinale: bs.grand_finale || 0,
             },

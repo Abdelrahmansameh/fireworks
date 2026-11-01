@@ -3,7 +3,6 @@ import {
     AUTO_LAUNCHER_COST_RATIO,
     DEFAULT_RECIPE_COMPONENTS,
     PATTERN_RECIPE_COMPONENTS,
-    DRONE_CONFIG,
     CROWD_CATCHER_CONFIG,
     CROWD_CONFIG,
     GAME_BOUNDS,
@@ -39,11 +38,11 @@ export const SAVE_VERSION = '5';
  * whole thing runs with no canvas, audio, or DOM.
  *
  * The live game (FireworkGame) extends this class and swaps in the real
- * renderer/audio/UI plus the visual systems (particles, drones, the real
+ * renderer/audio/UI plus the visual systems (particles, jetpack fans, the real
  * Crowd, cinematics, camera, input). The headless simulator constructs a
  * GameCore directly with `{ headless: true }` and steps it via stepHeadless().
  *
- * Drone collection and crowd-catching income are emergent from particle
+ * Jetpack fan collection and crowd-catching income are emergent from particle
  * physics in the live game; headless mode estimates them via EmergentYieldModel
  * (see SimulationConfig.js).
  */
@@ -116,11 +115,9 @@ class GameCore extends Engine {
         // Stat multiplier buckets (recomputed by progression.applyAll).
         this.baseSparkleMultiplier = 1;
         this.jetpackCount = Math.min(128, Math.max(0, Number(this.storage.getItem('jetpackCount')) || 0));
-        this.droneStats = {
-            lifetimeMultiplier: 1,
+        this.jetpackStats = {
             speedMultiplier: 1,
             collectionRadiusMultiplier: 1,
-            maxDrones: DRONE_CONFIG.maxDrones,
             sparklesPerParticleMultiplier: 1,
         };
         this.crowdStats = {
@@ -132,7 +129,6 @@ class GameCore extends Engine {
         };
         this.launcherStats = { spawnIntervalMultiplier: 1, sparkleYieldMultiplier: 1 };
         this.generatorStats = { productionRateMultiplier: 1 };
-        this.droneHubStats = { spawnIntervalMultiplier: 1 };
         this.catapultStats = { maxCatapults: 1 };
 
         // Headless-only collaborators.
@@ -201,7 +197,7 @@ class GameCore extends Engine {
         this.statsTracker.record('gold', amount, source);
     }
 
-    spawnDrone() {
+    spawnJetpack() {
         if (this.grantJetpack()) this.saveProgress();
     }
 
@@ -276,7 +272,6 @@ class GameCore extends Engine {
             case 'AUTO_LAUNCHER': return this.progression.isUnlocked('buildings_tab');
             case 'RESOURCE_GENERATOR': return this.progression.isUnlocked('resource_generator');
             case 'CATAPULT': return this.progression.isUnlocked('catapult');
-            case 'DRONE_HUB': return false;
             default: return false;
         }
     }
@@ -288,7 +283,7 @@ class GameCore extends Engine {
     grantJetpack() {
         if (this.jetpackCount >= 128) return false;
         this.jetpackCount++;
-        this.droneSystem?.setCount(this.jetpackCount, this.droneStats);
+        this.crowd?.setJetpackCount?.(this.jetpackCount, this.jetpackStats);
         return true;
     }
 
@@ -373,8 +368,8 @@ class GameCore extends Engine {
             }
         }
 
-        this.jetpackCount = Math.max(0, this.jetpackCount - (this.progression.getUpgradeLevel('drone_hub') > 0 ? 1 : 0) - this.progression.getUpgradeLevel('drone_max'));
-        this.droneSystem?.setCount(this.jetpackCount, this.droneStats);
+        this.jetpackCount = Math.max(0, this.jetpackCount - (this.progression.getUpgradeLevel('jetpack_unlock') > 0 ? 1 : 0) - this.progression.getUpgradeLevel('jetpack_team'));
+        this.crowd?.setJetpackCount?.(this.jetpackCount, this.jetpackStats);
         this.progression.resetUpgradesState();
         this.clearCrowdArrival();
         this.unlockedPatternKeys = ['spherical'];
@@ -465,7 +460,7 @@ class GameCore extends Engine {
                 this.showNotification('Sparkle Generator unlocked!');
                 this.ui.updateBuildingTypeVisibility();
                 break;
-            case 'drone_hub':
+            case 'jetpack_unlock':
                 this.showNotification('Jetpack fans unlocked!');
                 this.ui.updateBuildingTypeVisibility();
                 break;
@@ -628,7 +623,7 @@ class GameCore extends Engine {
     /**
      * Advance the economy by `dt` seconds with no presentation. Runs the same
      * building / progression code the live game uses; the only headless-specific
-     * pieces are the emergent (drone / crowd-catch) estimate and the crowd-count
+     * pieces are the emergent (jetpack / crowd-catch) estimate and the crowd-count
      * / gold model that stand in for the absent visual systems.
      */
     stepHeadless(dt, { clicksPerSec = 0 } = {}) {
@@ -641,7 +636,7 @@ class GameCore extends Engine {
         // Real building economy (launchers fire + count, generators produce).
         this.buildingManager.update(dt);
 
-        // Emergent estimate: drone collection + crowd catching.
+        // Emergent estimate: jetpack fan collection + crowd catching.
         this.emergentModel.applyTick(this, dt, clicksPerSec);
 
         // Grand Finale income burst (headless model of the live particle flood).
@@ -695,7 +690,7 @@ class GameCore extends Engine {
         let sps = this.calculateTotalSparklesPerSecond();
         sps += clicksPerSec * this.baseSparkleMultiplier;
         const em = this.emergentModel.rates(this, clicksPerSec);
-        sps += em.drones + em.crowdCatching;
+        sps += em.jetpacks + em.crowdCatching;
         const gps = expectedGPS(this).total;
         return { sps, gps };
     }

@@ -77,8 +77,8 @@ try {
 
     const before = await page.evaluate(() => {
         const snapshot = () => ({ base: game.baseSparkleMultiplier, crowd: { ...game.crowdStats },
-            launcher: { ...game.launcherStats }, catapult: { ...game.catapultStats }, drone: { ...game.droneStats },
-            workshop: { ...game.generatorStats }, hubs: { ...game.droneHubStats },
+            launcher: { ...game.launcherStats }, catapult: { ...game.catapultStats }, jetpack: { ...game.jetpackStats },
+            workshop: { ...game.generatorStats },
             recipes: game.progression.isUnlocked('recipes_tab'), studio: game.advancedCreatorUnlocked,
             patterns: [...game.unlockedPatternKeys], buildings: game.buildingManager.buildings.map(building => building.id),
             sparkles: game.getSparkles() });

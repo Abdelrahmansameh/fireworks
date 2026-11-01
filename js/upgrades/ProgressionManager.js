@@ -1,4 +1,4 @@
-import { BUILDING_TYPES, DRONE_CONFIG } from '../config/config.js';
+import { BUILDING_TYPES } from '../config/config.js';
 import { SKILL_TREE_CONFIG, SHOW_MILESTONES } from '../ui/SkillTreeConfig.js';
 import { roundUpClean } from '../utils/costRounding.js';
 
@@ -32,13 +32,13 @@ const LEGACY_BASE_COSTS = {
     launcher_sparkle_1: 8000,
     crowd_gold_2: 5000,
     crowd_invite_2: 3000,
-    drone_hub: 14000,
-    drone_lifetime: 4500,
-    drone_speed: 2000,
-    drone_max: 10000,
-    drone_sparkle_yield: 6500,
-    drone_radius: 2000,
-    drone_efficiency: 15000,
+    jetpack_unlock: 14000,
+    jetpack_reach: 4500,
+    jetpack_speed: 2000,
+    jetpack_team: 10000,
+    jetpack_sparkle_yield: 6500,
+    jetpack_radius: 2000,
+    jetpack_efficiency: 15000,
     unlock_advanced_creator: 3000,
     launcher_overclock: 55000,
     spark_core_3: 80000,
@@ -50,15 +50,15 @@ const LEGACY_BASE_COSTS = {
 const LEGACY_BUNDLES = [
     { id: 'crowd_catcher_yield', baseCost: 2800, costRatio: 4, targets: ['crowd_catcher_yield', 'crowd_catcher_radius', 'catapult_range_1'] },
     { id: 'crowd_gold_2', baseCost: 8000, costRatio: 1, targets: ['crowd_gold_2', 'crowd_invite_2'] },
-    { id: 'drone_lifetime', baseCost: 6500, costRatio: 1, targets: ['drone_lifetime', 'drone_speed'] },
-    { id: 'drone_sparkle_yield', baseCost: 8500, costRatio: 3.5, targets: ['drone_sparkle_yield', 'drone_radius'] },
-    { id: 'drone_efficiency', baseCost: 18000, costRatio: 1, targets: ['drone_efficiency', 'unlock_advanced_creator'] },
+    { id: 'jetpack_reach', baseCost: 6500, costRatio: 1, targets: ['jetpack_reach', 'jetpack_speed'] },
+    { id: 'jetpack_sparkle_yield', baseCost: 8500, costRatio: 3.5, targets: ['jetpack_sparkle_yield', 'jetpack_radius'] },
+    { id: 'jetpack_efficiency', baseCost: 18000, costRatio: 1, targets: ['jetpack_efficiency', 'unlock_advanced_creator'] },
 ];
 
 const LEGACY_UNLOCKS = [
     ['crowd_spark_1', ['unlock_recipes_tab', 'unlock_brokenHeart', 'unlock_christmasTree']],
     ['catapult', ['unlock_spinner', 'unlock_helix']],
-    ['drone_hub', ['unlock_snowflake', 'unlock_dragonsBreath']],
+    ['jetpack_unlock', ['unlock_snowflake', 'unlock_dragonsBreath']],
 ];
 
 /**
@@ -111,6 +111,7 @@ class ProgressionManager {
         if (!data || typeof data !== 'object') return;
         const savedUpgrades = data.upgrades && typeof data.upgrades === 'object'
             ? { ...data.upgrades } : { ...this._upgradeLevels };
+        const savedCosts = { ...(data.purchaseCosts || {}) };
         const upgrades = { ...savedUpgrades };
         const schemaVersion = Number(data.schemaVersion) || 0;
         const legacy = schemaVersion < 2;
@@ -161,7 +162,7 @@ class ProgressionManager {
             this._upgradeLevels[id] = level;
             const savedLevel = this._savedLevel(id, savedUpgrades[id]);
             this._purchaseCosts[id] = Array.from({ length: level }, (_, index) => {
-                const recorded = !legacy ? data.purchaseCosts?.[id]?.[index] : null;
+                const recorded = !legacy ? savedCosts?.[id]?.[index] : null;
                 if (recorded && typeof recorded === 'object' && !Array.isArray(recorded)) {
                     return this._cleanCosts(recorded);
                 }
@@ -188,8 +189,8 @@ class ProgressionManager {
         // The late Studio purchase is now part of the early Creator. Retain
         // its original charge so resetting upgrades refunds the actual spend.
         if (schemaVersion < 3 && savedUpgrades.unlock_advanced_creator > 0
-            && (!legacy || !(savedUpgrades.drone_efficiency > 0))) {
-            const charge = !legacy && data.purchaseCosts?.unlock_advanced_creator?.[0];
+            && (!legacy || !(savedUpgrades.jetpack_efficiency > 0))) {
+            const charge = !legacy && savedCosts?.unlock_advanced_creator?.[0];
             const costs = charge && typeof charge === 'object' ? this._cleanCosts(charge) : { gold: 3000 };
             const creatorCosts = this._purchaseCosts.unlock_recipes_tab?.[0];
             if (creatorCosts) {
@@ -426,11 +427,9 @@ class ProgressionManager {
      */
     applyAll(game) {
         game.baseSparkleMultiplier = 1;
-        game.droneStats = {
-            lifetimeMultiplier: 1,
+        game.jetpackStats = {
             speedMultiplier: 1,
             collectionRadiusMultiplier: 1,
-            maxDrones: DRONE_CONFIG.maxDrones,
             sparklesPerParticleMultiplier: 1,
         };
         game.crowdStats = {
@@ -442,7 +441,6 @@ class ProgressionManager {
         };
         game.launcherStats = { spawnIntervalMultiplier: 1, sparkleYieldMultiplier: 1 };
         game.generatorStats = { productionRateMultiplier: 1 };
-        game.droneHubStats = { spawnIntervalMultiplier: 1 };
         game.catapultStats = { maxCatapults: 1, fireIntervalMultiplier: 1, launchVxMultiplier: 1 };
         game.crowdUnlocked = false;
         game.grandFinaleUnlocked = false;
@@ -451,11 +449,12 @@ class ProgressionManager {
 
         for (const def of this._upgrades.values()) {
             const level = this.getUpgradeLevel(def.id);
-            for (let i = 1; i <= level; i++) def.apply(game, i);
+            // Some upgrades only grant a unit at purchase time and have no
+            // persistent effect to replay when loading or recomputing stats.
+            for (let i = 1; i <= level; i++) def.apply?.(game, i);
         }
 
-        if (game.droneSystem?.applyUpgradeStats) game.droneSystem.applyUpgradeStats(game.droneStats);
-        else if (game.droneSystem) game.droneSystem.maxDrones = game.droneStats.maxDrones;
+        game.crowd?.setJetpackCount?.(game.jetpackCount, game.jetpackStats);
         game.syncCrowdStats();
     }
 
@@ -538,15 +537,7 @@ class ProgressionManager {
                     return { met: false, reason: `Have ${s.crowdCount} crowd member${s.crowdCount !== 1 ? 's' : ''}` };
                 }
             }
-            if (s.droneCoverage !== undefined) {
-                const hubs = game.buildingManager.getBuildingsByType('DRONE_HUB').length;
-                const config = BUILDING_TYPES.DRONE_HUB;
-                const lifetime = config.baseDroneLifetime * (game.droneStats?.lifetimeMultiplier ?? 1);
-                const interval = config.baseSpawnInterval * (game.droneHubStats?.spawnIntervalMultiplier ?? 1);
-                const capacity = game.droneStats?.maxDrones ?? DRONE_CONFIG.maxDrones;
-                const coverage = hubs * lifetime / interval / capacity;
-                if (coverage < s.droneCoverage) return { met: false, reason: 'Add a Drone Hub' };
-            }
+
         }
 
         if (requires.buildings) {

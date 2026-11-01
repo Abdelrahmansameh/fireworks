@@ -88,7 +88,7 @@ try {
         const observedPatterns = [...game.unlockedPatternKeys];
         const buyBuildings = () => {
             let bought = false;
-            for (const [type, desired] of Object.entries({ AUTO_LAUNCHER: 32, CATAPULT: 3, DRONE_HUB: 4 })) {
+            for (const [type, desired] of Object.entries({ AUTO_LAUNCHER: 32, CATAPULT: 3 })) {
                 if (!game.isBuildingTypeUnlocked(type)) continue;
                 while (game.buildingManager.getBuildingsByType(type).length < desired) {
                     fund();

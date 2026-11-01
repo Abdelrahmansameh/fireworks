@@ -164,7 +164,7 @@ export function initializePanelDetails(game) {
 
         const jetpackShop = document.getElementById('jetpack-shop');
         if (jetpackShop) {
-            jetpackShop.hidden = !game.progression.isUnlocked('drone_hub');
+            jetpackShop.hidden = !game.progression.isUnlocked('jetpack_unlock');
             const count = game.jetpackCount ?? 0;
             const cost = game.getJetpackCost();
             setText('jetpack-count', count);
@@ -177,7 +177,7 @@ export function initializePanelDetails(game) {
         const tracker = game.statsTracker;
         if (!tracker) return;
         const total = tracker.getRollingRate('sparkles');
-        const sources = ['auto_launcher', 'resource_generator', 'crowd_catch', 'manual', 'drone'];
+        const sources = ['auto_launcher', 'resource_generator', 'crowd_catch', 'manual', 'jetpack'];
         const rates = Object.fromEntries(sources.map(source => [source, tracker.getRollingRate('sparkles', source)]));
         rates.other = Math.max(0, total - Object.values(rates).reduce((sum, rate) => sum + rate, 0));
         setText('stats-sparkles-hero', compact(total));
@@ -190,11 +190,11 @@ export function initializePanelDetails(game) {
             const rate = rates[element.dataset.productionSource];
             element.style.width = `${total > 0 ? (rate / total) * 100 : 0}%`;
         });
-        document.getElementById('stats-drones-row').hidden = rates.drone <= 0;
+        document.getElementById('stats-jetpacks-row').hidden = rates.jetpack <= 0;
         document.getElementById('stats-other-row').hidden = rates.other < 0.01;
-        document.querySelector('.stats-production-bar')?.setAttribute('aria-label', `Sparkle production: ${sources.map(source => `${source === 'drone' ? 'jetpack fans' : source.replaceAll('_', ' ')} ${compact(rates[source])} per second`).join(', ')}`);
+        document.querySelector('.stats-production-bar')?.setAttribute('aria-label', `Sparkle production: ${sources.map(source => `${source === 'jetpack' ? 'jetpack fans' : source.replaceAll('_', ' ')} ${compact(rates[source])} per second`).join(', ')}`);
 
-        const count = game.crowd?.people.length ?? 0;
+        const count = game.crowd?.naturalCount ?? game.crowd?.people.length ?? 0;
         const next = fireworksForCrowd(count + 1, game);
         const current = Math.max(0, fireworksForCrowd(count, game));
         const progress = Number.isFinite(next) ? Math.max(0, Math.min(100, (game.fireworkSystem.fireworkCount - current) / Math.max(0.000001, next - current) * 100)) : 100;

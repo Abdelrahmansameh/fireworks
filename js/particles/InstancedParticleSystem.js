@@ -69,6 +69,7 @@ class InstancedParticleSystem {
             });
             // Reflection staging excludes UI/resource particles that share these meshes.
             this.meshes[shape].reflectsInWater = true;
+            this.meshes[shape].waterReflectionRises = true;
             this.meshes[shape].reflectionInstanceData = new Float32Array(this.maxParticles * this.meshes[shape].instanceStrideFloats);
             this.meshes[shape].reflectionInstanceCount = 0;
             if (shape === 'glow') {

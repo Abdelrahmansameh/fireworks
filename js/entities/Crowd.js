@@ -1,3 +1,4 @@
+import { JetpackBehavior } from './crowdBehaviors/CrowdBehavior.js';
 import { GAME_BOUNDS, CROWD_CONFIG, CROWD_CATCHER_CONFIG, PARTICLE_TYPES } from '../config/config.js';
 import * as Renderer2D from '../rendering/Renderer.js';
 import { createRng } from '../utils/random.js';
@@ -9,9 +10,15 @@ class Crowd {
     constructor(renderer2D) {
         this.renderer = renderer2D;
         this.people = [];
+        this._disposed = false;
+        this.naturalCount = 0;
+        this.jetpackCount = 0;
+        this.jetpackStats = {};
+        this.onJetpackCollect = null;
         this.missingCrowdsToInit = 0;
 
         this.instancedGroup = null;
+        this.jetpackInstancedGroup = null;
 
         // Generic animation system
         /** @type {SkeletonData|null} */
@@ -95,11 +102,12 @@ class Crowd {
             this.maxPropParts = Math.max(this.maxPropParts, sum);
         }
 
+        if (this._disposed) return;
         this.totalPartsPerPerson = this._skeleton.partCount + this.maxPropParts;
 
         // People and skeleton-part instances have distinct units. Allocate room
         // for every part/prop of every permitted person, including future art.
-        this.maxRenderablePeople = CROWD_CONFIG.maxPeople ?? 48;
+        this.maxRenderablePeople = (CROWD_CONFIG.maxPeople ?? 48) + 128;
         const maxPartInstances = Math.max(CROWD_CONFIG.maxInstances,
             this.maxRenderablePeople * Math.max(1, this.totalPartsPerPerson));
 
@@ -115,48 +123,81 @@ class Crowd {
                 blendMode: Renderer2D.BlendMode.NORMAL,
             });
 
-            for (let i = 0; i < this.missingCrowdsToInit; i++) {
-                this._addPerson();
-            }
+            // Flyers stay in the crowd, but draw before firework particles.
+            this.jetpackInstancedGroup = this.renderer.createInstancedGroup({
+                vertices: geometry.vertices,
+                indices: geometry.indices,
+                texCoords: geometry.texCoords,
+                texture: null,
+                maxInstances: 128 * Math.max(1, this.totalPartsPerPerson),
+                zIndex: -21,
+                blendMode: Renderer2D.BlendMode.NORMAL,
+            });
             this.missingCrowdsToInit = 0;
+            this._syncMemberBehaviors();
         } catch (error) {
             console.error('Failed to create instanced group for crowd:', error);
         }
     }
 
     setCount(count) {
-        // Never spawn more people than the instance buffer can render.
-        if (this.maxRenderablePeople != null) {
-            count = Math.min(count, this.maxRenderablePeople);
-        }
+        const next = Math.max(0, Math.min(CROWD_CONFIG.maxPeople ?? 48, Math.floor(Number(count) || 0)));
+        if (next === this.naturalCount) return;
+        this.naturalCount = next;
+        this._syncMemberBehaviors();
+    }
 
-        if (!this.instancedGroup) {
-            this.missingCrowdsToInit = count;
-            return;
-        }
+    setJetpackCount(count, stats = {}) {
+        const next = Math.max(0, Math.min(128, Math.floor(Number(count) || 0)));
+        this.jetpackStats = stats || {};
+        if (next === this.jetpackCount) return;
+        this.jetpackCount = next;
+        this._syncMemberBehaviors();
+    }
 
-        if (count === this.people.length) return;
-
-        if (count < this.people.length) {
-            if (this.grabbedPersonIndex >= count) {
-                this.grabbedPersonIndex = -1;
+    _syncMemberBehaviors() {
+        if (!this.instancedGroup) return;
+        for (const [jetpack, target] of [[false, this.naturalCount], [true, this.jetpackCount]]) {
+            let members = this.people.filter(person => !!person.isJetpack === jetpack);
+            while (members.length < target) {
+                this._addPerson(jetpack);
+                const person = this.people[this.people.length - 1];
+                if (!person || members.includes(person)) break;
+                person.isJetpack = jetpack;
+                if (jetpack) person.behavior = new JetpackBehavior(this, person);
+                members.push(person);
             }
-
-            while (this.people.length > count) {
-                this.people.pop();
-                this.instancedGroup.instanceCount -= this.totalPartsPerPerson;
-            }
-        } else {
-            const added = count - this.people.length;
-            for (let i = 0; i < added; i++) {
-                this._addPerson();
+            while (members.length > target) {
+                // Leave an occupied catapult and grabbed person in place when possible.
+                const person = [...members].reverse().find(p => !p.catapultData && this.people.indexOf(p) !== this.grabbedPersonIndex) || members[members.length - 1];
+                this._removePerson(this.people.indexOf(person));
+                this._reorderInstancesByY();
+                members = members.filter(p => p !== person);
             }
         }
-
         this._reorderInstancesByY();
     }
 
-    _addPerson() {
+    _removePerson(index) {
+        const person = this.people[index];
+        if (!person) return;
+        person.behavior?.dispose();
+        if (person.catapultData?.catapult) {
+            const catapult = person.catapultData.catapult;
+            catapult._assignedPersonIndex = -1;
+            catapult.accumulator = 1;
+            catapult._setState('cooldown');
+        }
+        if (this.grabbedPersonIndex === index) this.grabbedPersonIndex = -1;
+        else if (this.grabbedPersonIndex > index) this.grabbedPersonIndex--;
+        this.people.splice(index, 1);
+        for (const other of this.people) {
+            const catapult = other.catapultData?.catapult;
+            if (catapult && catapult._assignedPersonIndex > index) catapult._assignedPersonIndex--;
+        }
+    }
+
+    _addPerson(isJetpack = false) {
         if (!this.instancedGroup) {
             this.missingCrowdsToInit++;
             return;
@@ -233,12 +274,13 @@ class Crowd {
 
         const scale = CROWD_CONFIG.baseScale + rng() * CROWD_CONFIG.scaleVariance;
 
-        const group = this.instancedGroup;
+        const group = isJetpack ? this.jetpackInstancedGroup : this.instancedGroup;
 
         // Start off-screen on the left so new people walk in from left side
         const personStartX = GAME_BOUNDS.SCROLL_MIN_X - 800;
 
         const person = {
+            isJetpack,
             x: personStartX,
             y: y,
             scale: scale,
@@ -294,6 +336,22 @@ class Crowd {
         const FRICTION = CROWD_CONFIG.friction;
         const WALK_SPEED = CROWD_CONFIG.walkSpeed;
 
+        if (this.jetpackCount && this.particleSystem && this._scanFrameCounter % 4 === 0) {
+            this._jetpackGrid = new Map();
+            const ps = this.particleSystem, size = 100;
+            for (const shape of Object.keys(ps.activeCounts)) {
+                const data = ps.instanceData[shape];
+                if (!data) continue;
+                for (let i = 0; i < ps.activeCounts[shape]; i++) {
+                    const b = i * ps.strideFloats;
+                    if (data[b + ps.particleTypeIdx] !== PARTICLE_TYPES.FIREWORK_EXPLOSION) continue;
+                    const x = data[b + ps.positionIdx], y = data[b + ps.positionIdx + 1];
+                    const key = `${Math.floor(x / size)},${Math.floor(y / size)}`;
+                    if (!this._jetpackGrid.has(key)) this._jetpackGrid.set(key, []);
+                    this._jetpackGrid.get(key).push([shape, i]);
+                }
+            }
+        }
         for (let i = 0; i < this.people.length; i++) {
             this._updatePerson(i, deltaTime, GRAVITY, FRICTION, WALK_SPEED);
         }
@@ -435,6 +493,11 @@ class Crowd {
 
     _updatePerson(personIndex, deltaTime, gravity, friction, walkSpeed) {
         const person = this.people[personIndex];
+
+        if (person.behavior) {
+            person.behavior.update(deltaTime);
+            return;
+        }
 
         switch (person.state) {
             case 'cheering': {
@@ -764,7 +827,8 @@ class Crowd {
         const maxSize = scalingCfg.maxSize;
         const ySizeFactor = minSize + (maxSize - minSize) * t;
 
-        const finalScale = scale * ySizeFactor;
+        const finalScale = scale * ySizeFactor * (person.isJetpack ? 0.75 : 1);
+        person.renderScale = finalScale;
 
         // Cinematic pupil tracking: steer the eyes toward a world target.
         const lookOverrides = (person.cinematicIdle && person.cinematicLookFn)
@@ -788,33 +852,42 @@ class Crowd {
             }
         }
 
-        applyPoseToInstances(
-            this._skeleton, pose, this.instancedGroup,
-            person.instanceBaseIndex,
-            person.x, person.y,
-            finalScale, flipX
-        );
+        // Rotate the whole flying pose in local space so the attached prop
+        // follows the same lean even when the person is mirrored.
+        const tilt = (person.behavior?.tilt ?? 0) * flipX;
+        if (tilt) {
+            const cos = Math.cos(tilt), sin = Math.sin(tilt);
+            pose = new Map([...pose].map(([id, tf]) => [id, {
+                ...tf, x: tf.x * cos - tf.y * sin, y: tf.x * sin + tf.y * cos,
+                rotation: tf.rotation + tilt,
+            }]));
+        }
 
-        let propInstanceOffset = this._skeleton.partCount;
         if (!person._propFrozenAnchors) person._propFrozenAnchors = new Map();
-
-        // Render props from the base clip, then from any overlay clip (so overlays
-        // like toss_coin spawn their props too). Distinct key prefixes keep the two
-        // sources' detach state separate.
-        if (clip) {
-            propInstanceOffset = this._renderClipProps(
-                clip.props, time, 'b', pose, person, finalScale, flipX, propInstanceOffset
-            );
-        }
-        if (overlay && overlay.clip) {
-            propInstanceOffset = this._renderClipProps(
-                overlay.clip.props, overlay.time, 'o', pose, person, finalScale, flipX, propInstanceOffset
-            );
-        }
+        // Draw behind-body props first, followed by the person and foreground props.
+        let propInstanceOffset = 0;
+        if (clip) propInstanceOffset = this._renderClipProps(
+            clip.props, time, 'b', pose, person, finalScale, flipX, propInstanceOffset, true
+        );
+        if (overlay && overlay.clip) propInstanceOffset = this._renderClipProps(
+            overlay.clip.props, overlay.time, 'o', pose, person, finalScale, flipX, propInstanceOffset, true
+        );
+        applyPoseToInstances(
+            this._skeleton, pose, person.isJetpack ? this.jetpackInstancedGroup : this.instancedGroup,
+            person.instanceBaseIndex + propInstanceOffset,
+            person.x, person.y, finalScale, flipX
+        );
+        propInstanceOffset += this._skeleton.partCount;
+        if (clip) propInstanceOffset = this._renderClipProps(
+            clip.props, time, 'b', pose, person, finalScale, flipX, propInstanceOffset, false
+        );
+        if (overlay && overlay.clip) propInstanceOffset = this._renderClipProps(
+            overlay.clip.props, overlay.time, 'o', pose, person, finalScale, flipX, propInstanceOffset, false
+        );
 
         // Hide unused preallocated instances
         for (let i = propInstanceOffset; i < this.totalPartsPerPerson; i++) {
-            this.instancedGroup.updateInstanceScale(person.instanceBaseIndex + i, 0, 0);
+            (person.isJetpack ? this.jetpackInstancedGroup : this.instancedGroup).updateInstanceScale(person.instanceBaseIndex + i, 0, 0);
         }
     }
 
@@ -834,11 +907,12 @@ class Crowd {
      * @param {string} keyPrefix — namespaces the per-prop frozen-anchor cache
      * @returns {number} the updated propInstanceOffset
      */
-    _renderClipProps(props, compareTime, keyPrefix, pose, person, finalScale, flipX, propInstanceOffset) {
+    _renderClipProps(props, compareTime, keyPrefix, pose, person, finalScale, flipX, propInstanceOffset, behind) {
         if (!props) return propInstanceOffset;
 
         for (let i = 0; i < props.length; i++) {
             const prop = props[i];
+            if ((prop.layer === 'behind') !== behind) continue;
             if (compareTime < prop.startTime || compareTime > prop.endTime) continue;
 
             const cached = this._propCache.get(prop.skeletonUrl);
@@ -892,12 +966,12 @@ class Crowd {
                     const finalX = propRootX + (ptf.x * Math.cos(propRootRot) - ptf.y * Math.sin(propRootRot));
                     const finalY = propRootY + (ptf.x * Math.sin(propRootRot) + ptf.y * Math.cos(propRootRot));
                     const finalRot = propRootRot + ptf.rotation;
-                    finalPropPose.set(pid, { x: finalX, y: finalY, rotation: finalRot });
+                    finalPropPose.set(pid, { ...ptf, x: finalX, y: finalY, rotation: finalRot });
                 }
             }
 
             applyPoseToInstances(
-                cached.skeleton, finalPropPose, this.instancedGroup,
+                cached.skeleton, finalPropPose, person.isJetpack ? this.jetpackInstancedGroup : this.instancedGroup,
                 person.instanceBaseIndex + propInstanceOffset,
                 person.x, person.y,
                 finalScale, flipX
@@ -910,45 +984,26 @@ class Crowd {
     }
 
     _reorderInstancesByY() {
-        if (!this.instancedGroup || this.people.length === 0) return;
-
-        const group = this.instancedGroup;
-        const stride = group.instanceStrideFloats;
+        if (!this.instancedGroup || !this.jetpackInstancedGroup) return;
         const partCount = this.totalPartsPerPerson;
-
-        const oldData = group.instanceData;
-        const newData = new Float32Array(group.maxInstances * stride);
-
-        let newInstanceIndex = 0;
-
-        const sortedPeople = this.people.slice().sort((a, b) => {
-            const ay = a.spawnY;
-            const by = b.spawnY;
-            return by - ay;
-        });
-
-        for (const person of sortedPeople) {
-            const oldBaseInst = person.instanceBaseIndex;
-            if (typeof oldBaseInst !== 'number' || oldBaseInst < 0) {
-                person.instanceBaseIndex = newInstanceIndex;
-                newInstanceIndex += partCount;
-                continue;
-            }
-
-            for (let p = 0; p < partCount; p++) {
-                const srcBase = (oldBaseInst + p) * stride;
-                const dstBase = (newInstanceIndex + p) * stride;
-                for (let f = 0; f < stride; f++) {
-                    newData[dstBase + f] = oldData[srcBase + f] || 0;
+        for (const [group, jetpack] of [[this.instancedGroup, false], [this.jetpackInstancedGroup, true]]) {
+            const stride = group.instanceStrideFloats;
+            const oldData = group.instanceData;
+            const newData = new Float32Array(group.maxInstances * stride);
+            let next = 0;
+            const members = this.people.filter(person => !!person.isJetpack === jetpack)
+                .sort((a, b) => b.spawnY - a.spawnY);
+            for (const person of members) {
+                const oldBase = person.instanceBaseIndex;
+                if (typeof oldBase === 'number' && oldBase >= 0) {
+                    newData.set(oldData.subarray(oldBase * stride, (oldBase + partCount) * stride), next * stride);
                 }
+                person.instanceBaseIndex = next;
+                next += partCount;
             }
-
-            person.instanceBaseIndex = newInstanceIndex;
-            newInstanceIndex += partCount;
+            group.instanceData = newData;
+            group.instanceCount = next;
         }
-
-        group.instanceData = newData;
-        group.instanceCount = newInstanceIndex;
     }
 
     _scanParticlesForPerson(person) {
@@ -984,7 +1039,7 @@ class Crowd {
                 if (pdy > radius || pdy < -radius) continue;
 
                 const existingFn = updateFns[pi];
-                if (existingFn && (existingFn._isDronePull || existingFn._isCrowdPull)) continue;
+                if (existingFn && (existingFn._isJetpackPull || existingFn._isCrowdPull)) continue;
 
                 const sparkleValue = sd[pBase + ps.sparkleValueIdx] || 0;
                 let pullElapsed = 0;
@@ -1167,10 +1222,16 @@ class Crowd {
     }
 
     dispose() {
+        this._disposed = true;
+        for (const person of this.people) person.behavior?.dispose();
         if (this.instancedGroup) {
             this.renderer.removeInstancedGroup(this.instancedGroup);
         }
+        if (this.jetpackInstancedGroup) {
+            this.renderer.removeInstancedGroup(this.jetpackInstancedGroup);
+        }
         this.instancedGroup = null;
+        this.jetpackInstancedGroup = null;
         this.people = [];
     }
 }

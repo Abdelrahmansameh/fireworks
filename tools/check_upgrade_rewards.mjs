@@ -46,13 +46,13 @@ try {
             launcher_sparkle_1: ['launcherStats.sparkleYieldMultiplier'],
             crowd_gold_2: ['crowdStats.goldRateMultiplier'],
             crowd_invite_2: ['crowdStats.countBonus'],
-            drone_hub: ['buildings.DRONE_HUB', 'unlocks'],
-            drone_lifetime: ['droneStats.lifetimeMultiplier'],
-            drone_speed: ['droneStats.speedMultiplier'],
-            drone_max: ['droneStats.maxDrones'],
-            drone_sparkle_yield: ['droneStats.sparklesPerParticleMultiplier'],
-            drone_radius: ['droneStats.collectionRadiusMultiplier'],
-            drone_efficiency: ['droneHubStats.spawnIntervalMultiplier'],
+            jetpack_unlock: ['jetpackCount', 'unlocks'],
+            jetpack_reach: ['jetpackStats.collectionRadiusMultiplier'],
+            jetpack_speed: ['jetpackStats.speedMultiplier'],
+            jetpack_team: ['jetpackCount'],
+            jetpack_sparkle_yield: ['jetpackStats.sparklesPerParticleMultiplier'],
+            jetpack_radius: ['jetpackStats.collectionRadiusMultiplier'],
+            jetpack_efficiency: ['jetpackStats.speedMultiplier'],
             launcher_overclock: ['launcherStats.spawnIntervalMultiplier'],
             spark_core_3: ['baseSparkleMultiplier'],
             launcher_sparkle_2: ['launcherStats.spawnIntervalMultiplier'],
@@ -64,7 +64,7 @@ try {
             unlock_recipes_tab: ['recipes_tab', 'advanced_creator', 'pattern_burst'],
             resource_generator: ['resource_generator'],
             catapult: ['catapult'],
-            drone_hub: ['drone_hub'],
+            jetpack_unlock: ['jetpack_unlock'],
         };
         const flatten = (value, prefix, target) => {
             for (const [key, item] of Object.entries(value)) {
@@ -77,12 +77,12 @@ try {
             const result = {};
             flatten({ baseSparkleMultiplier: game.baseSparkleMultiplier,
                 launcherStats: game.launcherStats, crowdStats: game.crowdStats,
-                catapultStats: game.catapultStats, droneStats: game.droneStats,
-                generatorStats: game.generatorStats, droneHubStats: game.droneHubStats,
+                catapultStats: game.catapultStats, jetpackStats: game.jetpackStats,
+                generatorStats: game.generatorStats, jetpackCount: game.jetpackCount,
                 crowdUnlocked: game.crowdUnlocked,
                 advancedCreatorUnlocked: game.advancedCreatorUnlocked,
                 grandFinaleUnlocked: game.grandFinaleUnlocked,
-                buildings: Object.fromEntries(['AUTO_LAUNCHER', 'CATAPULT', 'DRONE_HUB', 'RESOURCE_GENERATOR']
+                buildings: Object.fromEntries(['AUTO_LAUNCHER', 'CATAPULT', 'RESOURCE_GENERATOR']
                     .map(type => [type, game.buildingManager.getBuildingsByType(type).length])),
                 patterns: [...game.unlockedPatternKeys].sort(),
                 recipes: game.recipes.map(recipe => ({ name: recipe.name,

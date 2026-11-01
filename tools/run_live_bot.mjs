@@ -109,12 +109,12 @@ try {
     await page.goto(gameUrl.toString(), { waitUntil: 'domcontentloaded', timeout: 30000 });
     await page.waitForFunction(() => window.game?.bot && window.game?.particleSystem, { timeout: 30000 });
     const balance = await page.evaluate(async () => {
-        const { BUILDING_TYPES, CROWD_CONFIG, DRONE_CONFIG } = await import(new URL('js/config/config.js', document.baseURI).href);
+        const { BUILDING_TYPES, CROWD_CONFIG, JETPACK_CONFIG } = await import(new URL('js/config/config.js', document.baseURI).href);
         return {
             upgrades: window.game.progression.getAllUpgradeDefs().map(({ id, name, treeParent, baseCost, costRatio, currency, secondaryCost, maxLevel, requires }) => ({ id, name, treeParent, baseCost, costRatio, currency, secondaryCost, maxLevel, requires })),
             buildings: BUILDING_TYPES,
             crowd: CROWD_CONFIG,
-            drones: DRONE_CONFIG,
+            jetpacks: JETPACK_CONFIG,
         };
     });
     await page.evaluate(({ preset, speed }) => {

@@ -1,8 +1,8 @@
 /**
  * SimulationConfig — tunable parameters for the headless economy simulation.
  *
- * Drone collection and crowd-catching income are *emergent* in the live game:
- * drones and crowd members physically vacuum up firework-explosion particles,
+ * Jetpack fan collection and crowd-catching income are *emergent* in the live game:
+ * jetpack fans and crowd members physically vacuum up firework-explosion particles,
  * so there is no closed-form yield. For the headless simulator we replace that
  * physics with a coarse, fully data-driven flow estimate (no particle
  * positions — just "how many particles are emitted, and what fraction gets
@@ -10,7 +10,7 @@
  *
  * Flow model (per second):
  *   particlesEmitted = (launcherFPS + clicksPerSec) * avgParticlesPerFirework
- *   dronesCaught     = particlesEmitted * droneCatchFraction(activeDrones)
+ *   jetpackFansCaught     = particlesEmitted * jetpackCatchFraction(activeFans)
  *   crowdCaught      = particlesEmitted * crowdCatchFraction(activeCatchers)
  *
  * The fraction functions saturate (you can't catch more than what's emitted),
@@ -22,14 +22,14 @@ export const SIMULATION_CONFIG = {
     // actually lingers long enough to be catchable.)
     avgParticlesPerFirework: 120,
 
-    drone: {
-        // Fraction of emitted particles a single active (airborne) drone vacuums
+    jetpack: {
+        // Fraction of emitted particles a single airborne fan collects
         // per second. With the intermittent 30s/60s hubs a realistic late fleet is
-        // only a handful of simultaneously-airborne drones, so this is tuned so
+        // only a handful of airborne jetpack fans, so this is tuned so
         // income scales roughly linearly with that fleet (each hub you add is felt)
-        // rather than slamming into the cap after the first couple of drones.
-        catchFractionPerDrone: 0.11,
-        // Hard cap on the combined fraction all drones can catch.
+        // rather than slamming into the cap after the first couple of fans.
+        catchFractionPerFan: 0.11,
+        // Hard cap on the combined fraction all jetpack fans can catch.
         maxCatchFractionTotal: 0.6,
     },
 

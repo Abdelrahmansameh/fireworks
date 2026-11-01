@@ -5,7 +5,6 @@ const UNLOCK_UPGRADE = {
     AUTO_LAUNCHER: 'auto_launcher',
     RESOURCE_GENERATOR: 'resource_generator',
     CATAPULT: 'catapult',
-    DRONE_HUB: 'drone_hub',
 };
 
 /**
@@ -28,7 +27,7 @@ export default class LivePurchasePolicy {
         const crowdUnlock = game.progression.getUpgradeDef('crowd_unlock') ? 'crowd_unlock' : 'crowd_spark_1';
         if (game.progression.getUpgradeLevel(crowdUnlock) === 0) return { upgrade: crowdUnlock, label: 'Welcome the crowd' };
         if (this._count(game, 'CATAPULT') === 0) return { building: 'CATAPULT', label: 'First catapult' };
-        if (game.progression.getUpgradeLevel('drone_hub') === 0) return { upgrade: 'drone_hub', label: 'First jetpack fan' };
+        if (game.progression.getUpgradeLevel('jetpack_unlock') === 0) return { upgrade: 'jetpack_unlock', label: 'First jetpack fan' };
         return { upgrade: 'grand_finale', label: 'Grand finale' };
     }
 
@@ -71,16 +70,9 @@ export default class LivePurchasePolicy {
         for (const [type, definition] of Object.entries(BUILDING_TYPES)) {
             if (!game.isBuildingTypeUnlocked(type)) continue;
             const count = this._count(game, type);
-            // Use the live manager's cap, including the final partly useful hub,
-            // rather than maintaining a second model of airborne coverage.
             if (game.buildingManager.getBuildingLimit && count >= game.buildingManager.getBuildingLimit(type)) continue;
             if (count >= (definition.maxCount ?? definition.maxInstances ?? 100)) continue;
             if (type === 'CATAPULT' && count >= (game.catapultStats?.maxCatapults ?? 1)) continue;
-            if (type === 'DRONE_HUB' && count > 0 && !game.buildingManager.getBuildingLimit) {
-                const uptime = definition.baseDroneLifetime * (game.droneStats?.lifetimeMultiplier ?? 1)
-                    / (definition.baseSpawnInterval * (game.droneHubStats?.spawnIntervalMultiplier ?? 1));
-                if (count * uptime >= (game.droneStats?.maxDrones ?? Infinity)) continue;
-            }
             candidates.push({ kind: 'building', key: `building:${type}`, id: type, name: definition.name, currency: definition.currency, cost: Building.getPurchaseCost(type, count), definition });
         }
         return candidates;
@@ -88,10 +80,10 @@ export default class LivePurchasePolicy {
 
     _hasUsefulSource(game, definition) {
         const id = definition.id;
-        if (id === 'grand_finale' || id === 'auto_launcher' || id === 'resource_generator' || id === 'catapult' || id === 'drone_hub') return true;
+        if (id === 'grand_finale' || id === 'auto_launcher' || id === 'resource_generator' || id === 'catapult' || id === 'jetpack_unlock') return true;
         if (id.startsWith('launcher_') && this._count(game, 'AUTO_LAUNCHER') === 0) return false;
         if (id.startsWith('generator_') && this._count(game, 'RESOURCE_GENERATOR') === 0) return false;
-        if (id.startsWith('drone_') && (game.jetpackCount ?? 0) === 0) return false;
+        if (id.startsWith('jetpack_') && (game.jetpackCount ?? 0) === 0) return false;
         if (id.startsWith('catapult_') && this._count(game, 'CATAPULT') === 0) return false;
         if (id.startsWith('crowd_catcher_') && id !== 'crowd_catcher_unlock' && !game.crowdStats?.catchingEnabled) return false;
         return true;
@@ -103,7 +95,6 @@ export default class LivePurchasePolicy {
             if (id === 'AUTO_LAUNCHER') return 1.5;
             if (id === 'RESOURCE_GENERATOR') return 1.0;
             if (id === 'CATAPULT') return 1.1;
-            if (id === 'DRONE_HUB') return 1.1;
         }
         // Workshop cards are optional for finishing, but they are productive
         // choices the player should exercise when gold is plentiful.

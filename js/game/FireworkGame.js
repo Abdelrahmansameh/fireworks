@@ -1,9 +1,8 @@
 import { gameStorage } from '../platform/GameStorage.js';
 import { fireworksForCrowd, getCrowdArrivalProgress } from '../systems/ProductionRates.js';
-import { FIREWORK_CONFIG, GAME_BOUNDS, PROCEDURAL_BACKGROUND_CONFIG, DEFAULT_RECIPE_COMPONENTS, GENERIC_RECIPE_NAMES, AUTO_LAUNCHER_COST_BASE, DRONE_CONFIG, CROWD_CONFIG } from '../config/config.js';
+import { FIREWORK_CONFIG, GAME_BOUNDS, PROCEDURAL_BACKGROUND_CONFIG, DEFAULT_RECIPE_COMPONENTS, GENERIC_RECIPE_NAMES, AUTO_LAUNCHER_COST_BASE, CROWD_CONFIG } from '../config/config.js';
 import GameCore from './GameCore.js';
 import InstancedParticleSystem from '../particles/InstancedParticleSystem.js';
-import InstancedDroneSystem from '../entities/InstancedDroneSystem.js';
 import Crowd from '../entities/Crowd.js';
 import Firework from '../entities/Firework.js';
 import { patternKeys } from '../entities/patterns/index.js';
@@ -23,7 +22,7 @@ import CursorParticles from '../ui/CursorParticles.js';
  *
  * Extends {@link GameCore}, which owns all the headless-capable economy and
  * progression logic. FireworkGame layers on the presentation: the real
- * renderer, particle/drone systems, the physics-based Crowd, cinematics,
+ * renderer, particle systems, the physics-based Crowd, cinematics,
  * camera, audio, UI, and input. Only logic that touches the DOM, the renderer,
  * or the visual systems lives here — everything else is inherited from GameCore
  * so the headless simulator runs the exact same economy code.
@@ -75,10 +74,6 @@ class FireworkGame extends GameCore {
         if (savedBuildingData) {
             try {
                 const buildingData = JSON.parse(savedBuildingData);
-                if (gameStorage.getItem('jetpackCount') === null) {
-                    this.jetpackCount = Math.min(128, (buildingData.buildings || []).filter(b => b.type === 'DRONE_HUB').length);
-                }
-                buildingData.buildings = (buildingData.buildings || []).filter(b => b.type !== 'DRONE_HUB');
                 this.buildingManager.deserialize(buildingData);
             } catch (e) {
                 console.error('Failed to load building data:', e);
@@ -107,10 +102,13 @@ class FireworkGame extends GameCore {
         this.gameState.autoLaunchers = [];
 
         this.particleSystem = new InstancedParticleSystem(this.renderer2D, this.profiler);
-        this.droneSystem = new InstancedDroneSystem(this.renderer2D, this.particleSystem);
-        this.droneSystem.setCount(this.jetpackCount, this.droneStats);
         this.crowd = new Crowd(this.renderer2D);
         this.crowd.onCoinDrop = (amount, source) => this.addGold(amount, source);
+        this.crowd.onJetpackCollect = (sparkles, particleCount = 1) => {
+            this.addSparkles(sparkles * (this.jetpackStats.sparklesPerParticleMultiplier ?? 1), 'jetpack');
+            this.statsTracker.recordJetpackParticle(particleCount);
+        };
+        this.crowd.setJetpackCount(this.jetpackCount, this.jetpackStats);
         this.crowd.particleSystem = this.particleSystem;
         this.crowd.onCatchSparkles = (amount) => {
             const multiplied = amount * (this.crowdStats.sparklesPerParticleMultiplier ?? 1);
@@ -259,12 +257,6 @@ class FireworkGame extends GameCore {
         this.profiler.startFrame();
 
         this.particleSystem.update(deltaTime);
-        this.droneSystem?.update(deltaTime, (sparkles, particleCount = 1) => {
-            const multiplied = sparkles * (this.droneStats.sparklesPerParticleMultiplier ?? 1);
-            this.addSparkles(multiplied, 'drone');
-            this.statsTracker.recordDroneParticle(particleCount);
-        });
-
         this.updateCameraPosition(deltaTime);
 
         this.profiler.startFunction('buildingsUpdate');
@@ -274,7 +266,7 @@ class FireworkGame extends GameCore {
 
         const targetCrowdSize = this._calculateTargetCrowdCount(this.fireworkSystem.fireworkCount);
 
-        if (targetCrowdSize > 0 && this.crowd.people.length === 0 && !this.hasSeenFirstCrowdCinematic && !this.cinematicManager.isPlaying) {
+        if (targetCrowdSize > 0 && !this.crowd.people.some(person => !person.isJetpack) && !this.hasSeenFirstCrowdCinematic && !this.cinematicManager.isPlaying) {
             this.hasSeenFirstCrowdCinematic = true;
             this.saveProgress();
             this.playFirstCrowdCinematic();
@@ -404,11 +396,9 @@ class FireworkGame extends GameCore {
         this.grandFinaleUnlocked = false;
         this.grandFinaleManager.reset();
         this.jetpackCount = 0;
-        this.droneStats = {
-            lifetimeMultiplier: 1,
+        this.jetpackStats = {
             speedMultiplier: 1,
             collectionRadiusMultiplier: 1,
-            maxDrones: DRONE_CONFIG.maxDrones,
             sparklesPerParticleMultiplier: 1,
         };
         this.crowdStats = {
@@ -420,7 +410,6 @@ class FireworkGame extends GameCore {
         };
         this.launcherStats = { spawnIntervalMultiplier: 1, sparkleYieldMultiplier: 1 };
         this.generatorStats = { productionRateMultiplier: 1 };
-        this.droneHubStats = { spawnIntervalMultiplier: 1 };
         this.catapultStats = { maxCatapults: 1 };
 
         this.resourceManager.reset();
@@ -450,6 +439,11 @@ class FireworkGame extends GameCore {
             this.crowd.dispose();
             this.crowd = new Crowd(this.renderer2D);
             this.crowd.onCoinDrop = (amount, source) => this.addGold(amount, source);
+            this.crowd.onJetpackCollect = (sparkles, particleCount = 1) => {
+                this.addSparkles(sparkles * (this.jetpackStats.sparklesPerParticleMultiplier ?? 1), 'jetpack');
+                this.statsTracker.recordJetpackParticle(particleCount);
+            };
+            this.crowd.setJetpackCount(this.jetpackCount, this.jetpackStats);
             this.crowd.particleSystem = this.particleSystem;
             this.crowd.onCatchSparkles = (amount) => {
                 const multiplied = amount * (this.crowdStats.sparklesPerParticleMultiplier ?? 1);
@@ -471,11 +465,6 @@ class FireworkGame extends GameCore {
             // Re-point crowd at the fresh particle system
             if (this.crowd) this.crowd.particleSystem = this.particleSystem;
 
-            if (this.droneSystem) {
-                this.droneSystem.dispose();
-            }
-            this.droneSystem = new InstancedDroneSystem(this.renderer2D, this.particleSystem);
-            this.droneSystem.maxDrones = this.droneStats.maxDrones;
         }
 
         this.procduralBackground?.resetLighting();
@@ -743,10 +732,10 @@ class FireworkGame extends GameCore {
         this.initBackgroundColor();
         gameStorage.setItem('backgroundColor', PROCEDURAL_BACKGROUND_CONFIG.bodyBackgroundColor);
 
+        this.jetpackCount = Math.min(128, Math.max(0, Number(data.jetpackCount) || 0));
+
         if (data.buildingManagerData) {
             const buildingData = data.buildingManagerData;
-            this.jetpackCount = Math.min(128, Math.max(0, Number(data.jetpackCount ?? (buildingData.buildings || []).filter(b => b.type === 'DRONE_HUB').length) || 0));
-            buildingData.buildings = (buildingData.buildings || []).filter(b => b.type !== 'DRONE_HUB');
             this.buildingManager.deserialize(buildingData);
         } else if (data.gameState && data.gameState.autoLaunchers) {
             console.log('Migrating old save format to building system...');
@@ -783,7 +772,7 @@ class FireworkGame extends GameCore {
 
         this.ui.initializeUnlockStates();
         this.progression.applyAll(this);
-        this.droneSystem?.setCount(this.jetpackCount, this.droneStats);
+        this.crowd?.setJetpackCount?.(this.jetpackCount, this.jetpackStats);
         this.crowd.setCount(this._calculateTargetCrowdCount(this.fireworkSystem.fireworkCount));
         this.updateCrowdDisplay();
         this.saveProgress();
@@ -836,6 +825,7 @@ class FireworkGame extends GameCore {
         const arrivalCountdown = document.getElementById('crowd-arrival-countdown');
 
         const currentCrowd = this.crowd ? this.crowd.people.length : 0;
+        const naturalCrowd = this.crowd ? this.crowd.people.filter(person => !person.isJetpack).length : 0;
         if (crowdCountElement) {
             crowdCountElement.textContent = currentCrowd;
         }
@@ -847,9 +837,9 @@ class FireworkGame extends GameCore {
             currentSpsElement.textContent = Math.floor(currentFireworks).toLocaleString();
         }
 
-        const nextThresholdFireworks = fireworksForCrowd(currentCrowd + 1, this);
+        const nextThresholdFireworks = fireworksForCrowd(naturalCrowd + 1, this);
         const full = !Number.isFinite(nextThresholdFireworks);
-        const arrival = getCrowdArrivalProgress(currentCrowd + 1, this);
+        const arrival = getCrowdArrivalProgress(naturalCrowd + 1, this);
         const waitingForArrival = !full && currentFireworks >= nextThresholdFireworks && arrival.secondsRemaining > 1e-7;
         if (nextThresholdElement) {
             nextThresholdElement.textContent = full ? '—' : Math.ceil(nextThresholdFireworks).toLocaleString();
@@ -869,7 +859,7 @@ class FireworkGame extends GameCore {
                 progressBar.style.width = '100%';
                 return;
             }
-            const currentThresholdFireworks = fireworksForCrowd(currentCrowd, this);
+            const currentThresholdFireworks = fireworksForCrowd(naturalCrowd, this);
             const base = Math.max(0, currentThresholdFireworks);
             const denom = Math.max(1e-6, nextThresholdFireworks - base);
             const fireworkProgress = currentFireworks >= nextThresholdFireworks ? 1 : Math.min(1, Math.max(0, (currentFireworks - base) / denom));

@@ -92,7 +92,7 @@ export function render(container) {
             ${row('Clicks', 'bot-src-clicks')}
             ${row('Auto-Launchers', 'bot-src-launchers')}
             ${row('Generators', 'bot-src-generators')}
-            ${row('Jetpack fans', 'bot-src-drones')}
+            ${row('Jetpack fans', 'bot-src-jetpacks')}
             ${row('Crowd Catching', 'bot-src-crowd')}
             ${row('Grand Finale', 'bot-src-finale')}
             ${row('Gold — Crowd', 'bot-src-gold-crowd')}
@@ -204,7 +204,7 @@ export function updateReport(game) {
     set('bot-src-clicks', fmt(s.clicks));
     set('bot-src-launchers', fmt(s.launchers));
     set('bot-src-generators', fmt(s.generators));
-    set('bot-src-drones', fmt(s.drones));
+    set('bot-src-jetpacks', fmt(s.jetpacks));
     set('bot-src-crowd', fmt(s.crowdCatching));
     set('bot-src-finale', fmt(s.grandFinale));
     set('bot-src-gold-crowd', fmt(r.productionBreakdown.gold.crowd));

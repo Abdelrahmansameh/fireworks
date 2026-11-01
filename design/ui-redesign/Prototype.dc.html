@@ -1112,7 +1112,6 @@ class Component extends DCLogic {
       { key: 'launchers', aria: 'Launchers, ' + st.launchers, count: st.launchers, iL: true },
       { key: 'gens', aria: 'Generators, ' + st.gens, count: st.gens, iG: true },
       { key: 'cats', aria: 'Catapults, ' + st.cats, count: st.cats, iC: true },
-      { key: 'hub', aria: 'Drone hub, locked', count: '', iH: true, locked: true }
     ];
     const bTypes = types.map((t) => {
       const sel = st.bType === t.key;
@@ -1127,7 +1126,6 @@ class Component extends DCLogic {
       launchers: { name: 'Auto Launcher', desc: 'Fires every ' + (2.8 / st.fireMult).toFixed(1) + 's', count: st.launchers, cost: st.launcherCost, cur: 's', tint: '#ff7a59' },
       gens: { name: 'Sparkle Generator', desc: '+' + fmtRate(16.5 * st.sMult) + ' sparkles/s', count: st.gens, cost: st.genCost, cur: 'g', tint: '#5fe0e0' },
       cats: { name: 'Catapult', desc: 'Flings fans skyward', count: st.cats, cost: st.catCost, cur: 'g', tint: '#86e38f' },
-      hub: { name: 'Drone Hub', desc: 'Locked', count: 0, cost: 0, cur: 'g', tint: '#b9a3ff', locked: true }
     }[st.bType];
     const bAfford = !bInfo.locked && (bInfo.cur === 's' ? st.sparkles : st.gold) >= bInfo.cost;
     const mapTicks = st.mapPos.map((x, i) => ({
@@ -1264,7 +1262,7 @@ class Component extends DCLogic {
       bTypes: bTypes, bName: bInfo.name, bDesc: bInfo.desc,
       bCountLabel: bInfo.locked ? '' : '×' + bInfo.count,
       bCountAnim: now - st.bumpAt < 400 ? 'animation: bump 380ms ease-out both;' : '',
-      bI: { L: st.bType === 'launchers', G: st.bType === 'gens', C: st.bType === 'cats', H: st.bType === 'hub' },
+      bI: { L: st.bType === 'launchers', G: st.bType === 'gens', C: st.bType === 'cats' },
       bBlob: 'background:' + bInfo.tint + ';',
       bCardStyle: bInfo.locked ? 'background:#e9dfc8; border:2px dashed #1a1733; box-shadow:none;' : 'background:#fff3da; border:2px solid #1a1733; box-shadow:3px 3px 0 #0a0918;',
       bIsS: !bInfo.locked && bInfo.cur === 's', bIsG: !bInfo.locked && bInfo.cur === 'g',

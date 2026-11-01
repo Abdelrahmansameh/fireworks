@@ -6,7 +6,7 @@ const unlock = (game, id) => {
 const grant = type => (game, _level, upgradeId) => game.grantMilestoneBuilding(type, upgradeId);
 const node = (id, parent, branch, name, desc, cost, currency, extra = {}) => ({
     id, treeParent: parent, group: branch, branch,
-    icon: branch === 'DRONE' ? 'crowd' : branch === 'CROWD' ? 'crowd' : branch === 'LAUNCHER' ? 'launcher' : 'base',
+    icon: branch === 'JETPACK' ? 'crowd' : branch === 'CROWD' ? 'crowd' : branch === 'LAUNCHER' ? 'launcher' : 'base',
     offset: { x: branch === 'CROWD' ? 200 : branch === 'LAUNCHER' ? -200 : 0, y: -180 },
     name, desc, baseCost: cost, currency, costRatio: 1, maxLevel: 1, ...extra,
 });
@@ -19,14 +19,14 @@ const pattern = (key, parent, name, desc, cost, stage, extra = {}) =>
         apply: game => unlock(game, `pattern_${key}`),
         ...extra,
     });
-export const SHOW_MILESTONES = ['base_mult_1', 'unlock_recipes_tab', 'auto_launcher', 'crowd_spark_1', 'catapult', 'drone_hub', 'launcher_sparkle_2', 'grand_finale'];
+export const SHOW_MILESTONES = ['base_mult_1', 'unlock_recipes_tab', 'auto_launcher', 'crowd_spark_1', 'catapult', 'jetpack_unlock', 'launcher_sparkle_2', 'grand_finale'];
 export const SKILL_TREE_CONFIG = {
     branches: {
         BASE: { color: '#FFC857', label: 'Fireworks' },
         LAUNCHER: { color: '#FF7043', label: 'Launchers' },
         CROWD: { color: '#F06292', label: 'Crowd & catapults' },
         GENERATOR: { color: '#66BB6A', label: 'Workshop' },
-        DRONE: { color: '#29B6F6', label: 'Jetpacks' },
+        JETPACK: { color: '#29B6F6', label: 'Jetpacks' },
     },
     nodes: {
         base_mult_1: node('base_mult_1', 'ROOT', 'BASE', 'Brighter Sparks',
@@ -87,13 +87,13 @@ export const SKILL_TREE_CONFIG = {
         unlock_saturn: pattern('saturn', 'unlock_pistil', 'Saturn',
             'A sparkling planet with a colored ring.', 2400, 'crowd_gold_2'),
         unlock_brokenHeart: pattern('brokenHeart', 'unlock_saturn', 'Broken Heart',
-            'A heart that bursts apart.', 120, 'drone_hub'),
+            'A heart that bursts apart.', 120, 'jetpack_unlock'),
         unlock_christmasTree: pattern('christmasTree', 'unlock_brokenHeart', 'Christmas Tree',
-            'Light up a sparkling tree.', 160, 'drone_lifetime'),
+            'Light up a sparkling tree.', 160, 'jetpack_reach'),
         unlock_spinner: pattern('spinner', 'unlock_christmasTree', 'Spinner',
-            'A spinning burst of color.', 240, 'drone_speed'),
+            'A spinning burst of color.', 240, 'jetpack_speed'),
         unlock_helix: pattern('helix', 'unlock_spinner', 'Helix',
-            'Twisting trails of light.', 480, 'drone_efficiency'),
+            'Twisting trails of light.', 480, 'jetpack_efficiency'),
         unlock_snowflake: pattern('snowflake', 'unlock_helix', 'Snowflake',
             'A glittering six-pointed burst.', 900, 'launcher_overclock'),
         unlock_dragonsBreath: pattern('dragonsBreath', 'unlock_snowflake', "Dragon's Breath",
@@ -164,41 +164,41 @@ export const SKILL_TREE_CONFIG = {
             '+6 fans.', 4500, 'gold', {
                 action: 'Invite', apply: game => { game.crowdStats.countBonus += 6; },
             }),
-        drone_hub: node('drone_hub', 'crowd_invite_2', 'DRONE', 'Jetpack Fans',
+        jetpack_unlock: node('jetpack_unlock', 'crowd_invite_2', 'JETPACK', 'Jetpack Fans',
             'Give a fan a jetpack to catch sparkles.', 21000, 'gold', {
-                milestone: true, action: 'Equip', unlockId: 'drone_hub',
+                milestone: true, action: 'Equip', unlockId: 'jetpack_unlock',
                 requires: { stats: { launcherCount: 14 }, upgrades: { spark_core_2: 2, crowd_catcher_yield: 1, crowd_catcher_radius: 1, catapult_range_1: 1 } },
-                apply: game => unlock(game, 'drone_hub'), onPurchase: game => game.grantJetpack(),
+                apply: game => unlock(game, 'jetpack_unlock'), onPurchase: game => game.grantJetpack(),
             }),
-        drone_lifetime: node('drone_lifetime', 'drone_hub', 'DRONE', 'Helping Hands',
+        jetpack_reach: node('jetpack_reach', 'jetpack_unlock', 'JETPACK', 'Helping Hands',
             '+25% jetpack fan reach.', 6750, 'gold', {
-                apply: game => { game.droneStats.collectionRadiusMultiplier *= 1.25; },
+                apply: game => { game.jetpackStats.collectionRadiusMultiplier *= 1.25; },
             }),
-        drone_speed: node('drone_speed', 'drone_lifetime', 'DRONE', 'Fast Flyers',
+        jetpack_speed: node('jetpack_speed', 'jetpack_reach', 'JETPACK', 'Fast Flyers',
             '+35% jetpack fan speed.', 3000, 'gold', {
-                apply: game => { game.droneStats.speedMultiplier *= 1.35; },
+                apply: game => { game.jetpackStats.speedMultiplier *= 1.35; },
             }),
-        drone_max: node('drone_max', 'drone_speed', 'DRONE', 'Jetpack Team',
+        jetpack_team: node('jetpack_team', 'jetpack_speed', 'JETPACK', 'Jetpack Team',
             '+1 jetpack fan.', 15000, 'gold', {
                 maxLevel: 2, costRatio: 3,
                 onPurchase: game => game.grantJetpack(),
             }),
-        drone_sparkle_yield: node('drone_sparkle_yield', 'drone_lifetime', 'DRONE', 'Particle Magnets',
+        jetpack_sparkle_yield: node('jetpack_sparkle_yield', 'jetpack_reach', 'JETPACK', 'Particle Magnets',
             '+75% jetpack fan sparkles.', 9750, 'gold', {
                 maxLevel: 2, costRatio: 3.5, offset: { x: -200, y: 0 },
-                apply: game => { game.droneStats.sparklesPerParticleMultiplier *= 1.75; },
+                apply: game => { game.jetpackStats.sparklesPerParticleMultiplier *= 1.75; },
             }),
-        drone_radius: node('drone_radius', 'drone_sparkle_yield', 'DRONE', 'Wide Sweep',
+        jetpack_radius: node('jetpack_radius', 'jetpack_sparkle_yield', 'JETPACK', 'Wide Sweep',
             '+25% jetpack fan reach.', 3000, 'gold', {
                 maxLevel: 2, costRatio: 3.5,
-                apply: game => { game.droneStats.collectionRadiusMultiplier *= 1.25; },
+                apply: game => { game.jetpackStats.collectionRadiusMultiplier *= 1.25; },
             }),
-        drone_efficiency: node('drone_efficiency', 'drone_max', 'DRONE', 'Air Show',
+        jetpack_efficiency: node('jetpack_efficiency', 'jetpack_team', 'JETPACK', 'Air Show',
             '+35% jetpack fan speed.', 22500, 'gold', {
-                requires: { upgrades: { drone_max: 1, drone_sparkle_yield: 1, drone_radius: 1, drone_speed: 1 } },
-                apply: game => { game.droneStats.speedMultiplier *= 1.35; },
+                requires: { upgrades: { jetpack_team: 1, jetpack_sparkle_yield: 1, jetpack_radius: 1, jetpack_speed: 1 } },
+                apply: game => { game.jetpackStats.speedMultiplier *= 1.35; },
             }),
-        launcher_overclock: node('launcher_overclock', 'drone_efficiency', 'LAUNCHER', 'Full Salvo',
+        launcher_overclock: node('launcher_overclock', 'jetpack_efficiency', 'LAUNCHER', 'Full Salvo',
             '+54% launcher fire rate.', 55000, 'sparkles', {
                 requires: { stats: { launcherCount: 20 }, upgrades: { launcher_sparkle_1: 2 } },
                 apply: game => { game.launcherStats.spawnIntervalMultiplier *= 0.65; },
@@ -216,7 +216,7 @@ export const SKILL_TREE_CONFIG = {
             'Fill the sky for 30 seconds.', 750000, 'sparkles', {
                 secondaryCost: { gold: 22500 },
                 milestone: true, action: 'Launch',
-                requires: { stats: { launcherCount: 32 }, upgrades: { launcher_sparkle_2: 2, drone_efficiency: 1 } },
+                requires: { stats: { launcherCount: 32 }, upgrades: { launcher_sparkle_2: 2, jetpack_efficiency: 1 } },
                 apply: game => game._unlockGrandFinale(),
             }),
     },

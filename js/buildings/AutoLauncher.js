@@ -218,13 +218,11 @@ class AutoLauncher extends Building {
     _updateSkeletonColors(hex) {
         if (!this._skeleton) return;
 
-        const rgb = hexToRgb(hex);
-
         for (let i = 0; i < this._skeleton.parts.length; i++) {
             const part = this._skeleton.parts[i];
-            // We color only the tube with the recipe/override color
-            if (part.id === 'tube') {
-                this._skeleton.partColors[i] = rgb;
+            // Show the assigned recipe color on the crystal.
+            if (part.id === 'crystal') {
+                this._skeleton.partColors[i] = hexToRgb(hex ?? part.color);
             }
         }
     }

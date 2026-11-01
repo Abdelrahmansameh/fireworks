@@ -2,7 +2,7 @@ import { STATS_SCHEMA } from '../../config/StatsConfig.js';
 import { doodleIcon } from '../doodleIcons.js';
 
 const MAIN_IDS = new Set([
-    'stat-sps-total', 'stat-sps-auto', 'stat-sps-gen', 'stat-sps-crowd-catch', 'stat-sps-manual', 'stat-sps-drone',
+    'stat-sps-total', 'stat-sps-auto', 'stat-sps-gen', 'stat-sps-crowd-catch', 'stat-sps-manual', 'stat-sps-jetpack',
     'stat-gps-total', 'stat-fps-total', 'stat-session-time', 'stat-sess-sparkles', 'stat-sess-gold', 'stat-sess-fw', 'stat-sess-crowd-parts',
 ]);
 
@@ -26,7 +26,7 @@ export function render(container) {
                 <span class="stats-segment source-generators" data-production-source="resource_generator"></span>
                 <span class="stats-segment source-fans" data-production-source="crowd_catch"></span>
                 <span class="stats-segment source-clicks" data-production-source="manual"></span>
-                <span class="stats-segment source-drones" data-production-source="drone"></span>
+                <span class="stats-segment source-jetpacks" data-production-source="jetpack"></span>
                 <span class="stats-segment source-other" data-production-source="other"></span>
             </div>
             <div class="stats-production-legend">
@@ -34,7 +34,7 @@ export function render(container) {
                 <div class="stats-legend-row"><span><i class="source-generators"></i>Generators</span><strong data-source-rate="resource_generator">0</strong><span id="stat-sps-gen" hidden>0</span></div>
                 <div class="stats-legend-row"><span><i class="source-fans"></i>Fans</span><strong data-source-rate="crowd_catch">0</strong><span id="stat-sps-crowd-catch" hidden>0</span></div>
                 <div class="stats-legend-row"><span><i class="source-clicks"></i>Clicks</span><strong data-source-rate="manual">0</strong><span id="stat-sps-manual" hidden>0</span></div>
-                <div class="stats-legend-row" id="stats-drones-row" hidden><span><i class="source-drones"></i>Jetpack fans</span><strong data-source-rate="drone">0</strong><span id="stat-sps-drone" hidden>0</span></div>
+                <div class="stats-legend-row" id="stats-jetpacks-row" hidden><span><i class="source-jetpacks"></i>Jetpack fans</span><strong data-source-rate="jetpack">0</strong><span id="stat-sps-jetpack" hidden>0</span></div>
                 <div class="stats-legend-row" id="stats-other-row" hidden><span><i class="source-other"></i>Other</span><strong id="stats-other-rate">0</strong></div>
             </div>
           </div>

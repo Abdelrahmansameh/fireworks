@@ -1478,7 +1478,7 @@
           "parentPartId": "body",
           "startTime": 0,
           "endTime": 0.8,
-          "animation": "fly"
+          "layer": "behind"
         }
       ]
     }

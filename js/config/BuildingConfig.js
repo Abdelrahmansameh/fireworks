@@ -99,35 +99,5 @@ export const BUILDING_TYPES = {
         },
     },
 
-    DRONE_HUB: {
-        id: 'drone_hub',
-        name: 'Drone Hub',
-        description: 'Periodically launches drones that collect firework particles',
-        baseCost: 1350,
-        costRatio: 1.8,
-        currency: 'gold',
-        width: 40,
-        height: 50,
-        y: -435,
-        color: { r: 0.2, g: 0.7, b: 1.0, a: 1 },
-        texture: null,
-        textureKey: null,
-        skeletonUrl: 'assets/skeletons/drone_hub.json',
-        skeletonScale: 20,
-        // A first hub maintains a collector; upgrades add overlapping flights.
-        baseSpawnInterval: 24,
-        baseDroneLifetime: 28,
-        maxCount: 6,
-        baseDroneSpeed: 600,
-        droneScale: 1,   // multiplier on DRONE_CONFIG.scaling.baseScale (1 = use config size as-is)
-        droneColor: { r: 0.1, g: 0.65, b: 0.8, a: 1.0 },
-        unlockId: 'drone_hub',
-        statId: 'stat-bld-drone',
-        panel: {
-            showLauncherList: false,
-            showSpreadButton: false,
-            showRandomizeButton: false,
-        },
-        zIndex: 12,
-    }
+
 };

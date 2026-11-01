@@ -8,7 +8,7 @@ The game works, but four structural problems make every change harder than it sh
    - `GameCore` (600 lines) owns resources, buildings, upgrades, recipes, unlocks,
      stat buckets, persistence, and the headless economy — *and* calls 20+ named UI
      methods (`showBuildingsTab`, `updateBuildingCosts`, …).
-   - `FireworkGame` (1080 lines) extends it and adds renderer, particles, drones,
+   - `FireworkGame` (1080 lines) extends it and adds renderer, particles, crowd behaviors,
      crowd, camera, cinematics, input glue, *and recipe editing that reads the DOM
      directly* (`document.getElementById('recipe-name')` inside game logic).
    - `UIManager` (1940 lines) does DOM updates **and** canvas input: camera panning,
@@ -50,7 +50,7 @@ per-participant serialization. UI becomes a subscriber, never a callee.
 
 | Decision | Choice | Why |
 |---|---|---|
-| ECS vs GameObject/Component | **GameObject/Component** (Unity-style actors), *not* archetype ECS | Entity counts are tiny (dozens of buildings). The high-count things (particles, drones, crowd) are already data-oriented instanced systems — that *is* the correct pattern for them; wrap them as systems, don't force them into entities. Full ECS buys nothing here and costs readability. |
+| ECS vs GameObject/Component | **GameObject/Component** (Unity-style actors), *not* archetype ECS | Entity counts are tiny (dozens of buildings). The high-count things (particles, crowd behaviors, crowd) are already data-oriented instanced systems — that *is* the correct pattern for them; wrap them as systems, don't force them into entities. Full ECS buys nothing here and costs readability. |
 | Events both directions? | **Commands down, events up** | UI → game goes through a small `GameAPI` facade (plain method calls: traceable, steppable in a debugger). Game → UI/audio/stats goes through events (decoupled: emitters don't know listeners). Events in both directions makes control flow untraceable. |
 | Continuous values (sparkle count, rates) | **Polled, not evented** | Emitting `resource.changed` 60×/s per resource is an event storm. UI polls a read-only `GameView` once per frame and dirty-checks before touching the DOM. Events are for *discrete* facts only (purchase, unlock, finale start…). This is the standard engine split. |
 | Framework / bundler | **Stay vanilla ES modules** | Matches the repo; no build step to maintain; nothing here needs a framework. |
@@ -75,12 +75,12 @@ js/
     api/GameAPI.js             ← the only object UI may call
     api/GameView.js            ← read-only model UI polls each frame
     systems/                   ← EconomySystem, ProgressionSystem, BuildingSystem,
-                                 FireworkSystem, CrowdSystem, DroneSystem,
+                                 FireworkSystem, CrowdSystem,
                                  ParticleSystem, FinaleSystem, CinematicSystem,
                                  InputSystem, CameraSystem, AudioSystem,
                                  StatsSystem, SaveSystem(wired), RecipeSystem
     components/                ← SkeletonSprite, StaticSprite, RecipeLauncher,
-                                 ResourceProduction, DroneSpawner, CatapultBehaviour,
+                                 ResourceProduction, JetpackBehavior, CatapultBehaviour,
                                  Draggable, Highlightable, …
   ui/                          ← panels keep their current data-driven structure,
                                  but mount(api, view, events) — never see the game
@@ -176,7 +176,7 @@ class World {
   particle sim, finale, camera, input). Current managers map ~1:1 onto systems —
   `BuildingManager`→`BuildingSystem`, `ProgressionManager`→`ProgressionSystem`,
   `ResourceManager`→`EconomySystem`, `GrandFinaleManager`→`FinaleSystem`, etc.
-  The instanced particle/drone/crowd internals **stay exactly as they are** —
+  The instanced particle/crowd internals **stay exactly as they are** —
   they're already the right design — they just get a System wrapper with a clean
   boundary instead of being fields poked from three places.
 - **Update order is one array in the composition root** — today it's implicit in
@@ -191,7 +191,7 @@ world.addSystem(new EconomySystem());
 world.addSystem(new ProgressionSystem());
 world.addSystem(new BuildingSystem());
 world.addSystem(new FireworkSystem());
-world.addSystem(new DroneSystem());       // presentation-dependent
+// JetpackBehavior runs within Crowd, alongside other member behaviors.
 world.addSystem(new CrowdSystem());       // presentation-dependent
 world.addSystem(new CinematicSystem());   // "
 world.addSystem(new FinaleSystem());
@@ -266,7 +266,7 @@ class GameAPI {
     saveRecipe(name, components) { … }// takes DATA — no DOM reads in game code
     eraseRecipes() { … }
     launchAt(x, y) { … }
-    cheat = { addSparkles(n) {…}, unlockAll() {…}, spawnDrones(n) {…}, … };
+    cheat = { addSparkles(n) {…}, unlockAll() {…}, grantJetpacks(n) {…}, … };
 }
 ```
 
@@ -392,21 +392,21 @@ events.on(EV.UNLOCK_GRANTED, ({ id }) => {
 ## Extra improvements (recommended, fold into phases below)
 
 1. **Stat/modifier system** replacing the hand-maintained buckets
-   (`droneStats`, `crowdStats`, `launcherStats`, …, reset+recomputed by
+   (`jetpackStats`, `crowdStats`, `launcherStats`, …, reset+recomputed by
    `progression.applyAll(this)` mutating the game, and re-declared verbatim in
    `resetGame()`):
 
 ```js
-stats.define('drone.speedMult', 1);
+stats.define('jetpack.speedMult', 1);
 stats.define('crowd.goldRateMult', 1);
 // upgrades contribute modifiers; recompute invalidates a cache + emits nothing
-upgradeDef.effects = [{ stat: 'drone.speedMult', op: 'mult', value: 1.15 }];
-const v = stats.get('drone.speedMult');   // cached read, hot-path safe
+upgradeDef.effects = [{ stat: 'jetpack.speedMult', op: 'mult', value: 1.15 }];
+const v = stats.get('jetpack.speedMult');   // cached read, hot-path safe
 ```
 
    Upgrade *effects* become data in `SkillTreeConfig` instead of code in `applyAll`,
    `resetGame`'s duplicate initializers disappear, and systems read stats instead of
-   `this.game.droneStats?.x ?? 1` chains.
+   `this.game.jetpackStats?.x ?? 1` chains.
 
 2. **One cost module.** `EconomyMath.buildingCost(type, count)` /
    `upgradeCost(def, level)` — delete the duplicated launcher-cost formula in
@@ -475,7 +475,7 @@ Add `Entity`/`Component` + component registry. Port building types one at a time
 becomes `SkeletonSprite`). `BuildingSystem` handles purchase/placement/hit-testing
 via a `Draggable`/bounds query instead of `Building` subclass methods. Entity
 serialization slots into SaveSystem (same document, version 6 migration).
-Delete `Building`, `AutoLauncher`, `ResourceGenerator`, `Catapult`, `DroneHub`,
+Delete `Building`, `AutoLauncher`, `ResourceGenerator`, `Catapult`,
 `BuildingManager` classes.
 
 **Phase 6 — Stats/modifier system.**

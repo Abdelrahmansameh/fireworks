@@ -8,14 +8,13 @@ export const BASE_GOLD_DROPS_PER_SEC_PER_PERSON = BASE_GOLD_PER_TOSS / COIN_TOSS
 
 // Fallback default yields for emergent sources the sim needs to estimate.
 // Callers (sim UI) may override per-run via the `rates` argument.
-export const DEFAULT_BASE_DRONE_YIELD_PER_SEC = 1;
+export const DEFAULT_BASE_JETPACK_YIELD_PER_SEC = 1;
 export const DEFAULT_BASE_CATCH_YIELD_PER_SEC = 1;
 
 // Map building type -> the upgrade id that unlocks it.
 const BUILDING_UNLOCK_UPGRADE = {
     AUTO_LAUNCHER: 'auto_launcher',
     RESOURCE_GENERATOR: 'resource_generator',
-    DRONE_HUB: 'drone_hub',
     CATAPULT: 'catapult',
 };
 
@@ -123,12 +122,12 @@ export function buildingTypeUnlocked(type, progression) {
  * Per-source sparkles-per-second breakdown.
  *
  * `rates` supplies the emergent (random-driven) inputs the game can't compute
- * deterministically: player click rate and per-drone / per-catcher base yield.
+ * deterministically: player click rate and per-jetpack / per-catcher base yield.
  * Building-driven sources (launchers, generators) are derived from state.
  */
 export function expectedSPS(state, rates = {}) {
     const clicksPerSec = rates.clicksPerSec ?? 0;
-    const baseDroneYield = rates.baseDroneYieldPerSec ?? DEFAULT_BASE_DRONE_YIELD_PER_SEC;
+    const baseJetpackYield = rates.baseJetpackYieldPerSec ?? DEFAULT_BASE_JETPACK_YIELD_PER_SEC;
     const baseCatchYield = rates.baseCatchYieldPerSec ?? DEFAULT_BASE_CATCH_YIELD_PER_SEC;
 
     const baseSparkleMult = state.baseSparkleMultiplier ?? 1;
@@ -144,27 +143,27 @@ export function expectedSPS(state, rates = {}) {
     const generators = genCount * genBase * genMult * baseSparkleMult;
 
     // Each purchased jetpack provides one permanent collector.
-    const drones = (state.jetpackCount ?? 0) * baseDroneYield
-        * (state.droneStats?.sparklesPerParticleMultiplier ?? 1);
+    const jetpacks = (state.jetpackCount ?? 0) * baseJetpackYield
+        * (state.jetpackStats?.sparklesPerParticleMultiplier ?? 1);
 
     // Crowd catching: rough estimate — assume each catapult engages ~2 people.
     let crowdCatching = 0;
     const catapults = countBuildings(state, 'CATAPULT');
     if (state.crowdStats?.catchingEnabled && catapults > 0) {
-        const crowdSize = state.crowd?.people?.length ?? 0;
+        const crowdSize = state.crowd?.naturalCount ?? state.crowd?.people?.length ?? 0;
         const activeCatchers = Math.min(crowdSize, catapults * 2);
         crowdCatching = activeCatchers * baseCatchYield
             * (state.crowdStats?.sparklesPerParticleMultiplier ?? 1)
             * (state.crowdStats?.collectionRadiusMultiplier ?? 1);
     }
 
-    const total = clicks + launchers + generators + drones + crowdCatching;
-    return { clicks, launchers, generators, drones, crowdCatching, total };
+    const total = clicks + launchers + generators + jetpacks + crowdCatching;
+    return { clicks, launchers, generators, jetpacks, crowdCatching, total };
 }
 
 /** Per-source gold-per-second breakdown. */
 export function expectedGPS(state) {
-    const crowdSize = state.crowd?.people?.length ?? 0;
+    const crowdSize = state.crowd?.naturalCount ?? state.crowd?.people?.length ?? 0;
     // Each catapult occupies ~1 person, who doesn't toss coins (Crowd.js gates on !catapultData).
     const catapults = countBuildings(state, 'CATAPULT');
     const effectiveCrowd = Math.max(0, crowdSize - catapults);
