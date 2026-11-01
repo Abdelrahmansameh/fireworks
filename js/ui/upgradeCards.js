@@ -4,7 +4,7 @@ const BRANCH_STYLES = {
     BASE: { icon: 'fireworks', color: '#ffd04a' },
     LAUNCHER: { icon: 'launcher', color: '#ff7a59' },
     CROWD: { icon: 'crowd', color: '#ffd04a' },
-    GENERATOR: { icon: 'generator', color: '#86e38f' },
+    CULTIST: { icon: 'cultist', color: '#86e38f' },
     JETPACK: { icon: 'crowd', color: '#5fe0e0' },
 };
 

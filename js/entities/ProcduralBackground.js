@@ -3,6 +3,11 @@ import * as Renderer2D from '../rendering/Renderer.js';
 import { createRng } from '../utils/random.js';
 import BackgroundScenery from './BackgroundScenery.js';
 
+// Stars share a few instanced meshes instead of one draw call per shape.
+// Inner-radius ratios snap to buckets so each mesh covers many stars.
+const STAR_GROUP_CAPACITY = 1024;
+const STAR_RATIO_BUCKETS = 4;
+
 class ProcduralBackground {
     constructor(renderer, config = PROCEDURAL_BACKGROUND_CONFIG) {
         this.renderer = renderer;
@@ -12,6 +17,7 @@ class ProcduralBackground {
         this.coverageBounds = null;
         this.twinkleStars = [];
         this.twinkleTime = 0;
+        this.starMeshes = new Map();
         this.scenery = null;
         this.lightSurfaces = [];
     }
@@ -29,7 +35,8 @@ class ProcduralBackground {
         };
 
         this._buildSky();
-        this._buildStars();
+        const starBottom = world.horizonY + this.config.stars.minYFromHorizon;
+        this._buildStars(starBottom, this.coverageBounds.top);
         this.scenery = new BackgroundScenery(this);
         this.scenery.build();
         this.lightSurfaces = this.scenery.lightSurfaces;
@@ -46,6 +53,12 @@ class ProcduralBackground {
             this.renderer.removeNormalShape(shape);
         }
         this.shapes.length = 0;
+        for (const mesh of this.starMeshes.values()) {
+            for (const group of mesh.groups) {
+                this.renderer.removeInstancedGroup(group);
+            }
+        }
+        this.starMeshes.clear();
         this.skyBands.length = 0;
         this.skySafetyShape = null;
         this.groundShape = null;
@@ -66,12 +79,15 @@ class ProcduralBackground {
         const padding = Math.max(1, world.verticalSafeZone ?? 1080);
         const left = Math.min(bounds.left, visible.left - padding);
         const right = Math.max(bounds.right, visible.right + padding);
-        const top = Math.max(bounds.top, visible.top + padding);
+        const top = Math.max(bounds.top, Math.ceil((visible.top + padding) / 500) * 500);
         const bottom = Math.min(bounds.bottom, visible.bottom - padding);
         if (left === bounds.left && right === bounds.right && top === bounds.top && bottom === bounds.bottom) {
             return;
         }
 
+        if (top > bounds.top) {
+            this._buildStars(bounds.top, top);
+        }
         Object.assign(bounds, { left, right, top, bottom });
         this._setRectBounds(this.skySafetyShape, left, world.skyTopY - 1, right, top);
         for (const shape of this.skyBands) {
@@ -100,10 +116,9 @@ class ProcduralBackground {
             const brightnessScale = 1 - twinkle.amplitude * 0.5 + twinkle.amplitude * signal;
             const alphaScale = 1 + (brightnessScale - 1) * twinkle.alphaInfluence;
 
-            twinkle.shape.color.r = this._clamp01(twinkle.baseBrightness * brightnessScale);
-            twinkle.shape.color.g = this._clamp01(twinkle.baseBrightness * brightnessScale);
-            twinkle.shape.color.b = this._clamp01(twinkle.baseBrightness * brightnessScale);
-            twinkle.shape.color.a = this._clamp01(twinkle.baseAlpha * alphaScale);
+            const brightness = this._clamp01(twinkle.baseBrightness * brightnessScale);
+            const alpha = this._clamp01(twinkle.baseAlpha * alphaScale);
+            twinkle.group.updateInstanceColor(twinkle.index, brightness, brightness, brightness, alpha);
         }
     }
 
@@ -160,9 +175,13 @@ class ProcduralBackground {
         return this._lerpColor(sky.midColor, sky.topColor, localT);
     }
 
-    _buildStars() {
+    _buildStars(minY, maxY) {
         const { world, stars, zIndex } = this.config;
-        const rng = createRng(this.config.seed ^ 0xA1B2C3D4);
+        const rng = createRng((this.config.seed ^ 0xA1B2C3D4 ^ Math.floor(minY)) >>> 0);
+        // Keep the original sky's density as the field grows into the safety zone.
+        const referenceHeight = Math.max(1, world.skyTopY - stars.maxYFromSkyTop
+            - (world.horizonY + stars.minYFromHorizon));
+        const count = Math.ceil(stars.count * (maxY - minY) / referenceHeight);
         const distributionJitter = stars.distributionJitter ?? 0.9;
         const twinkleMinSpeed = stars.twinkleMinSpeed ?? 0.35;
         const twinkleMaxSpeed = stars.twinkleMaxSpeed ?? 1.6;
@@ -170,20 +189,16 @@ class ProcduralBackground {
         const twinkleMaxAmount = stars.twinkleMaxAmount ?? 0.45;
         const twinkleAlphaInfluence = stars.twinkleAlphaInfluence ?? 0.55;
 
-        const yMin = world.horizonY + stars.minYFromHorizon;
-        const yMax = world.skyTopY - stars.maxYFromSkyTop;
-        const minY = Math.min(yMin, yMax);
-        const maxY = Math.max(yMin, yMax);
         const xPositions = this._generateJitteredPositions(
             rng,
-            stars.count,
+            count,
             world.xMin,
             world.xMax,
             distributionJitter
         );
         const yPositions = this._generateJitteredPositions(
             rng,
-            stars.count,
+            count,
             minY,
             maxY,
             distributionJitter
@@ -200,7 +215,7 @@ class ProcduralBackground {
         this._shuffleInPlace(rng, xPositions);
         this._shuffleInPlace(rng, yPositions);
 
-        for (let i = 0; i < stars.count; i++) {
+        for (let i = 0; i < count; i++) {
             const x = xPositions[i];
             const y = yPositions[i];
             const size = this._randRange(rng, stars.minSize, stars.maxSize);
@@ -210,59 +225,77 @@ class ProcduralBackground {
             const isFourPoint = rng() < 0.58;
             const points = isFourPoint ? 4 : 5;
             const outerRadius = size * this._randRange(rng, 0.7, 0.95);
-            const innerRadius = outerRadius * this._randRange(rng, 0.2, 0.44);
+            const innerRatio = this._randRange(rng, 0.2, 0.44);
             const rotation = this._randRange(rng, 0, Math.PI * 2);
 
             const phase = this._randRange(rng, 0, Math.PI * 2);
             const twinkleSpeed = this._randRange(rng, twinkleMinSpeed, twinkleMaxSpeed);
             const twinkleAmplitude = this._randRange(rng, twinkleMinAmount, twinkleMaxAmount);
 
-            const starColor = new Renderer2D.Color(brightness, brightness, brightness, alpha);
-            const starVerts = this._buildStarVertices(x, y, outerRadius, innerRadius, points, rotation);
-            const coreShape = this._addPolygon(starVerts, starColor, zIndex.stars);
-            this._registerTwinkle(coreShape, brightness, alpha, phase, twinkleSpeed, twinkleAmplitude, twinkleAlphaInfluence);
+            const core =this._addStarInstance(x, y, outerRadius, points, innerRatio, 0.2, 0.44,
+                rotation, brightness, alpha, zIndex.stars, Renderer2D.BlendMode.NORMAL);
+            this._registerTwinkle(core, brightness, alpha, phase, twinkleSpeed, twinkleAmplitude, twinkleAlphaInfluence);
 
+            // Glows draw just above every core, as additive layers over the star.
             const haloRadius = outerRadius * this._randRange(rng, 1.3, 1.85);
-            const haloInnerRadius = haloRadius * this._randRange(rng, 0.42, 0.62);
+            const haloRatio = this._randRange(rng, 0.42, 0.62);
             const haloAlpha = alpha * this._randRange(rng, 0.12, 0.26);
-            const haloColor = new Renderer2D.Color(brightness, brightness, brightness, haloAlpha);
-            const haloVerts = this._buildStarVertices(
-                x,
-                y,
-                haloRadius,
-                haloInnerRadius,
-                4,
-                rotation
-            );
-            const haloShape = this._addPolygon(haloVerts, haloColor, zIndex.stars, Renderer2D.BlendMode.ADDITIVE);
-            this._registerTwinkle(haloShape, brightness, haloAlpha, phase + 0.37, twinkleSpeed * 1.1, twinkleAmplitude * 0.7, twinkleAlphaInfluence * 0.75);
+            const halo = this._addStarInstance(x, y, haloRadius, 4, haloRatio, 0.42, 0.62,
+                rotation, brightness, haloAlpha, zIndex.stars + 0.1, Renderer2D.BlendMode.ADDITIVE);
+            this._registerTwinkle(halo, brightness, haloAlpha, phase + 0.37, twinkleSpeed * 1.1, twinkleAmplitude * 0.7, twinkleAlphaInfluence * 0.75);
 
             if (rng() < 0.28) {
-                const sparkleOuterRadius = outerRadius * this._randRange(rng, 1.8, 2.7);
-                const sparkleInnerRadius = sparkleOuterRadius * this._randRange(rng, 0.08, 0.16);
+                const sparkleRadius = outerRadius * this._randRange(rng, 1.8, 2.7);
+                const sparkleRatio = this._randRange(rng, 0.08, 0.16);
                 const sparkleAlpha = alpha * this._randRange(rng, 0.09, 0.18);
-                const sparkleColor = new Renderer2D.Color(brightness, brightness, brightness, sparkleAlpha);
-                const sparkleVerts = this._buildStarVertices(
-                    x,
-                    y,
-                    sparkleOuterRadius,
-                    sparkleInnerRadius,
-                    4,
-                    rotation
-                );
-                const sparkleShape = this._addPolygon(sparkleVerts, sparkleColor, zIndex.stars, Renderer2D.BlendMode.ADDITIVE);
-                this._registerTwinkle(sparkleShape, brightness, sparkleAlpha, phase + 1.11, twinkleSpeed * 1.35, twinkleAmplitude * 1.15, twinkleAlphaInfluence * 0.9);
+                const sparkle = this._addStarInstance(x, y, sparkleRadius, 4, sparkleRatio, 0.08, 0.16,
+                    rotation, brightness, sparkleAlpha, zIndex.stars + 0.2, Renderer2D.BlendMode.ADDITIVE);
+                this._registerTwinkle(sparkle, brightness, sparkleAlpha, phase + 1.11, twinkleSpeed * 1.35, twinkleAmplitude * 1.15, twinkleAlphaInfluence * 0.9);
             }
         }
     }
 
-    _registerTwinkle(shape, baseBrightness, baseAlpha, phase, speed, amplitude, alphaInfluence) {
-        if (!this.config.stars?.twinkleEnabled || !shape) {
+    /** Add one star to the shared mesh for its shape and blend mode. */
+    _addStarInstance(x, y, radius, points, innerRatio, minRatio, maxRatio, rotation, brightness, alpha, zIndex, blendMode) {
+        const bucket = Math.min(STAR_RATIO_BUCKETS - 1,
+            Math.max(0, Math.floor((innerRatio - minRatio) / (maxRatio - minRatio) * STAR_RATIO_BUCKETS)));
+        const ratio = minRatio + (bucket + 0.5) * (maxRatio - minRatio) / STAR_RATIO_BUCKETS;
+        const key = `${points}:${ratio.toFixed(3)}:${blendMode}:${zIndex}`;
+
+        let mesh = this.starMeshes.get(key);
+        if (!mesh) {
+            mesh = {
+                geom: Renderer2D.buildPolygon(this._buildStarVertices(0, 0, 1, ratio, points)),
+                groups: [],
+            };
+            this.starMeshes.set(key, mesh);
+        }
+
+        let group = mesh.groups[mesh.groups.length - 1];
+        if (!group || group.instanceCount >= group.maxInstances) {
+            group = this.renderer.createInstancedGroup({
+                vertices: mesh.geom.vertices,
+                indices: mesh.geom.indices,
+                maxInstances: STAR_GROUP_CAPACITY,
+                zIndex,
+                blendMode,
+            });
+            mesh.groups.push(group);
+        }
+
+        const index = group.instanceCount;
+        group.addInstanceRaw(x, y, rotation, radius, radius, brightness, brightness, brightness, alpha);
+        return { group, index };
+    }
+
+    _registerTwinkle({ group, index }, baseBrightness, baseAlpha, phase, speed, amplitude, alphaInfluence) {
+        if (!this.config.stars?.twinkleEnabled) {
             return;
         }
 
         this.twinkleStars.push({
-            shape,
+            group,
+            index,
             baseBrightness,
             baseAlpha,
             phase,

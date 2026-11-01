@@ -1,5 +1,6 @@
 import { TABS } from './uiSchema.js';
 import { GAME_BOUNDS } from '../config/GameBoundsConfig.js';
+import { VENUE_ZOOM_OUT_DURATION_MS } from '../config/VenueProgression.js';
 
 /** Coordinates navigation and mobile sheets without owning game state. */
 export class ChromeController {
@@ -160,10 +161,10 @@ export class ChromeController {
     }
 
     /** Desired resting camera for the current viewport and mobile sheet. */
-    getCameraFraming() {
+    getCameraFraming(zoomOverride = null) {
         const renderer = this.game.renderer2D;
         const baselineZoom = this.cameraBaselineZoom;
-        const zoom = this.mobile.matches ? baselineZoom * GAME_BOUNDS.MOBILE_ZOOM_FACTOR : baselineZoom;
+        const zoom = zoomOverride ?? this.cameraDesiredZoom ?? (this.mobile.matches ? baselineZoom * GAME_BOUNDS.MOBILE_ZOOM_FACTOR : baselineZoom);
         // Keep the default bottom edge fixed when widening the mobile view.
         const baseline = this.cameraBaselineY + renderer.virtualHeight / 2 * (1 / zoom - 1 / baselineZoom);
         let y = baseline;
@@ -173,32 +174,103 @@ export class ChromeController {
             const unitsPerPixel = renderer.virtualHeight / renderer.canvas.clientHeight / zoom;
             const groundY = Math.min(GAME_BOUNDS.WORLD_GROUND_Y, GAME_BOUNDS.WORLD_LAUNCHER_Y, GAME_BOUNDS.CROWD_Y);
             // Preserve the previous footing margin in screen pixels at the wider zoom.
-            const footingPixels = 16 * renderer.canvas.clientHeight / renderer.virtualHeight * baselineZoom;
+            const footingPixels = 16 * renderer.canvas.clientHeight / renderer.virtualHeight;
             const clearY = this.getMobileDockTop() - 16 - footingPixels;
             dockTargetY = Math.min(baseline, groundY + (clearY - canvas.top - canvas.height / 2) * unitsPerPixel);
             const active = this.panels.find(panel => panel.classList.contains('active'));
             if (active && ['upgrades-content', 'buildings-content', 'crowd-content'].includes(active.id)) {
                 const shift = Math.max(0, innerHeight - active.getBoundingClientRect().top + 24);
-                y = baseline - Math.min(shift, innerHeight * .52) * unitsPerPixel;
+                y = baseline - Math.min(shift, innerHeight * .8) * unitsPerPixel;
             }
             y = Math.min(y, dockTargetY);
         }
         return { y, zoom, dockTargetY };
     }
 
+    /** Input changes the desired zoom; the camera keeps the ground anchored. */
+    setPlayerZoom(zoom, anchorClientX = null) {
+        const bounds = this.game.getVenueCameraBounds();
+        this.cameraAutoZoom = null;
+        this.cameraDesiredZoom = Math.max(bounds.wideZoom, Math.min(bounds.closeZoom, zoom));
+        this.game.cameraTargetX = null;
+        // Keep the world point under the cursor fixed on screen while zooming.
+        this.cameraZoomAnchor = null;
+        const renderer = this.game.renderer2D;
+        if (anchorClientX != null && renderer.canvas.clientHeight > 0) {
+            const rect = renderer.canvas.getBoundingClientRect();
+            const pixelOffset = anchorClientX - rect.left - rect.width / 2;
+            const unitsPerPixel = renderer.virtualHeight / renderer.canvas.clientHeight;
+            this.cameraZoomAnchor = { pixelOffset, unitsPerPixel, worldX: renderer.cameraX + pixelOffset * unitsPerPixel / renderer.cameraZoom };
+        }
+    }
+
     /** Keep the tab bar below ground objects; input shares the adjusted camera. */
     animateCamera() {
-        const tick = () => {
+        const tick = (time = performance.now()) => {
+            const elapsed = this.cameraLastFrameTime == null ? 0 : Math.max(0, Math.min((time - this.cameraLastFrameTime) / 1000, .05));
+            this.cameraLastFrameTime = time;
             const renderer = this.game.renderer2D;
             if (renderer && !this.game.cinematicManager?.isPlaying && !this.game.grandFinaleManager?.active) {
-                if (this.mobile.matches || this.cameraWasPanned) {
+                {
+                    const bounds = this.game.getVenueCameraBounds();
+                    const viewportChanged = this.cameraViewportWidth !== renderer.canvas.clientWidth || this.cameraViewportHeight !== renderer.canvas.clientHeight;
+                    const modeChanged = this.cameraModeMobile !== this.mobile.matches;
+                    // Zoom out only when the venue grew, e.g. a new launcher slot
+                    // landed outside it; a resize alone is handled below.
+                    const venueWidened = !viewportChanged && !modeChanged && this.cameraVenueLeft != null
+                        && (bounds.left < this.cameraVenueLeft - .5 || bounds.right > this.cameraVenueRight + .5);
+                    if (venueWidened || this.cameraDesiredZoom == null) {
+                        this.cameraDesiredZoom = bounds.wideZoom;
+                        this.cameraAutoZoom = venueWidened && bounds.wideZoom < renderer.cameraZoom
+                            ? { from: renderer.cameraZoom, to: bounds.wideZoom, elapsed: 0, duration: VENUE_ZOOM_OUT_DURATION_MS / 1000 }
+                            : null;
+                        this.game.cameraTargetX = null;
+                    } else if (viewportChanged) {
+                        this.cameraDesiredZoom = Math.max(bounds.wideZoom, Math.min(bounds.closeZoom, this.cameraDesiredZoom));
+                        if (this.cameraAutoZoom) {
+                            this.cameraAutoZoom = { from: renderer.cameraZoom, to: this.cameraDesiredZoom, elapsed: 0, duration: VENUE_ZOOM_OUT_DURATION_MS / 1000 };
+                        }
+                    }
+                    this.cameraViewportWidth = renderer.canvas.clientWidth;
+                    this.cameraViewportHeight = renderer.canvas.clientHeight;
+                    this.cameraVenueLeft = bounds.left;
+                    this.cameraVenueRight = bounds.right;
+                    // A readable portrait view cannot always show the whole venue.
+                    // Reveal a new building after the current gesture/cinematic.
+                    const focusX = this.game.pendingVenueFocusX;
+                    if (Number.isFinite(focusX) && !this.game.ui.isDragging && !this.game.ui.isScrollDragging && !this.game.ui.isCrowdDragging) {
+                        if (this.mobile.matches) {
+                            const aspect = (renderer.canvas.clientWidth || 1) / (renderer.canvas.clientHeight || 1);
+                            const safeHalfWidth = renderer.virtualHeight * aspect / (2 * this.cameraDesiredZoom) * .8;
+                            if (Math.abs(focusX - renderer.cameraX) > safeHalfWidth) {
+                                this.game.cameraTargetX = this.game.clampCameraX(focusX, this.cameraDesiredZoom);
+                            }
+                        }
+                        this.game.pendingVenueFocusX = null;
+                    }
                     const { y: target, zoom, dockTargetY } = this.getCameraFraming();
                     // Startup and breakpoint changes apply the mobile footing immediately.
                     // A cinematic handing the camera back in the same mode eases both values.
-                    const modeChanged = this.cameraModeMobile !== this.mobile.matches;
-                    let nextZoom = modeChanged ? zoom : renderer.cameraZoom + (zoom - renderer.cameraZoom) * .12;
+                    let nextZoom;
+                    if (modeChanged) {
+                        this.cameraAutoZoom = null;
+                        nextZoom = zoom;
+                    } else if (this.cameraAutoZoom) {
+                        const transition = this.cameraAutoZoom;
+                        transition.elapsed = Math.min(transition.duration, transition.elapsed + elapsed);
+                        const progress = transition.elapsed / transition.duration;
+                        const eased = progress * progress * (3 - 2 * progress);
+                        nextZoom = transition.from + (transition.to - transition.from) * eased;
+                        if (progress >= 1) this.cameraAutoZoom = null;
+                    } else {
+                        nextZoom = renderer.cameraZoom + (zoom - renderer.cameraZoom) * .12;
+                    }
                     if (Math.abs(nextZoom - zoom) < .0001) nextZoom = zoom;
-                    let next = modeChanged ? target : renderer.cameraY + (target - renderer.cameraY) * .12;
+                    // Recalculate Y for the intermediate zoom too: interpolating Y
+                    // independently makes the floor drift while zooming.
+                    const currentZoomTarget = this.getCameraFraming(nextZoom).y;
+                    let next = modeChanged ? currentZoomTarget : renderer.cameraY + (currentZoomTarget - renderer.cameraY) * .12;
+                    if (nextZoom !== renderer.cameraZoom) next = currentZoomTarget;
                     // The closed tab bar must never cover the ground while the camera eases.
                     if (this.mobile.matches) {
                         const groundY = Math.min(GAME_BOUNDS.WORLD_GROUND_Y, GAME_BOUNDS.WORLD_LAUNCHER_Y, GAME_BOUNDS.CROWD_Y);
@@ -206,7 +278,11 @@ export class ChromeController {
                         next = Math.min(next, dockAtCurrentZoom);
                     }
                     if (Math.abs(next - target) < .3) next = target;
-                    if (next !== renderer.cameraY || nextZoom !== renderer.cameraZoom) renderer.setCamera({ x: renderer.cameraX, y: next, zoom: nextZoom });
+                    const anchor = this.cameraZoomAnchor;
+                    if (anchor && (nextZoom === zoom || this.cameraAutoZoom || modeChanged)) this.cameraZoomAnchor = null;
+                    const anchoredX = anchor ? anchor.worldX - anchor.pixelOffset * anchor.unitsPerPixel / nextZoom : renderer.cameraX;
+                    const x = this.game.clampCameraX(anchoredX, nextZoom);
+                    if (next !== renderer.cameraY || nextZoom !== renderer.cameraZoom || x !== renderer.cameraX) renderer.setCamera({ x, y: next, zoom: nextZoom });
                     this.cameraModeMobile = this.mobile.matches;
                     this.cameraWasPanned = this.mobile.matches || next !== this.cameraBaselineY || nextZoom !== this.cameraBaselineZoom;
                 }

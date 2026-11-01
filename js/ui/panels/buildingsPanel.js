@@ -3,7 +3,6 @@ import { doodleIcon } from '../doodleIcons.js';
 
 const DISPLAY = {
     AUTO_LAUNCHER: { label: 'Launchers', icon: 'launcher', title: 'Auto Launcher' },
-    RESOURCE_GENERATOR: { label: 'Generators', icon: 'generator', title: 'Sparkle Generator' },
     CATAPULT: { label: 'Catapults', icon: 'catapult', title: 'Catapult' },
 };
 
@@ -52,7 +51,6 @@ export function render(container) {
               <div class="building-launcher-section">
                 <div class="building-list-heading"><h3>Launchers</h3></div>
                 <div class="building-list-tools">
-                    ${type.panel.showSpreadButton ? `<button type="button" id="spread-launchers">${doodleIcon('spread')}<span>Spread out</span></button>` : ''}
                     ${type.panel.showRandomizeButton ? `<button type="button" id="randomize-launcher-recipes">${doodleIcon('shuffle')}<span>Mix all</span></button>` : ''}
                 </div>
                 <div id="${type.id}-list" class="building-launcher-list"></div>

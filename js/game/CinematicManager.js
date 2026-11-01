@@ -17,7 +17,6 @@ export const CINEMATIC_CONFIG = {
 
     // First crowd cinematic zoom-out (after coin toss)
     ZOOM_OUT_DELAY_MS:    1500,  // ms after coin toss before zoom-out starts
-    ZOOM_OUT_DURATION_MS: 900,  // ms for zoom-out animation
 
     // Mobile shots fit the fan and the burst into the actual CSS viewport.
     MOBILE: {
@@ -128,10 +127,10 @@ export default class CinematicManager {
     }
 
     /** Tween into a responsive shot, then hold it until the next camera command. */
-    frameCamera(getCamera, durationMs) {
+    frameCamera(getCamera, durationMs, anchor = null) {
         this.stopFollowing();
         const target = getCamera();
-        const transition = this.zoomCamera(target.zoom, durationMs, target.x, target.y);
+        const transition = this.zoomCamera(target.zoom, durationMs, target.x, target.y, anchor);
         this._cameraFraming = getCamera;
         return transition;
     }
@@ -194,7 +193,7 @@ export default class CinematicManager {
      * Smoothly animate zoom from current to targetZoom over durationMs.
      * targetX/targetY: world position to center the zoom on. If null, keeps current position.
      */
-    zoomCamera(targetZoom, durationMs, targetX = null, targetY = null) {
+    zoomCamera(targetZoom, durationMs, targetX = null, targetY = null, anchor = null) {
         this._cameraFraming = null;
         return new Promise(resolve => {
             const r = this.game.renderer2D;
@@ -205,6 +204,7 @@ export default class CinematicManager {
                 startY: r.cameraY,
                 targetX: targetX ?? r.cameraX,
                 targetY: targetY ?? r.cameraY,
+                anchor,
                 elapsed: 0,
                 durationMs,
                 resolve,
@@ -232,7 +232,7 @@ export default class CinematicManager {
         }
 
         if (this._zoomTween) {
-            const { startZoom, startX, startY, durationMs, resolve } = this._zoomTween;
+            const { startZoom, startX, startY, durationMs, resolve, anchor } = this._zoomTween;
             const target = this._cameraFraming?.();
             const targetZoom = target?.zoom ?? this._zoomTween.targetZoom;
             const targetX = target?.x ?? this._zoomTween.targetX;
@@ -246,10 +246,23 @@ export default class CinematicManager {
             // If following an entity, ease toward their live X so we don't snap from
             // the camera's current (lagged) position onto the entity. Otherwise
             // interpolate to the static targetX.
-            const x = this.followedEntity
+            let x = this.followedEntity
                 ? startX + (this.followedEntity.x - startX) * ease
                 : startX + (targetX - startX) * ease;
-            const y = startY + (targetY - startY) * ease;
+            let y = startY + (targetY - startY) * ease;
+            // Interpolate the anchor in screen space, not camera coordinates.
+            // Otherwise changing zoom and Y together can push the floor below
+            // the screen even though both endpoint framings are visible.
+            if (Number.isFinite(anchor?.x)) {
+                const startOffset = (anchor.x - startX) * startZoom;
+                const targetOffset = (anchor.x - targetX) * targetZoom;
+                x = anchor.x - (startOffset + (targetOffset - startOffset) * ease) / zoom;
+            }
+            if (Number.isFinite(anchor?.y)) {
+                const startOffset = (anchor.y - startY) * startZoom;
+                const targetOffset = (anchor.y - targetY) * targetZoom;
+                y = anchor.y - (startOffset + (targetOffset - startOffset) * ease) / zoom;
+            }
 
             // Take full control of camera — kill game-loop pan so nothing fights us
             this.game.cameraTargetX = null;

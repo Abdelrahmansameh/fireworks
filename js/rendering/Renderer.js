@@ -1080,6 +1080,10 @@ export default class Renderer2D {
         this.a_texCoord_Normal = gl.getAttribLocation(this.normalProgram, 'a_texCoord');
         this.u_matrix_Normal = gl.getUniformLocation(this.normalProgram, 'u_matrix');
         this.u_color_Normal = gl.getUniformLocation(this.normalProgram, 'u_color');
+        this.u_gradientBounds_Normal = gl.getUniformLocation(this.normalProgram, 'u_gradientBounds');
+        this.u_gradientLeft_Normal = gl.getUniformLocation(this.normalProgram, 'u_gradientLeft');
+        this.u_gradientRight_Normal = gl.getUniformLocation(this.normalProgram, 'u_gradientRight');
+        this.u_useGradient_Normal = gl.getUniformLocation(this.normalProgram, 'u_useGradient');
         this.u_texture_Normal = gl.getUniformLocation(this.normalProgram, 'u_texture');
         this.u_useTexture_Normal = gl.getUniformLocation(this.normalProgram, 'u_useTexture'); this.instancedProgram = this._initProgram(this._instancedVS(), this._instancedFS());
         this.u_model_Normal = gl.getUniformLocation(this.normalProgram, 'u_model');
@@ -1586,6 +1590,18 @@ export default class Renderer2D {
         this._colorScratch[2] = shape.color.b;
         this._colorScratch[3] = shape.color.a;
         gl.uniform4fv(this.u_color_Normal, this._colorScratch);
+        const gradient = shape.lightGradient;
+        gl.uniform1i(this.u_useGradient_Normal, !!gradient);
+        if (gradient) {
+            const color = shape.color;
+            const left = gradient.previous?.color ?? color;
+            const right = gradient.next?.color ?? color;
+            gl.uniform2f(this.u_gradientBounds_Normal, gradient.left, gradient.right);
+            gl.uniform4f(this.u_gradientLeft_Normal, (left.r + color.r) / 2,
+                (left.g + color.g) / 2, (left.b + color.b) / 2, (left.a + color.a) / 2);
+            gl.uniform4f(this.u_gradientRight_Normal, (right.r + color.r) / 2,
+                (right.g + color.g) / 2, (right.b + color.b) / 2, (right.a + color.a) / 2);
+        }
 
         const useTexture = shape.texture !== null;
         gl.uniform1i(this.u_useTexture_Normal, useTexture);
@@ -1772,6 +1788,7 @@ export default class Renderer2D {
         varying vec2 v_texCoord;
         varying vec2 v_worldPosition;
         varying float v_sourceY;
+        varying float v_gradientX;
         ${this._waterVertexFunctions()}
         void main(){
             if (u_waterReflection) {
@@ -1786,6 +1803,7 @@ export default class Renderer2D {
                 gl_Position = u_matrix * vec4(a_position, 0.0, 1.0);
             }
             v_texCoord = a_texCoord;
+            v_gradientX = a_position.x;
         }
         `;
     }
@@ -1793,6 +1811,10 @@ export default class Renderer2D {
         return `
         precision highp float;
         uniform vec4 u_color;
+        uniform bool u_useGradient;
+        uniform vec2 u_gradientBounds;
+        uniform vec4 u_gradientLeft;
+        uniform vec4 u_gradientRight;
         uniform sampler2D u_texture;
         uniform bool u_useTexture;
         uniform bool u_waterReflection;
@@ -1802,14 +1824,17 @@ export default class Renderer2D {
         varying vec2 v_texCoord;
         varying vec2 v_worldPosition;
         varying float v_sourceY;
+        varying float v_gradientX;
         ${this._waterFragmentFunctions()}
         void main(){
+            vec4 color = u_useGradient ? mix(u_gradientLeft, u_gradientRight,
+                clamp((v_gradientX - u_gradientBounds.x) / (u_gradientBounds.y - u_gradientBounds.x), 0.0, 1.0)) : u_color;
             vec4 base;
             if (u_useTexture) {
                 vec4 texColor = texture2D(u_texture, v_texCoord);
-                base = texColor * u_color;
+                base = texColor * color;
             } else {
-                base = u_color;
+                base = color;
             }
             if (u_waterReflection) {
                 if (v_sourceY < u_waterBounds.w || v_worldPosition.x < u_waterBounds.x
@@ -1817,6 +1842,13 @@ export default class Renderer2D {
                     || v_worldPosition.y > u_waterBounds.w) discard;
                 base = shadeWaterReflection(base, v_worldPosition);
             } else if (u_waterSurface) base = shadeWaterSurface(base, v_worldPosition);
+            // Dark gradients can change by less than one 8-bit color step
+            // over dozens of pixels. Dither only lit gradients so those steps
+            // do not appear as broad vertical bands on the mountains.
+            if (u_useGradient && length(u_gradientRight.rgb - u_gradientLeft.rgb) > 0.0001) {
+                float noise = fract(sin(dot(gl_FragCoord.xy, vec2(12.9898, 78.233))) * 43758.5453) - 0.5;
+                base.rgb += noise / 255.0;
+            }
             gl_FragColor = base;
         }
         `;

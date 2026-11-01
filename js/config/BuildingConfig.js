@@ -27,43 +27,10 @@ export const BUILDING_TYPES = {
         statId: 'stat-bld-auto',
         panel: {
             showLauncherList: true,
-            showSpreadButton: true,
             showRandomizeButton: true,
         },
         zIndex: 20,
     },
-    RESOURCE_GENERATOR: {
-        id: 'resource_generator',
-        name: 'Sparkle Generator',
-        description: 'Passively generates sparkles over time',
-        baseCost: 375,
-        costRatio: 1.8,
-        currency: 'gold',
-        width: 25,
-        height: 30,
-        y: -435,
-        color: { r: 1, g: 0.84, b: 0, a: 1 },
-        texture: null,
-        textureKey: null,
-        skeletonUrl: 'assets/skeletons/sparkle_generator.json',
-        skeletonScale: 15,
-        baseProductionRate: 1,
-        maxCount: 3,
-        sparkleTrailBaseCount: 8,
-        sparkleTrailScalingRatio: 0.25,
-        maxSparkleTrailBurstCount: 100, 
-        resourceType: 'sparkles',
-        unlockId: 'resource_generator',
-        statId: 'stat-bld-gen',
-        maxAccumulator: 200,
-        panel: {
-            showLauncherList: false,
-            showSpreadButton: false,
-            showRandomizeButton: false,
-        },
-        zIndex: 10,
-    },
-
     CATAPULT: {
         id: 'catapult',
         name: 'Catapult',
@@ -80,8 +47,8 @@ export const BUILDING_TYPES = {
         skeletonUrl: 'assets/skeletons/catapult.json',
         skeletonScale: 15,
         baseFireInterval: 5,
-        // Position — to the left of the crowd so launched members arc into the fireworks zone
-        x: -1400,
+        // Share the crowd area so launched members arc toward the fireworks.
+        x: -450,
         y: -435,
         // Animation timing
         fireInterval: 6,   // seconds between shots (configurable)
@@ -94,7 +61,6 @@ export const BUILDING_TYPES = {
         statId: 'stat-bld-catapult',
         panel: {
             showLauncherList: false,
-            showSpreadButton: false,
             showRandomizeButton: false,
         },
     },

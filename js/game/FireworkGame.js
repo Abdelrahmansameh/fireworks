@@ -1,6 +1,6 @@
 import { gameStorage } from '../platform/GameStorage.js';
-import { fireworksForCrowd, getCrowdArrivalProgress } from '../systems/ProductionRates.js';
-import { FIREWORK_CONFIG, GAME_BOUNDS, PROCEDURAL_BACKGROUND_CONFIG, DEFAULT_RECIPE_COMPONENTS, GENERIC_RECIPE_NAMES, AUTO_LAUNCHER_COST_BASE, CROWD_CONFIG } from '../config/config.js';
+import { fireworksForCrowd } from '../systems/ProductionRates.js';
+import { FIREWORK_CONFIG, GAME_BOUNDS, PROCEDURAL_BACKGROUND_CONFIG, DEFAULT_RECIPE_COMPONENTS, GENERIC_RECIPE_NAMES, AUTO_LAUNCHER_COST_BASE, CROWD_CONFIG, CULTIST_CONFIG, JETPACK_CONFIG } from '../config/config.js';
 import GameCore from './GameCore.js';
 import InstancedParticleSystem from '../particles/InstancedParticleSystem.js';
 import Crowd from '../entities/Crowd.js';
@@ -16,6 +16,7 @@ import * as TextureManager from '../rendering/TextureManager.js';
 import AudioManager from '../audio/AudioManager.js';
 import ProcduralBackground from '../entities/ProcduralBackground.js';
 import CursorParticles from '../ui/CursorParticles.js';
+import { getVenueStage, VENUE_ZOOM_OUT_DURATION_MS } from '../config/VenueProgression.js';
 
 /**
  * FireworkGame — the live, browser-rendered game.
@@ -108,7 +109,9 @@ class FireworkGame extends GameCore {
             this.addSparkles(sparkles * (this.jetpackStats.sparklesPerParticleMultiplier ?? 1), 'jetpack');
             this.statsTracker.recordJetpackParticle(particleCount);
         };
+        this.crowd.getJetpackCeiling = () => this.getJetpackCeilingY();
         this.crowd.setJetpackCount(this.jetpackCount, this.jetpackStats);
+        this.crowd.setCultistCount(this.cultistCount, this.cultistRituals);
         this.crowd.particleSystem = this.particleSystem;
         this.crowd.onCatchSparkles = (amount) => {
             const multiplied = amount * (this.crowdStats.sparklesPerParticleMultiplier ?? 1);
@@ -116,6 +119,7 @@ class FireworkGame extends GameCore {
             this.statsTracker.recordCrowdCatchParticle();
         };
         this.crowd.onFirstPersonArrival = (person) => {
+            getVenueStage(this);
             if (this.cinematicManager.isPlaying) {
                 this.cinematicManager.resumeEvent('firstCrowdArrival');
             }
@@ -159,6 +163,8 @@ class FireworkGame extends GameCore {
             this.crowd.setCount(correctedCrowd);
         }
         this._isRestoring = false;
+        // Start the current goal before the first launch can count toward it.
+        this.milestones.tick();
         this.saveProgress();
     }
 
@@ -166,13 +172,17 @@ class FireworkGame extends GameCore {
         this.canvas2D = document.getElementById('game-canvas');
         this.renderer2D = new Renderer2D.Renderer2D(this.canvas2D, {});
         this.renderer2D._resizeIfNeeded();
+        // Bring the opening view closer while keeping the same ground line.
+        const initialZoom = GAME_BOUNDS.INITIAL_ZOOM;
+        const initialY = this.renderer2D.virtualHeight / 2 * (1 / initialZoom - 1);
+        this.renderer2D.setCamera({ x: 0, y: initialY, zoom: initialZoom });
 
         this.procduralBackground = new ProcduralBackground(this.renderer2D, PROCEDURAL_BACKGROUND_CONFIG);
         this.procduralBackground.generate();
 
         this.cameraTargetX = 0;
         this.cameraTargetY = 0;
-        this.cameraTargetZoom = 1.0;
+        this.cameraTargetZoom = initialZoom;
 
         window.addEventListener('resize', this.onWindowResize.bind(this), false);
 
@@ -221,6 +231,40 @@ class FireworkGame extends GameCore {
         return { ...GAME_BOUNDS };
     }
 
+    /** Top of the widest view the player can zoom out to, less a margin for jetpack fans. */
+    getJetpackCeilingY() {
+        const r = this.renderer2D;
+        const zoom = this.getVenueCameraBounds().wideZoom;
+        const y = this.chrome?.getCameraFraming(zoom).y ?? r.cameraY;
+        return y + r.virtualHeight / 2 / zoom - JETPACK_CONFIG.ceilingMargin;
+    }
+
+    /** Full unlocked interval, plus the zoom range that fits it in this viewport. */
+    getVenueCameraBounds() {
+        const r = this.renderer2D;
+        const stage = getVenueStage(this);
+        const mobile = this.chrome?.mobile.matches ?? window.matchMedia('(max-width: 700px)').matches;
+        const closeZoom = (this.chrome?.cameraBaselineZoom ?? GAME_BOUNDS.INITIAL_ZOOM) * (mobile ? GAME_BOUNDS.MOBILE_ZOOM_FACTOR : 1);
+        const aspect = (r.canvas.clientWidth || 1920) / (r.canvas.clientHeight || 1080);
+        const initialWidth = r.virtualHeight * aspect / closeZoom;
+        const left = stage.index ? Math.min(-initialWidth / 2, stage.left) : -initialWidth / 2;
+        const right = stage.index ? Math.max(initialWidth / 2, stage.right) : initialWidth / 2;
+        // On portrait screens a full-venue overview would make characters
+        // illegible. Keep a readable scale and permit panning at the widest view.
+        const fitZoom = closeZoom * initialWidth / (right - left);
+        const wideZoom = mobile ? Math.min(closeZoom, Math.max(0.4, fitZoom)) : fitZoom;
+        return { ...stage, left, right, closeZoom, wideZoom };
+    }
+
+    clampCameraX(x, zoom = this.renderer2D.cameraZoom) {
+        const bounds = this.getVenueCameraBounds();
+        const r = this.renderer2D;
+        const aspect = (r.canvas.clientWidth || 1920) / (r.canvas.clientHeight || 1080);
+        const halfWidth = r.virtualHeight * aspect / (2 * zoom);
+        if (bounds.right - bounds.left <= 2 * halfWidth) return (bounds.left + bounds.right) / 2;
+        return Math.max(bounds.left + halfWidth, Math.min(bounds.right - halfWidth, x));
+    }
+
     detectMobile() {
         return ('ontouchstart' in window) || navigator.maxTouchPoints > 0 || navigator.userAgent.includes('Mobi');
     }
@@ -237,10 +281,7 @@ class FireworkGame extends GameCore {
         const totalSparklesPerSec = this.calculateTotalSparklesPerSecond();
         const launcherCount = this.buildingManager.getBuildingsByType('AUTO_LAUNCHER').length;
 
-        const passiveSparklesPerSec = this.calculateSparklesPerSecond(
-            this.buildingManager.buildings.filter(b => b.type !== 'AUTO_LAUNCHER')
-        );
-        this.resourceManager.resources.sparkles.updateFromLevel(passiveSparklesPerSec);
+        this.resourceManager.resources.sparkles.updateFromLevel(this.calculateCultistSparklesPerSecond());
 
         this.ui.updateUI(
             Math.floor(this.getSparkles()),
@@ -262,12 +303,14 @@ class FireworkGame extends GameCore {
         this.profiler.startFunction('buildingsUpdate');
         this.buildingManager.update(deltaTime);
         this.profiler.endFunction('buildingsUpdate');
+        this.cultistRituals.update(deltaTime);
 
 
         const targetCrowdSize = this._calculateTargetCrowdCount(this.fireworkSystem.fireworkCount);
 
-        if (targetCrowdSize > 0 && !this.crowd.people.some(person => !person.isJetpack) && !this.hasSeenFirstCrowdCinematic && !this.cinematicManager.isPlaying) {
+        if (targetCrowdSize > 0 && !this.crowd.people.some(person => !person.isJetpack && !person.isCultist) && !this.hasSeenFirstCrowdCinematic && !this.cinematicManager.isPlaying) {
             this.hasSeenFirstCrowdCinematic = true;
+            getVenueStage(this);
             this.saveProgress();
             this.playFirstCrowdCinematic();
         } else if (!this.cinematicManager.isPlaying) {
@@ -396,6 +439,9 @@ class FireworkGame extends GameCore {
         this.grandFinaleUnlocked = false;
         this.grandFinaleManager.reset();
         this.jetpackCount = 0;
+        this.cultistCount = 0;
+        this.cultistRituals.setCount(0);
+        this.cultistStats = { sparkleMultiplier: 1, ritualSpeedMultiplier: 1 };
         this.jetpackStats = {
             speedMultiplier: 1,
             collectionRadiusMultiplier: 1,
@@ -409,13 +455,13 @@ class FireworkGame extends GameCore {
             countBonus: 0,
         };
         this.launcherStats = { spawnIntervalMultiplier: 1, sparkleYieldMultiplier: 1 };
-        this.generatorStats = { productionRateMultiplier: 1 };
         this.catapultStats = { maxCatapults: 1 };
 
         this.resourceManager.reset();
 
         this.progression.resetUpgradesState();
         this.progression.resetUnlockState();
+        this.milestones.reset();
 
         this.unlockedPatternKeys = [patternKeys[0]];
         this.hasSeenFirstCrowdCinematic = false;
@@ -443,7 +489,9 @@ class FireworkGame extends GameCore {
                 this.addSparkles(sparkles * (this.jetpackStats.sparklesPerParticleMultiplier ?? 1), 'jetpack');
                 this.statsTracker.recordJetpackParticle(particleCount);
             };
+            this.crowd.getJetpackCeiling = () => this.getJetpackCeilingY();
             this.crowd.setJetpackCount(this.jetpackCount, this.jetpackStats);
+            this.crowd.setCultistCount(this.cultistCount, this.cultistRituals);
             this.crowd.particleSystem = this.particleSystem;
             this.crowd.onCatchSparkles = (amount) => {
                 const multiplied = amount * (this.crowdStats.sparklesPerParticleMultiplier ?? 1);
@@ -451,6 +499,7 @@ class FireworkGame extends GameCore {
                 this.statsTracker.recordCrowdCatchParticle();
             };
             this.crowd.onFirstPersonArrival = (person) => {
+                getVenueStage(this);
                 if (this.cinematicManager.isPlaying) {
                     this.cinematicManager.resumeEvent('firstCrowdArrival');
                 }
@@ -483,6 +532,7 @@ class FireworkGame extends GameCore {
         this.initBackgroundColor();
 
         this.updateCrowdDisplay();
+        this.milestones.tick();
     }
 
     eraseAllRecipes() {
@@ -691,7 +741,11 @@ class FireworkGame extends GameCore {
             selectedRecipeIndex: this.selectedRecipeIndex,
             currentRecipeName: document.getElementById('recipe-name').value,
             buildingManagerData: this.buildingManager.serialize(),
+            venueStage: getVenueStage(this).index,
+            venueExtentLeft: gameStorage.getItem('venueExtentLeft'),
+            venueLauncherRight: gameStorage.getItem('venueLauncherRight'),
             jetpackCount: this.jetpackCount,
+            cultistCount: this.cultistCount,
             currentRecipeComponents: this.currentRecipeComponents,
             backgroundColor: '#f13b3b',
             resources: this.resourceManager.save(),
@@ -700,6 +754,7 @@ class FireworkGame extends GameCore {
                 ...this.progression.getState(),
                 firstClicks: this.firstClickStates,
             },
+            milestones: this.milestones.getState(),
             unlockedPatternKeys: this.unlockedPatternKeys,
             hasSeenFirstCrowdCinematic: this.hasSeenFirstCrowdCinematic
         };
@@ -710,6 +765,12 @@ class FireworkGame extends GameCore {
         const data = JSON.parse(jsonString);
 
         this.resetGame();
+        if (Number.isFinite(Number(data.venueStage))) {
+            gameStorage.setItem('venueStage', String(Math.max(0, Math.floor(Number(data.venueStage)))));
+        }
+        for (const key of ['venueExtentLeft', 'venueLauncherRight']) {
+            if (data[key] != null && Number.isFinite(Number(data[key]))) gameStorage.setItem(key, String(Number(data[key])));
+        }
 
         if (data.resources) {
             const resourceData = typeof data.resources === 'string' ? JSON.parse(data.resources) : data.resources;
@@ -733,6 +794,8 @@ class FireworkGame extends GameCore {
         gameStorage.setItem('backgroundColor', PROCEDURAL_BACKGROUND_CONFIG.bodyBackgroundColor);
 
         this.jetpackCount = Math.min(128, Math.max(0, Number(data.jetpackCount) || 0));
+        this.cultistCount = Math.min(CULTIST_CONFIG.maxCount, Math.max(0, Number(data.cultistCount) || 0));
+        this.cultistRituals.setCount(this.cultistCount);
 
         if (data.buildingManagerData) {
             const buildingData = data.buildingManagerData;
@@ -764,6 +827,10 @@ class FireworkGame extends GameCore {
             }
         }
 
+        // Without saved milestones the chain migrates from what the save owns.
+        if (data.milestones) this.milestones.loadState(data.milestones);
+        else this.milestones.reset();
+
         this.hasSeenFirstCrowdCinematic = !!data.hasSeenFirstCrowdCinematic;
         this.grantedRecipePatterns = new Set(Array.isArray(data.grantedRecipePatterns)
             ? data.grantedRecipePatterns : this.getOwnedPatternKeys());
@@ -773,8 +840,10 @@ class FireworkGame extends GameCore {
         this.ui.initializeUnlockStates();
         this.progression.applyAll(this);
         this.crowd?.setJetpackCount?.(this.jetpackCount, this.jetpackStats);
+        this.crowd?.setCultistCount?.(this.cultistCount, this.cultistRituals);
         this.crowd.setCount(this._calculateTargetCrowdCount(this.fireworkSystem.fireworkCount));
         this.updateCrowdDisplay();
+        this.milestones.tick();
         this.saveProgress();
     }
 
@@ -796,15 +865,8 @@ class FireworkGame extends GameCore {
     }
 
     setCameraTarget(targetX) {
-        const viewHalfWidth = (this.renderer2D.canvas.width / this.renderer2D.cameraZoom) / 2;
-        const minCameraX = GAME_BOUNDS.SCROLL_MIN_X;
-        const maxCameraX = GAME_BOUNDS.SCROLL_MAX_X - viewHalfWidth;
-
-        if (minCameraX > maxCameraX) {
-            this.cameraTargetX = (GAME_BOUNDS.SCROLL_MIN_X + GAME_BOUNDS.SCROLL_MAX_X) / 2;
-        } else {
-            this.cameraTargetX = Math.max(minCameraX, Math.min(maxCameraX, targetX));
-        }
+        // Cinematics deliberately visit the entrance beyond normal player bounds.
+        this.cameraTargetX = this.cinematicManager?.isPlaying ? targetX : this.clampCameraX(targetX);
     }
 
     isTabContentActive() {
@@ -822,34 +884,28 @@ class FireworkGame extends GameCore {
         const nextThresholdElement = document.getElementById('next-threshold');
         const progressBar = document.getElementById('threshold-progress');
         const fireworksLabel = document.getElementById('crowd-firework-progress');
-        const arrivalCountdown = document.getElementById('crowd-arrival-countdown');
 
         const currentCrowd = this.crowd ? this.crowd.people.length : 0;
-        const naturalCrowd = this.crowd ? this.crowd.people.filter(person => !person.isJetpack).length : 0;
+        const naturalCrowd = this.crowd ? this.crowd.people.filter(person => !person.isJetpack && !person.isCultist).length : 0;
         if (crowdCountElement) {
             crowdCountElement.textContent = currentCrowd;
         }
         if (crowdCountLabel) crowdCountLabel.textContent = currentCrowd === 1 ? 'fan' : 'fans';
 
-        // Inverse thresholds stay absolute; new venues also have an arrival clock.
-        const currentFireworks = this.fireworkSystem.fireworkCount;
+        // Inverse thresholds stay absolute. The arrival clock still paces fans, but the
+        // panel only shows fireworks, holding at the target while the fan is on the way.
+        const nextThresholdFireworks = fireworksForCrowd(naturalCrowd + 1, this);
+        const full = !Number.isFinite(nextThresholdFireworks);
+        const currentFireworks = full
+            ? this.fireworkSystem.fireworkCount
+            : Math.min(this.fireworkSystem.fireworkCount, nextThresholdFireworks);
         if (currentSpsElement) {
             currentSpsElement.textContent = Math.floor(currentFireworks).toLocaleString();
         }
-
-        const nextThresholdFireworks = fireworksForCrowd(naturalCrowd + 1, this);
-        const full = !Number.isFinite(nextThresholdFireworks);
-        const arrival = getCrowdArrivalProgress(naturalCrowd + 1, this);
-        const waitingForArrival = !full && currentFireworks >= nextThresholdFireworks && arrival.secondsRemaining > 1e-7;
         if (nextThresholdElement) {
             nextThresholdElement.textContent = full ? '—' : Math.ceil(nextThresholdFireworks).toLocaleString();
         }
-        if (fireworksLabel) fireworksLabel.hidden = full || waitingForArrival;
-        if (arrivalCountdown) {
-            arrivalCountdown.hidden = !waitingForArrival;
-            const text = waitingForArrival ? `Next fan: ${Math.ceil(arrival.secondsRemaining)}s` : '';
-            if (arrivalCountdown.textContent !== text) arrivalCountdown.textContent = text;
-        }
+        if (fireworksLabel) fireworksLabel.hidden = full;
         const fullLabel = document.getElementById('crowd-full');
         if (fullLabel) fullLabel.hidden = !full;
 
@@ -862,18 +918,12 @@ class FireworkGame extends GameCore {
             const currentThresholdFireworks = fireworksForCrowd(naturalCrowd, this);
             const base = Math.max(0, currentThresholdFireworks);
             const denom = Math.max(1e-6, nextThresholdFireworks - base);
-            const fireworkProgress = currentFireworks >= nextThresholdFireworks ? 1 : Math.min(1, Math.max(0, (currentFireworks - base) / denom));
-            const progress = Math.min(fireworkProgress, arrival.progress) * 100;
+            const progress = Math.min(1, Math.max(0, (currentFireworks - base) / denom)) * 100;
             progressBar.style.width = `${progress}%`;
             progressBar.parentElement.setAttribute('aria-valuenow', Math.round(progress));
-            progressBar.parentElement.setAttribute('aria-valuetext', waitingForArrival
-                ? `Next fan in ${Math.ceil(arrival.secondsRemaining)} seconds`
-                : `${Math.floor(currentFireworks)} of ${Math.ceil(nextThresholdFireworks)} fireworks`);
+            progressBar.parentElement.setAttribute('aria-valuetext',
+                `${Math.floor(currentFireworks)} of ${Math.ceil(nextThresholdFireworks)} fireworks`);
         }
-    }
-
-    spreadLaunchers() {
-        this.buildingManager.spreadBuildings('AUTO_LAUNCHER');
     }
 
     randomizeLauncherRecipes() {
@@ -959,8 +1009,9 @@ class FireworkGame extends GameCore {
         this.addSparkles(1000000, 'cheat');
         this.addGold(1000000, 'cheat');
 
-        // 2. Progression nodes (tabs, buildings)
+        // 2. Progression nodes (tabs, buildings) and the milestone chain
         this.progression.forceUnlockAll();
+        for (const id of ['tab_menu', 'upgrades_tab']) this.progression.recordUnlock(id);
 
         // 3. Upgrades (max level)
         for (const def of this.progression.getAllUpgradeDefs()) {
@@ -976,6 +1027,7 @@ class FireworkGame extends GameCore {
 
         // 6. Apply all (multipliers, etc.)
         this.progression.applyAll(this);
+        this.milestones.completeAll();
 
         // 7. Save and update UI
         this.saveProgress();
@@ -1024,9 +1076,8 @@ class FireworkGame extends GameCore {
     }
 
     playFirstCrowdCinematic() {
-        const showCrowdUpgrade = () => {
+        const showCrowdPanel = () => {
             if (this.crowdUnlocked && this.progression.getUpgradeLevel('crowd_fireworks') === 0) {
-                this.ui.renderCrowdGoldUpgrade();
                 this.ui.showTab('crowd');
                 const panel = document.querySelector('#crowd-content .panel');
                 if (panel) panel.scrollTop = 0;
@@ -1035,8 +1086,6 @@ class FireworkGame extends GameCore {
         let crowdPanelShown = false;
         return this.cinematicManager.play(async (game, cm) => {
             const mobile = game.chrome?.mobile.matches ?? window.matchMedia('(max-width: 700px)').matches;
-            const originalCameraX = game.renderer2D.cameraX;
-            const originalCameraY = game.renderer2D.cameraY;
             if (mobile) {
                 // Begin at the fan's entrance, outside normal scroll bounds.
                 // The same fitted shot then follows him all the way to his spot.
@@ -1053,7 +1102,7 @@ class FireworkGame extends GameCore {
 
             // Crowd member spawns
             game.crowd.setCount(1);
-            const person = game.crowd.people[0];
+            const person = game.crowd.people.find(p => !p.behavior);
             // Prevent normal crowd income while he walks into the cinematic.
             // The only toss during this sequence is the scripted one below.
             person.cinematicCoinTossDisabled = true;
@@ -1118,24 +1167,24 @@ class FireworkGame extends GameCore {
                 person.cinematicLookFn = null;
                 person.cinematicCoinTossDisabled = false;
                 person.coinTossTimer = 5; // force immediate toss
+                // Allow the scripted toss, then suppress natural tosses until
+                // the longer reveal is complete.
+                await cm.wait(50);
+                person.cinematicCoinTossDisabled = true;
 
-                // Brief pause, then zoom back out to where we were
-                await cm.wait(CINEMATIC_CONFIG.ZOOM_OUT_DELAY_MS);
+                // Reveal the newly earned venue in one continuous, grounded shot.
+                await cm.wait(Math.max(0, CINEMATIC_CONFIG.ZOOM_OUT_DELAY_MS - 50));
                 cm.stopFollowing();
-                if (mobile) {
-                    // Prepare the destination UI while hidden. Return to its current
-                    // camera target before handing control back to mobile chrome.
-                    game.ui.collapseForCinematic(false);
-                    showCrowdUpgrade();
-                    crowdPanelShown = true;
-                    await cm.frameCamera(() => ({ x: originalCameraX, ...game.chrome.getCameraFraming() }), CINEMATIC_CONFIG.ZOOM_OUT_DURATION_MS);
-                } else {
-                    cm.followEntity(person);
-                    await cm.zoomCamera(1.0, CINEMATIC_CONFIG.ZOOM_OUT_DURATION_MS, null, originalCameraY);
-                    cm.stopFollowing();
-                    await cm.panCameraTo(originalCameraX, 2000);
-                    await cm.wait(500);
-                }
+                // Lay out the destination panel while the cinematic UI is hidden,
+                // so its clearance is already included in the final framing.
+                game.ui.collapseForCinematic(false);
+                showCrowdPanel();
+                crowdPanelShown = true;
+                await cm.frameCamera(() => {
+                    const bounds = game.getVenueCameraBounds();
+                    const zoom = bounds.wideZoom;
+                    return { x: game.clampCameraX(person.x, zoom), ...game.chrome.getCameraFraming(zoom) };
+                }, VENUE_ZOOM_OUT_DURATION_MS, { x: person.x, y: GAME_BOUNDS.WORLD_GROUND_Y });
             } finally {
                 // Always release the pose and income locks if a sequence fails.
                 if (person.cinematicIdle) this.crowd.requestPoseBlend(person, CROWD_CONFIG.blending?.cinematicRelease);
@@ -1145,7 +1194,7 @@ class FireworkGame extends GameCore {
                 if (person.coinTossTimer < 0) person.coinTossTimer = 0;
             }
         }).then(() => {
-            if (!crowdPanelShown) showCrowdUpgrade();
+            if (!crowdPanelShown) showCrowdPanel();
         });
     }
 }

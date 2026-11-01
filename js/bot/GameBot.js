@@ -1,6 +1,7 @@
 import LivePurchasePolicy from './LivePurchasePolicy.js';
 import { BUILDING_TYPES } from '../config/config.js';
 import { GAME_BOUNDS } from '../config/GameBoundsConfig.js';
+import { MILESTONES } from '../config/MilestoneConfig.js';
 
 const PRESETS = {
     active: { opening: 2, cruising: 0.3, openingSeconds: 120, throwInterval: 20 },
@@ -99,6 +100,7 @@ export default class GameBot {
         if (!this.enabled || this.complete) return;
         this.gameTime += dt;
         this._updateRates(dt);
+        this._claimMilestone();
         this._doClicks(dt);
         this._doPurchases(dt);
         this._doCrowdThrow(dt);
@@ -109,6 +111,13 @@ export default class GameBot {
             this._sampleTimer %= this.SAMPLE_INTERVAL;
             this._sample();
         }
+    }
+
+    /** A player taps the goal widget as soon as it offers a reward. */
+    _claimMilestone() {
+        if (!this.game.milestones?.ready) return;
+        if (this.game.ui.milestoneWidget) this.game.ui.milestoneWidget.claim();
+        else this.game.milestones.claim();
     }
 
     _doClicks(dt) {
@@ -170,8 +179,8 @@ export default class GameBot {
             firstJetpackFan: game.jetpackCount > 0,
             secondJetpackFan: game.jetpackCount >= 2,
             jetpackTeam: game.progression.getUpgradeLevel('jetpack_team') > 0,
-            generatorsUnlocked: game.isBuildingTypeUnlocked('RESOURCE_GENERATOR'),
-            firstGenerator: this._count('RESOURCE_GENERATOR') > 0,
+            cultistsUnlocked: game.progression.isUnlocked('cultist_unlock'),
+            firstCultist: game.cultistCount > 0,
             recipes: game.progression.isUnlocked('recipes_tab'),
             unlock_recipes_tab: game.progression.getUpgradeLevel('unlock_recipes_tab') > 0,
             creator: game.advancedCreatorUnlocked,
@@ -182,6 +191,8 @@ export default class GameBot {
             if (!definition.patternKey) continue;
             states[definition.id] = game.progression.getUpgradeLevel(definition.id) > 0;
         }
+        // The pacing chain itself; run_live_bot reports these as the timeline.
+        for (const milestone of MILESTONES) states[`goal:${milestone.id}`] = !!game.milestones?.isComplete(milestone.id);
         for (const [id, met] of Object.entries(states)) {
             if (!met || Object.hasOwn(this.milestones, id)) continue;
             this.milestones[id] = this.gameTime;
@@ -314,7 +325,7 @@ export default class GameBot {
             preset: this.preset,
             ...this._snapshot(),
             productionBreakdown: {
-                sparkles: { clicks: sparkleSources.manual || 0, launchers: sparkleSources.auto_launcher || 0, generators: sparkleSources.resource_generator || 0, jetpacks: sparkleSources.jetpack || 0, crowdCatching: sparkleSources.crowd_catch || 0, grandFinale: sparkleSources.grand_finale || 0 },
+                sparkles: { clicks: sparkleSources.manual || 0, launchers: sparkleSources.auto_launcher || 0, cultists: sparkleSources.cultist || 0, jetpacks: sparkleSources.jetpack || 0, crowdCatching: sparkleSources.crowd_catch || 0, grandFinale: sparkleSources.grand_finale || 0 },
                 gold: { crowd: goldSources.crowd || 0 },
             },
             earned: { sparkles: totals.sparkles - baseline.sparkles, gold: totals.gold - baseline.gold },

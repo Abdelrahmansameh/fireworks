@@ -17,8 +17,8 @@ export default class Sparkles extends Resource {
     }
 
     update() {
-        // Buildings award production using game time. This rate is display-only;
-        // Resource.update's wall-clock accrual would pay generators a second time.
+        // Producers award sparkles using game time. This rate is display-only;
+        // Resource.update's wall-clock accrual would pay cultists a second time.
         this._lastUpdate = performance.now();
     }
 

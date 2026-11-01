@@ -9,6 +9,7 @@ import {
 } from '../config/config.js';
 import Engine from '../engine/Engine.js';
 import ProgressionManager from '../upgrades/ProgressionManager.js';
+import MilestoneManager from '../upgrades/MilestoneManager.js';
 import { PROGRESSION_CONFIG } from '../config/ProgressionConfig.js';
 import ResourceManager from '../resources/ResourceManager.js';
 import BuildingManager from '../buildings/BuildingManager.js';
@@ -24,7 +25,11 @@ import NullAudio from '../platform/NullAudio.js';
 import makeNullUI from '../platform/NullUI.js';
 import MemoryStorage from '../platform/MemoryStorage.js';
 import HeadlessCrowd from '../platform/HeadlessCrowd.js';
-import { roundUpToStep } from '../utils/costRounding.js';
+import { roundUpClean, roundUpToStep } from '../utils/costRounding.js';
+import CultistRituals from '../systems/CultistRituals.js';
+import { cultistSparklesPerSecond } from '../config/CultistRitual.js';
+import { CULTIST_CONFIG } from '../config/CultistConfig.js';
+import { getVenueStage } from '../config/VenueProgression.js';
 
 export const SAVE_VERSION = '5';
 
@@ -120,6 +125,10 @@ class GameCore extends Engine {
             collectionRadiusMultiplier: 1,
             sparklesPerParticleMultiplier: 1,
         };
+        this.cultistCount = Math.min(CULTIST_CONFIG.maxCount, Math.max(0, Number(this.storage.getItem('cultistCount')) || 0));
+        this.cultistStats = { sparkleMultiplier: 1, ritualSpeedMultiplier: 1 };
+        this.cultistRituals = new CultistRituals(this);
+        this.cultistRituals.setCount(this.cultistCount);
         this.crowdStats = {
             catchingEnabled: false,
             collectionRadiusMultiplier: 1,
@@ -128,12 +137,12 @@ class GameCore extends Engine {
             countBonus: 0,
         };
         this.launcherStats = { spawnIntervalMultiplier: 1, sparkleYieldMultiplier: 1 };
-        this.generatorStats = { productionRateMultiplier: 1 };
         this.catapultStats = { maxCatapults: 1 };
 
         // Headless-only collaborators.
         this.emergentModel = this.headless ? new EmergentYieldModel() : null;
         this.crowd = this.headless ? new HeadlessCrowd() : null;
+        this.crowd?.setCultistCount(this.cultistCount, this.cultistRituals);
 
         // Restore persisted progression state (no-op in a fresh headless run).
         const savedPatterns = JSON.parse(this.storage.getItem('unlockedPatternKeys') || 'null');
@@ -151,8 +160,14 @@ class GameCore extends Engine {
             this.unlockedPatternKeys = savedPatterns.filter(key => patternDisplayNames[key]);
         }
 
+        // Milestones read progression and stats, so they load after both exist.
+        this.milestones = new MilestoneManager(this);
+        this.milestones.load(this.storage);
+
         this.restoreRecipes();
         this.progression.applyAll(this);
+        // Headless games start now; the live game starts once its save is restored.
+        this.milestones.tick();
     }
 
     // ════════════════════════════════════════════════════════════════════════
@@ -212,16 +227,18 @@ class GameCore extends Engine {
         buildings.forEach(building => {
             if (building.type === 'AUTO_LAUNCHER' && building.getSparklesPerSecond) {
                 totalSparklesPerSecond += building.getSparklesPerSecond();
-            } else if (building.type === 'RESOURCE_GENERATOR' && building.resourceType === 'sparkles') {
-                totalSparklesPerSecond += building.getProductionRate();
             }
         });
 
         return Math.round(totalSparklesPerSecond * 100) / 100;
     }
 
+    calculateCultistSparklesPerSecond() {
+        return this.cultistCount * cultistSparklesPerSecond(this.cultistStats, this.baseSparkleMultiplier);
+    }
+
     calculateTotalSparklesPerSecond() {
-        return this.calculateSparklesPerSecond(this.buildingManager.buildings);
+        return this.calculateSparklesPerSecond(this.buildingManager.buildings) + this.calculateCultistSparklesPerSecond();
     }
 
     _calculateTargetCrowdCount(production) {
@@ -270,7 +287,6 @@ class GameCore extends Engine {
     isBuildingTypeUnlocked(buildingType) {
         switch (buildingType) {
             case 'AUTO_LAUNCHER': return this.progression.isUnlocked('buildings_tab');
-            case 'RESOURCE_GENERATOR': return this.progression.isUnlocked('resource_generator');
             case 'CATAPULT': return this.progression.isUnlocked('catapult');
             default: return false;
         }
@@ -283,7 +299,32 @@ class GameCore extends Engine {
     grantJetpack() {
         if (this.jetpackCount >= 128) return false;
         this.jetpackCount++;
+        getVenueStage(this);
         this.crowd?.setJetpackCount?.(this.jetpackCount, this.jetpackStats);
+        return true;
+    }
+
+    getCultistCost() {
+        return roundUpClean(CULTIST_CONFIG.baseCost * Math.pow(CULTIST_CONFIG.costRatio, this.cultistCount));
+    }
+
+    setCultistCount(count) {
+        this.cultistCount = Math.min(CULTIST_CONFIG.maxCount, Math.max(0, Math.floor(Number(count) || 0)));
+        this.cultistRituals.setCount(this.cultistCount);
+        this.crowd?.setCultistCount?.(this.cultistCount, this.cultistRituals);
+    }
+
+    purchaseCultist() {
+        const cost = this.getCultistCost();
+        const resource = this.resourceManager.resources.gold;
+        if (!this.progression.isUnlocked('cultist_unlock') || this.cultistCount >= CULTIST_CONFIG.maxCount
+            || !resource || resource.amount < cost) return false;
+        resource.subtract(cost);
+        this.setCultistCount(this.cultistCount + 1);
+        getVenueStage(this);
+        // New cultists walk into the crowd, so pan the venue there.
+        if (!this.headless) this.pendingVenueFocusX = GAME_BOUNDS.CROWD_LEFT_X;
+        this.saveProgress();
         return true;
     }
 
@@ -295,17 +336,6 @@ class GameCore extends Engine {
         this.grantJetpack();
         this.saveProgress();
         return true;
-    }
-
-    grantMilestoneBuilding(type, grantUpgradeId = null) {
-        const count = this.buildingManager.getBuildingsByType(type).length;
-        const x = type === 'AUTO_LAUNCHER' ? this.buildingManager.getNewBuildingX(type)
-            : type === 'CATAPULT' ? GAME_BOUNDS.CATAPULT_MAX_X + count * GAME_BOUNDS.CATAPULT_X_STEP
-            : (GAME_BOUNDS.LAUNCHER_MIN_X + GAME_BOUNDS.LAUNCHER_MAX_X) / 2;
-        this.buildingManager.createBuilding(type, x, GAME_BOUNDS.BUILDING_Y, { grantUpgradeId });
-        this.ui.updateBuildingCounts?.();
-        this.ui.updateBuildingCosts?.();
-        this.updateLauncherList();
     }
 
     buyAutoLauncher() {
@@ -368,13 +398,16 @@ class GameCore extends Engine {
             }
         }
 
-        this.jetpackCount = Math.max(0, this.jetpackCount - (this.progression.getUpgradeLevel('jetpack_unlock') > 0 ? 1 : 0) - this.progression.getUpgradeLevel('jetpack_team'));
+        const granted = new Set(this.milestones.getGrantedUpgradeIds());
+        const paidJetpack = this.progression.getUpgradeLevel('jetpack_unlock') > 0 && !granted.has('jetpack_unlock') ? 1 : 0;
+        this.jetpackCount = Math.max(0, this.jetpackCount - paidJetpack - this.progression.getUpgradeLevel('jetpack_team'));
         this.crowd?.setJetpackCount?.(this.jetpackCount, this.jetpackStats);
         this.progression.resetUpgradesState();
-        this.clearCrowdArrival();
+        this.milestones.reapplyGrantedUpgrades();
+        if (!granted.has('crowd_spark_1')) this.clearCrowdArrival();
         this.unlockedPatternKeys = ['spherical'];
         this.progression.applyAll(this);
-        this.crowd?.setCount(0);
+        if (!this.crowdUnlocked) this.crowd?.setCount(0);
 
         for (const [currency, amount] of Object.entries(refunds)) {
             if (amount > 0) this.resourceManager.resources[currency]?.add(amount);
@@ -403,6 +436,7 @@ class GameCore extends Engine {
                 changed = true;
             }
         }
+        this.milestones.completeAll();
         if (changed) {
             this.progression.applyAll(this);
             this.saveProgress();
@@ -422,6 +456,7 @@ class GameCore extends Engine {
         if (newlyUnlocked.length > 0) {
             this.saveProgress();
         }
+        this.milestones.tick();
     }
 
     _handleUnlock(id) {
@@ -456,8 +491,8 @@ class GameCore extends Engine {
             case 'crowds_tab':
                 this.ui.showCrowdsTab();
                 break;
-            case 'resource_generator':
-                this.showNotification('Sparkle Generator unlocked!');
+            case 'cultist_unlock':
+                this.showNotification('Cultists unlocked!');
                 this.ui.updateBuildingTypeVisibility();
                 break;
             case 'jetpack_unlock':
@@ -585,6 +620,7 @@ class GameCore extends Engine {
         if (this.headless || this._isRestoring) return;
 
         this.storage.setItem('jetpackCount', this.jetpackCount);
+        this.storage.setItem('cultistCount', this.cultistCount);
         this.storage.setItem('elapsedGameTime', this.elapsedGameTime);
         this.storage.setItem('gameCompleted', this.gameCompleted);
         this.storage.setItem('crowdStartFireworks', JSON.stringify(this.crowdStartFireworks));
@@ -611,6 +647,7 @@ class GameCore extends Engine {
             firstClicks: this.firstClickStates,
         };
         this.storage.setItem('progressionState', JSON.stringify(progressionState));
+        this.milestones.save(this.storage);
         this.storage.setItem('hasSeenFirstCrowdCinematic', JSON.stringify(this.hasSeenFirstCrowdCinematic));
         this.storage.setItem('unlockedPatternKeys', JSON.stringify(this.unlockedPatternKeys));
         this.statsTracker.save();
@@ -633,8 +670,9 @@ class GameCore extends Engine {
             this.addSparkles(clicksPerSec * this.baseSparkleMultiplier * dt, 'manual');
         }
 
-        // Real building economy (launchers fire + count, generators produce).
+        // Real building economy (launchers fire + count) and cultist rituals.
         this.buildingManager.update(dt);
+        this.cultistRituals.update(dt);
 
         // Emergent estimate: jetpack fan collection + crowd catching.
         this.emergentModel.applyTick(this, dt, clicksPerSec);
@@ -650,6 +688,7 @@ class GameCore extends Engine {
         // live game uses) — smooth and monotonic.
         const targetCrowd = this._calculateTargetCrowdCount(this.fireworkSystem.fireworkCount);
         this.crowd.setCount(targetCrowd);
+        if (targetCrowd > 0) getVenueStage(this);
 
         // Progression unlocks.
         this.checkUnlockConditions();

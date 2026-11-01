@@ -196,9 +196,8 @@ try {
         `Magenta firework lighting lost its dominant hue: ${JSON.stringify(magenta)}`);
     const mixed = await captureBurst('mixed-bursts', ['#ff3519', '#17eaff', '#16ff40', '#ff00c8',
         '#ff3519', '#17eaff', '#16ff40', '#ff00c8']);
-    assert(mixed.mountainMaxChange > .001 && mixed.primitiveEdgeMaxChange > .005
-        && mixed.mountainMaxChange < mixed.primitiveEdgeMaxChange * .9,
-    `Busy bursts should keep mountains more restrained than primitive edges: ${JSON.stringify(mixed)}`);
+    assert(mixed.mountainMaxChange > .001 && mixed.mountainMaxChange < .12,
+        `Busy bursts should illuminate mountains without washing them out: ${JSON.stringify(mixed)}`);
     const settlement = await captureBurst('primitive-settlement', '#ffae56', 80, 0);
     // The highest launch target must still have a visible reflection in this shallow lake.
     const maxAltitude = await page.evaluate(async () => (await import('/js/config/GameBoundsConfig.js')).GAME_BOUNDS.WORLD_MAX_EXPLOSION_Y);

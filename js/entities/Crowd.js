@@ -1,6 +1,8 @@
-import { JetpackBehavior } from './crowdBehaviors/CrowdBehavior.js';
-import { GAME_BOUNDS, CROWD_CONFIG, CROWD_CATCHER_CONFIG, PARTICLE_TYPES } from '../config/config.js';
+import { JetpackBehavior, CultistBehavior } from './crowdBehaviors/CrowdBehavior.js';
+import { GAME_BOUNDS, CROWD_CONFIG, CROWD_CATCHER_CONFIG, CULTIST_CONFIG, JETPACK_CONFIG, PARTICLE_TYPES } from '../config/config.js';
+
 import * as Renderer2D from '../rendering/Renderer.js';
+import InstancedParticleSystem from '../particles/InstancedParticleSystem.js';
 import { createRng } from '../utils/random.js';
 import { SkeletonData } from '../animation/SkeletonData.js';
 import { AnimationData } from '../animation/AnimationData.js';
@@ -15,6 +17,10 @@ class Crowd {
         this.jetpackCount = 0;
         this.jetpackStats = {};
         this.onJetpackCollect = null;
+        this.getJetpackCeiling = null;
+        this.jetpackCeilingY = GAME_BOUNDS.WORLD_MAX_EXPLOSION_Y;
+        this.cultistCount = 0;
+        this.cultistRituals = null;
         this.missingCrowdsToInit = 0;
 
         this.instancedGroup = null;
@@ -70,7 +76,7 @@ class Crowd {
         }
 
         // Initialize props
-        const uniquePropUrls = new Set();
+        const uniquePropUrls = new Set(CULTIST_CONFIG.props.map(prop => prop.skeletonUrl));
         for (const clip of this._animData.clips.values()) {
             if (clip.props) {
                 for (const prop of clip.props) {
@@ -100,6 +106,10 @@ class Crowd {
                 }
             }
             this.maxPropParts = Math.max(this.maxPropParts, sum);
+        }
+        // Cultists wear their hood on top of whatever their clip adds.
+        for (const prop of CULTIST_CONFIG.props) {
+            this.maxPropParts += this._propCache.get(prop.skeletonUrl)?.skeleton.partCount ?? 0;
         }
 
         if (this._disposed) return;
@@ -133,6 +143,9 @@ class Crowd {
                 zIndex: -21,
                 blendMode: Renderer2D.BlendMode.NORMAL,
             });
+            // Cultist ritual motes draw over the crowd so bodies never hide them.
+            this.cultistParticles ??= new InstancedParticleSystem(this.renderer, null,
+                { maxParticles: 4000, zIndex: CROWD_CONFIG.zIndex + 1, reflects: false, blendMode: Renderer2D.BlendMode.NORMAL });
             this.missingCrowdsToInit = 0;
             this._syncMemberBehaviors();
         } catch (error) {
@@ -155,27 +168,48 @@ class Crowd {
         this._syncMemberBehaviors();
     }
 
+    /** Cultists walk in and loop their ritual, one clock each in `rituals`. */
+    setCultistCount(count, rituals) {
+        this.cultistRituals = rituals;
+        const next = Math.max(0, Math.floor(Number(count) || 0));
+        if (next === this.cultistCount) return;
+        this.cultistCount = next;
+        this._syncMemberBehaviors();
+    }
+
     _syncMemberBehaviors() {
         if (!this.instancedGroup) return;
-        for (const [jetpack, target] of [[false, this.naturalCount], [true, this.jetpackCount]]) {
-            let members = this.people.filter(person => !!person.isJetpack === jetpack);
+        const kindOf = person => person.isCultist ? 'cultist' : person.isJetpack ? 'jetpack' : 'natural';
+        for (const [kind, target] of [['natural', this.naturalCount], ['jetpack', this.jetpackCount], ['cultist', this.cultistCount]]) {
+            let members = this.people.filter(person => kindOf(person) === kind);
             while (members.length < target) {
-                this._addPerson(jetpack);
+                this._addPerson(kind === 'jetpack', kind === 'cultist' ? this._cultistSpot(members) : null);
                 const person = this.people[this.people.length - 1];
                 if (!person || members.includes(person)) break;
-                person.isJetpack = jetpack;
-                if (jetpack) person.behavior = new JetpackBehavior(this, person);
+                person.isJetpack = kind === 'jetpack';
+                person.isCultist = kind === 'cultist';
+                if (kind === 'jetpack') person.behavior = new JetpackBehavior(this, person);
+                // Cultists keep their clock index, so the newest one leaves first.
+                if (kind === 'cultist') person.behavior = new CultistBehavior(this, person, members.length);
                 members.push(person);
             }
             while (members.length > target) {
                 // Leave an occupied catapult and grabbed person in place when possible.
-                const person = [...members].reverse().find(p => !p.catapultData && this.people.indexOf(p) !== this.grabbedPersonIndex) || members[members.length - 1];
+                const person = kind === 'cultist'
+                    ? members.reduce((newest, p) => (p.behavior.index > newest.behavior.index ? p : newest))
+                    : [...members].reverse().find(p => !p.catapultData && this.people.indexOf(p) !== this.grabbedPersonIndex) || members[members.length - 1];
                 this._removePerson(this.people.indexOf(person));
                 this._reorderInstancesByY();
                 members = members.filter(p => p !== person);
             }
         }
         this._reorderInstancesByY();
+    }
+
+    /** The ritual spot for the next cultist, matching its clock index. */
+    _cultistSpot(cultists) {
+        const spots = CULTIST_CONFIG.spots;
+        return spots?.length ? spots[cultists.length % spots.length] : null;
     }
 
     _removePerson(index) {
@@ -197,7 +231,7 @@ class Crowd {
         }
     }
 
-    _addPerson(isJetpack = false) {
+    _addPerson(isJetpack = false, spawnAt = null) {
         if (!this.instancedGroup) {
             this.missingCrowdsToInit++;
             return;
@@ -215,10 +249,10 @@ class Crowd {
         const seedConfig = CROWD_CONFIG.scaling ? CROWD_CONFIG.scaling.seed : 12345;
         const rng = createRng(seedConfig + personIndex);
 
-        // Slot-based placement: fill rightmost column first (leftX = -100),
+        // Slot-based placement: fill rightmost column first (leftX),
         // top-to-bottom within each column, then advance leftwards.
-        const leftX  = GAME_BOUNDS.CROWD_LEFT_X;   // right edge of crowd area (-100)
-        const rightX = GAME_BOUNDS.CROWD_RIGHT_X;  // left  edge of crowd area (-1200)
+        const leftX  = GAME_BOUNDS.CROWD_LEFT_X;   // right edge of crowd area
+        const rightX = GAME_BOUNDS.CROWD_RIGHT_X;  // left  edge of crowd area
         const xSlotSpacing = CROWD_CONFIG.xSlotSpacing ?? 72;
         const numRows      = Math.max(1, CROWD_CONFIG.slotRows ?? 3);
         const rowSpacing   = numRows > 1 ? CROWD_CONFIG.ySpread / (numRows - 1) : 0;
@@ -245,6 +279,11 @@ class Crowd {
         let attempts = 0;
         const maxAttempts = CROWD_CONFIG.maxPlacementAttempts;
         const yJitterAmt  = rowSpacing > 0 ? rowSpacing * jitterFracY : CROWD_CONFIG.ySpread * 0.4;
+
+        if (spawnAt) {
+            ({ x, y } = spawnAt);
+            positionFound = true;
+        }
 
         while (!positionFound && attempts < maxAttempts) {
             const jx = (rng() * 2 - 1) * xSlotSpacing * jitterFracX;
@@ -330,11 +369,17 @@ class Crowd {
     }
 
     update(deltaTime) {
+        this.cultistParticles?.update(deltaTime);
         if (!this.instancedGroup || this.people.length === 0) return;
 
         const GRAVITY = CROWD_CONFIG.gravity;
         const FRICTION = CROWD_CONFIG.friction;
         const WALK_SPEED = CROWD_CONFIG.walkSpeed;
+
+        if (this.jetpackCount) {
+            this.jetpackCeilingY = Math.min(GAME_BOUNDS.WORLD_GROUND_Y + JETPACK_CONFIG.maxHeight,
+                this.getJetpackCeiling?.() ?? Infinity);
+        }
 
         if (this.jetpackCount && this.particleSystem && this._scanFrameCounter % 4 === 0) {
             this._jetpackGrid = new Map();
@@ -552,7 +597,7 @@ class Crowd {
                 if (dx < 0 && dx >= deltaMove || dx > 0 && dx <= deltaMove) {
                     person.x = person.spawnX;
                     this._switchToState(personIndex, 'cheering');
-                    if (personIndex === 0 && this.onFirstPersonArrival) {
+                    if (person === this.people.find(p => !p.behavior) && this.onFirstPersonArrival) {
                         this.onFirstPersonArrival(person);
                     }
                 } else {
@@ -672,9 +717,11 @@ class Crowd {
 
         const name = person.state === 'grabbed' ? 'falling' : person.state;
         const clip = this._animData.getClip(name) ?? null;
-        const time = clip
-            ? (clip.loop ? person.animTimer % clip.duration : Math.min(person.animTimer, clip.duration))
-            : 0;
+        // Behaviors may drive the clock themselves (cultists follow production).
+        const behaviorTime = person.behavior?.clipTime;
+        const time = !clip ? 0
+            : behaviorTime != null ? behaviorTime * clip.duration
+            : (clip.loop ? person.animTimer % clip.duration : Math.min(person.animTimer, clip.duration));
         return { clip, time };
     }
 
@@ -863,9 +910,27 @@ class Crowd {
             }]));
         }
 
+        if (person.isCultist) {
+            // Hand tips and the direction each forearm points, for the climax spray.
+            person.hands = ['arm_3_l', 'arm_3_r'].map(id => {
+                const tf = pose.get(id);
+                const length = this._skeleton.getPart(id).height;
+                const dx = Math.sin(tf.rotation) * length, dy = -Math.cos(tf.rotation) * length;
+                return {
+                    x: person.x + (tf.x + dx) * flipX * finalScale,
+                    y: person.y + (tf.y + dy) * finalScale,
+                    angle: Math.atan2(dy, dx * flipX),
+                };
+            });
+        }
+
         if (!person._propFrozenAnchors) person._propFrozenAnchors = new Map();
         // Draw behind-body props first, followed by the person and foreground props.
+        const behaviorProps = person.behavior?.props;
         let propInstanceOffset = 0;
+        if (behaviorProps) propInstanceOffset = this._renderClipProps(
+            behaviorProps, time, 'p', pose, person, finalScale, flipX, propInstanceOffset, true
+        );
         if (clip) propInstanceOffset = this._renderClipProps(
             clip.props, time, 'b', pose, person, finalScale, flipX, propInstanceOffset, true
         );
@@ -878,6 +943,9 @@ class Crowd {
             person.x, person.y, finalScale, flipX
         );
         propInstanceOffset += this._skeleton.partCount;
+        if (behaviorProps) propInstanceOffset = this._renderClipProps(
+            behaviorProps, time, 'p', pose, person, finalScale, flipX, propInstanceOffset, false
+        );
         if (clip) propInstanceOffset = this._renderClipProps(
             clip.props, time, 'b', pose, person, finalScale, flipX, propInstanceOffset, false
         );
@@ -976,6 +1044,11 @@ class Crowd {
                 person.x, person.y,
                 finalScale, flipX
             );
+            // Props with an 'emitter' bone tell behaviors where to spawn particles.
+            const emitter = finalPropPose.get('emitter');
+            if (emitter) {
+                person.propEmitter = { x: person.x + emitter.x * flipX * finalScale, y: person.y + emitter.y * finalScale };
+            }
 
             propInstanceOffset += cached.skeleton.partCount;
         }
@@ -1157,13 +1230,13 @@ class Crowd {
         if (this._cursorHistory.length > CROWD_CONFIG.cursorHistorySize) this._cursorHistory.shift();
     }
 
-    release() {
+    release({ cancelled = false } = {}) {
         if (this.grabbedPersonIndex < 0) return;
 
         const person = this.people[this.grabbedPersonIndex];
 
         let vx = 0, vy = 0;
-        if (this._cursorHistory.length >= 2) {
+        if (!cancelled && this._cursorHistory.length >= 2) {
             const first = this._cursorHistory[0];
             const last = this._cursorHistory[this._cursorHistory.length - 1];
             const dt = last.t - first.t;
@@ -1230,6 +1303,8 @@ class Crowd {
         if (this.jetpackInstancedGroup) {
             this.renderer.removeInstancedGroup(this.jetpackInstancedGroup);
         }
+        this.cultistParticles?.dispose();
+        this.cultistParticles = null;
         this.instancedGroup = null;
         this.jetpackInstancedGroup = null;
         this.people = [];

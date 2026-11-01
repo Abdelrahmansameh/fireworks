@@ -3,7 +3,7 @@ import { state } from './core/state.js';
 import { undoManager, saveState } from './core/undo.js';
 import { initIO, loadSkeletonById, populateSkeletonPicker } from './core/io.js';
 import { updateHierarchyUI, selectPart, updateTimelineUI, updateAnimPropsUI, populateAnimations, setEditorMode, updateAnimPropsPanel,
-    copySelectedKeyframes, cutSelectedKeyframes, pasteKeyframes, duplicateSelectedKeyframes, deleteSelectedKeyframes, selectAllKeyframes, clearKeyframeSelection } from './core/ui.js';
+    copySelectedKeyframes, cutSelectedKeyframes, pasteKeyframes, duplicateSelectedKeyframes, deleteSelectedKeyframes, selectAllKeyframes, clearKeyframeSelection, stepSelectedKeyframe, stepSelectedKeyframeBone } from './core/ui.js';
 import { addSkeletonOutline, deletePart, renamePart, mirrorSkeleton } from './core/skeleton.js';
 import { makeAnimationLoop, mirrorAnimation, flipAnimation } from './core/animation.js';
 import { getParentTransform } from './core/math.js';
@@ -485,6 +485,12 @@ function setupUI() {
                 if (ctrl && key === 'a') { e.preventDefault(); selectAllKeyframes(); return; }
                 if ((key === 'delete' || key === 'backspace') && state.selectedKeyframes.length) {
                     e.preventDefault(); deleteSelectedKeyframes(); return;
+                }
+                if ((key === 'arrowleft' || key === 'arrowright') && state.selectedKeyframe) {
+                    e.preventDefault(); stepSelectedKeyframe(key === 'arrowright' ? 1 : -1); return;
+                }
+                if ((key === 'arrowup' || key === 'arrowdown') && state.selectedKeyframe) {
+                    e.preventDefault(); stepSelectedKeyframeBone(key === 'arrowdown' ? 1 : -1); return;
                 }
                 if (key === 'escape' && state.selectedKeyframes.length) {
                     clearKeyframeSelection(); updateTimelineUI(); return;

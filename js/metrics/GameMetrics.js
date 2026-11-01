@@ -59,7 +59,7 @@ export default class GameMetrics {
      * Record a resource gain.
      * @param {'sparkles'|'gold'} resource
      * @param {number} amount
-     * @param {string} source  e.g. 'manual', 'auto_launcher', 'resource_generator', 'jetpack', 'crowd', 'cheat'
+     * @param {string} source  e.g. 'manual', 'auto_launcher', 'cultist', 'jetpack', 'crowd', 'cheat'
      */
     record(resource, amount, source = 'unknown') {
         if (amount <= 0) return;

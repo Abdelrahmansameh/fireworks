@@ -2,19 +2,25 @@ import Building from './Building.js';
 import { GAME_BOUNDS } from '../config/config.js';
 import { SkeletonData } from '../animation/SkeletonData.js';
 import { AnimationData } from '../animation/AnimationData.js';
-import { computePose, applyPoseToInstances } from '../animation/SkeletonAnimator.js';
+import { computePose, applyPoseToInstances, computeSkeletonOutlinePoints } from '../animation/SkeletonAnimator.js';
 import * as Renderer2D from '../rendering/Renderer.js';
 
 const THROW_RELEASE_FRACTION = 0.35 / 1.2; 
 
 const APPROACH_OFFSET_X = 70;
 
-const LAUNCH_VX = 3500;
+// With the catapults closer to the launchers, retain roughly the same apex
+// over the firework area instead of throwing fans across the entire venue.
+const LAUNCH_VX = 1500;
 const LAUNCH_VY = 1700;
 
 class Catapult extends Building {
     constructor(game, x, y, data = {}) {
-        super(game, 'CATAPULT', x, y, data);
+        // Relocate catapults from the old, distant area on save load while
+        // preserving their spacing and any positions already in the new area.
+        const relocatedX = x <= -1400 ? x + 1000 : x;
+        super(game, 'CATAPULT', Math.max(GAME_BOUNDS.CATAPULT_MIN_X,
+            Math.min(relocatedX, GAME_BOUNDS.CATAPULT_MAX_X)), y, data);
 
         this.accumulator = data.accumulator ?? Math.random() * this.fireInterval; // stagger first fire
 
@@ -33,6 +39,30 @@ class Catapult extends Building {
 
 
     createMesh() {
+    }
+
+    isPointInside(x, y) {
+        if (this._skeleton && this._animData) {
+            const clip = this._animData.getClip(this._clipName);
+            const time = clip
+                ? (clip.loop ? this._animTimer % clip.duration : Math.min(this._animTimer, clip.duration))
+                : 0;
+            const pose = computePose(this._skeleton, clip, time);
+            const points = computeSkeletonOutlinePoints(
+                this._skeleton, pose, this.x, this.y, this.config.skeletonScale, 1
+            );
+            if (points.length) {
+                const padding = 6;
+                const xs = points.map(point => point.x);
+                const ys = points.map(point => point.y);
+                return x >= Math.min(...xs) - padding && x <= Math.max(...xs) + padding
+                    && y >= Math.min(...ys) - padding && y <= Math.max(...ys) + padding;
+            }
+        }
+        // Before the skeleton is ready, use a modest world-space hitbox.
+        return Math.abs(x - this.x) <= this.config.width / 2
+            && y >= this.y - this.config.height / 2
+            && y <= this.y + this.config.height;
     }
 
     async _loadSkeleton() {

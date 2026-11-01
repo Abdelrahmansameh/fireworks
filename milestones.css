@@ -1,0 +1,56 @@
+/* Top-centre milestone tracker (js/ui/MilestoneWidget.js). */
+.milestone-widget {
+    position: fixed; top: 16px; left: 50%; z-index: 5;
+    width: 300px; min-height: 0; transform: translateX(-50%);
+    display: flex; flex-direction: column; gap: 6px;
+    padding: 8px 12px 10px; text-align: left;
+    color: var(--cream);
+    /* Same panel as the menu rail. */
+    background-color: var(--indigo);
+    background-image: radial-gradient(rgba(255,243,218,.09) 1.1px, transparent 1.4px);
+    background-size: 14px 14px;
+    border: 2px solid var(--cream);
+    border-radius: 18px 12px 16px 14px / 14px 18px 12px 16px;
+    box-shadow: 6px 6px 0 var(--shadow-deep);
+    pointer-events: auto;
+}
+.milestone-widget:disabled { opacity: 1; cursor: default; }
+.milestone-widget:hover:not(:disabled), .milestone-widget:active:not(:disabled) { transform: translateX(-50%); }
+.milestone-row { display: flex; align-items: center; gap: 8px; }
+.milestone-goal { flex: 1; min-width: 0; font: 700 13px/18px 'Shantell Sans', cursive; color: var(--cream); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.milestone-count { flex-shrink: 0; font: 700 12px/18px 'Shantell Sans', cursive; font-variant-numeric: tabular-nums; color: var(--text-secondary); }
+.milestone-track { display: block; height: 6px; overflow: hidden; background: #2c3063; border-radius: 4px 3px 4px 3px; }
+.milestone-fill { display: block; height: 100%; width: 0; background: var(--cream); border-radius: inherit; transition: width 300ms linear; }
+
+/* A met goal reads like the active rail tab: a paper sticker. */
+.milestone-widget.ready {
+    cursor: pointer; color: var(--ink);
+    background: var(--paper); border-color: var(--ink);
+    box-shadow: 3px 3px 0 var(--shadow-deep);
+}
+.milestone-widget.ready:hover:not(:disabled) { background: #ffe7af; }
+.milestone-widget.ready:active:not(:disabled) { transform: translateX(-50%) translate(1px, 2px); box-shadow: 1px 1px 0 var(--shadow-deep); }
+.milestone-widget.ready .milestone-goal { color: var(--ink); }
+.milestone-widget.ready .milestone-track { display: none; }
+.milestone-widget.claimed { animation: milestone-pop 420ms cubic-bezier(.2,.8,.3,1.25); }
+@keyframes milestone-pop { 40% { transform: translateX(-50%) scale(1.05); } }
+
+body.workshop-open .milestone-widget { display: none; }
+
+/* Narrow desktops: centre in the band between the rail and the wallet. */
+@media (min-width: 701px) and (max-width: 1199px) {
+    .milestone-widget { left: calc(104px + (100vw - 424px) / 2); width: min(300px, calc(100vw - 448px)); }
+}
+
+@media (max-width: 700px) {
+    .milestone-widget {
+        top: calc(var(--mobile-status-top) + 58px); left: 12px; right: 12px;
+        width: auto; max-width: 360px; margin: 0 auto; transform: none;
+    }
+    .milestone-widget:hover:not(:disabled), .milestone-widget:active:not(:disabled) { transform: none; }
+    .milestone-widget.ready:active:not(:disabled) { transform: translate(1px, 2px); }
+    .top-bar-container:has(#ressource-count.unlock-hidden) ~ .milestone-widget { top: var(--mobile-status-top); }
+    .top-bar-container:has(.ressource-count:not(.expanded)) ~ .milestone-widget { top: calc(var(--mobile-status-top) + 48px); }
+    @keyframes milestone-pop { 40% { transform: scale(1.04); } }
+    body:not(.workshop-open):has(.milestone-widget:not([hidden])) .notification { top: calc(var(--mobile-status-top) + 66px + var(--milestone-height, 44px)); }
+}

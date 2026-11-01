@@ -6,6 +6,13 @@
       "runtimeExecutable": "python",
       "runtimeArgs": ["-m", "http.server", "8767"],
       "port": 8767
+    },
+    {
+      "name": "fireworks-static-alt",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["-m", "http.server", "8771"],
+      "port": 8771,
+      "autoPort": false
     }
   ]
 }

@@ -91,7 +91,7 @@ export function render(container) {
             <h3 class="stats-section-title">Sparkles by source</h3>
             ${row('Clicks', 'bot-src-clicks')}
             ${row('Auto-Launchers', 'bot-src-launchers')}
-            ${row('Generators', 'bot-src-generators')}
+            ${row('Cultists', 'bot-src-cultists')}
             ${row('Jetpack fans', 'bot-src-jetpacks')}
             ${row('Crowd Catching', 'bot-src-crowd')}
             ${row('Grand Finale', 'bot-src-finale')}
@@ -203,7 +203,7 @@ export function updateReport(game) {
     const s = r.productionBreakdown.sparkles;
     set('bot-src-clicks', fmt(s.clicks));
     set('bot-src-launchers', fmt(s.launchers));
-    set('bot-src-generators', fmt(s.generators));
+    set('bot-src-cultists', fmt(s.cultists));
     set('bot-src-jetpacks', fmt(s.jetpacks));
     set('bot-src-crowd', fmt(s.crowdCatching));
     set('bot-src-finale', fmt(s.grandFinale));

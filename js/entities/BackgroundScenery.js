@@ -51,6 +51,39 @@ export default class BackgroundScenery {
         return { r: color.r * amount, g: color.g * amount, b: color.b * amount, a: 1 };
     }
 
+    _mountainPieces(points, left, width, color, z, reflectivity, normalX) {
+        // Light each narrow slice independently so a local flash travels across
+        // the ridge instead of recoloring a whole mountain at once. Use the
+        // same slice boundaries for its body and both overlapping facets.
+        const clip = (polygon, edge, keepRight) => {
+            const result = [];
+            for (let i = 0; i < polygon.length; i++) {
+                const a = polygon[i], b = polygon[(i + 1) % polygon.length];
+                const aInside = keepRight ? a[0] >= edge : a[0] <= edge;
+                const bInside = keepRight ? b[0] >= edge : b[0] <= edge;
+                if (aInside) result.push(a);
+                if (aInside !== bInside) {
+                    const t = (edge - a[0]) / (b[0] - a[0]);
+                    result.push([edge, a[1] + (b[1] - a[1]) * t]);
+                }
+            }
+            return result;
+        };
+        const slices = Math.ceil(width / 140);
+        let previous = null;
+        for (let i = 0; i < slices; i++) {
+            const x0 = left + width * i / slices;
+            const x1 = left + width * (i + 1) / slices;
+            const piece = clip(clip(points, x0, true), x1, false);
+            if (piece.length < 3) continue;
+            const shape = this._polygon(piece.flat(), color, z, reflectivity, normalX);
+            shape.lightGradient = { left: x0, right: x1, previous, next: null };
+            if (previous) previous.lightGradient.next = shape;
+            previous = shape;
+            this.lightSurfaces.at(-1).mountain = true;
+        }
+    }
+
     _buildMountains() {
         const { mountains, world, water, zIndex } = this.config;
         if (!mountains?.enabled) return;
@@ -78,18 +111,12 @@ export default class BackgroundScenery {
                     x + width * (px + (index > 0 && index < profile.length - 1 ? (rng() - .5) * .035 : 0)),
                     baseY + height * (py + (py > 0 ? (rng() - .5) * .08 : 0)),
                 ]);
-                const shape = this._polygon(ridge.flat(), color, z, far ? .25 : .43, -.25);
-                // Give large faces a broad sampling footprint, so a nearby
-                // flash doesn't repaint an entire distant mountain uniformly.
-                const surface = this.lightSurfaces.at(-1);
-                surface.width = width;
-                surface.height = height;
-                surface.shape = shape;
-                this._polygon([...ridge.slice(2, 5), [x + width * .52, baseY + height * .27],
-                    [x + width * .31, baseY + height * .17]].flat(),
+                this._mountainPieces(ridge, x, width, color, z, far ? .25 : .43, -.25);
+                this._mountainPieces([...ridge.slice(2, 5), [x + width * .52, baseY + height * .27],
+                    [x + width * .31, baseY + height * .17]], x, width,
                     this._shade(color, 1.08), z, far ? .28 : .48, -.5);
-                this._polygon([...ridge.slice(5, 8), [x + width * .83, baseY + height * .14],
-                    [x + width * .62, baseY + height * .25]].flat(),
+                this._mountainPieces([...ridge.slice(5, 8), [x + width * .83, baseY + height * .14],
+                    [x + width * .62, baseY + height * .25]], x, width,
                     this._shade(color, .88), z, far ? .2 : .34, .5);
             }
         }
@@ -125,14 +152,23 @@ export default class BackgroundScenery {
         const rng = createRng(this.config.seed ^ 0x81B275);
         const bank = { r: 28 / 255, g: 38 / 255, b: 48 / 255, a: 1 };
         const front = ground.rimColor;
+        let previousBank = null;
+        let previousFront = null;
+        const linkSection = (shape, previous, left, right) => {
+            shape.lightGradient = { left, right, previous, next: null };
+            if (previous) previous.lightGradient.next = shape;
+            return shape;
+        };
         for (let x = world.xMin; x < world.xMax; x += 220) {
             const height = 4 + rng() * 9;
-            this._polygon([x, water.surfaceY - 2, x, water.surfaceY + height,
+            const bankShape = this._polygon([x, water.surfaceY - 2, x, water.surfaceY + 3,
                 x + 85, water.surfaceY + height + rng() * 7, x + 220, water.surfaceY + 3,
                 x + 220, water.surfaceY - 2], bank, zIndex.landmarks + 0.5, 0.9);
-            this._polygon([x, water.bottomY - 3, x + 220, water.bottomY - 3,
+            previousBank = linkSection(bankShape, previousBank, x, x + 220);
+            const frontShape = this._polygon([x, water.bottomY - 3, x + 220, water.bottomY - 3,
                 x + 220, water.bottomY + 4, x + 80, water.bottomY + 5 + rng() * 8,
-                x, water.bottomY + 3], front, zIndex.shoreline, 1);
+                x, water.bottomY + 4], front, zIndex.shoreline, 1);
+            previousFront = linkSection(frontShape, previousFront, x, x + 220);
         }
     }
 
@@ -191,8 +227,9 @@ export default class BackgroundScenery {
                         const y = data[offset + 1];
                         const c = offset + particleSystem.colorIdx;
                         if (!inRange(x, y) || data[c + 3] < 0.03) continue;
+                        const lightWeight = explosion ? 0.55 : type === PARTICLE_TYPES.ROCKET_TRAIL ? 0.012 : 0.12;
                         this._addEmitter(x, y, data[c], data[c + 1], data[c + 2],
-                            data[c + 3] * (explosion ? 0.55 : 0.12));
+                            data[c + 3] * lightWeight);
                     }
                 }
             }
@@ -200,7 +237,7 @@ export default class BackgroundScenery {
         for (const firework of fireworks) {
             if (firework.exploded || !firework.rocket) continue;
             const { position, color } = firework.rocket;
-            if (inRange(position.x, position.y)) this._addEmitter(position.x, position.y, color.r, color.g, color.b, color.a * 0.35);
+            if (inRange(position.x, position.y)) this._addEmitter(position.x, position.y, color.r, color.g, color.b, color.a * 0.035);
         }
         for (const emitter of this.emitters) {
             const inverseWeight = 1 / emitter.weight;
@@ -230,7 +267,8 @@ export default class BackgroundScenery {
                 const dx = emitter.x - surface.x;
                 const dy = (emitter.y - surface.y) * 0.7;
                 const distanceSquared = dx * dx + dy * dy;
-                const falloff = Math.max(0, 1 - distanceSquared / radiusSquared);
+                const surfaceRadiusSquared = surface.mountain ? radiusSquared * 2.2 ** 2 : radiusSquared;
+                const falloff = Math.max(0, 1 - distanceSquared / surfaceRadiusSquared);
                 let falloffSquared = falloff * falloff;
                 if (surface.width) {
                     const offset = surface.width * .27;

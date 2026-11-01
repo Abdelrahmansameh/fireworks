@@ -1,5 +1,6 @@
 import { GRAND_FINALE_CONFIG } from '../config/GrandFinaleConfig.js';
 import { GAME_BOUNDS } from '../config/config.js';
+import { getVenueStage } from '../config/VenueProgression.js';
 
 /** Time-based live finale; the first completed show persists the festival finish. */
 export default class GrandFinaleManager {
@@ -52,14 +53,17 @@ export default class GrandFinaleManager {
             const r = this.game.renderer2D;
             const t = Math.min(1, this.elapsed / 2);
             const ease = t * t * (3 - 2 * t);
-            const zoom = this._cameraStart.zoom + (0.75 - this._cameraStart.zoom) * ease;
-            const targetX = (GAME_BOUNDS.LAUNCHER_MIN_X + GAME_BOUNDS.LAUNCHER_MAX_X) / 2;
-            const targetY = GAME_BOUNDS.WORLD_GROUND_Y + r.virtualHeight / (2 * 0.75);
+            const venue = this.game.getVenueCameraBounds();
+            const zoom = this._cameraStart.zoom + (venue.wideZoom - this._cameraStart.zoom) * ease;
+            const targetX = (venue.left + venue.right) / 2;
+            const targetY = this.game.chrome?.getCameraFraming(zoom).y
+                ?? GAME_BOUNDS.WORLD_GROUND_Y + r.virtualHeight / (2 * zoom);
             r.setCamera({ x: this._cameraStart.x + (targetX - this._cameraStart.x) * ease,
-                y: this._cameraStart.y + (targetY - this._cameraStart.y) * ease, zoom });
+                y: targetY, zoom });
             this._spawnTowardTarget(deltaTime);
             if (this.elapsed >= this.config.durationSec) {
                 this.active = false;
+                this.game.setCameraTarget(this._cameraStart.x);
                 this.cooldown = this.config.cooldownSec;
                 if (!this.game.gameCompleted) {
                     this.game.gameCompleted = true;
@@ -95,14 +99,13 @@ export default class GrandFinaleManager {
     _launchOne() {
         const game = this.game;
         const minX = GAME_BOUNDS.LAUNCHER_MIN_X;
-        const maxX = GAME_BOUNDS.LAUNCHER_MAX_X;
+        const maxX = Math.max(minX, getVenueStage(game).right - 100);
         const x = minX + Math.random() * (maxX - minX);
         const y = GAME_BOUNDS.WORLD_LAUNCHER_Y;
 
         // Explode high in the sky, spread across the vertical band.
         const lo = GAME_BOUNDS.WORLD_MIN_EXPLOSION_Y + 120;
-        const hi = Math.max(GAME_BOUNDS.WORLD_MAX_EXPLOSION_Y,
-            game.renderer2D.getVisibleWorldBounds().top - 180);
+        const hi = getVenueStage(game).maxExplosionY;
         const targetY = lo + Math.random() * (hi - lo);
 
         // Pick a random known recipe so the finale is colourful and varied.

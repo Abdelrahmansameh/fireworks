@@ -1,5 +1,7 @@
 import { BUILDING_TYPES } from '../config/BuildingConfig.js';
+import { CULTIST_CONFIG } from '../config/CultistConfig.js';
 import { fireworksForCrowd } from '../systems/ProductionRates.js';
+import { cultistSparklesPerSecond } from '../config/CultistRitual.js';
 
 const compact = value => new Intl.NumberFormat('en', {
     notation: value >= 10000 ? 'compact' : 'standard', maximumFractionDigits: value < 100 ? 1 : 0,
@@ -21,6 +23,7 @@ export function initializePanelDetails(game) {
     };
     const notify = message => game.ui?.showNotification(message);
     on(document.getElementById('buy-jetpack'), 'click', () => game.purchaseJetpack());
+    on(document.getElementById('buy-cultist'), 'click', () => game.purchaseCultist());
     let lastSavedAt = Date.now();
     const originalSave = game.saveProgress;
     const observedSave = function (...args) {
@@ -158,7 +161,6 @@ export function initializePanelDetails(game) {
             const description = document.querySelector(`[data-building-description="${key}"]`);
             if (!description) continue;
             if (key === 'AUTO_LAUNCHER') description.textContent = `Fires every ${(type.baseSpawnInterval * (game.launcherStats?.spawnIntervalMultiplier ?? 1)).toFixed(1)}s`;
-            if (key === 'RESOURCE_GENERATOR') description.textContent = `Makes ${compact(type.baseProductionRate * (game.generatorStats?.productionRateMultiplier ?? 1) * (game.baseSparkleMultiplier ?? 1))} sparkles/s`;
             if (key === 'CATAPULT') description.textContent = `Throws a fan every ${((type.baseFireInterval ?? type.fireInterval) * (game.catapultStats?.fireIntervalMultiplier ?? 1)).toFixed(1)}s`;
         }
 
@@ -174,10 +176,24 @@ export function initializePanelDetails(game) {
             buy.setAttribute('aria-label', count >= 128 ? 'Jetpack fans at maximum' : `Buy a jetpack for ${cost} gold`);
         }
 
+        const cultistShop = document.getElementById('cultist-shop');
+        if (cultistShop) {
+            cultistShop.hidden = !game.progression.isUnlocked('cultist_unlock');
+            const count = game.cultistCount ?? 0;
+            const full = count >= CULTIST_CONFIG.maxCount;
+            const cost = game.getCultistCost();
+            setText('cultist-count', `${count}/${CULTIST_CONFIG.maxCount}`);
+            setText('cultist-cost', full ? 'Max' : compact(cost));
+            setText('cultist-description', `Each makes ${compact(cultistSparklesPerSecond(game.cultistStats, game.baseSparkleMultiplier ?? 1))} sparkles/s.`);
+            const buy = document.getElementById('buy-cultist');
+            buy.disabled = full || (game.resourceManager.resources.gold?.amount ?? 0) < cost;
+            buy.setAttribute('aria-label', full ? 'Cultists at maximum' : `Recruit a cultist for ${cost} gold`);
+        }
+
         const tracker = game.statsTracker;
         if (!tracker) return;
         const total = tracker.getRollingRate('sparkles');
-        const sources = ['auto_launcher', 'resource_generator', 'crowd_catch', 'manual', 'jetpack'];
+        const sources = ['auto_launcher', 'cultist', 'crowd_catch', 'manual', 'jetpack'];
         const rates = Object.fromEntries(sources.map(source => [source, tracker.getRollingRate('sparkles', source)]));
         rates.other = Math.max(0, total - Object.values(rates).reduce((sum, rate) => sum + rate, 0));
         setText('stats-sparkles-hero', compact(total));
@@ -191,8 +207,9 @@ export function initializePanelDetails(game) {
             element.style.width = `${total > 0 ? (rate / total) * 100 : 0}%`;
         });
         document.getElementById('stats-jetpacks-row').hidden = rates.jetpack <= 0;
+        document.getElementById('stats-cultists-row').hidden = rates.cultist <= 0;
         document.getElementById('stats-other-row').hidden = rates.other < 0.01;
-        document.querySelector('.stats-production-bar')?.setAttribute('aria-label', `Sparkle production: ${sources.map(source => `${source === 'jetpack' ? 'jetpack fans' : source.replaceAll('_', ' ')} ${compact(rates[source])} per second`).join(', ')}`);
+        document.querySelector('.stats-production-bar')?.setAttribute('aria-label', `Sparkle production: ${sources.map(source => `${source === 'jetpack' ? 'jetpack fans' : source === 'cultist' ? 'cultists' : source.replaceAll('_', ' ')} ${compact(rates[source])} per second`).join(', ')}`);
 
         const count = game.crowd?.naturalCount ?? game.crowd?.people.length ?? 0;
         const next = fireworksForCrowd(count + 1, game);

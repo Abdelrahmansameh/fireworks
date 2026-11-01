@@ -6,7 +6,7 @@ import { ChromeController } from './ui/ChromeController.js';
 import { WorkshopScreen } from './ui/WorkshopScreen.js';
 import { initializePanelDetails } from './ui/panelDetails.js';
 
-document.addEventListener('DOMContentLoaded', () => {
+function startGame() {
     buildChrome();
     window.game = new FireworkGame();
     window.game.chrome = new ChromeController(window.game);
@@ -20,4 +20,12 @@ document.addEventListener('DOMContentLoaded', () => {
     if (new URLSearchParams(location.search).has('bot')) {
         window.game.bot = new GameBot(window.game);
     }
-});
+}
+
+// Config modules await assets (the cultist ritual clip), so this module can
+// finish evaluating after DOMContentLoaded has already fired.
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', startGame);
+} else {
+    startGame();
+}

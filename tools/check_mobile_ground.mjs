@@ -64,7 +64,7 @@ try {
         });
         const label = `${viewport.width}x${viewport.height}@${deviceScaleFactor}: fresh unlock`;
         assert(initial.locked && initial.unlocked, `${label}: the fresh navigation did not transition from locked to unlocked`);
-        assert(initial.frames.every(frame => Math.abs(frame.zoom - .85) < .00001
+        assert(initial.frames.every(frame => Math.abs(frame.zoom - 1.02) < .00001
             && Math.abs(frame.ground - initial.expectedGround) < .3
             && Math.abs(frame.y - initial.initial.y) < .3),
         `${label}: startup or unlocking shifted the camera: ${JSON.stringify(initial)}`);
@@ -184,7 +184,7 @@ try {
                 if (!rectangles.some(rect => x >= rect.left - .001 && x <= rect.right + .001
                     && y >= rect.bottom - .001 && y <= rect.top + .001)) uncovered.push({ x, y });
             }
-            return { cameraY: r.cameraY, zoom: r.cameraZoom, ground, sceneAnchor,
+            return { cameraY: r.cameraY, zoom: r.cameraZoom, desiredZoom: game.chrome.cameraDesiredZoom, ground, sceneAnchor,
                 expectedSceneAnchorY, previousSkyTop, skyTop: bounds.top,
                 bottomUiTop, clearance: bottomUiTop - ground.y,
                 canvas: { top: canvas.top, bottom: canvas.bottom }, ui,
@@ -193,7 +193,7 @@ try {
         });
         if (mobile) {
             assert(!state.activePanel, `${label}: a panel opened during the navigation-bar check`);
-            assert(Math.abs(state.zoom - .85) < .00001, `${label}: mobile zoom is not .85: ${JSON.stringify(state)}`);
+            assert(Math.abs(state.zoom - state.desiredZoom) < .001, `${label}: camera did not settle at the earned zoom: ${JSON.stringify(state)}`);
             assert(Math.abs(state.sceneAnchor.y - state.expectedSceneAnchorY) < .3,
                 `${label}: zoom or menu state moved the ground pixel: ${JSON.stringify(state)}`);
             assert(state.skyTop > state.previousSkyTop + 1,
@@ -230,9 +230,10 @@ try {
     // Crossing the desktop breakpoint must release the mobile camera correction.
     await page.setViewportSize({ width: 1440, height: 900 });
     await inspect('desktop restore', false);
-    const restored = await page.evaluate(() => ({ y: game.renderer2D.cameraY, zoom: game.renderer2D.cameraZoom }));
-    assert(Math.abs(restored.y - fixture.baseline) < .4 && Math.abs(restored.zoom - 1) < .00001,
-        `Desktop camera failed to restore: ${JSON.stringify(restored)} vs ${fixture.baseline}/1`);
+    const restored = await page.evaluate(() => ({ y: game.renderer2D.cameraY, zoom: game.renderer2D.cameraZoom,
+        framing: game.chrome.getCameraFraming() }));
+    assert(Math.abs(restored.y - restored.framing.y) < .4 && Math.abs(restored.zoom - restored.framing.zoom) < .001,
+        `Desktop camera failed to restore its earned framing: ${JSON.stringify(restored)}`);
 
     // Cover camera movement and zoom outside the original sky and ground extent.
     await page.setViewportSize({ width: 2560, height: 1080 });

@@ -1,0 +1,321 @@
+{
+  "parts": [
+    {
+      "id": "hood_root",
+      "parentId": null,
+      "width": 1,
+      "height": 1,
+      "anchorX": 0,
+      "anchorY": 0,
+      "relX": 0,
+      "relY": 0,
+      "color": "ffffff",
+      "z": 0,
+      "alpha": 0
+    },
+    {
+      "id": "cowl_outline",
+      "parentId": "hood_root",
+      "width": 4.4,
+      "height": 3,
+      "anchorX": 0,
+      "anchorY": 0,
+      "relX": 0,
+      "relY": -0.55,
+      "color": "000000",
+      "z": -10
+    },
+    {
+      "id": "tip",
+      "parentId": "hood_root",
+      "width": 1,
+      "height": 1,
+      "anchorX": 0,
+      "anchorY": 0,
+      "relX": -0.25,
+      "relY": 0.6,
+      "color": "ffffff",
+      "z": 0,
+      "alpha": 0,
+      "baseRotation": 0.15
+    },
+    {
+      "id": "tip_outline",
+      "parentId": "tip",
+      "width": 2,
+      "height": 2,
+      "anchorX": 0,
+      "anchorY": 0,
+      "relX": 0,
+      "relY": 0.1,
+      "color": "000000",
+      "z": -9,
+      "baseRotation": 0.7854
+    },
+    {
+      "id": "cowl",
+      "parentId": "hood_root",
+      "width": 4,
+      "height": 2.6,
+      "anchorX": 0,
+      "anchorY": 0,
+      "relX": 0,
+      "relY": -0.55,
+      "color": "3a2563",
+      "z": 0
+    },
+    {
+      "id": "tip_fill",
+      "parentId": "tip",
+      "width": 1.6,
+      "height": 1.6,
+      "anchorX": 0,
+      "anchorY": 0,
+      "relX": 0,
+      "relY": 0.1,
+      "color": "3a2563",
+      "z": 1,
+      "baseRotation": 0.7854
+    }
+  ],
+  "animations": {
+    "ritual": {
+      "duration": 1.1,
+      "loop": true,
+      "tracks": {
+        "hood_root": [
+          {
+            "time": 0,
+            "offsetY": 0.4
+          },
+          {
+            "time": 0.05,
+            "offsetY": 0.4
+          },
+          {
+            "time": 0.1,
+            "offsetY": 0.4
+          },
+          {
+            "time": 0.17,
+            "offsetY": 0.28
+          },
+          {
+            "time": 0.3,
+            "offsetY": 0.08
+          },
+          {
+            "time": 0.44,
+            "offsetY": -0.1
+          },
+          {
+            "time": 0.56,
+            "offsetY": -0.3
+          },
+          {
+            "time": 0.64,
+            "offsetY": -0.34
+          },
+          {
+            "time": 0.72,
+            "offsetY": -0.3
+          },
+          {
+            "time": 0.8,
+            "offsetY": -0.36
+          },
+          {
+            "time": 0.88,
+            "offsetY": -0.32
+          },
+          {
+            "time": 0.96,
+            "offsetY": -0.42
+          },
+          {
+            "time": 1.03,
+            "offsetY": 0.24
+          },
+          {
+            "time": 1.1,
+            "offsetY": 0.4
+          }
+        ],
+        "cowl": [
+          {
+            "time": 0,
+            "scaleX": 0.84
+          },
+          {
+            "time": 0.05,
+            "scaleX": 0.84
+          },
+          {
+            "time": 0.1,
+            "scaleX": 0.84
+          },
+          {
+            "time": 0.17,
+            "scaleX": 0.9
+          },
+          {
+            "time": 0.3,
+            "scaleX": 0.97
+          },
+          {
+            "time": 0.44,
+            "scaleX": 1.06
+          },
+          {
+            "time": 0.56,
+            "scaleX": 1.17
+          },
+          {
+            "time": 0.64,
+            "scaleX": 1.19
+          },
+          {
+            "time": 0.72,
+            "scaleX": 1.16
+          },
+          {
+            "time": 0.8,
+            "scaleX": 1.2
+          },
+          {
+            "time": 0.88,
+            "scaleX": 1.18
+          },
+          {
+            "time": 0.96,
+            "scaleX": 1.24
+          },
+          {
+            "time": 1.03,
+            "scaleX": 0.9
+          },
+          {
+            "time": 1.1,
+            "scaleX": 0.84
+          }
+        ],
+        "cowl_outline": [
+          {
+            "time": 0,
+            "scaleX": 0.84
+          },
+          {
+            "time": 0.05,
+            "scaleX": 0.84
+          },
+          {
+            "time": 0.1,
+            "scaleX": 0.84
+          },
+          {
+            "time": 0.17,
+            "scaleX": 0.9
+          },
+          {
+            "time": 0.3,
+            "scaleX": 0.97
+          },
+          {
+            "time": 0.44,
+            "scaleX": 1.06
+          },
+          {
+            "time": 0.56,
+            "scaleX": 1.17
+          },
+          {
+            "time": 0.64,
+            "scaleX": 1.19
+          },
+          {
+            "time": 0.72,
+            "scaleX": 1.16
+          },
+          {
+            "time": 0.8,
+            "scaleX": 1.2
+          },
+          {
+            "time": 0.88,
+            "scaleX": 1.18
+          },
+          {
+            "time": 0.96,
+            "scaleX": 1.24
+          },
+          {
+            "time": 1.03,
+            "scaleX": 0.9
+          },
+          {
+            "time": 1.1,
+            "scaleX": 0.84
+          }
+        ],
+        "tip": [
+          {
+            "time": 0,
+            "rotation": 0.15
+          },
+          {
+            "time": 0.05,
+            "rotation": 0.05
+          },
+          {
+            "time": 0.1,
+            "rotation": 0.2
+          },
+          {
+            "time": 0.17,
+            "rotation": -0.15
+          },
+          {
+            "time": 0.3,
+            "rotation": 0.12
+          },
+          {
+            "time": 0.44,
+            "rotation": -0.05
+          },
+          {
+            "time": 0.56,
+            "rotation": -0.2
+          },
+          {
+            "time": 0.64,
+            "rotation": -0.25
+          },
+          {
+            "time": 0.72,
+            "rotation": -0.2
+          },
+          {
+            "time": 0.8,
+            "rotation": -0.25
+          },
+          {
+            "time": 0.88,
+            "rotation": -0.2
+          },
+          {
+            "time": 0.96,
+            "rotation": -0.3
+          },
+          {
+            "time": 1.03,
+            "rotation": 0.25
+          },
+          {
+            "time": 1.1,
+            "rotation": 0.15
+          }
+        ]
+      }
+    }
+  }
+}

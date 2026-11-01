@@ -1,5 +1,6 @@
 import Firework from '../entities/Firework.js';
 import { FIREWORK_CONFIG, GAME_BOUNDS } from '../config/config.js';
+import { getVenueStage } from '../config/VenueProgression.js';
 
 export default class FireworkSystem {
     constructor(game) {
@@ -31,11 +32,17 @@ export default class FireworkSystem {
     }
 
     launch(x, y, components, targetY = null, initialTilt = null) {
+        const stage = getVenueStage(this.game);
+        const maxY = stage.maxExplosionY;
+        const minY = GAME_BOUNDS.WORLD_MIN_EXPLOSION_Y;
+        const burstY = Number.isFinite(targetY)
+            ? Math.max(minY, Math.min(maxY, targetY))
+            : minY + Math.random() * ((stage.maxAutomaticExplosionY ?? maxY) - minY);
         const firework = new Firework(
             x, y, components,
             this.game.renderer2D,
             this.game.particleSystem,
-            targetY,
+            burstY,
             this.game.audioManager,
             initialTilt,
             this.game.getFireworkRecoveryBudget?.()
@@ -52,11 +59,15 @@ export default class FireworkSystem {
             return;
         }
 
-        const y = minY || GAME_BOUNDS.WORLD_LAUNCHER_Y;
+        const y = minY ?? GAME_BOUNDS.WORLD_LAUNCHER_Y;
         const spawnX = x + (Math.random() * 20 - 10) * FIREWORK_CONFIG.autoLauncherMeshWidth;
         const spawnY = y + FIREWORK_CONFIG.autoLauncherMeshHeight / 2;
 
-        this.launch(spawnX, spawnY, components, Math.max(targetY, minY), null);
+        // Low clicks choose a random burst using the same stage limits as an
+        // auto launcher; clicks in the sky keep their explicitly aimed height.
+        const burstTarget = Number.isFinite(targetY) && targetY <= GAME_BOUNDS.MANUAL_RANDOM_TARGET_MAX_Y
+            ? null : targetY;
+        this.launch(spawnX, spawnY, components, burstTarget, null);
         this.fireworkCount++;
         
         const sparkleAmount = this.game.baseSparkleMultiplier;

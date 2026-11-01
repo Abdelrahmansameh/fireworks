@@ -44,7 +44,6 @@
 .crowd-progress-title { flex: 1; font-family: 'Shantell Sans', 'Comic Sans MS', cursive; font-size: 13px; font-weight: 700; }
 .crowd-panel .progress-container { height: 14px; background: #fff7e6; border: 2px solid var(--ink); border-radius: 8px 5px 7px 6px; overflow: hidden; }
 .crowd-panel .progress-bar { width: 0; height: 100%; background: var(--green); border-right: 2px solid var(--ink); transition: width 250ms ease-out; }
-.crowd-panel #crowd-gold-upgrade { margin-bottom: 0; }
 
 .settings-section { display: flex; flex-direction: column; gap: 8px; }
 .settings-sound-card { display: flex; flex-direction: column; gap: 12px; padding: 10px; background: #2a2e5e; border: 2px solid rgba(244,234,213,.4); border-radius: var(--sticker); }
@@ -98,7 +97,7 @@
 .stats-production-bar { display: flex; height: 20px; box-sizing: border-box; border: 2px solid var(--ink); border-radius: 8px 6px 8px 7px; overflow: hidden; background: #efe2c8; }
 .stats-segment { display: block; width: 0; flex-shrink: 0; box-shadow: inset -2px 0 var(--ink); transition: width 250ms ease-out; }
 .source-launchers { background: var(--coral); }
-.source-generators { background: var(--teal); }
+.source-cultists { background: var(--teal); }
 .source-fans { background: var(--green); }
 .source-clicks { background: var(--gold); }
 .source-jetpacks { background: #b9a3ff; }

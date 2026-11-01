@@ -37,6 +37,7 @@ export class HeadlessSimulator {
 
             // 1. Economy step — real building + progression code + emergent estimate.
             game.stepHeadless(dt, { clicksPerSec });
+            game.milestones.claim();
 
             // 2. Unlock events (diff the progression unlock set).
             const nowUnlocked = game.progression.getState().unlocked;
@@ -73,7 +74,7 @@ export class HeadlessSimulator {
                 const sparklesParts = [
                     `clicks ${Math.round(s.manual || 0)}`,
                     `launchers ${Math.round(s.auto_launcher || 0)}`,
-                    `generators ${Math.round(s.resource_generator || 0)}`,
+                    `cultists ${Math.round(s.cultist || 0)}`,
                     `jetpacks ${Math.round(s.jetpack || 0)}`,
                     `crowdCatch ${Math.round(s.crowd_catch || 0)}`,
                     `finale ${Math.round(s.grand_finale || 0)}`,
@@ -125,7 +126,7 @@ export class HeadlessSimulator {
             sparkles: {
                 clicks: bs.manual || 0,
                 launchers: bs.auto_launcher || 0,
-                generators: bs.resource_generator || 0,
+                cultists: bs.cultist || 0,
                 jetpacks: bs.jetpack || 0,
                 crowdCatching: bs.crowd_catch || 0,
                 grandFinale: bs.grand_finale || 0,

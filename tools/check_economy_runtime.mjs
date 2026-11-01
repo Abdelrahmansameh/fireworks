@@ -22,11 +22,11 @@ try {
     await page.goto(process.argv[2] ?? 'http://127.0.0.1:8765/?bot=1', { waitUntil: 'domcontentloaded' });
     await page.waitForFunction(() => window.game?.particleSystem && window.game?.renderer2D);
     const results = await page.evaluate(async () => {
-        const [{ default: Firework }, { default: ParticleSystem }, { default: Crowd }, { default: ResourceGenerator }, { default: ResourceManager },
+        const [{ default: Firework }, { default: ParticleSystem }, { default: Crowd }, { default: CultistRituals }, { default: ResourceManager },
             renderer, config] = await Promise.all([
             import('/js/entities/Firework.js'), import('/js/particles/InstancedParticleSystem.js'),
             import('/js/entities/Crowd.js'),
-            import('/js/buildings/ResourceGenerator.js'), import('/js/resources/ResourceManager.js'),
+            import('/js/systems/CultistRituals.js'), import('/js/resources/ResourceManager.js'),
             import('/js/rendering/Renderer.js'), import('/js/config/config.js'),
         ]);
         const assert = (condition, message) => { if (!condition) throw new Error(message); };
@@ -101,26 +101,24 @@ try {
             } finally { jetpackCrowd.dispose(); }
 
             const tempGame = {
-                baseSparkleMultiplier: 4, generatorStats: { productionRateMultiplier: 2 },
+                baseSparkleMultiplier: 4, cultistStats: { sparkleMultiplier: 2, ritualSpeedMultiplier: 1 },
                 renderer2D: window.game.renderer2D, particleSystem: ps, recipes: [],
                 addSparkles(amount) { this.resourceManager.resources.sparkles.add(amount); },
                 addGold(amount) { this.resourceManager.resources.gold.add(amount); },
             };
             tempGame.resourceManager = new ResourceManager(tempGame);
-            const generator = new ResourceGenerator(tempGame, 450, -435, { accumulator: 0 });
-            try {
-                const sparkleResource = tempGame.resourceManager.resources.sparkles;
-                const perSecond = generator.getProductionRate();
-                sparkleResource.updateFromLevel(perSecond);
-                generator.update(1);
+            const rituals = new CultistRituals(tempGame);
+            rituals.setCount(1);
+            const sparkleResource = tempGame.resourceManager.resources.sparkles;
+            const perRitual = rituals.payout;
+            sparkleResource.updateFromLevel(perRitual / rituals.interval);
+            for (let i = 0; i < 2; i++) {
+                rituals.update(rituals.interval);
                 sparkleResource._lastUpdate = performance.now() - 2000;
                 tempGame.resourceManager.update();
-                generator.update(1);
-                sparkleResource._lastUpdate = performance.now() - 2000;
-                tempGame.resourceManager.update();
-                assert(sparkleResource.amount === perSecond * 2, `Generator was paid twice: ${sparkleResource.amount}`);
-                results.generator = { perSecond, twoGameSecondsAward: sparkleResource.amount, duplicateWallClockAward: 0 };
-            } finally { generator.destroy(); }
+            }
+            assert(sparkleResource.amount === perRitual * 2, `Cultist was paid twice: ${sparkleResource.amount}`);
+            results.cultist = { perRitual, twoRitualsAward: sparkleResource.amount, duplicateWallClockAward: 0 };
 
             const crowd = new Crowd(window.game.renderer2D);
             try {

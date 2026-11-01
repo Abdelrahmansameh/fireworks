@@ -161,6 +161,17 @@ try {
     await page.screenshot({ path: `${output}.png`, fullPage: false });
     const result = { validation: 'actual-browser-game', status, preset, speed, seed, wallSeconds: (Date.now() - started) / 1000, url: gameUrl.toString(), errors, runtimeErrors: fatalErrors, balance, finaleCapture, ...report };
     await writeFile(`${output}.json`, `${JSON.stringify(result, null, 2)}\n`);
+    const goals = Object.entries(report.milestones ?? {}).filter(([id]) => id.startsWith('goal:')).sort((a, b) => a[1] - b[1]);
+    if (goals.length) {
+        console.log('\nMilestone timeline (game time, gap since previous):');
+        let previous = 0;
+        for (const [id, time] of goals) {
+            console.log(`  ${(time / 60).toFixed(2).padStart(6)}m  +${Math.round(time - previous).toString().padStart(4)}s  ${id.slice(5)}`);
+            previous = time;
+        }
+        const gaps = goals.map(([, time], index) => time - (index ? goals[index - 1][1] : 0));
+        console.log(`  ${goals.length} milestones; longest gap ${Math.round(Math.max(...gaps))}s; median gap ${Math.round([...gaps].sort((a, b) => a - b)[Math.floor(gaps.length / 2)])}s\n`);
+    }
     console.log(`${status}: ${(report.elapsed / 60).toFixed(2)} game minutes; max purchase gap ${report.maxPurchaseGap.toFixed(1)}s`);
     console.log(`Report: ${output}.json`);
     console.log(`Screenshot: ${output}.png`);

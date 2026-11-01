@@ -45,7 +45,7 @@ export const FIREWORK_CONFIG = {
         saturn: 300,
         default: 100
     },
-    supportedShapes: ['sphere', 'star', 'ring', 'crystalDroplet', 'sliceBurst', 'triangle', 'glow'],
+    supportedShapes: ['sphere', 'star', 'ring', 'triangle', 'glow'],
 
     trails: {
         enabled: true,

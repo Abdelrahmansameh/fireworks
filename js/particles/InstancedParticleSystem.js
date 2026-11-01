@@ -4,11 +4,11 @@ import { getGlowTexture, ready as textureReady } from '../rendering/TextureManag
 const { BlendMode, Color, Vector2 } = Renderer2D;
 
 class InstancedParticleSystem {
-    constructor(renderer, profiler) {
+    constructor(renderer, profiler, { maxParticles = FIREWORK_CONFIG.maxParticles, zIndex = -20, reflects = true, blendMode = BlendMode.ADDITIVE } = {}) {
         this.profiler = profiler;
         this.renderer = renderer;
 
-        this.maxParticles = FIREWORK_CONFIG.maxParticles;
+        this.maxParticles = maxParticles;
         this.pendingTrailsStride = 10;
         this.pendingTrailsData = new Float32Array(this.maxParticles * this.pendingTrailsStride);
         this.pendingTrailsCount = 0;
@@ -64,11 +64,11 @@ class InstancedParticleSystem {
                 indices: g.indices,
                 texCoords: g.texCoords || null,
                 maxInstances: this.maxParticles,
-                blendMode: BlendMode.ADDITIVE,
-                zIndex: -20,
+                blendMode,
+                zIndex,
             });
             // Reflection staging excludes UI/resource particles that share these meshes.
-            this.meshes[shape].reflectsInWater = true;
+            this.meshes[shape].reflectsInWater = reflects;
             this.meshes[shape].waterReflectionRises = true;
             this.meshes[shape].reflectionInstanceData = new Float32Array(this.maxParticles * this.meshes[shape].instanceStrideFloats);
             this.meshes[shape].reflectionInstanceCount = 0;

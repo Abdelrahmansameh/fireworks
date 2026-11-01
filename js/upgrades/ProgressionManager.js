@@ -1,5 +1,5 @@
 import { BUILDING_TYPES } from '../config/config.js';
-import { SKILL_TREE_CONFIG, SHOW_MILESTONES } from '../ui/SkillTreeConfig.js';
+import { SKILL_TREE_CONFIG } from '../ui/SkillTreeConfig.js';
 import { roundUpClean } from '../utils/costRounding.js';
 
 const PROGRESSION_SCHEMA_VERSION = 3;
@@ -20,8 +20,8 @@ const LEGACY_BASE_COSTS = {
     unlock_dragonsBreath: 1500,
     crowd_invite_1: 700,
     crowd_catcher_unlock: 900,
-    resource_generator: 600,
-    generator_production: 1600,
+    cultist_unlock: 600,
+    cultist_chants: 1600,
     catapult: 2400,
     catapult_spawn_rate: 1300,
     catapult_max: 2200,
@@ -236,11 +236,6 @@ class ProgressionManager {
         return [...this._upgrades.values()];
     }
 
-    getNextMilestone() {
-        return SHOW_MILESTONES.map(id => this._upgrades.get(id))
-            .find(def => this.getUpgradeLevel(def.id) === 0) ?? null;
-    }
-
     /** Cost of the *next* level for upgrade `id` (rounded up to a clean ending). */
     getUpgradeCost(id) {
         const def = this._upgrades.get(id);
@@ -282,8 +277,10 @@ class ProgressionManager {
         const level = this.getUpgradeLevel(id);
         if (level >= (def.maxLevel ?? 1)) return { ok: false, reason: 'Already maxed' };
         if (def.unlockId && this.isUnlocked(def.unlockId)) return { ok: false, reason: 'Already unlocked' };
+        if (def.milestoneReward) return { ok: false, reason: 'Earned through milestones' };
 
-        if (def.treeParent && def.treeParent !== 'ROOT') {
+        // A milestone gate replaces the tree parent as this card's way in.
+        if (def.treeParent && def.treeParent !== 'ROOT' && !def.requires?.milestone) {
             const parentLevel = this.getUpgradeLevel(def.treeParent);
             if (parentLevel < 1) {
                 const parentDef = this._upgrades.get(def.treeParent);
@@ -313,8 +310,10 @@ class ProgressionManager {
         const def = this._upgrades.get(id);
         if (!def) return { visible: true };
         if (def.unlockId && this.isUnlocked(def.unlockId) && this.getUpgradeLevel(id) === 0) return { visible: false };
+        // Milestone rewards appear once earned; the milestone widget shows them until then.
+        if (def.milestoneReward && this.getUpgradeLevel(id) === 0) return { visible: false };
 
-        if (def.treeParent && def.treeParent !== 'ROOT') {
+        if (def.treeParent && def.treeParent !== 'ROOT' && !def.requires?.milestone) {
             if (this.getUpgradeLevel(def.treeParent) < 1) {
                 return { visible: false };
             }
@@ -373,6 +372,29 @@ class ProgressionManager {
         if (game.ui?.renderUpgrades) game.ui.renderUpgrades();
         game.showNotification(`${def.name} purchased!`);
         return true;
+    }
+
+    /**
+     * Give a milestone reward for free: level 1 with an empty charge, so a
+     * reset refunds nothing. Its apply and onPurchase run as for a purchase.
+     */
+    grantUpgrade(id, game, grantId) {
+        const def = this._upgrades.get(id);
+        if (!def || this.getUpgradeLevel(id) > 0) return false;
+        this._upgradeLevels[id] = 1;
+        this._purchaseCosts[id] = [{}];
+        this.applyAll(game);
+        def.onPurchase?.(game, 1, grantId);
+        for (const key of def.patternKeys ?? (def.patternKey ? [def.patternKey] : [])) game.grantPatternRecipe(key);
+        game.syncCrowdStats();
+        return true;
+    }
+
+    /** Re-own a granted reward after an upgrade reset, without granting its units again. */
+    restoreGrant(id) {
+        if (!this._upgrades.has(id) || this.getUpgradeLevel(id) > 0) return;
+        this._upgradeLevels[id] = 1;
+        this._purchaseCosts[id] = [{}];
     }
 
     /**
@@ -440,7 +462,7 @@ class ProgressionManager {
             countBonus: 0,            // added to the crowd count formula result
         };
         game.launcherStats = { spawnIntervalMultiplier: 1, sparkleYieldMultiplier: 1 };
-        game.generatorStats = { productionRateMultiplier: 1 };
+        game.cultistStats = { sparkleMultiplier: 1, ritualSpeedMultiplier: 1 };
         game.catapultStats = { maxCatapults: 1, fireIntervalMultiplier: 1, launchVxMultiplier: 1 };
         game.crowdUnlocked = false;
         game.grandFinaleUnlocked = false;
@@ -564,6 +586,10 @@ class ProgressionManager {
             }
         }
 
+        if (requires.milestone && !game.milestones?.isComplete(requires.milestone)) {
+            return { met: false, reason: 'Unlocked by a milestone' };
+        }
+
         if (requires.upgrades) {
             for (const [uid, minLevel] of Object.entries(requires.upgrades)) {
                 if (this.getUpgradeLevel(uid) < minLevel) {
@@ -596,6 +622,8 @@ class ProgressionManager {
                 if (!this.isUnlocked(uid)) return { visible: false };
             }
         }
+
+        if (requires.milestone && !game.milestones?.isComplete(requires.milestone)) return { visible: false };
 
         return { visible: true };
     }

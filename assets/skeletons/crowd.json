@@ -686,22 +686,46 @@
             "rotation": 0
           },
           {
-            "time": 0.125,
-            "rotation": 0,
+            "time": 0.06,
             "offsetX": 0,
-            "offsetY": 0.5
-          },
-          {
-            "time": 0.25,
-            "offsetX": 0,
-            "offsetY": 0,
+            "offsetY": -0.03,
             "rotation": 0
           },
           {
-            "time": 0.375,
-            "rotation": 0,
+            "time": 0.15,
             "offsetX": 0,
-            "offsetY": 0.5
+            "offsetY": -0.2,
+            "rotation": 0
+          },
+          {
+            "time": 0.22,
+            "offsetX": 0,
+            "offsetY": -0.38,
+            "rotation": 0
+          },
+          {
+            "time": 0.26,
+            "offsetX": 0,
+            "offsetY": -0.42,
+            "rotation": 0
+          },
+          {
+            "time": 0.32,
+            "offsetX": 0,
+            "offsetY": -0.33,
+            "rotation": 0
+          },
+          {
+            "time": 0.4,
+            "offsetX": 0,
+            "offsetY": -0.14,
+            "rotation": 0
+          },
+          {
+            "time": 0.46,
+            "offsetX": 0,
+            "offsetY": -0.03,
+            "rotation": 0
           },
           {
             "time": 0.5,
@@ -738,10 +762,46 @@
             "rotation": 0
           },
           {
-            "time": 0.25,
+            "time": 0.06,
             "offsetX": 0,
-            "offsetY": 0,
-            "rotation": 0.5
+            "offsetY": -0.006,
+            "rotation": 0.12
+          },
+          {
+            "time": 0.15,
+            "offsetX": 0,
+            "offsetY": 0.064,
+            "rotation": 0.3
+          },
+          {
+            "time": 0.22,
+            "offsetX": 0,
+            "offsetY": 0.13,
+            "rotation": 0.44
+          },
+          {
+            "time": 0.26,
+            "offsetX": 0,
+            "offsetY": 0.132,
+            "rotation": 0.48
+          },
+          {
+            "time": 0.32,
+            "offsetX": 0,
+            "offsetY": 0.149,
+            "rotation": 0.36
+          },
+          {
+            "time": 0.4,
+            "offsetX": 0,
+            "offsetY": 0.067,
+            "rotation": 0.2
+          },
+          {
+            "time": 0.46,
+            "offsetX": 0,
+            "offsetY": 0.009,
+            "rotation": 0.08
           },
           {
             "time": 0.5,
@@ -758,10 +818,46 @@
             "rotation": 0
           },
           {
-            "time": 0.25,
+            "time": 0.06,
             "offsetX": 0,
-            "offsetY": 0,
-            "rotation": -0.5
+            "offsetY": 0.041,
+            "rotation": -0.12
+          },
+          {
+            "time": 0.15,
+            "offsetX": 0,
+            "offsetY": 0.179,
+            "rotation": -0.3
+          },
+          {
+            "time": 0.22,
+            "offsetX": 0,
+            "offsetY": 0.295,
+            "rotation": -0.44
+          },
+          {
+            "time": 0.26,
+            "offsetX": 0,
+            "offsetY": 0.311,
+            "rotation": -0.48
+          },
+          {
+            "time": 0.32,
+            "offsetX": 0,
+            "offsetY": 0.286,
+            "rotation": -0.36
+          },
+          {
+            "time": 0.4,
+            "offsetX": 0,
+            "offsetY": 0.144,
+            "rotation": -0.2
+          },
+          {
+            "time": 0.46,
+            "offsetX": 0,
+            "offsetY": 0.04,
+            "rotation": -0.08
           },
           {
             "time": 0.5,
@@ -1479,6 +1575,1399 @@
           "startTime": 0,
           "endTime": 0.8,
           "layer": "behind"
+        }
+      ]
+    },
+    "ritual": {
+      "duration": 1.1,
+      "loop": true,
+      "tracks": {
+        "body": [
+          {
+            "time": 0,
+            "offsetY": 0.4,
+            "scaleX": 0.84,
+            "scaleY": 1.2
+          },
+          {
+            "time": 0.05,
+            "offsetY": 0.4,
+            "scaleX": 0.84,
+            "scaleY": 1.2
+          },
+          {
+            "time": 0.1,
+            "offsetY": 0.4,
+            "scaleX": 0.84,
+            "scaleY": 1.2
+          },
+          {
+            "time": 0.17,
+            "offsetY": 0.28,
+            "scaleX": 0.9,
+            "scaleY": 1.14
+          },
+          {
+            "time": 0.3,
+            "offsetY": 0.059,
+            "scaleX": 0.97,
+            "scaleY": 1.04
+          },
+          {
+            "time": 0.44,
+            "offsetY": -0.314,
+            "scaleX": 1.06,
+            "scaleY": 0.95
+          },
+          {
+            "time": 0.56,
+            "offsetY": -1.043,
+            "scaleX": 1.17,
+            "scaleY": 0.85
+          },
+          {
+            "time": 0.64,
+            "offsetY": -1.232,
+            "scaleX": 1.19,
+            "scaleY": 0.83
+          },
+          {
+            "time": 0.72,
+            "offsetY": -1.239,
+            "scaleX": 1.16,
+            "scaleY": 0.85
+          },
+          {
+            "time": 0.8,
+            "offsetY": -1.363,
+            "scaleX": 1.2,
+            "scaleY": 0.82
+          },
+          {
+            "time": 0.88,
+            "offsetY": -1.37,
+            "scaleX": 1.18,
+            "scaleY": 0.84
+          },
+          {
+            "time": 0.96,
+            "offsetY": -1.586,
+            "scaleX": 1.24,
+            "scaleY": 0.79
+          },
+          {
+            "time": 1.03,
+            "offsetY": -0.019,
+            "scaleX": 0.9,
+            "scaleY": 1.12
+          },
+          {
+            "time": 1.1,
+            "offsetY": 0.4,
+            "scaleX": 0.84,
+            "scaleY": 1.2
+          }
+        ],
+        "body_outline": [
+          {
+            "time": 0,
+            "scaleX": 0.84,
+            "scaleY": 1.2
+          },
+          {
+            "time": 0.05,
+            "scaleX": 0.84,
+            "scaleY": 1.2
+          },
+          {
+            "time": 0.1,
+            "scaleX": 0.84,
+            "scaleY": 1.2
+          },
+          {
+            "time": 0.17,
+            "scaleX": 0.9,
+            "scaleY": 1.14
+          },
+          {
+            "time": 0.3,
+            "scaleX": 0.97,
+            "scaleY": 1.04
+          },
+          {
+            "time": 0.44,
+            "scaleX": 1.06,
+            "scaleY": 0.95
+          },
+          {
+            "time": 0.56,
+            "scaleX": 1.17,
+            "scaleY": 0.85
+          },
+          {
+            "time": 0.64,
+            "scaleX": 1.19,
+            "scaleY": 0.83
+          },
+          {
+            "time": 0.72,
+            "scaleX": 1.16,
+            "scaleY": 0.85
+          },
+          {
+            "time": 0.8,
+            "scaleX": 1.2,
+            "scaleY": 0.82
+          },
+          {
+            "time": 0.88,
+            "scaleX": 1.18,
+            "scaleY": 0.84
+          },
+          {
+            "time": 0.96,
+            "scaleX": 1.24,
+            "scaleY": 0.79
+          },
+          {
+            "time": 1.03,
+            "scaleX": 0.9,
+            "scaleY": 1.12
+          },
+          {
+            "time": 1.1,
+            "scaleX": 0.84,
+            "scaleY": 1.2
+          }
+        ],
+        "leg_l": [
+          {
+            "time": 0,
+            "rotation": 0,
+            "offsetY": -0.4
+          },
+          {
+            "time": 0.05,
+            "rotation": 0,
+            "offsetY": -0.4
+          },
+          {
+            "time": 0.1,
+            "rotation": 0,
+            "offsetY": -0.4
+          },
+          {
+            "time": 0.17,
+            "rotation": 0,
+            "offsetY": -0.28
+          },
+          {
+            "time": 0.3,
+            "rotation": -0.024,
+            "offsetY": -0.064
+          },
+          {
+            "time": 0.44,
+            "rotation": -0.12,
+            "offsetY": 0.278
+          },
+          {
+            "time": 0.56,
+            "rotation": -0.255,
+            "offsetY": 0.937
+          },
+          {
+            "time": 0.64,
+            "rotation": -0.285,
+            "offsetY": 1.107
+          },
+          {
+            "time": 0.72,
+            "rotation": -0.294,
+            "offsetY": 1.108
+          },
+          {
+            "time": 0.8,
+            "rotation": -0.306,
+            "offsetY": 1.223
+          },
+          {
+            "time": 0.88,
+            "rotation": -0.315,
+            "offsetY": 1.224
+          },
+          {
+            "time": 0.96,
+            "rotation": -0.336,
+            "offsetY": 1.424
+          },
+          {
+            "time": 1.03,
+            "rotation": -0.135,
+            "offsetY": -0.023
+          },
+          {
+            "time": 1.1,
+            "rotation": 0,
+            "offsetY": -0.4
+          }
+        ],
+        "leg_r": [
+          {
+            "time": 0,
+            "rotation": 0,
+            "offsetY": -0.4
+          },
+          {
+            "time": 0.05,
+            "rotation": 0,
+            "offsetY": -0.4
+          },
+          {
+            "time": 0.1,
+            "rotation": 0,
+            "offsetY": -0.4
+          },
+          {
+            "time": 0.17,
+            "rotation": 0,
+            "offsetY": -0.28
+          },
+          {
+            "time": 0.3,
+            "rotation": 0.024,
+            "offsetY": -0.064
+          },
+          {
+            "time": 0.44,
+            "rotation": 0.12,
+            "offsetY": 0.278
+          },
+          {
+            "time": 0.56,
+            "rotation": 0.255,
+            "offsetY": 0.937
+          },
+          {
+            "time": 0.64,
+            "rotation": 0.285,
+            "offsetY": 1.107
+          },
+          {
+            "time": 0.72,
+            "rotation": 0.294,
+            "offsetY": 1.108
+          },
+          {
+            "time": 0.8,
+            "rotation": 0.306,
+            "offsetY": 1.223
+          },
+          {
+            "time": 0.88,
+            "rotation": 0.315,
+            "offsetY": 1.224
+          },
+          {
+            "time": 0.96,
+            "rotation": 0.336,
+            "offsetY": 1.424
+          },
+          {
+            "time": 1.03,
+            "rotation": 0.135,
+            "offsetY": -0.023
+          },
+          {
+            "time": 1.1,
+            "rotation": 0,
+            "offsetY": -0.4
+          }
+        ],
+        "foot_l": [
+          {
+            "time": 0,
+            "rotation": 0
+          },
+          {
+            "time": 0.05,
+            "rotation": 0
+          },
+          {
+            "time": 0.1,
+            "rotation": 0
+          },
+          {
+            "time": 0.17,
+            "rotation": 0
+          },
+          {
+            "time": 0.3,
+            "rotation": 0.024
+          },
+          {
+            "time": 0.44,
+            "rotation": 0.12
+          },
+          {
+            "time": 0.56,
+            "rotation": 0.255
+          },
+          {
+            "time": 0.64,
+            "rotation": 0.285
+          },
+          {
+            "time": 0.72,
+            "rotation": 0.294
+          },
+          {
+            "time": 0.8,
+            "rotation": 0.306
+          },
+          {
+            "time": 0.88,
+            "rotation": 0.315
+          },
+          {
+            "time": 0.96,
+            "rotation": 0.336
+          },
+          {
+            "time": 1.03,
+            "rotation": 0.135
+          },
+          {
+            "time": 1.1,
+            "rotation": 0
+          }
+        ],
+        "foot_r": [
+          {
+            "time": 0,
+            "rotation": 0
+          },
+          {
+            "time": 0.05,
+            "rotation": 0
+          },
+          {
+            "time": 0.1,
+            "rotation": 0
+          },
+          {
+            "time": 0.17,
+            "rotation": 0
+          },
+          {
+            "time": 0.3,
+            "rotation": -0.024
+          },
+          {
+            "time": 0.44,
+            "rotation": -0.12
+          },
+          {
+            "time": 0.56,
+            "rotation": -0.255
+          },
+          {
+            "time": 0.64,
+            "rotation": -0.285
+          },
+          {
+            "time": 0.72,
+            "rotation": -0.294
+          },
+          {
+            "time": 0.8,
+            "rotation": -0.306
+          },
+          {
+            "time": 0.88,
+            "rotation": -0.315
+          },
+          {
+            "time": 0.96,
+            "rotation": -0.336
+          },
+          {
+            "time": 1.03,
+            "rotation": -0.135
+          },
+          {
+            "time": 1.1,
+            "rotation": 0
+          }
+        ],
+        "arm_1_r": [
+          {
+            "time": 0,
+            "rotation": 0.95,
+            "offsetX": -0.32,
+            "offsetY": -0.146
+          },
+          {
+            "time": 0.05,
+            "rotation": 1.15,
+            "offsetX": -0.32,
+            "offsetY": -0.146
+          },
+          {
+            "time": 0.1,
+            "rotation": 1.05,
+            "offsetX": -0.32,
+            "offsetY": -0.146
+          },
+          {
+            "time": 0.17,
+            "rotation": 1.05,
+            "offsetX": -0.2,
+            "offsetY": -0.102
+          },
+          {
+            "time": 0.3,
+            "rotation": 0.7,
+            "offsetX": -0.06,
+            "offsetY": -0.029
+          },
+          {
+            "time": 0.44,
+            "rotation": -0.1,
+            "offsetX": 0.12,
+            "offsetY": 0.036
+          },
+          {
+            "time": 0.56,
+            "rotation": -0.85,
+            "offsetX": 0.34,
+            "offsetY": 0.109
+          },
+          {
+            "time": 0.64,
+            "rotation": -1,
+            "offsetX": 0.38,
+            "offsetY": 0.124
+          },
+          {
+            "time": 0.72,
+            "rotation": -0.95,
+            "offsetX": 0.32,
+            "offsetY": 0.109
+          },
+          {
+            "time": 0.8,
+            "rotation": -1.02,
+            "offsetX": 0.4,
+            "offsetY": 0.131
+          },
+          {
+            "time": 0.88,
+            "rotation": -0.97,
+            "offsetX": 0.36,
+            "offsetY": 0.117
+          },
+          {
+            "time": 0.96,
+            "rotation": -1.1,
+            "offsetX": 0.48,
+            "offsetY": 0.153
+          },
+          {
+            "time": 1.03,
+            "rotation": 0.6,
+            "offsetX": -0.2,
+            "offsetY": -0.087
+          },
+          {
+            "time": 1.1,
+            "rotation": 0.95,
+            "offsetX": -0.32,
+            "offsetY": -0.146
+          }
+        ],
+        "arm_1_l": [
+          {
+            "time": 0,
+            "rotation": -0.95,
+            "offsetX": 0.32,
+            "offsetY": -0.146
+          },
+          {
+            "time": 0.05,
+            "rotation": -1.15,
+            "offsetX": 0.32,
+            "offsetY": -0.146
+          },
+          {
+            "time": 0.1,
+            "rotation": -1.05,
+            "offsetX": 0.32,
+            "offsetY": -0.146
+          },
+          {
+            "time": 0.17,
+            "rotation": -1.05,
+            "offsetX": 0.2,
+            "offsetY": -0.102
+          },
+          {
+            "time": 0.3,
+            "rotation": -0.7,
+            "offsetX": 0.06,
+            "offsetY": -0.029
+          },
+          {
+            "time": 0.44,
+            "rotation": 0.1,
+            "offsetX": -0.12,
+            "offsetY": 0.036
+          },
+          {
+            "time": 0.56,
+            "rotation": 0.85,
+            "offsetX": -0.34,
+            "offsetY": 0.109
+          },
+          {
+            "time": 0.64,
+            "rotation": 1,
+            "offsetX": -0.38,
+            "offsetY": 0.124
+          },
+          {
+            "time": 0.72,
+            "rotation": 0.95,
+            "offsetX": -0.32,
+            "offsetY": 0.109
+          },
+          {
+            "time": 0.8,
+            "rotation": 1.02,
+            "offsetX": -0.4,
+            "offsetY": 0.131
+          },
+          {
+            "time": 0.88,
+            "rotation": 0.97,
+            "offsetX": -0.36,
+            "offsetY": 0.117
+          },
+          {
+            "time": 0.96,
+            "rotation": 1.1,
+            "offsetX": -0.48,
+            "offsetY": 0.153
+          },
+          {
+            "time": 1.03,
+            "rotation": -0.6,
+            "offsetX": 0.2,
+            "offsetY": -0.087
+          },
+          {
+            "time": 1.1,
+            "rotation": -0.95,
+            "offsetX": 0.32,
+            "offsetY": -0.146
+          }
+        ],
+        "arm_2_r": [
+          {
+            "time": 0,
+            "rotation": 0.05
+          },
+          {
+            "time": 0.05,
+            "rotation": 0.25
+          },
+          {
+            "time": 0.1,
+            "rotation": -0.05
+          },
+          {
+            "time": 0.17,
+            "rotation": 0.15
+          },
+          {
+            "time": 0.3,
+            "rotation": -0.1
+          },
+          {
+            "time": 0.44,
+            "rotation": -0.3
+          },
+          {
+            "time": 0.56,
+            "rotation": -0.45
+          },
+          {
+            "time": 0.64,
+            "rotation": -0.1
+          },
+          {
+            "time": 0.72,
+            "rotation": -0.6
+          },
+          {
+            "time": 0.8,
+            "rotation": -0.1
+          },
+          {
+            "time": 0.88,
+            "rotation": -0.6
+          },
+          {
+            "time": 0.96,
+            "rotation": -0.2
+          },
+          {
+            "time": 1.03,
+            "rotation": 0.1
+          },
+          {
+            "time": 1.1,
+            "rotation": 0.05
+          }
+        ],
+        "arm_2_l": [
+          {
+            "time": 0,
+            "rotation": -0.05
+          },
+          {
+            "time": 0.05,
+            "rotation": -0.25
+          },
+          {
+            "time": 0.1,
+            "rotation": 0.05
+          },
+          {
+            "time": 0.17,
+            "rotation": -0.15
+          },
+          {
+            "time": 0.3,
+            "rotation": 0.1
+          },
+          {
+            "time": 0.44,
+            "rotation": 0.3
+          },
+          {
+            "time": 0.56,
+            "rotation": 0.45
+          },
+          {
+            "time": 0.64,
+            "rotation": 0.1
+          },
+          {
+            "time": 0.72,
+            "rotation": 0.6
+          },
+          {
+            "time": 0.8,
+            "rotation": 0.1
+          },
+          {
+            "time": 0.88,
+            "rotation": 0.6
+          },
+          {
+            "time": 0.96,
+            "rotation": 0.2
+          },
+          {
+            "time": 1.03,
+            "rotation": -0.1
+          },
+          {
+            "time": 1.1,
+            "rotation": -0.05
+          }
+        ],
+        "arm_3_r": [
+          {
+            "time": 0,
+            "rotation": -0.05
+          },
+          {
+            "time": 0.05,
+            "rotation": 0.3
+          },
+          {
+            "time": 0.1,
+            "rotation": -0.15
+          },
+          {
+            "time": 0.17,
+            "rotation": 0.1
+          },
+          {
+            "time": 0.3,
+            "rotation": -0.1
+          },
+          {
+            "time": 0.44,
+            "rotation": -0.2
+          },
+          {
+            "time": 0.56,
+            "rotation": -0.5
+          },
+          {
+            "time": 0.64,
+            "rotation": 0.3
+          },
+          {
+            "time": 0.72,
+            "rotation": -0.5
+          },
+          {
+            "time": 0.8,
+            "rotation": 0.35
+          },
+          {
+            "time": 0.88,
+            "rotation": -0.55
+          },
+          {
+            "time": 0.96,
+            "rotation": 0.3
+          },
+          {
+            "time": 1.03,
+            "rotation": 0
+          },
+          {
+            "time": 1.1,
+            "rotation": -0.05
+          }
+        ],
+        "arm_3_l": [
+          {
+            "time": 0,
+            "rotation": 0.05
+          },
+          {
+            "time": 0.05,
+            "rotation": -0.3
+          },
+          {
+            "time": 0.1,
+            "rotation": 0.15
+          },
+          {
+            "time": 0.17,
+            "rotation": -0.1
+          },
+          {
+            "time": 0.3,
+            "rotation": 0.1
+          },
+          {
+            "time": 0.44,
+            "rotation": 0.2
+          },
+          {
+            "time": 0.56,
+            "rotation": 0.5
+          },
+          {
+            "time": 0.64,
+            "rotation": -0.3
+          },
+          {
+            "time": 0.72,
+            "rotation": 0.5
+          },
+          {
+            "time": 0.8,
+            "rotation": -0.35
+          },
+          {
+            "time": 0.88,
+            "rotation": 0.55
+          },
+          {
+            "time": 0.96,
+            "rotation": -0.3
+          },
+          {
+            "time": 1.03,
+            "rotation": 0
+          },
+          {
+            "time": 1.1,
+            "rotation": 0.05
+          }
+        ],
+        "eye_r": [
+          {
+            "time": 0,
+            "offsetX": 0,
+            "offsetY": 0.12,
+            "scaleY": 1.25,
+            "r": 1,
+            "g": 0.88,
+            "b": 0.5
+          },
+          {
+            "time": 0.05,
+            "offsetX": 0,
+            "offsetY": 0.12,
+            "scaleY": 1.25,
+            "r": 1,
+            "g": 0.88,
+            "b": 0.5
+          },
+          {
+            "time": 0.1,
+            "offsetX": 0,
+            "offsetY": 0.12,
+            "scaleY": 1.25,
+            "r": 1,
+            "g": 0.88,
+            "b": 0.5
+          },
+          {
+            "time": 0.17,
+            "offsetX": 0,
+            "offsetY": 0.084,
+            "scaleY": 1.15,
+            "r": 1,
+            "g": 0.904,
+            "b": 0.6
+          },
+          {
+            "time": 0.3,
+            "offsetX": 0,
+            "offsetY": 0.024,
+            "scaleY": 1,
+            "r": 1,
+            "g": 0.964,
+            "b": 0.85
+          },
+          {
+            "time": 0.44,
+            "offsetX": 0.059,
+            "offsetY": -0.03,
+            "scaleY": 1,
+            "r": 1,
+            "g": 1,
+            "b": 1
+          },
+          {
+            "time": 0.56,
+            "offsetX": 0.166,
+            "offsetY": -0.09,
+            "scaleY": 0.55,
+            "r": 1,
+            "g": 1,
+            "b": 1
+          },
+          {
+            "time": 0.64,
+            "offsetX": 0.186,
+            "offsetY": -0.102,
+            "scaleY": 0.5,
+            "r": 1,
+            "g": 1,
+            "b": 1
+          },
+          {
+            "time": 0.72,
+            "offsetX": 0.157,
+            "offsetY": -0.09,
+            "scaleY": 0.5,
+            "r": 1,
+            "g": 0.999,
+            "b": 0.995
+          },
+          {
+            "time": 0.8,
+            "offsetX": 0.196,
+            "offsetY": -0.108,
+            "scaleY": 0.5,
+            "r": 1,
+            "g": 0.994,
+            "b": 0.976
+          },
+          {
+            "time": 0.88,
+            "offsetX": 0.176,
+            "offsetY": -0.096,
+            "scaleY": 0.5,
+            "r": 1,
+            "g": 0.982,
+            "b": 0.925
+          },
+          {
+            "time": 0.96,
+            "offsetX": 0.235,
+            "offsetY": -0.126,
+            "scaleY": 0.45,
+            "r": 1,
+            "g": 0.956,
+            "b": 0.816
+          },
+          {
+            "time": 1.03,
+            "offsetX": 0,
+            "offsetY": 0.072,
+            "scaleY": 1.1,
+            "r": 1,
+            "g": 0.916,
+            "b": 0.65
+          },
+          {
+            "time": 1.1,
+            "offsetX": 0,
+            "offsetY": 0.12,
+            "scaleY": 1.25,
+            "r": 1,
+            "g": 0.88,
+            "b": 0.5
+          }
+        ],
+        "eye_l": [
+          {
+            "time": 0,
+            "offsetX": 0,
+            "offsetY": 0.12,
+            "scaleY": 1.25,
+            "r": 1,
+            "g": 0.88,
+            "b": 0.5
+          },
+          {
+            "time": 0.05,
+            "offsetX": 0,
+            "offsetY": 0.12,
+            "scaleY": 1.25,
+            "r": 1,
+            "g": 0.88,
+            "b": 0.5
+          },
+          {
+            "time": 0.1,
+            "offsetX": 0,
+            "offsetY": 0.12,
+            "scaleY": 1.25,
+            "r": 1,
+            "g": 0.88,
+            "b": 0.5
+          },
+          {
+            "time": 0.17,
+            "offsetX": 0,
+            "offsetY": 0.084,
+            "scaleY": 1.15,
+            "r": 1,
+            "g": 0.904,
+            "b": 0.6
+          },
+          {
+            "time": 0.3,
+            "offsetX": 0,
+            "offsetY": 0.024,
+            "scaleY": 1,
+            "r": 1,
+            "g": 0.964,
+            "b": 0.85
+          },
+          {
+            "time": 0.44,
+            "offsetX": -0.059,
+            "offsetY": -0.03,
+            "scaleY": 1,
+            "r": 1,
+            "g": 1,
+            "b": 1
+          },
+          {
+            "time": 0.56,
+            "offsetX": -0.166,
+            "offsetY": -0.09,
+            "scaleY": 0.55,
+            "r": 1,
+            "g": 1,
+            "b": 1
+          },
+          {
+            "time": 0.64,
+            "offsetX": -0.186,
+            "offsetY": -0.102,
+            "scaleY": 0.5,
+            "r": 1,
+            "g": 1,
+            "b": 1
+          },
+          {
+            "time": 0.72,
+            "offsetX": -0.157,
+            "offsetY": -0.09,
+            "scaleY": 0.5,
+            "r": 1,
+            "g": 0.999,
+            "b": 0.995
+          },
+          {
+            "time": 0.8,
+            "offsetX": -0.196,
+            "offsetY": -0.108,
+            "scaleY": 0.5,
+            "r": 1,
+            "g": 0.994,
+            "b": 0.976
+          },
+          {
+            "time": 0.88,
+            "offsetX": -0.176,
+            "offsetY": -0.096,
+            "scaleY": 0.5,
+            "r": 1,
+            "g": 0.982,
+            "b": 0.925
+          },
+          {
+            "time": 0.96,
+            "offsetX": -0.235,
+            "offsetY": -0.126,
+            "scaleY": 0.45,
+            "r": 1,
+            "g": 0.956,
+            "b": 0.816
+          },
+          {
+            "time": 1.03,
+            "offsetX": 0,
+            "offsetY": 0.072,
+            "scaleY": 1.1,
+            "r": 1,
+            "g": 0.916,
+            "b": 0.65
+          },
+          {
+            "time": 1.1,
+            "offsetX": 0,
+            "offsetY": 0.12,
+            "scaleY": 1.25,
+            "r": 1,
+            "g": 0.88,
+            "b": 0.5
+          }
+        ],
+        "eye_r_outline": [],
+        "eye_l_outline": [],
+        "pupil_r": [
+          {
+            "time": 0,
+            "rotation": 0,
+            "offsetX": 0.54,
+            "offsetY": 0.22,
+            "scaleX": 0.5,
+            "scaleY": 0.5,
+            "r": 1,
+            "g": 1,
+            "b": 1,
+            "a": 1
+          },
+          {
+            "time": 0.1,
+            "rotation": 0,
+            "offsetX": 0.54,
+            "offsetY": 0.22,
+            "scaleX": 0.5,
+            "scaleY": 0.5,
+            "r": 1,
+            "g": 1,
+            "b": 1,
+            "a": 1
+          },
+          {
+            "time": 0.17,
+            "scaleX": 0.55,
+            "scaleY": 0.55,
+            "offsetX": 0.243,
+            "offsetY": -0.055
+          },
+          {
+            "time": 0.3,
+            "scaleX": 0.8,
+            "scaleY": 0.8,
+            "offsetX": 0.081,
+            "offsetY": -0.205
+          },
+          {
+            "time": 0.44,
+            "rotation": 0,
+            "offsetX": 0,
+            "offsetY": -0.28,
+            "scaleX": 1,
+            "scaleY": 1,
+            "r": 1,
+            "g": 1,
+            "b": 1,
+            "a": 1
+          },
+          {
+            "time": 0.56,
+            "rotation": 0,
+            "offsetX": 0,
+            "offsetY": -0.28,
+            "scaleX": 0.9,
+            "scaleY": 0.9,
+            "r": 1,
+            "g": 1,
+            "b": 1,
+            "a": 1
+          },
+          {
+            "time": 0.64,
+            "rotation": 0,
+            "offsetX": 0,
+            "offsetY": -0.28,
+            "scaleX": 0.9,
+            "scaleY": 0.9,
+            "r": 1,
+            "g": 1,
+            "b": 1,
+            "a": 1
+          },
+          {
+            "time": 0.72,
+            "rotation": 0,
+            "offsetX": 0,
+            "offsetY": -0.28,
+            "scaleX": 0.85,
+            "scaleY": 0.85,
+            "r": 1,
+            "g": 1,
+            "b": 1,
+            "a": 1
+          },
+          {
+            "time": 0.8,
+            "rotation": 0,
+            "offsetX": 0,
+            "offsetY": -0.28,
+            "scaleX": 0.8,
+            "scaleY": 0.8,
+            "r": 1,
+            "g": 1,
+            "b": 1,
+            "a": 1
+          },
+          {
+            "time": 0.88,
+            "rotation": 0,
+            "offsetX": 0,
+            "offsetY": -0.28,
+            "scaleX": 0.75,
+            "scaleY": 0.75,
+            "r": 1,
+            "g": 1,
+            "b": 1,
+            "a": 1
+          },
+          {
+            "time": 0.96,
+            "rotation": 0,
+            "offsetX": 0,
+            "offsetY": -0.28,
+            "scaleX": 0.7,
+            "scaleY": 0.7,
+            "r": 1,
+            "g": 1,
+            "b": 1,
+            "a": 1
+          },
+          {
+            "time": 1.03,
+            "rotation": 0,
+            "offsetX": 0.54,
+            "offsetY": 0.22,
+            "scaleX": 0.6,
+            "scaleY": 0.6,
+            "r": 1,
+            "g": 1,
+            "b": 1,
+            "a": 1
+          },
+          {
+            "time": 1.1,
+            "rotation": 0,
+            "offsetX": 0.54,
+            "offsetY": 0.22,
+            "scaleX": 0.5,
+            "scaleY": 0.5,
+            "r": 1,
+            "g": 1,
+            "b": 1,
+            "a": 1
+          }
+        ],
+        "pupil_l": [
+          {
+            "time": 0,
+            "rotation": 0,
+            "offsetX": -0.44,
+            "offsetY": 0.22,
+            "scaleX": 0.5,
+            "scaleY": 0.5,
+            "r": 1,
+            "g": 1,
+            "b": 1,
+            "a": 1
+          },
+          {
+            "time": 0.1,
+            "rotation": 0,
+            "offsetX": -0.44,
+            "offsetY": 0.22,
+            "scaleX": 0.5,
+            "scaleY": 0.5,
+            "r": 1,
+            "g": 1,
+            "b": 1,
+            "a": 1
+          },
+          {
+            "time": 0.17,
+            "scaleX": 0.55,
+            "scaleY": 0.55,
+            "offsetX": -0.231,
+            "offsetY": -0.055
+          },
+          {
+            "time": 0.3,
+            "scaleX": 0.8,
+            "scaleY": 0.8,
+            "offsetX": -0.117,
+            "offsetY": -0.205
+          },
+          {
+            "time": 0.44,
+            "rotation": 0,
+            "offsetX": -0.06,
+            "offsetY": -0.28,
+            "scaleX": 1,
+            "scaleY": 1,
+            "r": 1,
+            "g": 1,
+            "b": 1,
+            "a": 1
+          },
+          {
+            "time": 0.56,
+            "rotation": 0,
+            "offsetX": 0,
+            "offsetY": -0.28,
+            "scaleX": 0.9,
+            "scaleY": 0.9,
+            "r": 1,
+            "g": 1,
+            "b": 1,
+            "a": 1
+          },
+          {
+            "time": 0.64,
+            "rotation": 0,
+            "offsetX": 0,
+            "offsetY": -0.28,
+            "scaleX": 0.9,
+            "scaleY": 0.9,
+            "r": 1,
+            "g": 1,
+            "b": 1,
+            "a": 1
+          },
+          {
+            "time": 0.72,
+            "rotation": 0,
+            "offsetX": 0,
+            "offsetY": -0.28,
+            "scaleX": 0.85,
+            "scaleY": 0.85,
+            "r": 1,
+            "g": 1,
+            "b": 1,
+            "a": 1
+          },
+          {
+            "time": 0.8,
+            "rotation": 0,
+            "offsetX": 0,
+            "offsetY": -0.28,
+            "scaleX": 0.8,
+            "scaleY": 0.8,
+            "r": 1,
+            "g": 1,
+            "b": 1,
+            "a": 1
+          },
+          {
+            "time": 0.88,
+            "rotation": 0,
+            "offsetX": 0,
+            "offsetY": -0.28,
+            "scaleX": 0.75,
+            "scaleY": 0.75,
+            "r": 1,
+            "g": 1,
+            "b": 1,
+            "a": 1
+          },
+          {
+            "time": 0.96,
+            "rotation": 0,
+            "offsetX": 0,
+            "offsetY": -0.28,
+            "scaleX": 0.7,
+            "scaleY": 0.7,
+            "r": 1,
+            "g": 1,
+            "b": 1,
+            "a": 1
+          },
+          {
+            "time": 1.03,
+            "rotation": 0,
+            "offsetX": -0.44,
+            "offsetY": 0.19,
+            "scaleX": 0.6,
+            "scaleY": 0.6,
+            "r": 1,
+            "g": 1,
+            "b": 1,
+            "a": 1
+          },
+          {
+            "time": 1.1,
+            "rotation": 0,
+            "offsetX": -0.44,
+            "offsetY": 0.19,
+            "scaleX": 0.5,
+            "scaleY": 0.5,
+            "r": 1,
+            "g": 1,
+            "b": 1,
+            "a": 1
+          }
+        ]
+      },
+      "props": [
+        {
+          "skeletonUrl": "assets/skeletons/cultist_bowl.json",
+          "animation": "ritual",
+          "parentPartId": "body",
+          "startTime": 0,
+          "endTime": 1.1,
+          "offsetX": 0,
+          "offsetY": -4.04
         }
       ]
     }

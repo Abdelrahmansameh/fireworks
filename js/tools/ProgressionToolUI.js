@@ -212,7 +212,7 @@ export function initializeProgressionTool() {
             makeRow(`Sparkles Generated: ${fmt(b_sparklesTotal)}`);
             if (b_sparklesTotal > 0) {
                 makeRow(`Launchers: ${fmt(sparkles.launchers)} (${(sparkles.launchers/b_sparklesTotal*100).toFixed(1)}%)`, true);
-                makeRow(`Generators: ${fmt(sparkles.generators)} (${(sparkles.generators/b_sparklesTotal*100).toFixed(1)}%)`, true);
+                makeRow(`Cultists: ${fmt(sparkles.cultists)} (${(sparkles.cultists/b_sparklesTotal*100).toFixed(1)}%)`, true);
                 makeRow(`Jetpack fans: ${fmt(sparkles.jetpacks)} (${(sparkles.jetpacks/b_sparklesTotal*100).toFixed(1)}%)`, true);
                 makeRow(`Crowd Catching: ${fmt(sparkles.crowdCatching)} (${(sparkles.crowdCatching/b_sparklesTotal*100).toFixed(1)}%)`, true);
                 makeRow(`Clicks: ${fmt(sparkles.clicks)} (${(sparkles.clicks/b_sparklesTotal*100).toFixed(1)}%)`, true);

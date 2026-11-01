@@ -4,7 +4,7 @@ import { gameStorage } from '../platform/GameStorage.js';
 import { WORKSHOP_COLORS } from './panels/recipesPanel.js';
 import { miniature, sparkMiniature } from './WorkshopMiniatures.js';
 import { doodleIcon } from './doodleIcons.js';
-const sparkNames = { sphere: 'Dot', star: 'Star', ring: 'Ring', crystalDroplet: 'Droplet', sliceBurst: 'Slice', triangle: 'Triangle', glow: 'Glow' };
+const sparkNames = { sphere: 'Dot', star: 'Star', ring: 'Ring', triangle: 'Triangle', glow: 'Glow' };
 
 /** The workshop edits the same recipe that launchers and saved fireworks use. */
 export class WorkshopScreen {
@@ -186,7 +186,7 @@ export class WorkshopScreen {
         const component = this.component;
         component.pattern = patterns[Math.floor(Math.random() * patterns.length)].key;
         component.color = WORKSHOP_COLORS[Math.floor(Math.random() * WORKSHOP_COLORS.length)];
-        component.shape = ['sphere', 'star', 'ring', 'crystalDroplet', 'sliceBurst'][Math.floor(Math.random() * 5)];
+        component.shape = ['sphere', 'star', 'ring'][Math.floor(Math.random() * 3)];
         for (const [key, range] of Object.entries(COMPONENT_PROPERTY_RANGES)) {
             const steps = Math.round((range.max - range.min) / range.step);
             component[key] = Number((range.min + Math.floor(Math.random() * (steps + 1)) * range.step).toFixed(2));

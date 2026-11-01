@@ -46,7 +46,7 @@ class Firework {
         const minY = GAME_BOUNDS.WORLD_MIN_EXPLOSION_Y;
         const maxY = GAME_BOUNDS.WORLD_MAX_EXPLOSION_Y;
 
-        this.targetY = targetY || minY + Math.random() * (maxY - minY);
+        this.targetY = targetY ?? minY + Math.random() * (maxY - minY);
 
         // Estimate time to explode (use vertical component if tilted)
         const verticalAscentSpeed = FIREWORK_CONFIG.rocketTilt && FIREWORK_CONFIG.rocketTilt.enabled

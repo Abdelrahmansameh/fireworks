@@ -1,8 +1,8 @@
 import AutoLauncher from './AutoLauncher.js';
-import ResourceGenerator from './ResourceGenerator.js';
 import Catapult from './Catapult.js';
 import Building from './Building.js';
 import { BUILDING_TYPES, GAME_BOUNDS } from '../config/config.js';
+import { getVenueStage } from '../config/VenueProgression.js';
 
 class BuildingManager {
     constructor(game) {
@@ -12,7 +12,6 @@ class BuildingManager {
 
         this.buildingClasses = {
             'AUTO_LAUNCHER': AutoLauncher,
-            'RESOURCE_GENERATOR': ResourceGenerator,
             'CATAPULT': Catapult,
         };
     }
@@ -24,8 +23,17 @@ class BuildingManager {
             return null;
         }
 
+        if (buildingType === 'AUTO_LAUNCHER') {
+            x = this.getLauncherSlotX(this.getBuildingsByType('AUTO_LAUNCHER').length);
+        }
         const building = new BuildingClass(this.game, x, y, data);
         this.buildings.push(building);
+        // Record milestones immediately, including in headless play or when a
+        // player refunds a building before the next rendered frame.
+        getVenueStage(this.game);
+        if (!this.game._isRestoring && !this.game.headless) {
+            this.game.pendingVenueFocusX = building.x;
+        }
 
         return building;
     }
@@ -73,31 +81,32 @@ class BuildingManager {
     }
 
     getNewBuildingX(buildingType) {
-        const config = BUILDING_TYPES[buildingType];
         const count = this.getBuildingsByType(buildingType).length;
         let x;
 
-        // Stack catapults horizontally within their dedicated bounds: the first
-        // sits at the right edge and each new one is placed to its left.
-        // For other buildings (e.g. auto launchers) place them sequentially
-        // from left to right across the world, ignoring the current camera.
+        // Catapults share the crowd area, with the first closest to launchers.
         if (buildingType === 'CATAPULT') {
             x = GAME_BOUNDS.CATAPULT_MAX_X + count * GAME_BOUNDS.CATAPULT_X_STEP;
             const minX = GAME_BOUNDS.CATAPULT_MIN_X;
             const maxX = GAME_BOUNDS.CATAPULT_MAX_X;
             x = Math.max(minX, Math.min(x, maxX));
         } else {
-            const spacing = 350;
-            const startX = GAME_BOUNDS.LAUNCHER_MIN_X + spacing;
-            x = startX + count * spacing;
-
-            // Keep new building inside launcher world bounds
-            const halfWidth = config.width / 2;
-            if (x - halfWidth < GAME_BOUNDS.LAUNCHER_MIN_X) x = GAME_BOUNDS.LAUNCHER_MIN_X + halfWidth;
-            if (x + halfWidth > GAME_BOUNDS.LAUNCHER_MAX_X) x = GAME_BOUNDS.LAUNCHER_MAX_X - halfWidth;
+            x = this.getLauncherSlotX(count);
         }
 
         return x;
+    }
+
+    getLauncherSlotX(index) {
+        return GAME_BOUNDS.LAUNCHER_START_X + index * GAME_BOUNDS.LAUNCHER_SPACING;
+    }
+
+    /** Launchers always occupy the first N slots, in purchase order. */
+    layoutLaunchers() {
+        this.getBuildingsByType('AUTO_LAUNCHER').forEach((launcher, index) => {
+            launcher.x = this.getLauncherSlotX(index);
+            if (launcher.mesh) launcher.mesh.position.x = launcher.x;
+        });
     }
 
     getBuildingLimit(buildingType) {
@@ -116,6 +125,7 @@ class BuildingManager {
             if (this.selectedBuildingId === building.id) {
                 this.selectedBuildingId = null;
             }
+            if (building.type === 'AUTO_LAUNCHER') this.layoutLaunchers();
         }
     }
 
@@ -166,27 +176,6 @@ class BuildingManager {
         return this.getBuildingById(this.selectedBuildingId);
     }
 
-    spreadBuildings(buildingType = null) {
-        let buildingsToSpread = buildingType ?
-            this.getBuildingsByType(buildingType) :
-            this.buildings;
-
-        if (buildingsToSpread.length === 0) {
-            this.game.showNotification("No buildings to spread!");
-            return;
-        }
-
-        const totalWidth = GAME_BOUNDS.LAUNCHER_MAX_X - GAME_BOUNDS.LAUNCHER_MIN_X;
-        const spacing = Math.min(totalWidth / (buildingsToSpread.length + 1), 500);
-
-        buildingsToSpread.forEach((building, index) => {
-            const newX = GAME_BOUNDS.LAUNCHER_MIN_X + spacing * (index + 1);
-            building.setPosition(newX, building.y);
-        });
-
-        this.game.showNotification("Buildings spread evenly!");
-    }
-
     resetBuildingsOfType(buildingType) {
         const buildings = this.getBuildingsByType(buildingType);
         let refundAmount = 0;
@@ -210,33 +199,6 @@ class BuildingManager {
         return refundAmount;
     }
 
-    isValidPlacement(x, y, buildingType, excludeBuilding = null) {
-        const config = BUILDING_TYPES[buildingType];
-        if (!config) return false;
-
-        const halfWidth = config.width / 2;
-        if (x - halfWidth < GAME_BOUNDS.LAUNCHER_MIN_X ||
-            x + halfWidth > GAME_BOUNDS.LAUNCHER_MAX_X) {
-            return false;
-        }
-
-        const minSpacing = 50;
-
-        for (const building of this.buildings) {
-            if (building === excludeBuilding) continue;
-
-            const dx = Math.abs(building.x - x);
-            const dy = Math.abs(building.y - y);
-            const minDist = (building.config.width + config.width) / 2 + minSpacing;
-
-            if (dx < minDist && dy < building.config.height / 2 + config.height / 2) {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
     serialize() {
         return {
             buildings: this.buildings.map(b => b.serialize()),
@@ -252,6 +214,7 @@ class BuildingManager {
 
         if (data.buildings) {
             for (const buildingData of data.buildings) {
+                if (!this.buildingClasses[buildingData.type]) continue;
                 this.createBuilding(
                     buildingData.type,
                     buildingData.x,

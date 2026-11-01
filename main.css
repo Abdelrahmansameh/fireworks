@@ -29,7 +29,7 @@ h2, h3 { font-size: 20px; line-height: 24px; }
 #game-container { position: fixed; inset: 0; z-index: 0; }
 #game-canvas { display: block; width: 100%; height: 100%; touch-action: none; }
 #ui-root { position: fixed; inset: 0; z-index: 100; pointer-events: none; }
-body.mobile-cinematic #ui-root, body.mobile-cinematic .notification { visibility: hidden; }
+body.cinematic-active #ui-root, body.cinematic-active .notification { visibility: hidden; }
 .top-bar-container { position: fixed; inset: 0; pointer-events: none; }
 .tab-bar { position: absolute; left: 16px; top: 84px; bottom: 16px; width: 80px; display: flex; flex-direction: column; padding: 8px; gap: 8px; background-color: var(--indigo); background-image: radial-gradient(rgba(255,243,218,.09) 1.1px, transparent 1.4px); background-size: 14px 14px; border: 2px solid var(--cream); border-radius: 18px 22px 16px 20px / 20px 16px 22px 18px; box-shadow: 5px 5px 0 var(--shadow-deep); pointer-events: auto; transition: transform 240ms, opacity 170ms; }
 .tab-bar::after { content: ''; position: absolute; inset: 4px; border: 1px solid #77718c; border-radius: 13px 17px 11px 15px; pointer-events: none; }
@@ -269,4 +269,9 @@ body.menu-tucked .tab-bar { opacity: 0; transform: translateX(-110px); pointer-e
     .wallet-rate { font-size:11.5px; }
     .resource-counter:has(.ressource-count:not(.expanded)) { left: 12px; right: auto; max-width: calc(100vw - 24px); }
     .tab-content:not(#recipes-content) > .panel-header { position:absolute; width:1px; height:1px; min-height:0; overflow:hidden; clip:rect(0,0,0,0); padding:0; }
+}
+
+/* Keep room for the audience above the crowd sheet on short landscape screens. */
+@media (max-width:700px) and (max-height:500px) and (orientation:landscape) {
+    #crowd-content:not(.sheet-full) { height:110px; }
 }

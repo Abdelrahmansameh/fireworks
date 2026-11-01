@@ -34,7 +34,7 @@ export const STATS_SCHEMA = [
                 type: 'group', label: ICONS.SPARKLE_SVG + ' Sparkles / sec', id: 'stat-sps-total', defaultValue: '0.00',
                 children: [
                     { label: '› Auto-Launchers',     id: 'stat-sps-auto',        defaultValue: '0.00' },
-                    { label: '› Resource Generators', id: 'stat-sps-gen',         defaultValue: '0.00' },
+                    { label: '› Cultists', id: 'stat-sps-cultist',       defaultValue: '0.00' },
                     { label: '› Jetpack Fans',              id: 'stat-sps-jetpack',       defaultValue: '0.00' },
                     { label: '› Crowd Catchers',      id: 'stat-sps-crowd-catch', defaultValue: '0.00' },
                     { label: '› Manual Clicks',       id: 'stat-sps-manual',      defaultValue: '0.00' },
@@ -67,7 +67,7 @@ export const STATS_SCHEMA = [
             { type: 'group', label: 'Gold Balance',     id: 'stat-bal-gold',     defaultValue: '0' },
             { type: 'group', label: 'Crowd Size',       id: 'stat-crowd-size',   defaultValue: '0' },
             { type: 'group', label: 'Auto-Launchers',       id: 'stat-bld-auto',  defaultValue: '0' },
-            { type: 'group', label: 'Resource Generators',  id: 'stat-bld-gen',   defaultValue: '0' },
+            { type: 'group', label: 'Cultists',  id: 'stat-bld-cultist', defaultValue: '0' },
             { type: 'group', label: 'Jetpack Fans',           id: 'stat-bld-jetpack', defaultValue: '0' },
         ],
     },
@@ -80,7 +80,7 @@ export const STATS_SCHEMA = [
                 type: 'group', label: 'Sparkles Earned', id: 'stat-sess-sparkles', defaultValue: '0',
                 children: [
                     { label: '› Auto-Launchers',      id: 'stat-sess-sp-auto',       defaultValue: '0' },
-                    { label: '› Resource Generators', id: 'stat-sess-sp-gen',        defaultValue: '0' },
+                    { label: '› Cultists', id: 'stat-sess-sp-cultist',   defaultValue: '0' },
                     { label: '› Jetpack Fans',              id: 'stat-sess-sp-jetpack',      defaultValue: '0' },
                     { label: '› Crowd Catchers',      id: 'stat-sess-sp-crowd-catch',defaultValue: '0' },
                     { label: '› Manual',              id: 'stat-sess-sp-manual',     defaultValue: '0' },
@@ -112,7 +112,7 @@ export const STATS_SCHEMA = [
                 type: 'group', label: 'All-time Sparkles Earned', id: 'stat-life-sparkles', defaultValue: '0',
                 children: [
                     { label: '› Auto-Launchers',      id: 'stat-life-sp-auto',       defaultValue: '0' },
-                    { label: '› Resource Generators', id: 'stat-life-sp-gen',        defaultValue: '0' },
+                    { label: '› Cultists', id: 'stat-life-sp-cultist',   defaultValue: '0' },
                     { label: '› Jetpack Fans',              id: 'stat-life-sp-jetpack',      defaultValue: '0' },
                     { label: '› Crowd Catchers',      id: 'stat-life-sp-crowd-catch',defaultValue: '0' },
                     { label: '› Manual',              id: 'stat-life-sp-manual',     defaultValue: '0' },

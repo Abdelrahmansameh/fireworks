@@ -13,7 +13,8 @@ import helix from './helix.js';
 import dragonsBreath from './dragonsBreath.js';
 import saturn from './saturn.js';
 
-export const patternDefinitions = [
+// Temporarily disabled shapes keep their recipes so saved fireworks still render.
+const allPatternDefinitions = [
     { key: 'spherical', displayName: 'Spherical', recipe: spherical },
     { key: 'burst', displayName: 'Burst', recipe: burst, unlockId: 'pattern_burst' },
     { key: 'palm', displayName: 'Palm', recipe: palm, unlockId: 'pattern_palm' },
@@ -26,19 +27,21 @@ export const patternDefinitions = [
     { key: 'pistil', displayName: 'Pistil', recipe: pistil, unlockId: 'pattern_pistil' },
     { key: 'saturn', displayName: 'Saturn', recipe: saturn, hasSecondaryColor: true, unlockId: 'pattern_saturn' },
     { key: 'brokenHeart', displayName: 'Broken Heart', recipe: brokenHeart, unlockId: 'pattern_brokenHeart' },
-    { key: 'christmasTree', displayName: 'Christmas Tree', recipe: christmasTree, hasSecondaryColor: true, unlockId: 'pattern_christmasTree' },
+    { key: 'christmasTree', displayName: 'Christmas Tree', recipe: christmasTree, hasSecondaryColor: true, unlockId: 'pattern_christmasTree', disabled: true },
     { key: 'spinner', displayName: 'Spinner', recipe: spinner, unlockId: 'pattern_spinner' },
-    { key: 'helix', displayName: 'Helix', recipe: helix, hasSecondaryColor: true, unlockId: 'pattern_helix' },
+    { key: 'helix', displayName: 'Helix', recipe: helix, hasSecondaryColor: true, unlockId: 'pattern_helix', disabled: true },
     { key: 'snowflake', displayName: 'Snowflake', recipe: snowflake, hasSecondaryColor: true, unlockId: 'pattern_snowflake' },
     { key: 'dragonsBreath', displayName: "Dragon's Breath", recipe: dragonsBreath, unlockId: 'pattern_dragonsBreath' },
 ];
 
+export const patternDefinitions = allPatternDefinitions.filter(({ disabled }) => !disabled);
+
 export const patternKeys = patternDefinitions.map(({ key }) => key);
 
 export const patternDisplayNames = Object.fromEntries(
-    patternDefinitions.map(({ key, displayName }) => [key, displayName])
+    allPatternDefinitions.map(({ key, displayName }) => [key, displayName])
 );
 
 export const recipeMap = Object.fromEntries(
-    patternDefinitions.map(({ key, recipe }) => [key, recipe])
+    allPatternDefinitions.map(({ key, recipe }) => [key, recipe])
 );

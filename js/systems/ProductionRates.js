@@ -1,5 +1,6 @@
 import { BUILDING_TYPES, CROWD_CONFIG } from '../config/config.js';
 import Building from '../buildings/Building.js';
+import { cultistSparklesPerSecond } from '../config/CultistRitual.js';
 
 export const COIN_TOSS_INTERVAL = 5;
 
@@ -14,7 +15,6 @@ export const DEFAULT_BASE_CATCH_YIELD_PER_SEC = 1;
 // Map building type -> the upgrade id that unlocks it.
 const BUILDING_UNLOCK_UPGRADE = {
     AUTO_LAUNCHER: 'auto_launcher',
-    RESOURCE_GENERATOR: 'resource_generator',
     CATAPULT: 'catapult',
 };
 
@@ -123,7 +123,7 @@ export function buildingTypeUnlocked(type, progression) {
  *
  * `rates` supplies the emergent (random-driven) inputs the game can't compute
  * deterministically: player click rate and per-jetpack / per-catcher base yield.
- * Building-driven sources (launchers, generators) are derived from state.
+ * Owned sources (launchers, cultists) are derived from state.
  */
 export function expectedSPS(state, rates = {}) {
     const clicksPerSec = rates.clicksPerSec ?? 0;
@@ -137,10 +137,7 @@ export function expectedSPS(state, rates = {}) {
     const launcherYieldMult = state.launcherStats?.sparkleYieldMultiplier ?? 1;
     const launchers = launcherFPS(state) * baseSparkleMult * launcherYieldMult;
 
-    const genCount = countBuildings(state, 'RESOURCE_GENERATOR');
-    const genBase = BUILDING_TYPES.RESOURCE_GENERATOR.baseProductionRate;
-    const genMult = state.generatorStats?.productionRateMultiplier ?? 1;
-    const generators = genCount * genBase * genMult * baseSparkleMult;
+    const cultists = (state.cultistCount ?? 0) * cultistSparklesPerSecond(state.cultistStats, baseSparkleMult);
 
     // Each purchased jetpack provides one permanent collector.
     const jetpacks = (state.jetpackCount ?? 0) * baseJetpackYield
@@ -157,8 +154,8 @@ export function expectedSPS(state, rates = {}) {
             * (state.crowdStats?.collectionRadiusMultiplier ?? 1);
     }
 
-    const total = clicks + launchers + generators + jetpacks + crowdCatching;
-    return { clicks, launchers, generators, jetpacks, crowdCatching, total };
+    const total = clicks + launchers + cultists + jetpacks + crowdCatching;
+    return { clicks, launchers, cultists, jetpacks, crowdCatching, total };
 }
 
 /** Per-source gold-per-second breakdown. */

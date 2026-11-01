@@ -34,8 +34,8 @@ try {
             crowd_fireworks: ['launcherStats.sparkleYieldMultiplier'],
             crowd_invite_1: ['crowdStats.countBonus'],
             crowd_catcher_unlock: ['crowdStats.catchingEnabled'],
-            resource_generator: ['buildings.RESOURCE_GENERATOR', 'unlocks'],
-            generator_production: ['generatorStats.productionRateMultiplier'],
+            cultist_unlock: ['unlocks'],
+            cultist_chants: ['cultistStats.sparkleMultiplier'],
             catapult: ['buildings.CATAPULT', 'unlocks'],
             catapult_spawn_rate: ['catapultStats.fireIntervalMultiplier'],
             catapult_max: ['buildings.CATAPULT', 'catapultStats.maxCatapults'],
@@ -62,7 +62,7 @@ try {
             auto_launcher: ['buildings_tab'],
             crowd_spark_1: ['crowd', 'crowds_tab'],
             unlock_recipes_tab: ['recipes_tab', 'advanced_creator', 'pattern_burst'],
-            resource_generator: ['resource_generator'],
+            cultist_unlock: ['cultist_unlock'],
             catapult: ['catapult'],
             jetpack_unlock: ['jetpack_unlock'],
         };
@@ -78,11 +78,11 @@ try {
             flatten({ baseSparkleMultiplier: game.baseSparkleMultiplier,
                 launcherStats: game.launcherStats, crowdStats: game.crowdStats,
                 catapultStats: game.catapultStats, jetpackStats: game.jetpackStats,
-                generatorStats: game.generatorStats, jetpackCount: game.jetpackCount,
+                cultistStats: game.cultistStats, cultistCount: game.cultistCount, jetpackCount: game.jetpackCount,
                 crowdUnlocked: game.crowdUnlocked,
                 advancedCreatorUnlocked: game.advancedCreatorUnlocked,
                 grandFinaleUnlocked: game.grandFinaleUnlocked,
-                buildings: Object.fromEntries(['AUTO_LAUNCHER', 'CATAPULT', 'RESOURCE_GENERATOR']
+                buildings: Object.fromEntries(['AUTO_LAUNCHER', 'CATAPULT']
                     .map(type => [type, game.buildingManager.getBuildingsByType(type).length])),
                 patterns: [...game.unlockedPatternKeys].sort(),
                 recipes: game.recipes.map(recipe => ({ name: recipe.name,

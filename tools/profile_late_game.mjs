@@ -64,12 +64,12 @@ try {
             g.crowdStartFireworks = 0;
             g.crowdStartedAt = 0;
             g.fireworkSystem.fireworkCount = 100000;
-            for (const type of ['AUTO_LAUNCHER', 'RESOURCE_GENERATOR', 'CATAPULT']) {
+            g.setCultistCount(Infinity);
+            for (const type of ['AUTO_LAUNCHER', 'CATAPULT']) {
                 const limit = g.buildingManager.getBuildingLimit(type);
                 if (!Number.isFinite(limit)) throw new Error(`Missing building limit for ${type}`);
                 while (g.buildingManager.getBuildingsByType(type).length < limit) g.grantMilestoneBuilding(type);
             }
-            g.spreadLaunchers();
             const launchers = g.buildingManager.getBuildingsByType('AUTO_LAUNCHER');
             launchers.forEach((building, index) => {
                 building.assignedRecipeIndex = index % g.recipes.length;

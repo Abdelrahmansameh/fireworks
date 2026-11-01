@@ -20,6 +20,7 @@ await mkdir(screenshots, { recursive: true });
 const url = new URL(process.argv[2] ?? 'http://127.0.0.1:8765/');
 url.searchParams.delete('bot');
 const cases = [
+    { viewport: { width: 1440, height: 900 }, deviceScaleFactor: 1, desktop: true },
     ...[{ width: 390, height: 844 }, { width: 320, height: 568 },
         { width: 640, height: 360 }, { width: 700, height: 900 }]
         .map(viewport => ({ viewport, deviceScaleFactor: 1 })),
@@ -28,7 +29,6 @@ const cases = [
         resize: { width: 640, height: 360 } },
     { viewport: { width: 390, height: 844 }, deviceScaleFactor: 1,
         resize: { width: 844, height: 390 } },
-    { viewport: { width: 1440, height: 900 }, deviceScaleFactor: 1, desktop: true },
 ];
 
 try {
@@ -62,7 +62,8 @@ try {
                 frames: 0, stableShotFrames: 0, walkingShotFrames: 0, rocketFrames: 0,
                 coins: [], launches: [], failures: [], maxChromeCameraChange: 0,
                 maxFramingError: 0, minBodyClearance: Infinity, minRocketClearance: Infinity,
-                minWalkingHeight: Infinity, minCoinClearance: Infinity, coinFrames: 0 };
+                minWalkingHeight: Infinity, minCoinClearance: Infinity, coinFrames: 0,
+                handoffFrames: [], handoffMaxStep: 0, handoffMinClearance: Infinity };
             const recordFailure = message => {
                 if (check.failures.length < 6) check.failures.push(message);
             };
@@ -93,6 +94,31 @@ try {
                 const clearance = point => Math.min(point.x - rect.left, rect.right - point.x,
                     point.y - rect.top, rect.bottom - point.y);
                 check.frames++;
+                // Cover the return shot and the first frames after control is
+                // returned to the normal camera. The old test only checked the
+                // final settled position and missed transient clipping/jumps.
+                if (check.coins.length && person) {
+                    const anchor = r.worldToScreen(person.x, person.y);
+                    const grabbed = game.crowd.grabbedPersonIndex;
+                    game.crowd.grabbedPersonIndex = 0;
+                    const outline = game.crowd.getGrabbedPersonOutlinePoints();
+                    game.crowd.grabbedPersonIndex = grabbed;
+                    const pixels = (outline ?? []).map(point => r.worldToScreen(point.x, point.y));
+                    const ui = getComputedStyle(document.getElementById('ui-root'));
+                    const panel = document.querySelector('.tab-content.active');
+                    const bottom = game.chrome.mobile.matches && panel && ui.visibility !== 'hidden'
+                        ? Math.min(rect.bottom, panel.getBoundingClientRect().top) : rect.bottom;
+                    const bodyClearance = pixels.length ? Math.min(...pixels.map(point =>
+                        Math.min(point.x - rect.left, rect.right - point.x, point.y - rect.top, bottom - point.y))) : Infinity;
+                    const previous = check.handoffFrames.at(-1);
+                    if (previous) check.handoffMaxStep = Math.max(check.handoffMaxStep,
+                        Math.hypot(anchor.x - previous.x, anchor.y - previous.y));
+                    check.handoffMinClearance = Math.min(check.handoffMinClearance, bodyClearance);
+                    check.handoffFrames.push({ x: anchor.x, y: anchor.y, zoom: r.cameraZoom,
+                        clearance: bodyClearance, bottom, cameraY: r.cameraY,
+                        bodyBottom: pixels.length ? Math.max(...pixels.map(point => point.y)) : null,
+                        playing: cm.isPlaying });
+                }
                 if (cm.isPlaying && !desktop) {
                     const ui = getComputedStyle(document.getElementById('ui-root'));
                     if (!document.body.classList.contains('cinematic-active') || ui.visibility !== 'hidden'
@@ -167,6 +193,8 @@ try {
                     if (milestone === 'burst') return !!check.firework?.exploded;
                     if (milestone === 'coin') return check.coins.length > 0 && person?.coinAnimTimer > 0
                         && cm.isPlaying && !cm._zoomTween;
+                    if (milestone === 'return-mid') return cm._zoomTween?.durationMs >= 4000
+                        && cm._zoomTween.elapsed >= cm._zoomTween.durationMs / 2;
                     if (milestone === 'finish') return game.hasSeenFirstCrowdCinematic && !cm.isPlaying
                         && document.querySelector('.tab-content.active')?.id === 'crowd-content';
                     throw new Error(`Unknown milestone: ${milestone}`);
@@ -260,7 +288,21 @@ try {
             game.render();
         });
         await page.screenshot({ path: join(screenshots, `${label}-coin.png`) });
+        await page.evaluate(() => window.__cinematicCheck.advanceTo('return-mid'));
+        await page.screenshot({ path: join(screenshots, `${label}-return-mid.png`) });
         await page.evaluate(() => window.__cinematicCheck.advanceTo('finish'));
+        // The venue's first-fan reveal now zooms out over several seconds.
+        await page.evaluate(async () => {
+            const check = window.__cinematicCheck;
+            for (let i = 0; i < 720; i++) {
+                await new Promise(resolve => requestAnimationFrame(resolve));
+                check.sample();
+                if (game.chrome.cameraVenueLeft === game.getVenueCameraBounds().left
+                    && !game.chrome.cameraAutoZoom
+                    && Math.abs(game.renderer2D.cameraZoom - game.chrome.cameraDesiredZoom) < .001) return;
+            }
+            throw new Error('Camera did not settle after the first-crowd handoff');
+        });
         const finished = await page.evaluate(async () => {
             const check = window.__cinematicCheck;
             // Chrome resumes its panel framing once the sequence gives up control.
@@ -272,10 +314,14 @@ try {
                 walkingShotFrames: check.walkingShotFrames, rocketFrames: check.rocketFrames,
                 minBodyClearance: check.minBodyClearance, minRocketClearance: check.minRocketClearance,
                 minWalkingHeight: check.minWalkingHeight, minCoinClearance: check.minCoinClearance,
+                handoffFrames: check.handoffFrames.length, handoffMaxStep: check.handoffMaxStep,
+                handoffMinClearance: check.handoffMinClearance,
+                worstHandoffFrames: [...check.handoffFrames].sort((a, b) => a.clearance - b.clearance).slice(0, 3),
                 coinFrames: check.coinFrames,
                 maxFramingError: check.maxFramingError, maxChromeCameraChange: check.maxChromeCameraChange,
                 coins: check.coins, launches: check.launches, failures: check.failures,
                 camera: { x: r.cameraX, y: r.cameraY, zoom: r.cameraZoom }, expected,
+                venue: game.getVenueCameraBounds(), clampedX: game.clampCameraX(r.cameraX),
                 uiVisible: ui.visibility !== 'hidden', activeClass: document.body.classList.contains('cinematic-active'),
                 activePanel: document.querySelector('.tab-content.active')?.id,
                 panelScroll: document.querySelector('#crowd-content .panel').scrollTop,
@@ -284,7 +330,12 @@ try {
                 gold: game.resourceManager.resources.gold.amount,
                 earnedGold: game.statsTracker.sessionGoldBySource.crowd ?? 0 };
         });
+        await page.screenshot({ path: join(screenshots, `${label}-return-end.png`) });
         assert(finished.failures.length === 0, `${label}: ${finished.failures.join('; ')}`);
+        assert(finished.handoffFrames > 30 && finished.handoffMinClearance >= -2,
+            `${label}: fan was clipped during the return or camera handoff: ${JSON.stringify(finished.worstHandoffFrames)}`);
+        assert(finished.handoffMaxStep < 40,
+            `${label}: camera jumped during the return or handoff: ${finished.handoffMaxStep}px`);
         assert(finished.coins.filter(coin => coin.playing).length === 1
             && finished.coins[0].exploded && finished.coins[0].source === 'crowd',
         `${label}: introduction did not make exactly one scripted toss after its burst: ${JSON.stringify(finished.coins)}`);
@@ -294,30 +345,31 @@ try {
         assert(finished.uiVisible && !finished.activeClass && !finished.coinBlocked && !finished.inputDisabled
             && !finished.rewardsHidden && finished.activePanel === 'crowd-content' && finished.panelScroll === 0,
         `${label}: cinematic failed to restore the crowd purchase UI: ${JSON.stringify(finished)}`);
-        assert(Math.abs(finished.camera.x - initial.originalX) < (fixture.desktop ? 80 : 1),
-            `${label}: camera did not return to its original X: ${JSON.stringify(finished.camera)}`);
+        assert(finished.venue.index >= 3 && Math.abs(finished.camera.x - finished.clampedX) < .01,
+            `${label}: camera did not hand back within the earned venue: ${JSON.stringify(finished)}`);
+        assert(Math.abs(finished.camera.zoom - finished.venue.wideZoom) < .003,
+            `${label}: camera did not settle at the earned overview: ${JSON.stringify(finished)}`);
         if (!fixture.desktop) {
             assert(finished.stableShotFrames > 20 && finished.walkingShotFrames > 20 && finished.rocketFrames > 20,
                 `${label}: regression did not sample all mobile shots: ${JSON.stringify(finished)}`);
             const finalHeight = fixture.resize?.height ?? fixture.viewport.height;
             assert(finished.minWalkingHeight >= Math.min(75, finalHeight * .13) && finished.coinFrames > 20,
                 `${label}: close fan shot is too small or the coin arc was not sampled: ${JSON.stringify(finished)}`);
-            const handbackZoom = (fixture.resize?.width ?? fixture.viewport.width) <= 700 ? .85 : 1;
-            assert(Math.abs(finished.camera.zoom - handbackZoom) < .00001,
-                `${label}: camera did not return to ${handbackZoom} zoom for the final viewport`);
             assert(finished.launches[0].tilt === 0, `${label}: mobile cinematic rocket is randomly tilted`);
             assert(!finished.expected || Math.abs(finished.camera.y - finished.expected.y) < 1,
                 `${label}: mobile camera did not hand back to crowd panel framing: ${JSON.stringify(finished)}`);
-        } else assert(Math.abs(finished.camera.zoom - 1) < .00001, 'Desktop camera did not return to normal zoom');
+        }
         results.push({ label, arrivalZoom: +arrival.zoom.toFixed(3), burst: burst.screen,
             frames: finished.frames, walkingFrames: finished.walkingShotFrames,
             bodyClearance: Number.isFinite(finished.minBodyClearance) ? +finished.minBodyClearance.toFixed(1) : null,
             rocketClearance: Number.isFinite(finished.minRocketClearance) ? +finished.minRocketClearance.toFixed(1) : null,
             walkingBodyHeight: Number.isFinite(finished.minWalkingHeight) ? +finished.minWalkingHeight.toFixed(1) : null,
             coinClearance: Number.isFinite(finished.minCoinClearance) ? +finished.minCoinClearance.toFixed(1) : null,
+            handoffFrames: finished.handoffFrames, handoffMaxStep: +finished.handoffMaxStep.toFixed(1),
+            handoffClearance: +finished.handoffMinClearance.toFixed(1),
             chromeCameraChange: finished.maxChromeCameraChange, scriptedCoins: finished.coins.length,
             restoredZoom: finished.camera.zoom });
-        console.log(`Passed ${label}`);
+        console.log(`Passed ${label}: handoff frames=${finished.handoffFrames}, max step=${finished.handoffMaxStep.toFixed(2)}px, minimum clearance=${finished.handoffMinClearance.toFixed(2)}px`);
         await page.close();
     }
     assert(errors.length === 0, `Browser errors: ${errors.join('\n')}`);

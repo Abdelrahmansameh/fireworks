@@ -255,6 +255,50 @@ function toggleKeyframeSelection(partId, time) {
     }
 }
 
+// Step the active keyframe to the previous/next keyframe on the same bone.
+export function stepSelectedKeyframe(dir) {
+    const cur = state.selectedKeyframe;
+    const anim = state.meshData.animations[state.currentAnimId];
+    if (!cur || !anim || !anim.tracks || !anim.tracks[cur.partId]) return false;
+    const times = anim.tracks[cur.partId].map(kf => kf.time).sort((a, b) => a - b);
+    const next = dir > 0
+        ? times.find(t => t > cur.time + KF_EPS)
+        : [...times].reverse().find(t => t < cur.time - KF_EPS);
+    if (next === undefined) return true;
+    setSingleKeyframeSelection(cur.partId, next);
+    state.currentTime = next;
+    selectPart(cur.partId);
+    updateTimelineUI();
+    updateAnimPropsUI();
+    return true;
+}
+
+// Move the active keyframe to the nearest-in-time keyframe on the bone
+// above/below in the timeline, skipping bones with no keyframes.
+export function stepSelectedKeyframeBone(dir) {
+    const cur = state.selectedKeyframe;
+    const anim = state.meshData.animations[state.currentAnimId];
+    if (!cur || !anim || !anim.tracks) return false;
+    const ids = visibleParts().map(p => p.id);
+    let i = ids.indexOf(cur.partId);
+    if (i < 0) return false;
+    for (i += dir; i >= 0 && i < ids.length; i += dir) {
+        const track = anim.tracks[ids[i]];
+        if (!track || !track.length) continue;
+        let best = track[0].time;
+        for (const kf of track) {
+            if (Math.abs(kf.time - cur.time) < Math.abs(best - cur.time)) best = kf.time;
+        }
+        setSingleKeyframeSelection(ids[i], best);
+        state.currentTime = best;
+        selectPart(ids[i]);
+        updateTimelineUI();
+        updateAnimPropsUI();
+        return true;
+    }
+    return true;
+}
+
 export function clearKeyframeSelection() {
     state.selectedKeyframes = [];
     state.selectedKeyframe = null;
@@ -586,9 +630,42 @@ function onTimelineBackgroundMouseDown(e) {
     document.addEventListener('mouseup', onUp);
 }
 
+// Ctrl+wheel over the timeline zooms horizontally around the cursor;
+// a plain wheel scrolls normally.
+const TIMELINE_MIN_PPS = 20;
+const TIMELINE_MAX_PPS = 3000;
+let timelineZoomInstalled = false;
+
+function installTimelineZoom() {
+    if (timelineZoomInstalled) return;
+    const panel = document.getElementById('timeline-panel');
+    if (!panel) return;
+    timelineZoomInstalled = true;
+    panel.addEventListener('wheel', (e) => {
+        const container = timelineCtx.tracksContainer;
+        if (!container || !(e.ctrlKey || e.metaKey)) return;
+        e.preventDefault();
+        const oldPps = state.timelinePixelsPerSecond;
+        const factor = Math.exp(-e.deltaY * 0.0015);
+        const newPps = Math.max(TIMELINE_MIN_PPS, Math.min(TIMELINE_MAX_PPS, oldPps * factor));
+        if (newPps === oldPps) return;
+        // Keep the time under the cursor fixed while zooming.
+        const rect = container.getBoundingClientRect();
+        const cursorX = Math.max(0, e.clientX - rect.left - timelineCtx.labelWidth);
+        const timeAtCursor = (container.scrollLeft + cursorX) / oldPps;
+        state.timelinePixelsPerSecond = newPps;
+        updateTimelineUI();
+        container.scrollLeft = Math.max(0, timeAtCursor * newPps - cursorX);
+        syncTimelineRuler();
+    }, { passive: false });
+}
+
 export function updateTimelineUI() {
     const tracksContainer = document.getElementById('timeline-tracks');
+    const prevScrollLeft = tracksContainer.scrollLeft;
+    const prevScrollTop = tracksContainer.scrollTop;
     tracksContainer.innerHTML = '';
+    installTimelineZoom();
     const anim = state.meshData.animations[state.currentAnimId];
     if (!anim) return;
 
@@ -659,6 +736,9 @@ export function updateTimelineUI() {
     timelineCtx.tracksContainer = tracksContainer;
     timelineCtx.labelWidth = labelWidth;
     timelineCtx.renderedKfEls = renderedKfEls;
+
+    tracksContainer.scrollLeft = prevScrollLeft;
+    tracksContainer.scrollTop = prevScrollTop;
 
     buildTimelineRuler(anim.duration, state.timelinePixelsPerSecond, labelWidth);
     // Keep the ruler aligned while the track area scrolls horizontally.

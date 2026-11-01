@@ -21,11 +21,6 @@
       "file": "coin.json"
     },
     {
-      "id": "sparkle_generator",
-      "name": "Sparkle Generator",
-      "file": "sparkle_generator.json"
-    },
-    {
       "id": "gold_ore",
       "name": "Gold Ore",
       "file": "gold_ore.json"
@@ -39,6 +34,21 @@
       "id": "jetpack",
       "name": "Jetpack",
       "file": "jetpack.json"
+    },
+    {
+      "id": "cultist_hood",
+      "name": "Cultist Hood",
+      "file": "cultist_hood.json"
+    },
+    {
+      "id": "cultist_brim",
+      "name": "Cultist Hood Brim",
+      "file": "cultist_brim.json"
+    },
+    {
+      "id": "cultist_bowl",
+      "name": "Cultist Ritual Bowl",
+      "file": "cultist_bowl.json"
     }
   ]
 }

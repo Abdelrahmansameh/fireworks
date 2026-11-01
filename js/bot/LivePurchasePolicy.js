@@ -1,16 +1,16 @@
-import { BUILDING_TYPES } from '../config/config.js';
+import { BUILDING_TYPES, CULTIST_CONFIG } from '../config/config.js';
 import Building from '../buildings/Building.js';
 
 const UNLOCK_UPGRADE = {
     AUTO_LAUNCHER: 'auto_launcher',
-    RESOURCE_GENERATOR: 'resource_generator',
     CATAPULT: 'catapult',
 };
 
 /**
  * A goal-driven player for the live game, independent of js/sim.
- * It saves for the next mechanic, buys cheaper useful investments during long
- * waits, and respects the same visibility, prerequisites and caps as the UI.
+ * It follows the current milestone the way a player reads the goal widget:
+ * ownership goals are bought toward, income goals are grown by investing.
+ * It respects the same visibility, prerequisites and caps as the UI.
  * Decisions use measured income from actual launches and particle catches.
  */
 export default class LivePurchasePolicy {
@@ -21,14 +21,14 @@ export default class LivePurchasePolicy {
     _count(game, type) { return game.buildingManager.getBuildingsByType(type).length; }
 
     _nextBeat(game) {
-        if (game.progression.getUpgradeLevel('unlock_recipes_tab') === 0) return { upgrade: 'unlock_recipes_tab', label: 'Open the Firework Creator' };
-        if (this._count(game, 'AUTO_LAUNCHER') === 0) return { building: 'AUTO_LAUNCHER', label: 'First auto launcher' };
-        // The crowd's economic introduction comes before either collection system.
-        const crowdUnlock = game.progression.getUpgradeDef('crowd_unlock') ? 'crowd_unlock' : 'crowd_spark_1';
-        if (game.progression.getUpgradeLevel(crowdUnlock) === 0) return { upgrade: crowdUnlock, label: 'Welcome the crowd' };
-        if (this._count(game, 'CATAPULT') === 0) return { building: 'CATAPULT', label: 'First catapult' };
-        if (game.progression.getUpgradeLevel('jetpack_unlock') === 0) return { upgrade: 'jetpack_unlock', label: 'First jetpack fan' };
-        return { upgrade: 'grand_finale', label: 'Grand finale' };
+        const milestone = game.milestones?.current;
+        if (!milestone) return { label: 'Grand finale' };
+        const label = game.milestones.describeGoal(milestone);
+        const { goal } = milestone;
+        if (goal.type === 'upgrade') return { upgrade: goal.upgrade, level: goal.target, label };
+        if (goal.type === 'building') return { building: goal.building, count: goal.target, label };
+        // Income and crowd goals have no single purchase: grow the whole show.
+        return { label };
     }
 
     _requirements(game, beat) {
@@ -39,6 +39,8 @@ export default class LivePurchasePolicy {
             const key = `building:${type}`;
             needed.set(key, Math.max(count, needed.get(key) || 0));
             if (!game.isBuildingTypeUnlocked(type)) upgrade(UNLOCK_UPGRADE[type], 1);
+            // Extra catapults come from Catapult Team, which also builds one.
+            if (type === 'CATAPULT' && count > (game.catapultStats?.maxCatapults ?? 1)) upgrade('catapult_max', count - 1);
         };
         const upgrade = (id, level = 1) => {
             if (!id || game.progression.getUpgradeLevel(id) >= level || visiting.has(id)) return;
@@ -46,15 +48,15 @@ export default class LivePurchasePolicy {
             if (!definition) return;
             visiting.add(id);
             needed.set(`upgrade:${id}`, Math.max(level, needed.get(`upgrade:${id}`) || 0));
-            if (definition.treeParent && definition.treeParent !== 'ROOT') upgrade(definition.treeParent, 1);
+            if (definition.treeParent && definition.treeParent !== 'ROOT' && !definition.requires?.milestone) upgrade(definition.treeParent, 1);
             for (const [required, minimum] of Object.entries(definition.requires?.upgrades || {})) upgrade(required, minimum);
             for (const type of definition.requires?.buildings || []) upgrade(UNLOCK_UPGRADE[type], 1);
             for (const [type, minimum] of Object.entries(definition.requires?.buildingCounts || {})) building(type, minimum);
             if (definition.requires?.stats?.launcherCount) building('AUTO_LAUNCHER', definition.requires.stats.launcherCount);
             visiting.delete(id);
         };
-        if (beat.building) building(beat.building);
-        else upgrade(beat.upgrade);
+        if (beat.building) building(beat.building, beat.count);
+        else if (beat.upgrade) upgrade(beat.upgrade, beat.level);
         return needed;
     }
 
@@ -75,14 +77,18 @@ export default class LivePurchasePolicy {
             if (type === 'CATAPULT' && count >= (game.catapultStats?.maxCatapults ?? 1)) continue;
             candidates.push({ kind: 'building', key: `building:${type}`, id: type, name: definition.name, currency: definition.currency, cost: Building.getPurchaseCost(type, count), definition });
         }
+        // Cultists are crowd members, recruited from the crowd panel.
+        if (game.progression.isUnlocked('cultist_unlock') && game.cultistCount < CULTIST_CONFIG.maxCount) {
+            candidates.push({ kind: 'cultist', key: 'cultist', id: 'cultist', name: 'Cultist', currency: 'gold', cost: game.getCultistCost(), definition: CULTIST_CONFIG });
+        }
         return candidates;
     }
 
     _hasUsefulSource(game, definition) {
         const id = definition.id;
-        if (id === 'grand_finale' || id === 'auto_launcher' || id === 'resource_generator' || id === 'catapult' || id === 'jetpack_unlock') return true;
+        if (id === 'grand_finale' || id === 'auto_launcher' || id === 'cultist_unlock' || id === 'catapult' || id === 'jetpack_unlock') return true;
         if (id.startsWith('launcher_') && this._count(game, 'AUTO_LAUNCHER') === 0) return false;
-        if (id.startsWith('generator_') && this._count(game, 'RESOURCE_GENERATOR') === 0) return false;
+        if (id.startsWith('cultist_') && (game.cultistCount ?? 0) === 0) return false;
         if (id.startsWith('jetpack_') && (game.jetpackCount ?? 0) === 0) return false;
         if (id.startsWith('catapult_') && this._count(game, 'CATAPULT') === 0) return false;
         if (id.startsWith('crowd_catcher_') && id !== 'crowd_catcher_unlock' && !game.crowdStats?.catchingEnabled) return false;
@@ -93,13 +99,13 @@ export default class LivePurchasePolicy {
         const id = candidate.id;
         if (candidate.kind === 'building') {
             if (id === 'AUTO_LAUNCHER') return 1.5;
-            if (id === 'RESOURCE_GENERATOR') return 1.0;
             if (id === 'CATAPULT') return 1.1;
         }
+        if (candidate.kind === 'cultist') return 1.0;
         // Workshop cards are optional for finishing, but they are productive
         // choices the player should exercise when gold is plentiful.
-        if (id === 'resource_generator') return 1.1;
-        if (id.startsWith('generator_')) return 0.9;
+        if (id === 'cultist_unlock') return 1.1;
+        if (id.startsWith('cultist_')) return 0.9;
         if (candidate.definition.onPurchase) return 1.25;
         if (candidate.definition.botOptional || id.startsWith('unlock_')) return 0.15;
         if (id.startsWith('crowd_gold')) return 2.0;
@@ -118,7 +124,7 @@ export default class LivePurchasePolicy {
 
     _canAfford(game, candidate) {
         if (!Object.entries(this._costs(candidate)).every(([currency, cost]) => (game.resourceManager.resources[currency]?.amount ?? 0) >= cost)) return false;
-        return candidate.kind === 'building' || game.progression.canPurchase(candidate.id, game).ok;
+        return candidate.kind !== 'upgrade' || game.progression.canPurchase(candidate.id, game).ok;
     }
 
     runTick(game, rates) {
@@ -151,7 +157,11 @@ export default class LivePurchasePolicy {
                 const ownTarget = required.find(requiredCandidate => Object.hasOwn(this._costs(requiredCandidate), currency));
                 if (ownTarget && (wait(ownTarget) < 20 || cost > this._costs(ownTarget)[currency] * 0.35)) return false;
             }
-            const maxIncomeSeconds = weight < 0.5 ? 8 : 45 * weight;
+            // With nothing to save for in this currency (an income goal), spend
+            // like a player would: buy whatever useful thing is affordable.
+            const saving = Object.keys(this._costs(candidate))
+                .some(currency => required.some(requiredCandidate => Object.hasOwn(this._costs(requiredCandidate), currency)));
+            const maxIncomeSeconds = weight < 0.5 ? (saving ? 8 : 30) : (saving ? 45 * weight : Infinity);
             return costTime(candidate) <= maxIncomeSeconds;
         });
         investments.sort((a, b) => costTime(a) / this._investmentWeight(game, a) - costTime(b) / this._investmentWeight(game, b));
@@ -165,6 +175,10 @@ export default class LivePurchasePolicy {
             const level = game.progression.getUpgradeLevel(candidate.id);
             if (level <= before) return null;
             return { type: 'upgrade', id: candidate.id, name: candidate.name, level, currency: candidate.currency, cost: candidate.cost, secondaryCost: { ...candidate.secondaryCost }, reason };
+        }
+        if (candidate.kind === 'cultist') {
+            if (!game.purchaseCultist()) return null;
+            return { type: 'cultist', id: 'cultist', name: candidate.name, count: game.cultistCount, currency: 'gold', cost: candidate.cost, reason };
         }
         const before = this._count(game, candidate.id);
         game.buyBuilding(candidate.id);

@@ -44,6 +44,13 @@ export function render(container) {
         </fieldset>
 
         <fieldset>
+            <legend>Ruler</legend>
+            <button id="cheat-ruler-toggle">Start Ruler</button>
+            <button id="cheat-ruler-clear">Clear</button>
+            <div id="cheat-ruler-readout" style="font-family: monospace; white-space: pre; margin-top: 6px;">Click the canvas to place marker A, then B. Drag markers to adjust. Esc exits.</div>
+        </fieldset>
+
+        <fieldset>
             <legend>Grand Finale</legend>
             <button id="cheat-trigger-grand-finale">Trigger Grand Finale</button>
         </fieldset>
