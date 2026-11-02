@@ -2,7 +2,7 @@ import { STATS_SCHEMA } from '../../config/StatsConfig.js';
 import { doodleIcon } from '../doodleIcons.js';
 
 const MAIN_IDS = new Set([
-    'stat-sps-total', 'stat-sps-auto', 'stat-sps-cultist', 'stat-sps-crowd-catch', 'stat-sps-manual', 'stat-sps-flyer',
+    'stat-sps-total', 'stat-sps-portal', 'stat-sps-cultist', 'stat-sps-crowd-catch', 'stat-sps-manual', 'stat-sps-flyer',
     'stat-gps-total', 'stat-fps-total', 'stat-session-time', 'stat-sess-sparkles', 'stat-sess-gold', 'stat-sess-fw', 'stat-sess-crowd-parts',
 ]);
 
@@ -22,7 +22,7 @@ export function render(container) {
             <div class="stats-production-hero">${doodleIcon('sparkle')}<span id="stats-sparkles-hero">0</span><span class="stats-production-unit">sparkles/s</span></div>
             <span id="stat-sps-total" hidden>0.00 /s</span>
             <div class="stats-production-bar" role="img" aria-label="Sparkle production by source">
-                <span class="stats-segment source-launchers" data-production-source="auto_launcher"></span>
+                <span class="stats-segment source-portals" data-production-source="portal"></span>
                 <span class="stats-segment source-cultists" data-production-source="cultist"></span>
                 <span class="stats-segment source-fans" data-production-source="crowd_catch"></span>
                 <span class="stats-segment source-clicks" data-production-source="manual"></span>
@@ -30,7 +30,7 @@ export function render(container) {
                 <span class="stats-segment source-other" data-production-source="other"></span>
             </div>
             <div class="stats-production-legend">
-                <div class="stats-legend-row"><span><i class="source-launchers"></i>Launchers</span><strong data-source-rate="auto_launcher">0</strong><span id="stat-sps-auto" hidden>0</span></div>
+                <div class="stats-legend-row"><span><i class="source-portals"></i>Portals</span><strong data-source-rate="portal">0</strong><span id="stat-sps-portal" hidden>0</span></div>
                 <div class="stats-legend-row" id="stats-cultists-row" hidden><span><i class="source-cultists"></i>Cultists</span><strong data-source-rate="cultist">0</strong><span id="stat-sps-cultist" hidden>0</span></div>
                 <div class="stats-legend-row"><span><i class="source-fans"></i>Fans</span><strong data-source-rate="crowd_catch">0</strong><span id="stat-sps-crowd-catch" hidden>0</span></div>
                 <div class="stats-legend-row"><span><i class="source-clicks"></i>Clicks</span><strong data-source-rate="manual">0</strong><span id="stat-sps-manual" hidden>0</span></div>

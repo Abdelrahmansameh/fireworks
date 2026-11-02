@@ -5,8 +5,8 @@ const unlock = (game, id) => {
 };
 const node = (id, parent, branch, name, desc, cost, currency, extra = {}) => ({
     id, treeParent: parent, group: branch, branch,
-    icon: branch === 'FLYER' ? 'crowd' : branch === 'CROWD' ? 'crowd' : branch === 'LAUNCHER' ? 'launcher' : 'base',
-    offset: { x: branch === 'CROWD' ? 200 : branch === 'LAUNCHER' ? -200 : 0, y: -180 },
+    icon: branch === 'FLYER' ? 'crowd' : branch === 'CROWD' ? 'crowd' : branch === 'PORTAL' ? 'portal' : 'base',
+    offset: { x: branch === 'CROWD' ? 200 : branch === 'PORTAL' ? -200 : 0, y: -180 },
     name, desc, baseCost: cost, currency, costRatio: 1, maxLevel: 1, ...extra,
 });
 // Pattern upgrades form their own ordered branch. Upgrade prerequisites place
@@ -23,7 +23,7 @@ const pattern = (key, parent, name, cost, stage, extra = {}) =>
 export const SKILL_TREE_CONFIG = {
     branches: {
         BASE: { color: '#FFC857', label: 'Fireworks' },
-        LAUNCHER: { color: '#FF7043', label: 'Launchers' },
+        PORTAL: { color: '#FF7043', label: 'Portals' },
         CROWD: { color: '#F06292', label: 'Crowd & catapults' },
         CULTIST: { color: '#66BB6A', label: 'Cult' },
         FLYER: { color: '#29B6F6', label: 'Flyers' },
@@ -45,33 +45,33 @@ export const SKILL_TREE_CONFIG = {
                     unlock(game, 'pattern_burst');
                 },
             }),
-        auto_launcher: node('auto_launcher', 'unlock_recipes_tab', 'LAUNCHER', 'Auto Launcher',
-            'Unlock auto launchers', 45, 'sparkles', {
+        portal_unlock: node('portal_unlock', 'unlock_recipes_tab', 'PORTAL', 'Portal',
+            'Unlock portals', 45, 'sparkles', {
                 offset: { x: 0, y: -180 }, milestoneReward: true, action: 'Unlock', unlockId: 'buildings_tab',
                 apply: game => unlock(game, 'buildings_tab'),
             }),
-        launcher_spawn_rate: node('launcher_spawn_rate', 'auto_launcher', 'LAUNCHER', 'Rapid Fire',
-            '+33% launcher fire rate.', 150, 'sparkles', {
-                maxLevel: 2, costRatio: 4, apply: game => { game.launcherStats.spawnIntervalMultiplier *= 0.75; },
+        portal_spawn_rate: node('portal_spawn_rate', 'portal_unlock', 'PORTAL', 'Rapid Fire',
+            '+33% portal fire rate.', 150, 'sparkles', {
+                maxLevel: 2, costRatio: 4, apply: game => { game.portalStats.spawnIntervalMultiplier *= 0.75; },
             }),
-        crowd_spark_1: node('crowd_spark_1', 'launcher_spawn_rate', 'CROWD', 'Opening Night',
+        crowd_spark_1: node('crowd_spark_1', 'portal_spawn_rate', 'CROWD', 'Opening Night',
             'Fans bring gold.', 330, 'sparkles', {
                 milestoneReward: true, action: 'Invite', unlockId: 'crowd',
                 apply: game => unlock(game, 'crowd'), onPurchase: game => game.beginCrowdArrival(),
             }),
         crowd_fireworks: node('crowd_fireworks', 'crowd_spark_1', 'CROWD', 'Sparkle Powder',
-            '+25% launcher sparkles.', 80, 'gold', {
-                apply: game => { game.launcherStats.sparkleYieldMultiplier *= 1.25; },
+            '+25% portal sparkles.', 80, 'gold', {
+                apply: game => { game.portalStats.sparkleYieldMultiplier *= 1.25; },
             }),
         crowd_gold_1: node('crowd_gold_1', 'crowd_fireworks', 'CROWD', 'Better Tips',
             '+75% crowd gold.', 120, 'gold', {
                 maxLevel: 2, costRatio: 4,
                 apply: game => { game.crowdStats.goldRateMultiplier *= 1.75; },
             }),
-        unlock_palm: pattern('palm', 'auto_launcher', 'Palm',
-            90, 'auto_launcher', { offset: { x: -600, y: -180 } }),
+        unlock_palm: pattern('palm', 'portal_unlock', 'Palm',
+            90, 'portal_unlock', { offset: { x: -600, y: -180 } }),
         unlock_star: pattern('star', 'unlock_palm', 'Star',
-            180, 'launcher_spawn_rate'),
+            180, 'portal_spawn_rate'),
         unlock_willow: pattern('willow', 'unlock_star', 'Willow',
             300, 'crowd_spark_1'),
         unlock_ring: pattern('ring', 'unlock_willow', 'Ring',
@@ -92,7 +92,7 @@ export const SKILL_TREE_CONFIG = {
         unlock_spinner: pattern('spinner', 'unlock_brokenHeart', 'Spinner',
             240, 'flyer_speed'),
         unlock_snowflake: pattern('snowflake', 'unlock_spinner', 'Snowflake',
-            900, 'launcher_overclock'),
+            900, 'portal_overclock'),
         unlock_dragonsBreath: pattern('dragonsBreath', 'unlock_snowflake', "Dragon's Breath",
             1500, 'spark_core_3'),
         crowd_invite_1: node('crowd_invite_1', 'crowd_gold_1', 'CROWD', 'Extra Tickets',
@@ -148,9 +148,9 @@ export const SKILL_TREE_CONFIG = {
             '+80% sparkles.', 4000, 'sparkles', {
                 maxLevel: 2, costRatio: 2.5, apply: game => { game.baseSparkleMultiplier *= 1.8; },
             }),
-        launcher_sparkle_1: node('launcher_sparkle_1', 'spark_core_2', 'LAUNCHER', 'Sparkle Payload',
-            '+75% launcher sparkles.', 8000, 'sparkles', {
-                maxLevel: 2, costRatio: 4, apply: game => { game.launcherStats.sparkleYieldMultiplier *= 1.75; },
+        portal_sparkle_1: node('portal_sparkle_1', 'spark_core_2', 'PORTAL', 'Sparkle Payload',
+            '+75% portal sparkles.', 8000, 'sparkles', {
+                maxLevel: 2, costRatio: 4, apply: game => { game.portalStats.sparkleYieldMultiplier *= 1.75; },
             }),
         crowd_gold_2: node('crowd_gold_2', 'catapult_spawn_rate', 'CROWD', 'Festival Sponsors',
             '×2 crowd gold.', 7500, 'gold', {
@@ -203,20 +203,20 @@ export const SKILL_TREE_CONFIG = {
                 requires: { upgrades: { flyer_team: 1, flyer_sparkle_yield: 1, flyer_radius: 1, flyer_speed: 1 } },
                 apply: game => { game.flyerStats.speedMultiplier *= 1.35; },
             }),
-        launcher_overclock: node('launcher_overclock', 'flyer_efficiency', 'LAUNCHER', 'Full Salvo',
-            '+54% launcher fire rate.', 25000, 'sparkles', {
-                apply: game => { game.launcherStats.spawnIntervalMultiplier *= 0.65; },
+        portal_overclock: node('portal_overclock', 'flyer_efficiency', 'PORTAL', 'Full Salvo',
+            '+54% portal fire rate.', 25000, 'sparkles', {
+                apply: game => { game.portalStats.spawnIntervalMultiplier *= 0.65; },
             }),
-        spark_core_3: node('spark_core_3', 'launcher_overclock', 'BASE', 'Encore Sparks',
+        spark_core_3: node('spark_core_3', 'portal_overclock', 'BASE', 'Encore Sparks',
             '×2 sparkles.', 80000, 'sparkles', {
                 apply: game => { game.baseSparkleMultiplier *= 2; },
             }),
-        launcher_sparkle_2: node('launcher_sparkle_2', 'spark_core_3', 'LAUNCHER', 'Sky Curtain',
-            '+54% launcher fire rate.', 60000, 'sparkles', {
+        portal_sparkle_2: node('portal_sparkle_2', 'spark_core_3', 'PORTAL', 'Sky Curtain',
+            '+54% portal fire rate.', 60000, 'sparkles', {
                 maxLevel: 2, costRatio: 2.5,
-                apply: game => { game.launcherStats.spawnIntervalMultiplier *= 0.65; },
+                apply: game => { game.portalStats.spawnIntervalMultiplier *= 0.65; },
             }),
-        grand_finale: node('grand_finale', 'launcher_sparkle_2', 'LAUNCHER', 'Grand Finale',
+        grand_finale: node('grand_finale', 'portal_sparkle_2', 'PORTAL', 'Grand Finale',
             'Fill the sky for 30 seconds.', 750000, 'sparkles', {
                 milestoneReward: true, action: 'Launch',
                 apply: game => game._unlockGrandFinale(),

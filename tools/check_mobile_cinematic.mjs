@@ -47,17 +47,17 @@ try {
             game.checkUnlockConditions();
             game.resourceManager.resources.sparkles.amount = 2000;
             game.resourceManager.resources.gold.amount = 0;
-            for (const id of ['base_mult_1', 'unlock_recipes_tab', 'auto_launcher', 'launcher_spawn_rate']) {
-                const success = ['unlock_recipes_tab', 'auto_launcher'].includes(id)
+            for (const id of ['base_mult_1', 'unlock_recipes_tab', 'portal_unlock', 'portal_spawn_rate']) {
+                const success = ['unlock_recipes_tab', 'portal_unlock'].includes(id)
                     ? game.progression.grantUpgrade(id, game, 'test-fixture') : game.buyUpgrade(id);
                 if (!success) throw new Error(`Could not obtain ${id}`);
             }
             for (let i = 0; i < 3; i++) {
-                if (!game.buildingManager.buyBuilding('AUTO_LAUNCHER')) throw new Error('Could not buy a launcher');
+                if (!game.buildingManager.buyBuilding('PORTAL')) throw new Error('Could not buy a portal');
             }
-            // Keep the purchased launchers in the real unlock flow, but isolate
+            // Keep the purchased portals in the real unlock flow, but isolate
             // the scripted rocket from unrelated automatic firework launches.
-            for (const launcher of game.buildingManager.getBuildingsByType('AUTO_LAUNCHER')) launcher.accumulator = -1e6;
+            for (const portal of game.buildingManager.getBuildingsByType('PORTAL')) portal.accumulator = -1e6;
             game.ui.showTab('upgrades');
             const camera = game.renderer2D;
             const check = window.__cinematicCheck = { desktop, originalX: camera.cameraX,

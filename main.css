@@ -125,17 +125,16 @@ input[type='checkbox'] { accent-color: var(--teal); width: 20px; height: 20px; v
 .upgrade-empty { color: #c7bfd9; font-size: 12px; }
 .show-progression-goal { border: 2px dashed #cdb885; padding: 8px; border-radius: var(--sticker); }
 .show-progression-goal button { width: 100%; margin-top: 8px; }
-.launcher-card { display: flex; align-items: center; gap: 8px; min-height: 56px; margin-bottom: 8px; padding: 4px 8px; background: var(--paper); color: var(--ink); border: 2px solid var(--ink); border-radius: var(--sticker); box-shadow: 3px 3px 0 var(--shadow-deep); cursor: pointer; transition: background 160ms, border-color 160ms, transform 160ms, box-shadow 160ms; }
-.launcher-card:last-child { margin-bottom: 3px; }
-.launcher-card:hover { background: #fff7e6; border-color: #b9a3ff; transform: translateY(-1px); }
-.launcher-card:focus-visible { outline: 3px solid var(--teal); outline-offset: 3px; }
-.launcher-card.selected { border-color: var(--coral); box-shadow: 3px 3px 0 var(--ink), inset 0 0 0 1px var(--coral); }
-.launcher-card-icon { width: 28px; height: 28px; flex-shrink: 0; display: grid; place-items: center; border: 1.5px solid var(--ink); border-radius: 9px 7px 8px 6px; background: var(--launcher-color, #ffd04a); }
-.launcher-card-icon .doodle-icon { width: 19px; height: 19px; }
-.launcher-card > select { flex: 1; width: 0; min-width: 0; height: 44px; min-height: 44px; padding: 6px; background: transparent; color: var(--ink); border: 0; border-radius: 6px; box-shadow: none; font-size: 12px; font-weight: 600; cursor: pointer; }
-.launcher-card > select:hover { background: #f5ecd9; }
-.launcher-card > select:focus-visible { outline-offset: 0; }
-.launcher-details { font-size: 12px; color: #c7bfd9; }
+.portal-card { display: flex; align-items: center; gap: 8px; min-height: 56px; margin-bottom: 8px; padding: 4px 8px; background: var(--paper); color: var(--ink); border: 2px solid var(--ink); border-radius: var(--sticker); box-shadow: 3px 3px 0 var(--shadow-deep); cursor: pointer; transition: background 160ms, border-color 160ms, transform 160ms, box-shadow 160ms; }
+.portal-card:last-child { margin-bottom: 3px; }
+.portal-card:hover { background: #fff7e6; border-color: #b9a3ff; transform: translateY(-1px); }
+.portal-card:focus-visible { outline: 3px solid var(--teal); outline-offset: 3px; }
+.portal-card.selected { border-color: var(--coral); box-shadow: 3px 3px 0 var(--ink), inset 0 0 0 1px var(--coral); }
+.portal-card-icon { width: 28px; height: 28px; flex-shrink: 0; display: grid; place-items: center; border: 1.5px solid var(--ink); border-radius: 9px 7px 8px 6px; background: var(--portal-color, #ffd04a); }
+.portal-card-icon .doodle-icon { width: 19px; height: 19px; }
+.portal-card > select { flex: 1; width: 0; min-width: 0; height: 44px; min-height: 44px; padding: 6px; background: transparent; color: var(--ink); border: 0; border-radius: 6px; box-shadow: none; font-size: 12px; font-weight: 600; cursor: pointer; }
+.portal-card > select:hover { background: #f5ecd9; }
+.portal-card > select:focus-visible { outline-offset: 0; }
 .stats-group, .stats-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 8px; }
 .stats-value { font-family: 'Chewy', cursive; font-size: 17px; text-align: right; flex-shrink: 0; }
 .stats-section + .stats-section { margin-top: 24px; }

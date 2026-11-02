@@ -2,7 +2,7 @@ import { BUILDING_TYPES } from '../../config/BuildingConfig.js';
 import { doodleIcon } from '../doodleIcons.js';
 
 const DISPLAY = {
-    AUTO_LAUNCHER: { label: 'Launchers', icon: 'launcher', title: 'Auto Launcher' },
+    PORTAL: { label: 'Portals', icon: 'portal', title: 'Portal' },
     CATAPULT: { label: 'Catapults', icon: 'catapult', title: 'Catapult' },
 };
 
@@ -47,17 +47,17 @@ export function render(container) {
                     <span id="${type.id}-cost">${type.baseCost}</span>
                 </button>
             </div>
-            ${type.panel.showLauncherList ? `
-              <div class="building-launcher-section">
-                <div class="building-list-heading"><h3>Launchers</h3></div>
+            ${type.panel.showPortalList ? `
+              <div class="building-portal-section">
+                <div class="building-list-heading"><h3>Portals</h3></div>
                 <div class="building-list-tools">
-                    ${type.panel.showRandomizeButton ? `<button type="button" id="randomize-launcher-recipes">${doodleIcon('shuffle')}<span>Mix all</span></button>` : ''}
+                    ${type.panel.showRandomizeButton ? `<button type="button" id="randomize-portal-recipes">${doodleIcon('shuffle')}<span>Mix all</span></button>` : ''}
                 </div>
-                <div id="${type.id}-list" class="building-launcher-list"></div>
-                <p class="building-empty-state" data-building-empty="${key}">Your launchers will appear here.</p>
+                <div id="${type.id}-list" class="building-portal-list"></div>
+                <p class="building-empty-state" data-building-empty="${key}">Your portals will appear here.</p>
               </div>
             ` : ''}
-            ${key === 'AUTO_LAUNCHER' ? `<div id="${type.id}-stats" hidden></div>` : `<details class="building-extra-stats"><summary>Details</summary><div id="${type.id}-stats"></div></details>`}
+            ${key === 'PORTAL' ? `<div id="${type.id}-stats" hidden></div>` : `<details class="building-extra-stats"><summary>Details</summary><div id="${type.id}-stats"></div></details>`}
         `;
         panel.appendChild(section);
     });

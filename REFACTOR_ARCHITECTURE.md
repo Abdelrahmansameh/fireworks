@@ -12,7 +12,7 @@ The game works, but four structural problems make every change harder than it sh
      crowd, camera, cinematics, input glue, *and recipe editing that reads the DOM
      directly* (`document.getElementById('recipe-name')` inside game logic).
    - `UIManager` (1940 lines) does DOM updates **and** canvas input: camera panning,
-     launcher dragging, crowd grabbing — world interactions living in the UI layer.
+     portal dragging, crowd grabbing — world interactions living in the UI layer.
    - Coupling counts: game classes call `this.ui.*` at **43** sites; UI files reach
      into `this.game.*` at **154** sites. Bidirectional, by name, untyped.
 
@@ -25,12 +25,12 @@ The game works, but four structural problems make every change harder than it sh
 3. **Dependencies are implicit and duplicated.** Everything receives `this.game` and
    pokes at everything else. Callbacks are assigned ad hoc (`crowd.onCoinDrop = …`,
    re-assigned again in `resetGame`). Cost math exists twice
-   (`Building.getPurchaseCost` and `GameCore.calculateAutoLauncherCost`, with a
+   (`Building.getPurchaseCost` and `GameCore.calculatePortalCost`, with a
    "mirror" comment). `resetGame()` re-declares every stat-bucket default verbatim.
    `NullUI` is a Proxy that swallows *any* method call — a typo'd UI call never errors.
 
 4. **The UI pattern is push-by-name.** Game logic decides *which* DOM refresh to call
-   (`updateBuildingCounts`, `updateLauncherList`, `renderUpgrades` …). Adding a fact
+   (`updateBuildingCounts`, `updatePortalList`, `renderUpgrades` …). Adding a fact
    to the game means finding every UI method that might display it.
 
 **What must be preserved:** the headless simulator (`js/sim/runSim.mjs` →
@@ -54,7 +54,7 @@ per-participant serialization. UI becomes a subscriber, never a callee.
 | Events both directions? | **Commands down, events up** | UI → game goes through a small `GameAPI` facade (plain method calls: traceable, steppable in a debugger). Game → UI/audio/stats goes through events (decoupled: emitters don't know listeners). Events in both directions makes control flow untraceable. |
 | Continuous values (sparkle count, rates) | **Polled, not evented** | Emitting `resource.changed` 60×/s per resource is an event storm. UI polls a read-only `GameView` once per frame and dirty-checks before touching the DOM. Events are for *discrete* facts only (purchase, unlock, finale start…). This is the standard engine split. |
 | Framework / bundler | **Stay vanilla ES modules** | Matches the repo; no build step to maintain; nothing here needs a framework. |
-| Inheritance for buildings | **Composition from config** | `AutoLauncher extends Building` mixes mesh creation, animation, economy, and hit-testing in one class. Components split those; building *types* become data. |
+| Inheritance for buildings | **Composition from config** | `Portal extends Building` mixes mesh creation, animation, economy, and hit-testing in one class. Components split those; building *types* become data. |
 
 ### Layout
 
@@ -79,7 +79,7 @@ js/
                                  ParticleSystem, FinaleSystem, CinematicSystem,
                                  InputSystem, CameraSystem, AudioSystem,
                                  StatsSystem, SaveSystem(wired), RecipeSystem
-    components/                ← SkeletonSprite, StaticSprite, RecipeLauncher,
+    components/                ← SkeletonSprite, StaticSprite, PortalSprite, RecipePortal,
                                  ResourceProduction, FlyerBehavior, CatapultBehaviour,
                                  Draggable, Highlightable, …
   ui/                          ← panels keep their current data-driven structure,
@@ -94,7 +94,7 @@ js/
 // engine/core/Entity.js
 class Entity {
     constructor(type, id) {
-        this.type = type;                 // 'AUTO_LAUNCHER' — config key
+        this.type = type;                 // 'PORTAL' — config key
         this.id = id;
         this.transform = { x: 0, y: 0, rotation: 0, scale: 1 };
         this.components = [];             // ordered array (stable iteration, no Map overhead)
@@ -118,12 +118,12 @@ Building types become **data**, not classes:
 
 ```js
 // config/BuildingConfig.js — each type declares its components
-AUTO_LAUNCHER: {
+PORTAL: {
     …existing cost/size/ui fields…,
     components: [
-        ['SkeletonSprite',  { skeleton: 'auto_launcher', scale: 0.9 }],
-        ['RecipeLauncher',  { baseInterval: 5 }],
-        ['Draggable',       { boundsKey: 'LAUNCHER' }],
+        ['PortalSprite',    {}],                  // flat glowing pool; squishes when it fires
+        ['RecipePortal',    { baseInterval: 5 }],
+        ['Draggable',       { boundsKey: 'PORTAL' }],
         ['Highlightable',   {}],
     ],
 },
@@ -145,7 +145,7 @@ already renders it from `BUILDING_TYPES`.
 **Headless story improves:** presentation components (`SkeletonSprite`,
 `StaticSprite`) are simply *not attached* when the world has no renderer service
 (component registry filters on `ctx.renderer == null`). Logic components
-(`RecipeLauncher`, `ResourceProduction`) run identically live and headless — today
+(`RecipePortal`, `ResourceProduction`) run identically live and headless — today
 this separation is done per-class with NullRenderer tricks; it becomes per-component
 and automatic.
 
@@ -310,8 +310,8 @@ One versioned document, one storage key, per-system/per-entity ownership:
     "flags":       { "seenFirstCrowdCinematic": true, "advancedCreator": false }
   },
   "entities": [
-    { "type": "AUTO_LAUNCHER", "id": "…", "transform": {…},
-      "components": { "RecipeLauncher": { "assignedRecipeIndex": 3 } } }
+    { "type": "PORTAL", "id": "…", "transform": {…},
+      "components": { "RecipePortal": { "assignedRecipeIndex": 3 } } }
   ]
 }
 ```
@@ -328,7 +328,7 @@ class SaveSystem {
 
 - Every system that persists registers itself; entities are serialized by
   `BuildingSystem` via `entity.serialize()` — **each component serializes only its
-  own fields** (`RecipeLauncher` saves `assignedRecipeIndex`; `SkeletonSprite`
+  own fields** (`RecipePortal` saves `assignedRecipeIndex`; `SkeletonSprite`
   saves nothing).
 - **Migrations replace save-wiping.** `migrations = { 4: (old) => new5 }`, run in
   sequence. The 4→5 migration reads today's ~14 scattered keys into the new
@@ -380,7 +380,7 @@ events.on(EV.UNLOCK_GRANTED, ({ id }) => {
   switch in `GameCore._handleUnlock`. Notifications on unlock come from config
   (`unlockDef.notify: 'New building unlocked: …'`), not code.
 - **Canvas input leaves the UI layer.** Pointer→world routing, camera panning,
-  launcher dragging, crowd grabbing move to `InputSystem` + `CameraSystem` in the
+  portal dragging, crowd grabbing move to `InputSystem` + `CameraSystem` in the
   world (they are gameplay, and they're the reason UIManager needs renderer access
   today). The UI keeps only DOM input.
 - **Per-frame UI updates are polled + dirty-checked**: the active panel's `update()`
@@ -392,7 +392,7 @@ events.on(EV.UNLOCK_GRANTED, ({ id }) => {
 ## Extra improvements (recommended, fold into phases below)
 
 1. **Stat/modifier system** replacing the hand-maintained buckets
-   (`flyerStats`, `crowdStats`, `launcherStats`, …, reset+recomputed by
+   (`flyerStats`, `crowdStats`, `portalStats`, …, reset+recomputed by
    `progression.applyAll(this)` mutating the game, and re-declared verbatim in
    `resetGame()`):
 
@@ -409,7 +409,7 @@ const v = stats.get('flyer.speedMult');   // cached read, hot-path safe
    `this.game.flyerStats?.x ?? 1` chains.
 
 2. **One cost module.** `EconomyMath.buildingCost(type, count)` /
-   `upgradeCost(def, level)` — delete the duplicated launcher-cost formula in
+   `upgradeCost(def, level)` — delete the duplicated portal-cost formula in
    `GameCore` and the static on `Building`.
 
 3. **Deterministic RNG service.** `services.rng` already exists in GameCore —
@@ -471,11 +471,11 @@ into "the same world minus presentation systems, plus EmergentYieldSystem".
 
 **Phase 5 — Entities + Components (buildings).**
 Add `Entity`/`Component` + component registry. Port building types one at a time
-(ResourceGenerator first — simplest; AutoLauncher last — skeleton+overlay animation
-becomes `SkeletonSprite`). `BuildingSystem` handles purchase/placement/hit-testing
+(ResourceGenerator first — simplest; Portal last — its glowing-pool visual and
+fire squish in `PortalVisual` become `PortalSprite`). `BuildingSystem` handles purchase/placement/hit-testing
 via a `Draggable`/bounds query instead of `Building` subclass methods. Entity
 serialization slots into SaveSystem (same document, version 6 migration).
-Delete `Building`, `AutoLauncher`, `ResourceGenerator`, `Catapult`,
+Delete `Building`, `Portal`, `ResourceGenerator`, `Catapult`,
 `BuildingManager` classes.
 
 **Phase 6 — Stats/modifier system.**

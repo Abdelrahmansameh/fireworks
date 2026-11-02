@@ -5,7 +5,7 @@ import { createRng } from '../utils/random.js';
 import { buildPrimitiveLandmarks } from './PrimitiveLandmarks.js';
 import BackgroundWater from './BackgroundWater.js';
 
-// Broad, irregular silhouettes share the launchers' simple geometry. Geometry
+// Broad, irregular silhouettes share the portals' simple geometry. Geometry
 // stays cached while material lighting and the river's instanced currents move.
 export default class BackgroundScenery {
     constructor(background) {

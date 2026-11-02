@@ -1,32 +1,27 @@
-export const AUTO_LAUNCHER_COST_BASE = 60;
+export const PORTAL_COST_BASE = 60;
 
-export const AUTO_LAUNCHER_COST_RATIO = 1.22;
+export const PORTAL_COST_RATIO = 1.22;
 
-export const LAUNCHER_WORLD_HIGHLIGHT_DURATION = 2.5;
+export const PORTAL_WORLD_HIGHLIGHT_DURATION = 2.5;
 
 export const BUILDING_TYPES = {
-    AUTO_LAUNCHER: {
-        id: 'auto_launcher',
-        name: 'Auto Launcher',
-        description: 'Automatically launches fireworks',
-        baseCost: AUTO_LAUNCHER_COST_BASE,
-        costRatio: AUTO_LAUNCHER_COST_RATIO,
+    PORTAL: {
+        id: 'portal',
+        name: 'Portal',
+        description: 'A glowing pool that fireworks rise out of on their own',
+        baseCost: PORTAL_COST_BASE,
+        costRatio: PORTAL_COST_RATIO,
         currency: 'sparkles',
-        width: 40,
-        height: 20,
-        y: -435,
-        color: { r: 95 / 255, g: 101 / 255, b: 180 / 255, a: 1 },
-        texture: null,
-        textureKey: null,
-        skeletonUrl: 'assets/skeletons/auto_launcher.json',
-        skeletonScale: 10,
+        // Footprint width, used to size the venue around the next portal slot.
+        width: 60,
+        // Always taken from config; portals never save their height.
+        y: -449,
         baseSpawnInterval: 5,
         maxCount: 32,
-        maxAccumulator: 200,
         unlockId: 'buildings_tab',
-        statId: 'stat-bld-auto',
+        statId: 'stat-bld-portal',
         panel: {
-            showLauncherList: true,
+            showPortalList: true,
             showRandomizeButton: true,
         },
         zIndex: 20,
@@ -60,7 +55,7 @@ export const BUILDING_TYPES = {
         unlockId: 'catapult',
         statId: 'stat-bld-catapult',
         panel: {
-            showLauncherList: false,
+            showPortalList: false,
             showRandomizeButton: false,
         },
     },

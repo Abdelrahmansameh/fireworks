@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Exercise Creator before launchers, staged patterns, and crowd arrivals in the real browser game.
+// Exercise Creator before portals, staged patterns, and crowd arrivals in the real browser game.
 import { createRequire } from 'node:module';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
@@ -30,7 +30,7 @@ try {
         game.ui.renderUpgrades();
         const before = game.getSparkles();
         const visible = game.progression.getAllUpgradeDefs().filter(def => game.progression.isVisible(def.id, game).visible).map(def => def.id);
-        const blockedAuto = !game.buyUpgrade('auto_launcher') && game.getSparkles() === before;
+        const blockedAuto = !game.buyUpgrade('portal_unlock') && game.getSparkles() === before;
         return { visible, blockedAuto, starterCost: game.progression.getUpgradeCost('base_mult_1') };
     });
     assert(JSON.stringify(opening.visible) === JSON.stringify(['base_mult_1']) && opening.blockedAuto && opening.starterCost === 30,
@@ -45,14 +45,14 @@ try {
         game.fireworkSystem.launchFireworkAt(0, 100);
         return { manualAward: game.getSparkles() - before, multiplier: game.baseSparkleMultiplier,
             buildings: game.buildingManager.buildings.length, recipes: game.progression.isUnlocked('recipes_tab'),
-            autoVisible: game.progression.isVisible('auto_launcher', game).visible,
+            autoVisible: game.progression.isVisible('portal_unlock', game).visible,
             creatorVisible: game.progression.isVisible('unlock_recipes_tab', game).visible,
-            firstLauncherCost: game.buildingManager.getBuyCost('AUTO_LAUNCHER'),
+            firstPortalCost: game.buildingManager.getBuyCost('PORTAL'),
             secondStarterCost: game.progression.getUpgradeCost('base_mult_1') };
     });
     assert(starter.manualAward === 1.75 && starter.multiplier === 1.75 && starter.buildings === 0
         && !starter.recipes && !starter.autoVisible && starter.creatorVisible && starter.secondStarterCost === 240,
-    `The starter did not lead to the Creator before launchers: ${JSON.stringify(starter)}`);
+    `The starter did not lead to the Creator before portals: ${JSON.stringify(starter)}`);
     await page.locator('[data-upgrade-card="unlock_recipes_tab"] .upgrade-buy-button').click();
     const creator = await page.evaluate(() => {
         const result = { recipes: game.progression.isUnlocked('recipes_tab'),
@@ -61,8 +61,8 @@ try {
             patterns: [...game.unlockedPatternKeys],
             recipesNamed: game.recipes.map(recipe => recipe.name),
             buildings: game.buildingManager.buildings.length,
-            autoVisible: game.progression.isVisible('auto_launcher', game).visible };
-        game.resourceManager.resources.sparkles.amount = game.progression.getUpgradeCost('auto_launcher');
+            autoVisible: game.progression.isVisible('portal_unlock', game).visible };
+        game.resourceManager.resources.sparkles.amount = game.progression.getUpgradeCost('portal_unlock');
         game.updateUI();
         return result;
     });
@@ -71,51 +71,51 @@ try {
         && creator.recipesNamed.filter(name => name === 'Burst').length === 1,
     `The second upgrade did not bundle Creator with Burst and its recipe: ${JSON.stringify(creator)}`);
     await page.evaluate(() => { game.ui.dismissNotification(); game.updateUI(); });
-    await page.screenshot({ path: join(screenshotDirectory, 'early-first-launcher.png'), animations: 'disabled' });
-    await page.locator('[data-upgrade-card="auto_launcher"] .upgrade-buy-button').click();
-    const launcherUnlock = await page.evaluate(() => {
+    await page.screenshot({ path: join(screenshotDirectory, 'early-first-portal.png'), animations: 'disabled' });
+    await page.locator('[data-upgrade-card="portal_unlock"] .upgrade-buy-button').click();
+    const portalUnlock = await page.evaluate(() => {
         game.progression.applyAll(game);
         game.ui.showTab('buildings');
         game.updateUI();
         game.saveProgress();
         return { unlocked: game.progression.isUnlocked('buildings_tab'),
-            count: game.buildingManager.getBuildingsByType('AUTO_LAUNCHER').length,
-            firstCost: game.buildingManager.getBuyCost('AUTO_LAUNCHER'),
-            buyDisabled: document.getElementById('buy-auto_launcher').disabled };
+            count: game.buildingManager.getBuildingsByType('PORTAL').length,
+            firstCost: game.buildingManager.getBuyCost('PORTAL'),
+            buyDisabled: document.getElementById('buy-portal').disabled };
     });
-    assert(launcherUnlock.unlocked && launcherUnlock.count === 0 && launcherUnlock.firstCost === starter.firstLauncherCost && launcherUnlock.buyDisabled,
-        `Launcher unlock granted a free unit or changed its first price: ${JSON.stringify(launcherUnlock)}`);
+    assert(portalUnlock.unlocked && portalUnlock.count === 0 && portalUnlock.firstCost === starter.firstPortalCost && portalUnlock.buyDisabled,
+        `Portal unlock granted a free unit or changed its first price: ${JSON.stringify(portalUnlock)}`);
     await page.reload({ waitUntil: 'domcontentloaded' });
     await page.waitForFunction(() => window.game?.particleSystem && !window.game._isRestoring);
-    const launcherReload = await page.evaluate(firstCost => {
+    const portalReload = await page.evaluate(firstCost => {
         game.pause();
         game.ui.showTab('buildings');
         game.resourceManager.resources.sparkles.amount = firstCost - 1;
         game.updateUI();
-        const blocked = !game.buildingManager.buyBuilding('AUTO_LAUNCHER');
-        const result = { count: game.buildingManager.getBuildingsByType('AUTO_LAUNCHER').length,
-            blocked, balance: game.getSparkles(), disabled: document.getElementById('buy-auto_launcher').disabled };
+        const blocked = !game.buildingManager.buyBuilding('PORTAL');
+        const result = { count: game.buildingManager.getBuildingsByType('PORTAL').length,
+            blocked, balance: game.getSparkles(), disabled: document.getElementById('buy-portal').disabled };
         game.resourceManager.resources.sparkles.amount = firstCost;
         game.updateUI();
         return result;
-    }, launcherUnlock.firstCost);
-    assert(launcherReload.count === 0 && launcherReload.blocked && launcherReload.balance === launcherUnlock.firstCost - 1 && launcherReload.disabled,
-        `Loading or an unaffordable purchase granted a launcher: ${JSON.stringify(launcherReload)}`);
-    await page.locator('#buy-auto_launcher').click();
-    const firstLauncher = await page.evaluate(() => {
-        const launchers = game.buildingManager.getBuildingsByType('AUTO_LAUNCHER');
-        return { count: launchers.length, balance: game.getSparkles(),
-            paid: launchers[0]?.purchaseCost, grant: launchers[0]?.grantUpgradeId ?? null };
+    }, portalUnlock.firstCost);
+    assert(portalReload.count === 0 && portalReload.blocked && portalReload.balance === portalUnlock.firstCost - 1 && portalReload.disabled,
+        `Loading or an unaffordable purchase granted a portal: ${JSON.stringify(portalReload)}`);
+    await page.locator('#buy-portal').click();
+    const firstPortal = await page.evaluate(() => {
+        const portals = game.buildingManager.getBuildingsByType('PORTAL');
+        return { count: portals.length, balance: game.getSparkles(),
+            paid: portals[0]?.purchaseCost, grant: portals[0]?.grantUpgradeId ?? null };
     });
-    assert(firstLauncher.count === 1 && firstLauncher.balance === 0 && firstLauncher.paid === launcherUnlock.firstCost && firstLauncher.grant === null,
-        `The first launcher was not a separate paid purchase: ${JSON.stringify(firstLauncher)}`);
+    assert(firstPortal.count === 1 && firstPortal.balance === 0 && firstPortal.paid === portalUnlock.firstCost && firstPortal.grant === null,
+        `The first portal was not a separate paid purchase: ${JSON.stringify(firstPortal)}`);
     const arrivals = await page.evaluate(async () => {
         const { fireworksForCrowd, getCrowdArrivalProgress } = await import('/js/systems/ProductionRates.js');
         const ensure = (condition, message) => { if (!condition) throw new Error(message); };
         game.resourceManager.resources.sparkles.amount = 10000000;
         game.resourceManager.resources.gold.amount = 10000000;
-        for (let i = 0; i < 2; i++) ensure(game.buildingManager.buyBuilding('AUTO_LAUNCHER'), 'Could not buy a launcher');
-        ensure(game.buyUpgrade('launcher_spawn_rate'), 'Could not buy Rapid Fire');
+        for (let i = 0; i < 2; i++) ensure(game.buildingManager.buyBuilding('PORTAL'), 'Could not buy a portal');
+        ensure(game.buyUpgrade('portal_spawn_rate'), 'Could not buy Rapid Fire');
         game.fireworkSystem.fireworkCount = 5000;
         ensure(game.buyUpgrade('crowd_spark_1'), 'Could not invite the first fan');
         const anchor = { fireworks: game.crowdStartFireworks, time: game.crowdStartedAt };
@@ -180,13 +180,13 @@ try {
         const buy = id => ensure(game.buyUpgrade(id), `Could not buy ${id}`);
         game.resourceManager.resources.sparkles.amount = 10000000;
         game.resourceManager.resources.gold.amount = 10000000;
-        for (const id of ['base_mult_1', 'unlock_recipes_tab', 'auto_launcher']) buy(id);
-        const beforeLaunchers = { patterns: [...game.unlockedPatternKeys], recipes: JSON.stringify(game.recipes) };
-        while (game.buildingManager.getBuildingsByType('AUTO_LAUNCHER').length < 10) {
-            ensure(game.buildingManager.buyBuilding('AUTO_LAUNCHER'), 'Could not buy a launcher');
+        for (const id of ['base_mult_1', 'unlock_recipes_tab', 'portal_unlock']) buy(id);
+        const beforePortals = { patterns: [...game.unlockedPatternKeys], recipes: JSON.stringify(game.recipes) };
+        while (game.buildingManager.getBuildingsByType('PORTAL').length < 10) {
+            ensure(game.buildingManager.buyBuilding('PORTAL'), 'Could not buy a portal');
         }
-        const launchersUnchanged = JSON.stringify(game.unlockedPatternKeys) === JSON.stringify(beforeLaunchers.patterns)
-            && JSON.stringify(game.recipes) === beforeLaunchers.recipes;
+        const portalsUnchanged = JSON.stringify(game.unlockedPatternKeys) === JSON.stringify(beforePortals.patterns)
+            && JSON.stringify(game.recipes) === beforePortals.recipes;
         const starBeforePalm = game.progression.canPurchase('unlock_star', game).ok;
         const before = { sparkles: game.getSparkles(), gold: game.resourceManager.resources.gold.amount,
             recipes: game.recipes.length };
@@ -195,25 +195,25 @@ try {
             goldCharge: before.gold - game.resourceManager.resources.gold.amount,
             recipeAdded: game.recipes.length === before.recipes + 1 && game.recipes.at(-1).name === 'Palm' };
         const starBeforeRapidFire = game.progression.canPurchase('unlock_star', game).ok;
-        buy('launcher_spawn_rate');
+        buy('portal_spawn_rate');
         const starAfterRapidFire = game.progression.canPurchase('unlock_star', game).ok;
         buy('unlock_star');
         const willowBeforeCrowd = game.progression.canPurchase('unlock_willow', game).ok;
         buy('crowd_spark_1');
         const willowAfterCrowd = game.progression.canPurchase('unlock_willow', game).ok;
         buy('unlock_willow');
-        return { launchersUnchanged, starBeforePalm, palm, starBeforeRapidFire, starAfterRapidFire,
+        return { portalsUnchanged, starBeforePalm, palm, starBeforeRapidFire, starAfterRapidFire,
             willowBeforeCrowd, willowAfterCrowd, unlocked: [...game.unlockedPatternKeys],
             newRecipes: game.recipes.slice(before.recipes).map(recipe => recipe.name) };
     });
-    assert(patterns.launchersUnchanged && !patterns.starBeforePalm && patterns.palm.sparkleCharge === 90
+    assert(patterns.portalsUnchanged && !patterns.starBeforePalm && patterns.palm.sparkleCharge === 90
         && patterns.palm.goldCharge === 0 && patterns.palm.recipeAdded
         && !patterns.starBeforeRapidFire && patterns.starAfterRapidFire && !patterns.willowBeforeCrowd && patterns.willowAfterCrowd
         && JSON.stringify(patterns.unlocked) === JSON.stringify(['spherical', 'burst', 'palm', 'star', 'willow'])
         && JSON.stringify(patterns.newRecipes) === JSON.stringify(['Palm', 'Star', 'Willow']),
     `Pattern upgrades did not follow their staged order and grant named recipes: ${JSON.stringify(patterns)}`);
     assert(errors.length === 0, errors.join('\n'));
-    console.log(JSON.stringify({ passed: true, validation: 'actual-browser-game', opening, starter, creator, launcherUnlock, launcherReload, firstLauncher,
+    console.log(JSON.stringify({ passed: true, validation: 'actual-browser-game', opening, starter, creator, portalUnlock, portalReload, firstPortal,
         arrivals, persistence, patterns }, null, 2));
 } catch (error) {
     if (errors.length) console.error('Browser errors:', errors.join('\n'));

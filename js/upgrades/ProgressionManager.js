@@ -3,63 +3,6 @@ import { SKILL_TREE_CONFIG } from '../ui/SkillTreeConfig.js';
 import { roundUpCost } from '../utils/costRounding.js';
 
 const PROGRESSION_SCHEMA_VERSION = 3;
-// Historical charges for saves written before purchase ledgers existed.
-const LEGACY_BASE_COSTS = {
-    auto_launcher: 45,
-    base_mult_1: 60,
-    launcher_spawn_rate: 100,
-    crowd_spark_1: 220,
-    crowd_fireworks: 80,
-    crowd_gold_1: 80,
-    unlock_recipes_tab: 180,
-    unlock_brokenHeart: 120,
-    unlock_christmasTree: 160,
-    unlock_spinner: 240,
-    unlock_helix: 480,
-    unlock_snowflake: 900,
-    unlock_dragonsBreath: 1500,
-    crowd_invite_1: 700,
-    crowd_catcher_unlock: 900,
-    cultist_unlock: 600,
-    cultist_chants: 1600,
-    catapult: 2400,
-    catapult_spawn_rate: 1300,
-    catapult_max: 2200,
-    crowd_catcher_yield: 1800,
-    crowd_catcher_radius: 700,
-    catapult_range_1: 300,
-    spark_core_2: 4000,
-    launcher_sparkle_1: 8000,
-    crowd_gold_2: 5000,
-    crowd_invite_2: 3000,
-    flyer_unlock: 14000,
-    flyer_reach: 4500,
-    flyer_speed: 2000,
-    flyer_team: 10000,
-    flyer_sparkle_yield: 6500,
-    flyer_radius: 2000,
-    flyer_efficiency: 15000,
-    unlock_advanced_creator: 3000,
-    launcher_overclock: 55000,
-    spark_core_3: 80000,
-    launcher_sparkle_2: 120000,
-    grand_finale: 900000,
-};
-
-// Old bundle prices are retained only to refund existing purchases accurately.
-const LEGACY_BUNDLES = [
-    { id: 'crowd_catcher_yield', baseCost: 2800, costRatio: 4, targets: ['crowd_catcher_yield', 'crowd_catcher_radius', 'catapult_range_1'] },
-    { id: 'crowd_gold_2', baseCost: 8000, costRatio: 1, targets: ['crowd_gold_2', 'crowd_invite_2'] },
-    { id: 'flyer_reach', baseCost: 6500, costRatio: 1, targets: ['flyer_reach', 'flyer_speed'] },
-    { id: 'flyer_sparkle_yield', baseCost: 8500, costRatio: 3.5, targets: ['flyer_sparkle_yield', 'flyer_radius'] },
-    { id: 'flyer_efficiency', baseCost: 18000, costRatio: 1, targets: ['flyer_efficiency', 'unlock_advanced_creator'] },
-];
-
-const LEGACY_UNLOCKS = [
-    ['crowd_spark_1', ['unlock_recipes_tab', 'unlock_brokenHeart', 'unlock_christmasTree']],
-    ['catapult', ['unlock_spinner', 'unlock_helix']],
-    ['flyer_unlock', ['unlock_snowflake', 'unlock_dragonsBreath']],
-];
 
 /**
  * ProgressionManager — centralized state for all upgrades and unlock nodes.
@@ -107,45 +50,18 @@ class ProgressionManager {
      * Restore state from a previously serialized object.
      * Safe to call with null / undefined / empty object (no-op).
      */
-    loadState(data, savedPatterns = []) {
+    loadState(data) {
         if (!data || typeof data !== 'object') return;
         const savedUpgrades = data.upgrades && typeof data.upgrades === 'object'
             ? { ...data.upgrades } : { ...this._upgradeLevels };
         const savedCosts = { ...(data.purchaseCosts || {}) };
         const upgrades = { ...savedUpgrades };
-        const schemaVersion = Number(data.schemaVersion) || 0;
-        const legacy = schemaVersion < 2;
         const unlocked = Array.isArray(data.unlocked)
             ? new Set(data.unlocked.filter(id => typeof id === 'string')) : new Set(this._unlockedSet);
         const inherit = (id, level) => {
             if (!this._upgrades.has(id)) return;
             upgrades[id] = Math.max(this._savedLevel(id, upgrades[id]), this._savedLevel(id, level));
         };
-
-        if (legacy) {
-            for (const [source, targets] of LEGACY_UNLOCKS) {
-                if (this._savedLevel(source, savedUpgrades[source]) > 0) {
-                    targets.forEach(id => inherit(id, 1));
-                }
-            }
-            for (const bundle of LEGACY_BUNDLES) {
-                const level = this._savedLevel(bundle.id, savedUpgrades[bundle.id]);
-                bundle.targets.forEach(id => inherit(id, level));
-            }
-        }
-
-        if (schemaVersion < 3) {
-            // Former launcher-earned patterns become owned upgrades, with no
-            // charge attached. Player recipes and assignments stay untouched.
-            for (const key of Array.isArray(savedPatterns) ? savedPatterns : []) {
-                const def = [...this._upgrades.values()].find(upgrade => upgrade.patternKey === key);
-                if (def) unlocked.add(def.unlockId);
-            }
-            if (savedUpgrades.auto_launcher > 0 || savedUpgrades.unlock_advanced_creator > 0
-                || unlocked.has('recipes_tab') || unlocked.has('advanced_creator')) {
-                inherit('unlock_recipes_tab', 1);
-            }
-        }
 
         // Some saves recorded an unlock before recording its purchase. Keep
         // that feature owned so its card cannot charge for an existing effect.
@@ -162,40 +78,12 @@ class ProgressionManager {
             this._upgradeLevels[id] = level;
             const savedLevel = this._savedLevel(id, savedUpgrades[id]);
             this._purchaseCosts[id] = Array.from({ length: level }, (_, index) => {
-                const recorded = !legacy ? savedCosts?.[id]?.[index] : null;
+                const recorded = savedCosts?.[id]?.[index];
                 if (recorded && typeof recorded === 'object' && !Array.isArray(recorded)) {
                     return this._cleanCosts(recorded);
                 }
-                return index < savedLevel ? this._levelCosts(id, index, legacy) : {};
+                return index < savedLevel ? this._levelCosts(id, index) : {};
             });
-        }
-
-        if (legacy) {
-            for (const bundle of LEGACY_BUNDLES) {
-                const level = this._savedLevel(bundle.id, savedUpgrades[bundle.id]);
-                const targets = bundle.targets.filter(id => this._upgrades.has(id));
-                for (let index = 0; index < level; index++) {
-                    let remaining = roundUpCost(bundle.baseCost * Math.pow(bundle.costRatio, index));
-                    targets.forEach((id, targetIndex) => {
-                        if (!this._purchaseCosts[id] || index >= this.getUpgradeLevel(id)) return;
-                        const amount = targetIndex === targets.length - 1 ? remaining
-                            : Math.min(remaining, this._levelCosts(id, index, true).gold ?? 0);
-                        this._purchaseCosts[id][index] = { gold: amount };
-                        remaining -= amount;
-                    });
-                }
-            }
-        }
-        // The late Studio purchase is now part of the early Creator. Retain
-        // its original charge so resetting upgrades refunds the actual spend.
-        if (schemaVersion < 3 && savedUpgrades.unlock_advanced_creator > 0
-            && (!legacy || !(savedUpgrades.flyer_efficiency > 0))) {
-            const charge = !legacy && savedCosts?.unlock_advanced_creator?.[0];
-            const costs = charge && typeof charge === 'object' ? this._cleanCosts(charge) : { gold: 3000 };
-            const creatorCosts = this._purchaseCosts.unlock_recipes_tab?.[0];
-            if (creatorCosts) {
-                for (const [currency, amount] of Object.entries(costs)) creatorCosts[currency] = (creatorCosts[currency] ?? 0) + amount;
-            }
         }
     }
 
@@ -461,7 +349,7 @@ class ProgressionManager {
             goldRateMultiplier: 1,   // multiplied into crowd.goldPerCoinToss (base 1 gold per 5s)
             countBonus: 0,            // added to the crowd count formula result
         };
-        game.launcherStats = { spawnIntervalMultiplier: 1, sparkleYieldMultiplier: 1 };
+        game.portalStats = { spawnIntervalMultiplier: 1, sparkleYieldMultiplier: 1 };
         game.cultistStats = { sparkleMultiplier: 1, ritualSpeedMultiplier: 1 };
         game.minerStats = { goldMultiplier: 1, speedMultiplier: 1 };
         game.catapultStats = { maxCatapults: 1, fireIntervalMultiplier: 1, launchVxMultiplier: 1 };
@@ -510,14 +398,11 @@ class ProgressionManager {
         return Math.max(0, Math.min(def.maxLevel ?? 1, Math.floor(level)));
     }
 
-    _levelCosts(id, index, legacy = false) {
+    _levelCosts(id, index) {
         const def = this._upgrades.get(id);
         if (!def) return {};
-        const baseCost = legacy ? LEGACY_BASE_COSTS[id] ?? def.baseCost : def.baseCost;
-        const costRatio = legacy && id === 'base_mult_1' ? 2.6 : def.costRatio;
-        const costs = { [def.currency]: roundUpCost(baseCost * Math.pow(costRatio, index)) };
-        const secondaryCost = legacy && id === 'grand_finale' ? { gold: 15000 } : def.secondaryCost;
-        for (const [currency, amount] of Object.entries(secondaryCost ?? {})) {
+        const costs = { [def.currency]: roundUpCost(def.baseCost * Math.pow(def.costRatio, index)) };
+        for (const [currency, amount] of Object.entries(def.secondaryCost ?? {})) {
             costs[currency] = (costs[currency] ?? 0) + amount;
         }
         return costs;
@@ -548,10 +433,10 @@ class ProgressionManager {
             if (s.sps !== undefined && game.calculateTotalSparklesPerSecond() < s.sps) {
                 return { met: false, reason: `Reach ${s.sps} sparkles/sec` };
             }
-            if (s.launcherCount !== undefined) {
-                const count = game.buildingManager.getBuildingsByType('AUTO_LAUNCHER').length;
-                if (count < s.launcherCount) {
-                    return { met: false, reason: `Build ${s.launcherCount} Auto-Launchers` };
+            if (s.portalCount !== undefined) {
+                const count = game.buildingManager.getBuildingsByType('PORTAL').length;
+                if (count < s.portalCount) {
+                    return { met: false, reason: `Build ${s.portalCount} Portals` };
                 }
             }
             if (s.crowdCount !== undefined) {

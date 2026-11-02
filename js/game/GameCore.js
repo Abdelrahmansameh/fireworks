@@ -1,6 +1,6 @@
 import {
-    AUTO_LAUNCHER_COST_BASE,
-    AUTO_LAUNCHER_COST_RATIO,
+    PORTAL_COST_BASE,
+    PORTAL_COST_RATIO,
     DEFAULT_RECIPE_COMPONENTS,
     PATTERN_RECIPE_COMPONENTS,
     CROWD_CATCHER_CONFIG,
@@ -33,7 +33,7 @@ import { MINER_CONFIG } from '../config/MinerConfig.js';
 import MinerShifts from '../systems/MinerShifts.js';
 import { getVenueStage } from '../config/VenueProgression.js';
 
-export const SAVE_VERSION = '5';
+export const SAVE_VERSION = '6';
 
 /**
  * GameCore — the headless-capable game-logic engine.
@@ -71,13 +71,13 @@ class GameCore extends Engine {
         this.audioManager = new NullAudio();
         this.ui = makeNullUI();
 
-        // Keep existing progress when the balance changes.
+        // Older saves are incompatible with the current format: wipe them.
         if (this.storage.getItem('saveVersion') !== SAVE_VERSION) {
+            this.storage.clear();
             this.storage.setItem('saveVersion', SAVE_VERSION);
         }
 
         // ── Core logic state ────────────────────────────────────────────────
-        this.gameState = { autoLaunchers: [] };
         this.elapsedGameTime = Number(this.storage.getItem('elapsedGameTime')) || 0;
         this.gameCompleted = this.storage.getItem('gameCompleted') === 'true';
         this.crowdUnlocked = false;
@@ -89,8 +89,8 @@ class GameCore extends Engine {
         this.currentRecipeComponents = DEFAULT_RECIPE_COMPONENTS.map(component => ({ ...component }));
         this.selectedRecipeIndex = null;
         this.cursorRecipeIndex = 0;
-        this.autoLauncherCost = AUTO_LAUNCHER_COST_BASE;
-        this.selectedLauncherIndex = null;
+        this.portalCost = PORTAL_COST_BASE;
+        this.selectedPortalIndex = null;
 
         this.unlockedPatternKeys = ['spherical'];
 
@@ -142,7 +142,7 @@ class GameCore extends Engine {
             goldRateMultiplier: 1,
             countBonus: 0,
         };
-        this.launcherStats = { spawnIntervalMultiplier: 1, sparkleYieldMultiplier: 1 };
+        this.portalStats = { spawnIntervalMultiplier: 1, sparkleYieldMultiplier: 1 };
         this.catapultStats = { maxCatapults: 1 };
 
         // Headless-only collaborators.
@@ -155,7 +155,7 @@ class GameCore extends Engine {
         const savedPatterns = JSON.parse(this.storage.getItem('unlockedPatternKeys') || 'null');
         try {
             const pState = JSON.parse(this.storage.getItem('progressionState') || '{}');
-            this.progression.loadState(pState, savedPatterns);
+            this.progression.loadState(pState);
             if (pState.firstClicks && typeof pState.firstClicks === 'object') {
                 this.firstClickStates = { ...this.firstClickStates, ...pState.firstClicks };
             }
@@ -211,7 +211,7 @@ class GameCore extends Engine {
     }
 
     getFireworkRecoveryBudget() {
-        return this.baseSparkleMultiplier * (this.launcherStats?.sparkleYieldMultiplier ?? 1) * 1.5;
+        return this.baseSparkleMultiplier * (this.portalStats?.sparkleYieldMultiplier ?? 1) * 1.5;
     }
 
     addGold(amount, source = 'unknown') {
@@ -232,7 +232,7 @@ class GameCore extends Engine {
         let totalSparklesPerSecond = 0;
 
         buildings.forEach(building => {
-            if (building.type === 'AUTO_LAUNCHER' && building.getSparklesPerSecond) {
+            if (building.type === 'PORTAL' && building.getSparklesPerSecond) {
                 totalSparklesPerSecond += building.getSparklesPerSecond();
             }
         });
@@ -286,14 +286,14 @@ class GameCore extends Engine {
     //  Buildings
     // ════════════════════════════════════════════════════════════════════════
 
-    calculateAutoLauncherCost(numLaunchers) {
-        // Mirror Building.getPurchaseCost('AUTO_LAUNCHER', …): clean ending, always rounded up.
-        return roundUpCost(AUTO_LAUNCHER_COST_BASE * Math.pow(AUTO_LAUNCHER_COST_RATIO, numLaunchers));
+    calculatePortalCost(numPortals) {
+        // Mirror Building.getPurchaseCost('PORTAL', …): clean ending, always rounded up.
+        return roundUpCost(PORTAL_COST_BASE * Math.pow(PORTAL_COST_RATIO, numPortals));
     }
 
     isBuildingTypeUnlocked(buildingType) {
         switch (buildingType) {
-            case 'AUTO_LAUNCHER': return this.progression.isUnlocked('buildings_tab');
+            case 'PORTAL': return this.progression.isUnlocked('buildings_tab');
             case 'CATAPULT': return this.progression.isUnlocked('catapult');
             default: return false;
         }
@@ -368,17 +368,17 @@ class GameCore extends Engine {
         return true;
     }
 
-    buyAutoLauncher() {
-        const building = this.buildingManager.buyBuilding('AUTO_LAUNCHER');
+    buyPortal() {
+        const building = this.buildingManager.buyBuilding('PORTAL');
         if (building) {
-            this.updateLauncherList();
+            this.updatePortalList();
         }
         return building;
     }
 
     buyBuilding(buildingType) {
-        if (buildingType === 'AUTO_LAUNCHER') {
-            return this.buyAutoLauncher();
+        if (buildingType === 'PORTAL') {
+            return this.buyPortal();
         }
         const building = this.buildingManager.buyBuilding(buildingType);
         if (building) {
@@ -388,8 +388,8 @@ class GameCore extends Engine {
         }
     }
 
-    clampToLauncherBounds(x) {
-        return Math.max(GAME_BOUNDS.LAUNCHER_MIN_X, Math.min(x, GAME_BOUNDS.LAUNCHER_MAX_X));
+    clampToPortalBounds(x) {
+        return Math.max(GAME_BOUNDS.PORTAL_MIN_X, Math.min(x, GAME_BOUNDS.PORTAL_MAX_X));
     }
 
     clampToCrowdBounds(x) {
@@ -397,8 +397,8 @@ class GameCore extends Engine {
     }
 
     /** Thin UI delegate; the live subclass overrides with the real DOM version. */
-    updateLauncherList() {
-        this.ui.updateLauncherList?.();
+    updatePortalList() {
+        this.ui.updatePortalList?.();
     }
 
     // ════════════════════════════════════════════════════════════════════════
@@ -448,7 +448,7 @@ class GameCore extends Engine {
         this.ui.updateBuildingCounts?.();
         this.ui.updateBuildingCosts?.();
         this.ui.updateBuildingTypeVisibility?.();
-        this.updateLauncherList();
+        this.updatePortalList();
         if (this.ui?.renderUpgrades) this.ui.renderUpgrades();
 
         return refunds;
@@ -627,7 +627,7 @@ class GameCore extends Engine {
         });
         this.persistRecipes();
         this.updateRecipeList?.();
-        this.updateLauncherList();
+        this.updatePortalList();
         return true;
     }
 
@@ -662,17 +662,15 @@ class GameCore extends Engine {
         this.storage.setItem('crowdStartedAt', JSON.stringify(this.crowdStartedAt));
 
         this.storage.setItem('fireworkCount', this.fireworkSystem.fireworkCount);
-        this.storage.setItem('autoLauncherCost', this.autoLauncherCost);
+        this.storage.setItem('portalCost', this.portalCost);
         this.storage.setItem('sparkles', this.getSparkles());
         this.storage.setItem('fireworkRecipes', JSON.stringify(this.recipes));
         this.storage.setItem('grantedRecipePatterns', JSON.stringify([...this.grantedRecipePatterns]));
 
         this.storage.setItem('buildingManagerData', JSON.stringify(this.buildingManager.serialize()));
 
-        this.storage.setItem('gameState', JSON.stringify({ autoLaunchers: [] }));
-
         this.storage.setItem('currentRecipeComponents', JSON.stringify(this.currentRecipeComponents));
-        this.storage.setItem('selectedLauncherIndex', this.selectedLauncherIndex || '');
+        this.storage.setItem('selectedPortalIndex', this.selectedPortalIndex || '');
 
         this.storage.setItem('resources', JSON.stringify(this.resourceManager.save()));
         this.storage.setItem('advancedCreatorUnlocked', JSON.stringify(this.advancedCreatorUnlocked));
@@ -705,7 +703,7 @@ class GameCore extends Engine {
             this.addSparkles(clicksPerSec * this.baseSparkleMultiplier * dt, 'manual');
         }
 
-        // Real building economy (launchers fire + count) and cultist rituals.
+        // Real building economy (portals fire + count) and cultist rituals.
         this.buildingManager.update(dt);
         this.cultistRituals.update(dt);
         this.minerShifts.update(dt);
@@ -733,7 +731,7 @@ class GameCore extends Engine {
     /**
      * Headless model of the Grand Finale income burst. The live event floods the
      * sky to the particle cap; here we approximate that as a sustained stream of
-     * `simEffectiveFireworksPerSec` launcher-yield fireworks (× sparkleYieldFraction)
+     * `simEffectiveFireworksPerSec` portal-yield fireworks (× sparkleYieldFraction)
      * while active, on the same duration/cooldown cadence as the live manager.
      */
     _stepHeadlessFinale(dt) {
@@ -741,7 +739,7 @@ class GameCore extends Engine {
         const f = this._finaleSim;
         if (f.active) {
             f.elapsed += dt;
-            const yieldMulti = this.launcherStats?.sparkleYieldMultiplier ?? 1;
+            const yieldMulti = this.portalStats?.sparkleYieldMultiplier ?? 1;
             const perFw = this.baseSparkleMultiplier * yieldMulti * cfg.sparkleYieldFraction;
             const fw = cfg.simEffectiveFireworksPerSec * dt;
             // Mirror the live finale: income only, no fireworkCount bump (which would

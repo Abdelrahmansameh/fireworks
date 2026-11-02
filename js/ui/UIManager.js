@@ -1,5 +1,5 @@
 import { gameStorage } from '../platform/GameStorage.js';
-import { GAME_BOUNDS, DEFAULT_RECIPE_COMPONENTS, COMPONENT_PROPERTY_RANGES, PARTICLE_TYPES, STATS_CONFIG, LAUNCHER_WORLD_HIGHLIGHT_DURATION, BUILDING_TYPES } from '../config/config.js';
+import { GAME_BOUNDS, DEFAULT_RECIPE_COMPONENTS, COMPONENT_PROPERTY_RANGES, PARTICLE_TYPES, STATS_CONFIG, PORTAL_WORLD_HIGHLIGHT_DURATION, BUILDING_TYPES } from '../config/config.js';
 import { TABS } from './uiSchema.js';
 import ICONS from './icons.js';
 import { SkillTreeScreen } from './SkillTreeScreen.js';
@@ -27,7 +27,7 @@ class UIManager {
         this.activePointerId = null;
         this.scrollDragIsTouch = false;
         this.minCameraDragHoldMs = 150;
-        this.draggingLauncher = null;
+        this.draggingPortal = null;
         this.lastPointerX = 0;
         this.grabCursorWorldX = 0;
         this.grabCursorWorldY = 0;
@@ -166,13 +166,13 @@ class UIManager {
             );
         });
 
-        document.getElementById('reset-launchers').addEventListener('click', () => {
+        document.getElementById('reset-portals').addEventListener('click', () => {
             this.showConfirmation(
-                'Reset Auto-Launchers',
-                'Sell all launchers? Paid launchers are refunded; included launchers are returned.',
+                'Reset Portals',
+                'Sell all portals? Paid portals are refunded; included portals are returned.',
                 () => {
-                    const refundAmount = this.game.resetAutoLaunchers(); // Method in game needs adjustment
-                    this.showNotification(`Auto-launchers reset! Refunded ${Math.floor(refundAmount)} sparkles`);
+                    const refundAmount = this.game.resetPortals();
+                    this.showNotification(`Portals reset! Refunded ${Math.floor(refundAmount)} sparkles`);
                 }
             );
         });
@@ -195,7 +195,7 @@ class UIManager {
             btn.addEventListener('click', () => {
                 this.toggleTab(tab.id);
                 if (tab.id === 'buildings') {
-                    this.game.updateLauncherList();
+                    this.game.updatePortalList();
                     this.updateBuildingCosts();
                     this.updateBuildingTypeVisibility();
                 }
@@ -353,8 +353,8 @@ class UIManager {
 
         document.addEventListener('wheel', this.handleWheelScroll, { passive: false });
 
-        document.getElementById('randomize-launcher-recipes').addEventListener('click', () => {
-            this.game.randomizeLauncherRecipes();
+        document.getElementById('randomize-portal-recipes').addEventListener('click', () => {
+            this.game.randomizePortalRecipes();
         });
 
 
@@ -458,19 +458,19 @@ class UIManager {
         this.grabCursorWorldX = worldPos.x;
         this.grabCursorWorldY = worldPos.y;
 
-        const intersectedBuilding = this.game.getLauncherAt(worldPos.x, worldPos.y);
+        const intersectedBuilding = this.game.getPortalAt(worldPos.x, worldPos.y);
 
-        if (intersectedBuilding?.type === 'AUTO_LAUNCHER') {
-            // Launchers sit in fixed slots: a click selects, it never drags.
+        if (intersectedBuilding?.type === 'PORTAL') {
+            // Portals sit in fixed slots: a click selects, it never drags.
             this.activePointerId = null;
-            this.game.selectLauncher(intersectedBuilding.id);
-            this.game.updateLauncherList();
+            this.game.selectPortal(intersectedBuilding.id);
+            this.game.updatePortalList();
             this.focusBuildingInUI(intersectedBuilding);
         } else if (intersectedBuilding) {
             this.isDragging = true;
-            this.draggingLauncher = intersectedBuilding;
-            this.game.selectLauncher(intersectedBuilding.id);
-            this.game.updateLauncherList();
+            this.draggingPortal = intersectedBuilding;
+            this.game.selectPortal(intersectedBuilding.id);
+            this.game.updatePortalList();
 
             document.body.style.cursor = 'none';
 
@@ -577,7 +577,7 @@ class UIManager {
             return;
         }
 
-        if (this.isDragging && this.draggingLauncher) {
+        if (this.isDragging && this.draggingPortal) {
             e.preventDefault();
             const worldPos = this.game.screenToWorld(e.clientX, e.clientY);
             this.grabCursorWorldX = worldPos.x;
@@ -587,7 +587,7 @@ class UIManager {
             const maxX = Math.min(venue.right, GAME_BOUNDS.CATAPULT_MAX_X);
             const clampedX = Math.max(minX, Math.min(worldPos.x, maxX));
 
-            this.draggingLauncher.setPosition(clampedX, this.draggingLauncher.y);
+            this.draggingPortal.setPosition(clampedX, this.draggingPortal.y);
             this.game.saveProgress();
         } else if (this.isScrollDragging) {
             this.currentPointerX = e.clientX;
@@ -676,7 +676,7 @@ class UIManager {
             this.scrollDragStartX = 0;
             this.scrollDragStartY = 0;
             this.scrollDragIsTouch = false;
-            this.draggingLauncher = null;
+            this.draggingPortal = null;
 
             document.removeEventListener('pointermove', this.pointerMoveHandler);
             document.removeEventListener('pointerup', this.pointerUpHandler);
@@ -842,7 +842,7 @@ class UIManager {
         return document.elementFromPoint(x, y) !== gameContainer;
     }
 
-    updateUI(sparklesCount, totalSparklesRate, fireworkCount, autoLauncherCount, nextCost) {
+    updateUI(sparklesCount, totalSparklesRate, fireworkCount, portalCount, nextCost) {
         const sparklesElement = document.getElementById('ressource-count');
         const isDetail = sparklesElement.classList.contains('expanded');
 
@@ -1007,8 +1007,8 @@ class UIManager {
 
     getUpgradeAvailabilitySignature() {
         const p = this.game.progression;
-        const launchers = this.game.buildingManager.getBuildingsByType('AUTO_LAUNCHER').length;
-        return `${launchers}:${Boolean(this.game.gameCompleted)}|` + p.getAllUpgradeDefs().map(def => {
+        const portals = this.game.buildingManager.getBuildingsByType('PORTAL').length;
+        return `${portals}:${Boolean(this.game.gameCompleted)}|` + p.getAllUpgradeDefs().map(def => {
             if (!p.isVisible(def.id, this.game).visible) return `${def.id}:hidden`;
             const check = p.canPurchase(def.id, this.game);
             return `${def.id}:${p.getUpgradeLevel(def.id)}:${check.ok ? 'ready' : check.reason}:${JSON.stringify(p.getUpgradeCosts(def.id))}`;
@@ -1038,7 +1038,7 @@ class UIManager {
 
         // ── Rolling rates ───────────────────────────────────────────────────
         const spsTot = st.getRollingRate('sparkles');
-        const spsAuto = st.getRollingRate('sparkles', 'auto_launcher');
+        const spsPortal = st.getRollingRate('sparkles', 'portal');
         const spsCultist = st.getRollingRate('sparkles', 'cultist');
         const spsFlyer = st.getRollingRate('sparkles', 'flyer');
         const spsCrowdCatch = st.getRollingRate('sparkles', 'crowd_catch');
@@ -1050,11 +1050,11 @@ class UIManager {
         const gpsCheat = st.getRollingRate('gold', 'cheat');
 
         const fpsTot = st.getFireworksPerSecond();
-        const fpsAuto = st.getFireworksPerSecond('auto_launcher');
+        const fpsPortal = st.getFireworksPerSecond('portal');
         const fpsMnl = st.getFireworksPerSecond('manual');
 
         set('stat-sps-total', fmtRate(spsTot) + ' /s');
-        set('stat-sps-auto', fmtRate(spsAuto) + ' /s');
+        set('stat-sps-portal', fmtRate(spsPortal) + ' /s');
         set('stat-sps-cultist', fmtRate(spsCultist) + ' /s');
         set('stat-sps-flyer', fmtRate(spsFlyer) + ' /s');
         set('stat-sps-crowd-catch', fmtRate(spsCrowdCatch) + ' /s');
@@ -1072,7 +1072,7 @@ class UIManager {
         if (cheatGRow) cheatGRow.style.display = gpsCheat > 0 ? '' : 'none';
 
         set('stat-fps-total', fmtRate(fpsTot) + ' /s');
-        set('stat-fps-auto', fmtRate(fpsAuto) + ' /s');
+        set('stat-fps-portal', fmtRate(fpsPortal) + ' /s');
         set('stat-fps-manual', fmtRate(fpsMnl) + ' /s');
 
         // ── Current state ───────────────────────────────────────────────────
@@ -1086,7 +1086,7 @@ class UIManager {
         set('stat-crowd-size', crowdSize);
 
         const getBldCount = (type) => g.buildingManager.getBuildingsByType(type).length;
-        set('stat-bld-auto', getBldCount('AUTO_LAUNCHER'));
+        set('stat-bld-portal', getBldCount('PORTAL'));
         set('stat-bld-cultist', g.cultistCount ?? 0);
         set('stat-bld-flyer', g.flyerCount ?? 0);
         set('stat-bld-miner', g.minerCount ?? 0);
@@ -1095,7 +1095,7 @@ class UIManager {
         set('stat-session-time', GameMetrics.formatDuration(st.getSessionDurationSeconds()));
 
         set('stat-sess-sparkles', fmt(st.sessionSparkles));
-        set('stat-sess-sp-auto', fmt(st.sessionSparklesBySource['auto_launcher'] ?? 0));
+        set('stat-sess-sp-portal', fmt(st.sessionSparklesBySource['portal'] ?? 0));
         set('stat-sess-sp-cultist', fmt(st.sessionSparklesBySource['cultist'] ?? 0));
         set('stat-sess-sp-flyer', fmt(st.sessionSparklesBySource['flyer'] ?? 0));
         set('stat-sess-sp-crowd-catch', fmt(st.sessionSparklesBySource['crowd_catch'] ?? 0));
@@ -1106,7 +1106,7 @@ class UIManager {
 
         set('stat-sess-fw', fmt(st.sessionFireworks));
         set('stat-sess-fw-manual', fmt(st.sessionFireworksBySource['manual'] ?? 0));
-        set('stat-sess-fw-auto', fmt(st.sessionFireworksBySource['auto_launcher'] ?? 0));
+        set('stat-sess-fw-portal', fmt(st.sessionFireworksBySource['portal'] ?? 0));
 
         set('stat-sess-flyer-parts', fmt(st.sessionFlyerParticles));
         set('stat-sess-crowd-parts', fmt(st.sessionCrowdCatchParticles));
@@ -1114,7 +1114,7 @@ class UIManager {
         // ── Lifetime records ────────────────────────────────────────────────
         set('firework-count', fmt(g.fireworkSystem.fireworkCount));
         set('stat-life-sparkles', fmt(st.lifetimeSparkles));
-        set('stat-life-sp-auto', fmt(st.lifetimeSparklesBySource['auto_launcher'] ?? 0));
+        set('stat-life-sp-portal', fmt(st.lifetimeSparklesBySource['portal'] ?? 0));
         set('stat-life-sp-cultist', fmt(st.lifetimeSparklesBySource['cultist'] ?? 0));
         set('stat-life-sp-flyer', fmt(st.lifetimeSparklesBySource['flyer'] ?? 0));
         set('stat-life-sp-crowd-catch', fmt(st.lifetimeSparklesBySource['crowd_catch'] ?? 0));
@@ -1362,39 +1362,39 @@ class UIManager {
         });
     }
 
-    updateLauncherList(launchers, selectedBuildingId, onSelect) {
-        const launcherList = document.getElementById('auto_launcher-list');
-        const stats = document.getElementById('auto_launcher-stats');
-        if (!launcherList) return;
-        const hasLaunchers = launchers.length > 0;
+    updatePortalList(portals, selectedBuildingId, onSelect) {
+        const portalList = document.getElementById('portal-list');
+        const stats = document.getElementById('portal-stats');
+        if (!portalList) return;
+        const hasPortals = portals.length > 0;
         if (stats) stats.style.display = 'none';
-        for (const id of ['randomize-launcher-recipes']) {
+        for (const id of ['randomize-portal-recipes']) {
             const button = document.getElementById(id);
-            if (button) button.style.display = hasLaunchers ? '' : 'none';
+            if (button) button.style.display = hasPortals ? '' : 'none';
         }
-        launcherList.replaceChildren();
-        const locate = launcher => {
-            onSelect(launcher.id);
-            this.game.setCameraTarget(launcher.x);
-            launcher.highlight(LAUNCHER_WORLD_HIGHLIGHT_DURATION);
+        portalList.replaceChildren();
+        const locate = portal => {
+            onSelect(portal.id);
+            this.game.setCameraTarget(portal.x);
+            portal.highlight(PORTAL_WORLD_HIGHLIGHT_DURATION);
             this.game.saveProgress();
             const panel = document.getElementById('buildings-content');
             if (matchMedia('(max-width: 700px)').matches && panel.classList.contains('sheet-full')) {
                 panel.classList.remove('sheet-full');
             }
         };
-        for (const [index, launcher] of launchers.entries()) {
-            const assignedRecipe = this.game.recipes[launcher.assignedRecipeIndex];
+        for (const [index, portal] of portals.entries()) {
+            const assignedRecipe = this.game.recipes[portal.assignedRecipeIndex];
             const component = assignedRecipe?.components?.[0];
             const row = document.createElement('div');
-            row.className = `launcher-card${launcher.id === selectedBuildingId ? ' selected' : ''}`;
-            row.dataset.buildingId = launcher.id;
+            row.className = `portal-card${portal.id === selectedBuildingId ? ' selected' : ''}`;
+            row.dataset.buildingId = portal.id;
             row.tabIndex = 0;
             row.setAttribute('role', 'button');
-            row.setAttribute('aria-label', `Show launcher ${index + 1}`);
-            row.setAttribute('aria-pressed', String(launcher.id === selectedBuildingId));
-            row.style.setProperty('--launcher-color', component?.color ?? '#ffffff');
-            row.innerHTML = `<span class="launcher-card-icon" aria-hidden="true">${doodleIcon('launcher')}</span>`;
+            row.setAttribute('aria-label', `Show portal ${index + 1}`);
+            row.setAttribute('aria-pressed', String(portal.id === selectedBuildingId));
+            row.style.setProperty('--portal-color', component?.color ?? '#ffffff');
+            row.innerHTML = `<span class="portal-card-icon" aria-hidden="true">${doodleIcon('portal')}</span>`;
             let dragged = false;
             let pointerStart = null;
             row.addEventListener('pointerdown', event => {
@@ -1408,27 +1408,27 @@ class UIManager {
             row.addEventListener('pointercancel', () => { dragged = true; pointerStart = null; });
             row.addEventListener('click', event => {
                 if (dragged || event.target.closest('input, select, option, label')) return;
-                locate(launcher);
+                locate(portal);
             });
             row.addEventListener('keydown', event => {
                 if (event.target !== row || !['Enter', ' '].includes(event.key)) return;
                 event.preventDefault();
-                locate(launcher);
+                locate(portal);
             });
             const select = document.createElement('select');
             select.className = 'recipe-select';
-            select.dataset.buildingId = launcher.id;
-            select.setAttribute('aria-label', `Firework for launcher ${index + 1}`);
+            select.dataset.buildingId = portal.id;
+            select.setAttribute('aria-label', `Firework for portal ${index + 1}`);
             select.add(new Option('Random', ''));
             this.game.recipes.forEach((recipe, recipeIndex) => select.add(new Option(recipe.name, String(recipeIndex))));
-            select.value = assignedRecipe ? String(launcher.assignedRecipeIndex) : '';
+            select.value = assignedRecipe ? String(portal.assignedRecipeIndex) : '';
             select.addEventListener('change', () => {
-                launcher.assignedRecipeIndex = select.value === '' ? null : Number(select.value);
-                row.style.setProperty('--launcher-color', this.game.recipes[launcher.assignedRecipeIndex]?.components?.[0]?.color ?? '#ffffff');
+                portal.assignedRecipeIndex = select.value === '' ? null : Number(select.value);
+                row.style.setProperty('--portal-color', this.game.recipes[portal.assignedRecipeIndex]?.components?.[0]?.color ?? '#ffffff');
                 this.game.saveProgress();
             });
             row.appendChild(select);
-            launcherList.appendChild(row);
+            portalList.appendChild(row);
         }
     }
     getReadableShape(shape) {
@@ -1557,7 +1557,7 @@ class UIManager {
             this.showCollapseButton();
         }
 
-        if (p.getUpgradeLevel('auto_launcher') > 0) {
+        if (p.getUpgradeLevel('portal_unlock') > 0) {
             this.showBuildingsTab();
         }
 
@@ -1751,9 +1751,9 @@ class UIManager {
     updateBuildingListByType(buildingType) {
         const buildings = this.game.buildingManager.getBuildingsByType(buildingType);
 
-        if (buildingType === 'AUTO_LAUNCHER') {
-            this.updateLauncherList(buildings, this.game.buildingManager.selectedBuildingId,
-                (id) => this.game.selectLauncher(id)
+        if (buildingType === 'PORTAL') {
+            this.updatePortalList(buildings, this.game.buildingManager.selectedBuildingId,
+                (id) => this.game.selectPortal(id)
             );
         }
 
@@ -1801,10 +1801,10 @@ class UIManager {
             tab.classList.toggle('locked', !unlocked);
             tab.setAttribute('aria-disabled', String(!unlocked));
 
-            // If the active section belongs to a now-locked type, fall back to AUTO_LAUNCHER
+            // If the active section belongs to a now-locked type, fall back to PORTAL
             if (activeBuildingType === key && !unlocked) {
-                this.switchBuildingType('AUTO_LAUNCHER');
-                activeBuildingType = 'AUTO_LAUNCHER';
+                this.switchBuildingType('PORTAL');
+                activeBuildingType = 'PORTAL';
             }
         }
     }

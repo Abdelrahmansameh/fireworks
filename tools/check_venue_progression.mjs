@@ -49,7 +49,7 @@ try {
             const openingPan = [game.clampCameraX(-1e9), game.clampCameraX(1e9)];
             for (let i = 0; i < 7; i++) {
                 const bm = game.buildingManager;
-                bm.createBuilding('AUTO_LAUNCHER', bm.getNewBuildingX('AUTO_LAUNCHER'), -435, { id: `test-${i}` });
+                bm.createBuilding('PORTAL', bm.getNewBuildingX('PORTAL'), -435, { id: `test-${i}` });
             }
             const earlyTransition = await sampleFor(800);
             const firstBounds = game.getVenueCameraBounds();
@@ -65,7 +65,7 @@ try {
             await frames(75);
             for (let i = 7; i < 14; i++) {
                 const bm = game.buildingManager;
-                bm.createBuilding('AUTO_LAUNCHER', bm.getNewBuildingX('AUTO_LAUNCHER'), -435, { id: `test-${i}` });
+                bm.createBuilding('PORTAL', bm.getNewBuildingX('PORTAL'), -435, { id: `test-${i}` });
             }
             const transition = await sampleFor(4600);
             const bounds = game.getVenueCameraBounds();
@@ -117,7 +117,7 @@ try {
                     requestAnimationFrame(tick);
                 });
                 const bm = game.buildingManager;
-                bm.createBuilding('AUTO_LAUNCHER', bm.getNewBuildingX('AUTO_LAUNCHER'), -435, { id: 'focus-test' });
+                bm.createBuilding('PORTAL', bm.getNewBuildingX('PORTAL'), -435, { id: 'focus-test' });
                 await frames(200);
                 const r = game.renderer2D;
                 const visible = r.getVisibleWorldBounds();
@@ -173,7 +173,7 @@ try {
         const earlyManual = [fs.fireworks.at(-1).targetY];
         const positions = [];
         for (let i = 0; i < 32; i++) {
-            const type = 'AUTO_LAUNCHER';
+            const type = 'PORTAL';
             const x = bm.getNewBuildingX(type);
             positions.push(x);
             bm.createBuilding(type, x, -435, { id: `slot-${i}` });
@@ -192,12 +192,12 @@ try {
         const catapultSelectable = bm.getBuildingAt(catapult.x, catapult.y) === catapult;
         game.ui.isDragging = true;
         game.ui.activePointerId = 1;
-        game.ui.draggingLauncher = catapult;
+        game.ui.draggingPortal = catapult;
         const target = game.renderer2D.worldToScreen(-700, catapult.y);
         game.ui.pointerMoveHandler({ pointerId: 1, clientX: target.x, clientY: target.y, preventDefault() {} });
         game.ui.isDragging = false;
         game.ui.activePointerId = null;
-        game.ui.draggingLauncher = null;
+        game.ui.draggingPortal = null;
         const movedCatapult = catapult.x;
         for (const building of [...bm.buildings]) bm.removeBuilding(building);
         const beforeSave = getVenueStage(game).index;
@@ -208,7 +208,7 @@ try {
         return { positions, stage, zero, high, random, earlyAutomatic, earlyManual, legacyCatapult, catapultSelectable, movedCatapult,
             beforeSave, afterSave, reset: getVenueStage(game).index };
     });
-    assert(new Set(state.positions).size === 32, 'Launcher placement collided');
+    assert(new Set(state.positions).size === 32, 'Portal placement collided');
     assert(state.earlyAutomatic.every((y, i) => y <= [200, 200, 375][i] && y > [199, 199, 374][i])
         && state.earlyManual.every((y, i) => y === [324, 380, 440][i]),
     `Early automatic height limits or manual aiming are incorrect: ${JSON.stringify(state)}`);

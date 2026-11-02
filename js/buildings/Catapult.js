@@ -9,7 +9,7 @@ const THROW_RELEASE_FRACTION = 0.35 / 1.2;
 
 const APPROACH_OFFSET_X = 70;
 
-// With the catapults closer to the launchers, retain roughly the same apex
+// With the catapults closer to the portals, retain roughly the same apex
 // over the firework area instead of throwing fans across the entire venue.
 const LAUNCH_VX = 1500;
 const LAUNCH_VY = 1700;

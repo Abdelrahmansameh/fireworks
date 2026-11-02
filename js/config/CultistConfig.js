@@ -8,7 +8,7 @@ export const CULTIST_CONFIG = {
     sparklesPerRitual: 1,        // the ritual clip in crowd.json sets how often
 
     // Ritual spots in the gap between the crowd (CROWD_LEFT_X) and the
-    // launchers (LAUNCHER_MIN_X), one per cultist in buy order.
+    // portals (PORTAL_MIN_X), one per cultist in buy order.
     spots: [
         { x: 0, y: -460 },
         { x: -50, y: -440 },

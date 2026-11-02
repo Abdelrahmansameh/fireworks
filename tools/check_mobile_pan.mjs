@@ -64,8 +64,8 @@ try {
         for (const count of [7, 32]) {
             await page.evaluate(count => {
                 const bm = game.buildingManager;
-                while (bm.getBuildingsByType('AUTO_LAUNCHER').length < count) {
-                    bm.createBuilding('AUTO_LAUNCHER', bm.getNewBuildingX('AUTO_LAUNCHER'), -435);
+                while (bm.getBuildingsByType('PORTAL').length < count) {
+                    bm.createBuilding('PORTAL', bm.getNewBuildingX('PORTAL'), -435);
                 }
                 game.pendingVenueFocusX = null;
                 game.cameraTargetX = null;
@@ -102,18 +102,18 @@ try {
                 const expectedRightX = worldWidth <= viewWidth ? (atRight.bounds.left + atRight.bounds.right) / 2
                     : atRight.bounds.right - viewWidth / 2;
                 assert(Math.abs(atRight.x - expectedRightX) < 1,
-                    `${JSON.stringify(viewport)}: ${count} launchers ${which} right edge is wrong: ${JSON.stringify(atRight)}`);
+                    `${JSON.stringify(viewport)}: ${count} portals ${which} right edge is wrong: ${JSON.stringify(atRight)}`);
                 assert(atRight.fireworks === before.fireworks, `${JSON.stringify(viewport)}: swiping fired a rocket`);
                 for (let i = 0; i < 64; i++) await swipe('left');
                 let atLeft = await state();
                 const expectedLeftX = worldWidth <= viewWidth ? (atLeft.bounds.left + atLeft.bounds.right) / 2
                     : atLeft.bounds.left + viewWidth / 2;
                 assert(Math.abs(atLeft.x - expectedLeftX) < 1,
-                    `${JSON.stringify(viewport)}: ${count} launchers ${which} left edge is wrong: ${JSON.stringify(atLeft)}`);
+                    `${JSON.stringify(viewport)}: ${count} portals ${which} left edge is wrong: ${JSON.stringify(atLeft)}`);
                 assert(atLeft.fireworks === before.fireworks, `${JSON.stringify(viewport)}: swiping at edge fired a rocket`);
                 await swipe('right', true);
                 assert((await state()).fireworks === before.fireworks, `${JSON.stringify(viewport)}: cancelling a swipe fired a rocket`);
-                results.push({ viewport, launchers: count, zoom: which, left: +expectedLeftX.toFixed(1), right: +expectedRightX.toFixed(1) });
+                results.push({ viewport, portals: count, zoom: which, left: +expectedLeftX.toFixed(1), right: +expectedRightX.toFixed(1) });
             }
         }
         // Starting a pinch while grabbing a fan must cancel the grab, not throw them.

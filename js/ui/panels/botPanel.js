@@ -79,7 +79,7 @@ export function render(container) {
             ${row('Gold / sec', 'bot-gps')}
             ${row('Crowd size', 'bot-crowd')}
             ${row('Fireworks launched', 'bot-fireworks')}
-            ${row('Launcher fireworks / sec', 'bot-launcher-fps')}
+            ${row('Portal fireworks / sec', 'bot-portal-fps')}
             ${row('Longest wait', 'bot-max-gap')}
             ${row('Saving for', 'bot-goal')}
             ${row('Sparkles spent', 'bot-sparkles-spent')}
@@ -90,7 +90,7 @@ export function render(container) {
         <div class="stats-section">
             <h3 class="stats-section-title">Sparkles by source</h3>
             ${row('Clicks', 'bot-src-clicks')}
-            ${row('Auto-Launchers', 'bot-src-launchers')}
+            ${row('Portals', 'bot-src-portals')}
             ${row('Cultists', 'bot-src-cultists')}
             ${row('Flying cultists', 'bot-src-flyers')}
             ${row('Crowd Catching', 'bot-src-crowd')}
@@ -193,7 +193,7 @@ export function updateReport(game) {
     set('bot-gps', fmtRate(r.gps));
     set('bot-crowd', fmt(r.crowd));
     set('bot-fireworks', fmt(r.fireworks));
-    set('bot-launcher-fps', fmtRate(r.launcherFPS));
+    set('bot-portal-fps', fmtRate(r.portalFPS));
     set('bot-max-gap', fmtTime(r.maxPurchaseGap));
     set('bot-goal', [r.goal?.label, r.goal?.next].filter(Boolean).join(' — ') || '—');
     set('bot-sparkles-spent', fmt(r.spending.sparkles));
@@ -202,7 +202,7 @@ export function updateReport(game) {
 
     const s = r.productionBreakdown.sparkles;
     set('bot-src-clicks', fmt(s.clicks));
-    set('bot-src-launchers', fmt(s.launchers));
+    set('bot-src-portals', fmt(s.portals));
     set('bot-src-cultists', fmt(s.cultists));
     set('bot-src-flyers', fmt(s.flyers));
     set('bot-src-crowd', fmt(s.crowdCatching));

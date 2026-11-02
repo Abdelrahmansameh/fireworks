@@ -59,7 +59,7 @@ export default class GameMetrics {
      * Record a resource gain.
      * @param {'sparkles'|'gold'} resource
      * @param {number} amount
-     * @param {string} source  e.g. 'manual', 'auto_launcher', 'cultist', 'flyer', 'crowd', 'cheat'
+     * @param {string} source  e.g. 'manual', 'portal', 'cultist', 'flyer', 'crowd', 'cheat'
      */
     record(resource, amount, source = 'unknown') {
         if (amount <= 0) return;
@@ -88,7 +88,7 @@ export default class GameMetrics {
 
     /**
      * Record a firework launch.
-     * @param {string} source  'manual' | 'auto_launcher'
+     * @param {string} source  'manual' | 'portal'
      */
     recordFirework(source = 'unknown') {
         const ts = this.now();

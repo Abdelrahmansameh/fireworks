@@ -46,7 +46,7 @@ export function render(container) {
         <section class="settings-section settings-reset-section">
             <div class="settings-section-heading"><h3>Reset</h3><span>hold to confirm</span></div>
             <div class="settings-reset-actions">
-                <button type="button" id="reset-launchers" class="danger-button hold-reset" aria-description="Hold for 1.2 seconds to open confirmation">Launchers</button>
+                <button type="button" id="reset-portals" class="danger-button hold-reset" aria-description="Hold for 1.2 seconds to open confirmation">Portals</button>
                 <button type="button" id="reset-upgrades" class="danger-button hold-reset" aria-description="Hold for 1.2 seconds to open confirmation">Upgrades</button>
                 <button type="button" id="reset-game" class="danger-button hold-reset" aria-description="Hold for 1.2 seconds to open confirmation">All</button>
             </div>

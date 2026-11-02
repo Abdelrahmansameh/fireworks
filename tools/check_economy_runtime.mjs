@@ -184,14 +184,14 @@ try {
                 };
                 purchase('base_mult_1');
                 purchase('unlock_recipes_tab');
-                const launcherCountBeforeUnlock = game.buildingManager.getBuildingsByType('AUTO_LAUNCHER').length;
-                purchase('auto_launcher');
-                assert(game.isBuildingTypeUnlocked('AUTO_LAUNCHER')
-                    && game.buildingManager.getBuildingsByType('AUTO_LAUNCHER').length === launcherCountBeforeUnlock,
-                'Auto Launcher upgrade did not unlock purchases without granting a launcher');
+                const portalCountBeforeUnlock = game.buildingManager.getBuildingsByType('PORTAL').length;
+                purchase('portal_unlock');
+                assert(game.isBuildingTypeUnlocked('PORTAL')
+                    && game.buildingManager.getBuildingsByType('PORTAL').length === portalCountBeforeUnlock,
+                'Portal upgrade did not unlock purchases without granting a portal');
                 if (cycle === 0) {
-                    const paidBuilding = game.buildingManager.buyBuilding('AUTO_LAUNCHER');
-                    assert(paidBuilding && !paidBuilding.grantUpgradeId, 'Separately purchased launcher was tagged as a grant');
+                    const paidBuilding = game.buildingManager.buyBuilding('PORTAL');
+                    assert(paidBuilding && !paidBuilding.grantUpgradeId, 'Separately purchased portal was tagged as a grant');
                     paidBuildingId = paidBuilding.id;
                 }
                 purchase('base_mult_1');
@@ -200,12 +200,12 @@ try {
                 purchase('flyer_team');
                 purchase('flyer_team');
                 purchase('grand_finale');
-                await ready(() => game.buildingManager.buildings.every(building => building._instancedGroup));
+                await ready(() => game.buildingManager.buildings.every(building => building.type === 'PORTAL' || building._instancedGroup));
                 const saved = JSON.parse(JSON.stringify(game.buildingManager.serialize()));
                 assert(saved.buildings.filter(building => building.grantUpgradeId).length === 2,
                     'Save did not preserve every included building marker');
                 game.buildingManager.deserialize(saved);
-                await ready(() => game.buildingManager.buildings.every(building => building._instancedGroup));
+                await ready(() => game.buildingManager.buildings.every(building => building.type === 'PORTAL' || building._instancedGroup));
                 const beforeReset = { sparkles: wallets.sparkles.amount, gold: wallets.gold.amount };
                 const refund = game.resetUpgrades();
                 for (const currency of ['sparkles', 'gold']) {
@@ -217,31 +217,31 @@ try {
                 resetCycles.push({ cycle: cycle + 1, refund, includedBuildingsReturned: 2, paidBuildingsRetained: 1 });
             }
             results.reset = { markerPreservedAfterDeserialize: true, cycles: resetCycles, noGrantedUnitGrowth: true };
-            const paidLauncherRefund = game.resetAutoLaunchers();
-            assert(paidLauncherRefund > 0 && game.buildingManager.buildings.length === 0,
-                'Paid launcher reset did not refund and remove the retained launcher');
+            const paidPortalRefund = game.resetPortals();
+            assert(paidPortalRefund > 0 && game.buildingManager.buildings.length === 0,
+                'Paid portal reset did not refund and remove the retained portal');
             const beforeGrant = wallets.sparkles.amount;
             const starterCost = game.progression.getUpgradeCost('base_mult_1');
-            assert(game.buyUpgrade('base_mult_1'), 'Could not repurchase the starter for launcher reset accounting');
+            assert(game.buyUpgrade('base_mult_1'), 'Could not repurchase the starter for portal reset accounting');
             const creatorCost = game.progression.getUpgradeCost('unlock_recipes_tab');
-            assert(game.buyUpgrade('unlock_recipes_tab'), 'Could not repurchase Creator before the launcher license');
-            const licenseCost = game.progression.getUpgradeCost('auto_launcher');
-            assert(game.buyUpgrade('auto_launcher'), 'Could not repurchase launcher license for reset accounting check');
-            assert(game.buildingManager.getBuildingsByType('AUTO_LAUNCHER').length === 0,
-                'Repurchasing the launcher license granted a free launcher');
-            const firstPaid = game.buildingManager.buyBuilding('AUTO_LAUNCHER');
-            const secondPaid = game.buildingManager.buyBuilding('AUTO_LAUNCHER');
+            assert(game.buyUpgrade('unlock_recipes_tab'), 'Could not repurchase Creator before the portal license');
+            const licenseCost = game.progression.getUpgradeCost('portal_unlock');
+            assert(game.buyUpgrade('portal_unlock'), 'Could not repurchase portal license for reset accounting check');
+            assert(game.buildingManager.getBuildingsByType('PORTAL').length === 0,
+                'Repurchasing the portal license granted a free portal');
+            const firstPaid = game.buildingManager.buyBuilding('PORTAL');
+            const secondPaid = game.buildingManager.buyBuilding('PORTAL');
             const expectedPaidRefund = firstPaid.purchaseCost + secondPaid.purchaseCost;
-            // Preserve accounting for included launchers retained in older saves.
-            game.grantMilestoneBuilding('AUTO_LAUNCHER', 'auto_launcher');
+            // Preserve accounting for included portals retained in older saves.
+            game.grantMilestoneBuilding('PORTAL', 'portal_unlock');
             const buildingSave = JSON.parse(JSON.stringify(game.buildingManager.serialize()));
             game.buildingManager.deserialize(buildingSave);
-            const launcherRefund = game.resetAutoLaunchers();
-            assert(launcherRefund === expectedPaidRefund, 'Launcher refund included the grant or lost a paid purchase price');
+            const portalRefund = game.resetPortals();
+            assert(portalRefund === expectedPaidRefund, 'Portal refund included the grant or lost a paid purchase price');
             const licenseRefund = game.resetUpgrades();
             assert(licenseRefund.sparkles === starterCost + creatorCost + licenseCost && wallets.sparkles.amount === beforeGrant,
-                'Launcher reset followed by upgrade reset manufactured currency');
-            results.reset.launcherReset = { paidPurchaseRefund: launcherRefund, includedLauncherRefund: 0,
+                'Portal reset followed by upgrade reset manufactured currency');
+            results.reset.portalReset = { paidPurchaseRefund: portalRefund, includedPortalRefund: 0,
                 starterAndLicenseRefund: licenseRefund.sparkles, currencyGrowth: 0, purchasePricesPreservedAfterDeserialize: true };
 
             const beforeFlyer = game.flyerCount;

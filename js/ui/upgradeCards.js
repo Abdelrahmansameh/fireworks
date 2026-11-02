@@ -2,7 +2,7 @@ import { doodleIcon } from './doodleIcons.js';
 
 const BRANCH_STYLES = {
     BASE: { icon: 'fireworks', color: '#ffd04a' },
-    LAUNCHER: { icon: 'launcher', color: '#ff7a59' },
+    PORTAL: { icon: 'portal', color: '#ff7a59' },
     CROWD: { icon: 'crowd', color: '#ffd04a' },
     CULTIST: { icon: 'cultist', color: '#86e38f' },
     FLYER: { icon: 'crowd', color: '#5fe0e0' },

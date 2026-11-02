@@ -144,12 +144,12 @@ try {
         report = await page.evaluate(() => window.game.bot.finalReport ?? window.game.bot.getReport());
         if (await page.evaluate(() => !!window.__liveBotFinaleCapture)) {
             await page.screenshot({ path: `${output}-finale.png`, fullPage: false });
-            finaleCapture = { elapsed: report.elapsed, finaleElapsed: await page.evaluate(() => window.game.grandFinaleManager.elapsed), activeParticles: report.activeParticles, launcherFPS: report.launcherFPS, buildings: report.buildings };
+            finaleCapture = { elapsed: report.elapsed, finaleElapsed: await page.evaluate(() => window.game.grandFinaleManager.elapsed), activeParticles: report.activeParticles, portalFPS: report.portalFPS, buildings: report.buildings };
             await page.evaluate(() => { window.__liveBotFinaleCapture = false; window.game.resume(); });
         }
         const minute = Math.floor(report.elapsed / 60);
         if (minute !== lastLoggedMinute) {
-            console.log(`${minute}m: ${report.buildings.AUTO_LAUNCHER.count} launchers, ${report.launcherFPS.toFixed(2)} launches/s, ${report.sps.toFixed(1)} sparkles/s, ${report.gps.toFixed(1)} gold/s; ${report.goal?.label ?? ''}`);
+            console.log(`${minute}m: ${report.buildings.PORTAL.count} portals, ${report.portalFPS.toFixed(2)} launches/s, ${report.sps.toFixed(1)} sparkles/s, ${report.gps.toFixed(1)} gold/s; ${report.goal?.label ?? ''}`);
             lastLoggedMinute = minute;
         }
         if (report.complete) status = 'complete';

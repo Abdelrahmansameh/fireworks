@@ -1,6 +1,6 @@
 // The milestone chain sets the pacing of a show. Each milestone is one goal; its
 // reward opens the next mechanic. Buildings, fans, flyers, miners and the
-// finale are only earned here, never bought; the late launcher upgrades open here and
+// finale are only earned here, never bought; the late portal upgrades open here and
 // are then bought in the shop. Tune pacing with tools/run_live_bot.mjs.
 //
 // Goal types:
@@ -38,12 +38,12 @@ export const MILESTONES = [
         id: 'first_machine', chapter: 0,
         goal: { type: 'sparkles', target: 100 },
         hint: 'Keep launching. Every burst pays sparkles.',
-        reward: { title: 'Auto Launcher', desc: 'Build launchers that fire on their own.', icon: 'launcher', upgrades: ['auto_launcher'] },
+        reward: { title: 'Portal', desc: 'Build portals that fire on their own.', icon: 'portal', upgrades: ['portal_unlock'] },
     },
     {
         id: 'small_show', chapter: 0,
-        goal: { type: 'building', building: 'AUTO_LAUNCHER', target: 3 },
-        hint: 'Buy launchers in Buildings.',
+        goal: { type: 'building', building: 'PORTAL', target: 3 },
+        hint: 'Buy portals in Buildings.',
         reward: { title: 'Opening Night', action: '', desc: 'Fans arrive and toss gold.', icon: 'crowd', upgrades: ['crowd_spark_1'] },
     },
 

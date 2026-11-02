@@ -2,7 +2,7 @@
 
 ## The player fantasy
 
-The show begins as an intimate patch of ground and sky. The player makes the first fireworks themselves, installs launchers, welcomes an audience, and gradually turns the same place into a busy festival. The venue grows because the show needs more room: every camera expansion accompanies an actual achievement, and the higher sky gives later fireworks a larger stage. The player should still be able to zoom in to enjoy the fans and machines.
+The show begins as an intimate patch of ground and sky. The player makes the first fireworks themselves, installs portals, welcomes an audience, and gradually turns the same place into a busy festival. The venue grows because the show needs more room: every camera expansion accompanies an actual achievement, and the higher sky gives later fireworks a larger stage. The player should still be able to zoom in to enjoy the fans and machines.
 
 ## Core rules
 
@@ -20,34 +20,34 @@ Coordinates below are world units, not screen pixels. X increases to the right a
 | Stage | Trigger | Left | Right | Highest burst centre Y | What the player experiences |
 | --- | --- | ---: | ---: | ---: | --- |
 | 0 — First sparks | New game | -960 | 960 | 324 | The current close view, fixed in place, gives the player an immediate stage for manual fireworks. |
-| 1 — One machine | Own the first auto launcher | -200 | 400 | 380 | The first machine belongs to the intimate opening scene. The sky can already climb a little higher. |
-| 2 — Building a show | Own 3 launchers | -300 | 1000 | 440 | Additional room is available when the content extent exceeds the initial viewport, and the show qualifies for Opening Night. |
-| 3 — Opening Night | The first fan arrives | -1250 | 1000 | 500 | The audience side is revealed and the existing first-fan introduction remains the emotional centre of this beat. The crowd enters at the left of the launchers. |
-| 4 — Festival ground | Own 7 launchers, or the first catapult or generator | -1250 | 1900 | 575 | A deeper launcher field and sky accommodate the growing show. The workshop is optional; if it is obtained early it earns this stage without requiring a catapult. |
-| 5 — Bigger sky | Own 14 launchers or a flyer | -1250 | 2500 | 675 | More ground opens to the right and more sky above. Flyers require 14 launchers in the current tree, but either condition restores the correct stage for older saves. |
-| 6 — Full Salvo ground | Own 20 launchers | -1250 | 3100 | 775 | More capacity for dense automation and the Full Salvo branch. The purchase of the 20th launcher itself earns the space; the Full Salvo upgrade is a separate choice. |
-| 7 — Sky Curtain ground | Own 25 launchers | -1250 | 4000 | 875 | The venue widens again as the Sky Curtain upgrade becomes eligible. |
-| 8 — Grand venue | Own 32 launchers | -1250 | 4150 | 975 | The full launcher field and tallest normal burst height are available before the Grand Finale is purchased. Finale eligibility still follows its existing upgrade requirements. |
+| 1 — One machine | Own the first portal | -200 | 400 | 380 | The first machine belongs to the intimate opening scene. The sky can already climb a little higher. |
+| 2 — Building a show | Own 3 portals | -300 | 1000 | 440 | Additional room is available when the content extent exceeds the initial viewport, and the show qualifies for Opening Night. |
+| 3 — Opening Night | The first fan arrives | -1250 | 1000 | 500 | The audience side is revealed and the existing first-fan introduction remains the emotional centre of this beat. The crowd enters at the left of the portals. |
+| 4 — Festival ground | Own 7 portals, or the first catapult or generator | -1250 | 1900 | 575 | A deeper portal field and sky accommodate the growing show. The workshop is optional; if it is obtained early it earns this stage without requiring a catapult. |
+| 5 — Bigger sky | Own 14 portals or a flyer | -1250 | 2500 | 675 | More ground opens to the right and more sky above. Flyers require 14 portals in the current tree, but either condition restores the correct stage for older saves. |
+| 6 — Full Salvo ground | Own 20 portals | -1250 | 3100 | 775 | More capacity for dense automation and the Full Salvo branch. The purchase of the 20th portal itself earns the space; the Full Salvo upgrade is a separate choice. |
+| 7 — Sky Curtain ground | Own 25 portals | -1250 | 4000 | 875 | The venue widens again as the Sky Curtain upgrade becomes eligible. |
+| 8 — Grand venue | Own 32 portals | -1250 | 4150 | 975 | The full portal field and tallest normal burst height are available before the Grand Finale is purchased. Finale eligibility still follows its existing upgrade requirements. |
 
-The table describes a high-water mark. For example, if the player buys seven launchers before the first fan arrives, stage 4 takes precedence; the fan still arrives and plays its introduction, but does not force a smaller stage. A workshop purchased at three launchers similarly reveals stage 4. On loading an older save, owned buildings and already unlocked crowd/flyers provide the minimum earned stage.
+The table describes a high-water mark. For example, if the player buys seven portals before the first fan arrives, stage 4 takes precedence; the fan still arrives and plays its introduction, but does not force a smaller stage. A workshop purchased at three portals similarly reveals stage 4. On loading an older save, owned buildings and already unlocked crowd/flyers provide the minimum earned stage.
 
 ## A concrete playthrough
 
 1. The player launches the first fireworks by hand. There are no blank stretches of terrain to scroll through. The initial height and camera match the established opening composition.
-2. The player unlocks automation and buys launcher 1. It appears near the middle of the opening field, and the sky gains its first small increase. Launchers 2 and 3 occupy separate positions, with the third earning the next expansion.
-3. Opening Night becomes available after three launchers and its existing prerequisite. Buying it starts the existing arrival sequence; the **arrival of the first fan**, not merely seeing the upgrade, earns the audience reveal. Fans create a new gold economy.
-4. More launchers extend the show rightward. The optional Sparkle Workshop is given a distinct building position rather than appearing on top of the first launcher. A first workshop or the seventh launcher earns the festival-ground view, whichever comes first.
-5. The Catapult upgrade requires seven launchers and its current prerequisites. Its granted machine sits in the crowd area near the launchers and throws fans toward the fireworks. Catapult Team adds machines beside it; the audience and machines may share the same ground region.
-6. At 14 launchers the sky and ground have enough headroom for the next phase. The Flyers upgrade remains a separate, earned purchase; its first fan uses the same venue rather than opening an unrelated map.
-7. At 20, 25 and 32 launchers, further room and height arrive at the moment the growing launcher line needs them. The corresponding Full Salvo, Sky Curtain and Grand Finale upgrades remain choices in the existing progression tree, not hidden camera prerequisites.
+2. The player unlocks automation and buys portal 1. It appears near the middle of the opening field, and the sky gains its first small increase. Portals 2 and 3 occupy separate positions, with the third earning the next expansion.
+3. Opening Night becomes available after three portals and its existing prerequisite. Buying it starts the existing arrival sequence; the **arrival of the first fan**, not merely seeing the upgrade, earns the audience reveal. Fans create a new gold economy.
+4. More portals extend the show rightward. The optional Sparkle Workshop is given a distinct building position rather than appearing on top of the first portal. A first workshop or the seventh portal earns the festival-ground view, whichever comes first.
+5. The Catapult upgrade requires seven portals and its current prerequisites. Its granted machine sits in the crowd area near the portals and throws fans toward the fireworks. Catapult Team adds machines beside it; the audience and machines may share the same ground region.
+6. At 14 portals the sky and ground have enough headroom for the next phase. The Flyers upgrade remains a separate, earned purchase; its first fan uses the same venue rather than opening an unrelated map.
+7. At 20, 25 and 32 portals, further room and height arrive at the moment the growing portal line needs them. The corresponding Full Salvo, Sky Curtain and Grand Finale upgrades remain choices in the existing progression tree, not hidden camera prerequisites.
 
 ## Ground layout and capacity
 
-The audience occupies X = -1200 to -100 in three rows. Existing crowd placement uses 72-unit columns; roughly 14 columns allow around 40 fans with some spacing. The catapult zone is X = -900 to -450, overlapping that audience area by design, with the first machine closest to the launchers and later machines spaced leftward. Their rightward throw speed is reduced from 3500 to 1500 world units per second to suit the shorter distance to the show; their loading interaction must remain readable even when fans stand nearby.
+The audience occupies X = -1200 to -100 in three rows. Existing crowd placement uses 72-unit columns; roughly 14 columns allow around 40 fans with some spacing. The catapult zone is X = -900 to -450, overlapping that audience area by design, with the first machine closest to the portals and later machines spaced leftward. Their rightward throw speed is reduced from 3500 to 1500 world units per second to suit the shorter distance to the show; their loading interaction must remain readable even when fans stand nearby.
 
-The launcher/workshop field starts at X = 100 and reaches X = 4000 at the full venue. New launchers and generators use a shared set of 35 default ground positions, starting at X = 220 and spaced 110 units apart. This gives the configured maximum of 32 launchers and 3 generators a separate slot each in the default layout. A shared occupancy check avoids putting a newly bought machine directly on another type. Player-arranged positions should be preserved during purchases and save/load; spreading buildings remains an explicit player action. If a player deliberately obstructs every default position, the best available clearance is a fallback, not a guarantee against all overlap.
+The portal/workshop field starts at X = 100 and reaches X = 4000 at the full venue. New portals and generators use a shared set of 35 default ground positions, starting at X = 220 and spaced 110 units apart. This gives the configured maximum of 32 portals and 3 generators a separate slot each in the default layout. A shared occupancy check avoids putting a newly bought machine directly on another type. Player-arranged positions should be preserved during purchases and save/load; spreading buildings remains an explicit player action. If a player deliberately obstructs every default position, the best available clearance is a fallback, not a guarantee against all overlap.
 
-Crowd, catapults and machines are layered visual objects, so shared ground is acceptable, but important silhouettes and interactions must stay legible. The spacing values are starting balance targets: verify actual skeleton art, animation envelopes and interaction hit areas in play, especially with all 40 fans, three catapults, 32 launchers and three generators present. The system must not silently place every late launcher at the same right-edge coordinate.
+Crowd, catapults and machines are layered visual objects, so shared ground is acceptable, but important silhouettes and interactions must stay legible. The spacing values are starting balance targets: verify actual skeleton art, animation envelopes and interaction hit areas in play, especially with all 40 fans, three catapults, 32 portals and three generators present. The system must not silently place every late portal at the same right-edge coordinate.
 
 ## Camera and controls
 
@@ -57,7 +57,7 @@ Anchor the ground in screen space throughout zoom and stage transitions. On mobi
 
 ## Firework height and game balance
 
-The lowest normal burst centre remains Y = -105; the stage table raises the upper centre. Manual targets are limited to the earned sky, and automatic launchers select their targets within that same earned range. A manual click at or below Y = 0 chooses a random height from the same range as an auto launcher; clicks higher in the sky aim directly. In stages 0 and 1, untargeted bursts stop at Y = 200; in stage 2 they stop at Y = 375. This leaves room for their particles in the closer early view without restricting manual aiming. A finale or a scripted cinematic can have its own presentation, but should respect the venue's intended sky unless explicitly designed as a special shot. Existing recipes, costs and base yields do not change just because the camera moves.
+The lowest normal burst centre remains Y = -105; the stage table raises the upper centre. Manual targets are limited to the earned sky, and portals select their targets within that same earned range. A manual click at or below Y = 0 chooses a random height from the same range as a portal; clicks higher in the sky aim directly. In stages 0 and 1, untargeted bursts stop at Y = 200; in stage 2 they stop at Y = 375. This leaves room for their particles in the closer early view without restricting manual aiming. A finale or a scripted cinematic can have its own presentation, but should respect the venue's intended sky unless explicitly designed as a special shot. Existing recipes, costs and base yields do not change just because the camera moves.
 
 Greater flight height changes timing and the geometry of catching, even with unchanged nominal rewards. Catapult fans have a finite arc, and flyers travel through the scene. During balancing, measure actual caught particles and sparkle income before and after each expansion; keep lower bursts in the mix so a higher ceiling does not make a newly purchased catapult ineffective. Preserve the special character of manual aiming: a player can still choose a lower visible target.
 
@@ -67,7 +67,7 @@ Greater flight height changes timing and the geometry of catching, even with unc
 - A full game reset clears the earned stage with the rest of progression. Loading an advanced save should restore the appropriate overview without replaying all milestone animations.
 - Buying several buildings in quick succession should settle at the highest stage achieved rather than play a queue of competing camera moves. A milestone achieved during a scripted camera sequence should become visible when normal control resumes.
 - A viewport resize or orientation change recalculates the available view and ground anchor without changing the earned stage or firework ceiling. Existing buildings remain in world coordinates.
-- A player can buy the workshop before the catapult, delay either branch, refund buildings, or earn later launcher thresholds early. None of those paths should dead-end venue growth.
+- A player can buy the workshop before the catapult, delay either branch, refund buildings, or earn later portal thresholds early. None of those paths should dead-end venue growth.
 
 ## Acceptance and tuning
 

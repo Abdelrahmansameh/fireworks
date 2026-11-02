@@ -196,7 +196,7 @@ export class ChromeController {
         if (this.mobile.matches && renderer.canvas.clientHeight > 0) {
             const canvas = renderer.canvas.getBoundingClientRect();
             const unitsPerPixel = renderer.virtualHeight / renderer.canvas.clientHeight / zoom;
-            const groundY = Math.min(GAME_BOUNDS.WORLD_GROUND_Y, GAME_BOUNDS.WORLD_LAUNCHER_Y, GAME_BOUNDS.CROWD_Y);
+            const groundY = Math.min(GAME_BOUNDS.WORLD_GROUND_Y, GAME_BOUNDS.WORLD_LAUNCH_Y, GAME_BOUNDS.CROWD_Y);
             // Preserve the previous footing margin in screen pixels at the wider zoom.
             const footingPixels = 16 * renderer.canvas.clientHeight / renderer.virtualHeight;
             const clearY = this.getMobileDockTop() - 16 - footingPixels;
@@ -240,7 +240,7 @@ export class ChromeController {
                     const bounds = this.game.getVenueCameraBounds();
                     const viewportChanged = this.cameraViewportWidth !== renderer.canvas.clientWidth || this.cameraViewportHeight !== renderer.canvas.clientHeight;
                     const modeChanged = this.cameraModeMobile !== this.mobile.matches;
-                    // Zoom out only when the venue grew, e.g. a new launcher slot
+                    // Zoom out only when the venue grew, e.g. a new portal slot
                     // landed outside it; a resize alone is handled below.
                     const venueWidened = !viewportChanged && !modeChanged && this.cameraVenueLeft != null
                         && (bounds.left < this.cameraVenueLeft - .5 || bounds.zoomRight > this.cameraVenueRight + .5);
@@ -301,7 +301,7 @@ export class ChromeController {
                     let next = modeChanged ? currentZoomTarget : currentZoomTarget + offset * Math.exp(-CAMERA_Y_EASE_RATE * elapsed);
                     // The closed tab bar must never cover the ground while the camera eases.
                     if (this.mobile.matches) {
-                        const groundY = Math.min(GAME_BOUNDS.WORLD_GROUND_Y, GAME_BOUNDS.WORLD_LAUNCHER_Y, GAME_BOUNDS.CROWD_Y);
+                        const groundY = Math.min(GAME_BOUNDS.WORLD_GROUND_Y, GAME_BOUNDS.WORLD_LAUNCH_Y, GAME_BOUNDS.CROWD_Y);
                         const dockAtCurrentZoom = groundY + (dockTargetY - groundY) * zoom / nextZoom;
                         next = Math.min(next, dockAtCurrentZoom);
                     }

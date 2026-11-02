@@ -25,7 +25,7 @@ try {
         game.checkUnlockConditions();
         game.resourceManager.resources.sparkles.amount = 100000;
         game.resourceManager.resources.gold.amount = 100000;
-        for (const id of ['base_mult_1', 'unlock_recipes_tab', 'auto_launcher', 'launcher_spawn_rate']) game.buyUpgrade(id);
+        for (const id of ['base_mult_1', 'unlock_recipes_tab', 'portal_unlock', 'portal_spawn_rate']) game.buyUpgrade(id);
         game.ui.expandAllTabs();
         game.ui.showTab('upgrades');
         game.ui.renderUpgrades();
@@ -34,7 +34,7 @@ try {
         card.classList.contains('locked') && !card.querySelector('.upgrade-saving-status')),
     'A building prerequisite was incorrectly presented as insufficient resources.');
     await page.evaluate(() => {
-        while (game.buildingManager.getBuildingsByType('AUTO_LAUNCHER').length < 3) game.buyBuilding('AUTO_LAUNCHER');
+        while (game.buildingManager.getBuildingsByType('PORTAL').length < 3) game.buyBuilding('PORTAL');
         game.buyUpgrade('crowd_spark_1');
         game.ui.dismissNotification();
     });
@@ -57,7 +57,7 @@ try {
         const cues = await page.evaluate(() => {
             const ready = document.querySelector('[data-upgrade-card="base_mult_1"]');
             const saving = document.querySelector('[data-upgrade-card="crowd_fireworks"]');
-            const owned = document.querySelector('[data-upgrade-card="auto_launcher"]');
+            const owned = document.querySelector('[data-upgrade-card="portal_unlock"]');
             return {
                 ready: ready.classList.contains('ready'),
                 readyEnabled: !ready.querySelector('button').disabled,

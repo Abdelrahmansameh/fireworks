@@ -27,8 +27,8 @@ try {
         for (const id of ['sparkle_counter', 'tab_menu', 'upgrades_tab']) game._handleUnlock(id);
         game.resourceManager.resources.sparkles.amount = 100000;
         game.resourceManager.resources.gold.amount = 100000;
-        for (const id of ['base_mult_1', 'unlock_recipes_tab', 'auto_launcher', 'launcher_spawn_rate', 'crowd_spark_1', 'crowd_fireworks']) {
-            if (['unlock_recipes_tab', 'auto_launcher', 'crowd_spark_1'].includes(id)) {
+        for (const id of ['base_mult_1', 'unlock_recipes_tab', 'portal_unlock', 'portal_spawn_rate', 'crowd_spark_1', 'crowd_fireworks']) {
+            if (['unlock_recipes_tab', 'portal_unlock', 'crowd_spark_1'].includes(id)) {
                 if (!game.progression.grantUpgrade(id, game, 'test-fixture')) throw new Error(`Could not grant ${id}`);
             } else if (!game.buyUpgrade(id)) throw new Error(`Could not buy ${id}`);
         }
@@ -50,10 +50,10 @@ try {
     assert(!await page.locator('.tab-content.active').count(), 'Tucking the menu left a panel open.');
     await page.locator('#collapse-button').click();
     await page.locator('#buildings-tab').click();
-    const before = await page.evaluate(() => game.buildingManager.getBuildingsByType('AUTO_LAUNCHER').length);
-    await page.locator('#buy-auto_launcher').click();
-    assert(await page.evaluate(() => game.buildingManager.getBuildingsByType('AUTO_LAUNCHER').length) === before + 1, 'Building purchase did not create a launcher.');
-    await page.locator('.launcher-card-icon').first().click();
+    const before = await page.evaluate(() => game.buildingManager.getBuildingsByType('PORTAL').length);
+    await page.locator('#buy-portal').click();
+    assert(await page.evaluate(() => game.buildingManager.getBuildingsByType('PORTAL').length) === before + 1, 'Building purchase did not create a portal.');
+    await page.locator('.portal-card-icon').first().click();
     await page.screenshot({ animations: 'disabled', path: join(screenshots, 'desktop-buildings.png') });
 
     await page.locator('#recipes-tab').click();

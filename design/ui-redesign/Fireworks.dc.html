@@ -30,7 +30,7 @@ a{color:#ff7a59}a:hover{color:#ffd04a}
 </style>
 </helmet>
 <div style="position: relative; width: 1440px; height: 900px; overflow: hidden; background: #0b0f1f; font-family: 'Shantell Sans', 'Comic Sans MS', cursive; color: #f4ead5">
-  <img src="/_blob/c666baf500bb879daf153f03138ef07b" alt="The game: crowd of fans, auto launchers and fireworks in the night sky" style="position: absolute; left: 0; top: 0; width: 1440px; height: 900px; object-fit: cover">
+  <img src="/_blob/c666baf500bb879daf153f03138ef07b" alt="The game: crowd of fans, portals and fireworks in the night sky" style="position: absolute; left: 0; top: 0; width: 1440px; height: 900px; object-fit: cover">
   <sc-if value="{{scrim}}" hint-placeholder-val="{{ true }}">
     <div aria-hidden="true" style="position: absolute; left: 0; top: 0; width: 1440px; height: 900px; background: rgba(9,10,28,0.55)"></div>
   </sc-if>
@@ -252,7 +252,7 @@ a{color:#ff7a59}a:hover{color:#ffd04a}
       <div role="img" aria-label="{{previewAria}}" style="position: relative; width: 388px; height: 372px; overflow: hidden; background-color: #0d1133; background-image: radial-gradient(rgba(255,255,255,0.55) 0.9px, transparent 1.3px), radial-gradient(rgba(255,255,255,0.3) 0.8px, transparent 1.2px); background-size: 53px 47px, 31px 37px; background-position: 7px 11px, 19px 3px; border: 2px solid #1a1733; border-radius: 3px">
         <div style="position: absolute; left: 0; right: 0; bottom: 0; height: 40px; background: #1b1d2c; border-top: 2px solid #2b2e44"></div>
         <div style="position: absolute; left: 193px; top: 180px; height: 150px; width: 0; border-left: 2px dotted rgba(255,243,218,0.45)"></div>
-        <div style="position: absolute; left: 182px; top: 316px; width: 24px; height: 18px; border: 2px solid #0a0918; border-radius: 3px 3px 1px 1px; {{launcherTube}}"></div>
+        <div style="position: absolute; left: 180px; top: 326px; width: 28px; height: 8px; border: 2px solid #0a0918; border-radius: 50%; {{portalPool}}"></div>
         <div style="position: absolute; left: 174px; top: 330px; width: 40px; height: 12px; background: #24296b; border: 2px solid #0a0918; border-radius: 3px"></div>
         <div style="position: absolute; left: 0; top: 0; width: 388px; height: 372px; transform-origin: 194px 168px; {{burstAnim}}">
           <sc-for list="{{previewDots}}" as="d" hint-placeholder-count="120">
@@ -590,7 +590,7 @@ class Component extends DCLogic {
 
       previewDots: preview,
       burstAnim: 'animation:' + st.anim + ' 750ms cubic-bezier(0.2, 0.9, 0.3, 1) both;',
-      launcherTube: 'background:repeating-linear-gradient(0deg, ' + st.layers[0].color + ' 0 5px, #fff3da 5px 8px);',
+      portalPool: 'background:radial-gradient(ellipse at center, #fff3da 0 25%, ' + st.layers[0].color + ' 70%); box-shadow:0 0 10px ' + st.layers[0].color + ';',
       previewAria: 'Preview of ' + (st.name || 'your firework') + ': ' + st.layers.map((ly) => patternOf(ly.pattern).full).join(' and '),
       name: st.name,
       onName: (e) => this.setState({ name: e.target.value }),

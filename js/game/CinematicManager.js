@@ -118,6 +118,7 @@ export default class CinematicManager {
     followEntity(entity) {
         this._cameraFraming = null;
         this.followedEntity = entity;
+        this._followEngaged = false;
     }
 
     stopFollowing() {
@@ -227,8 +228,13 @@ export default class CinematicManager {
         }
 
         if (this.followedEntity && !this._zoomTween) {
-            // Normal follow: smooth pan via game's camera system
-            this.game.setCameraTarget(this.followedEntity.x);
+            // Hold the shot until the entity reaches frame centre, then track it.
+            // Following earlier would pan back to meet him before reversing.
+            const entityX = this.followedEntity.x;
+            if (this._followEngaged || entityX >= this.game.renderer2D.cameraX) {
+                this._followEngaged = true;
+                this.game.setCameraTarget(entityX);
+            }
         }
 
         if (this._zoomTween) {

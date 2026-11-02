@@ -9,7 +9,7 @@
  * caught"). Tune these knobs to make the estimate track the live game.
  *
  * Flow model (per second):
- *   particlesEmitted = (launcherFPS + clicksPerSec) * avgParticlesPerFirework
+ *   particlesEmitted = (portalFPS + clicksPerSec) * avgParticlesPerFirework
  *   flyerFansCaught     = particlesEmitted * flyerCatchFraction(activeFans)
  *   crowdCaught      = particlesEmitted * crowdCatchFraction(activeCatchers)
  *

@@ -95,23 +95,22 @@ try {
         document.querySelectorAll('#tab-list .unlock-hidden, #collapse-button.unlock-hidden')
             .forEach(element => element.classList.remove('unlock-hidden'));
         const lowerAnchor = Math.min(GAME_BOUNDS.WORLD_GROUND_Y,
-            GAME_BOUNDS.CROWD_Y - CROWD_CONFIG.ySpread, GAME_BOUNDS.WORLD_LAUNCHER_Y);
-        window.__groundLauncher = game.buildingManager.createBuilding('AUTO_LAUNCHER', 0, -435,
+            GAME_BOUNDS.CROWD_Y - CROWD_CONFIG.ySpread, GAME_BOUNDS.WORLD_LAUNCH_Y);
+        window.__groundPortal = game.buildingManager.createBuilding('PORTAL', 0, -435,
             { id: 'mobile-ground-fixture', accumulator: 0 });
         window.__groundCheck = { lowerAnchor, previous: null, stable: 0 };
         return { baseline: game.renderer2D.cameraY };
     });
-    await page.waitForFunction(() => window.__groundLauncher?._instancedGroup && game.crowd.instancedGroup);
+    await page.waitForFunction(() => window.__groundPortal?.getSkeletonOutlinePoints() && game.crowd.instancedGroup);
     await page.evaluate(() => {
-        window.__groundLauncher._animTimer = 0;
-        window.__groundLauncher.update(0);
+        window.__groundPortal.update(0);
         game.crowd.setCount(1);
         const person = game.crowd.people[0];
         Object.assign(person, { x: -70, y: -490, spawnX: -70, spawnY: -490,
             state: 'cheering', animTimer: 0, coinTossTimer: 100 });
         game.crowd.update(0);
         game.ui.updateBuildingCounts();
-        game.ui.updateBuildingListByType('AUTO_LAUNCHER');
+        game.ui.updateBuildingListByType('PORTAL');
         game.updateUI();
         game.ui.dismissNotification();
         game.render();
@@ -156,7 +155,7 @@ try {
             const world = game.screenToWorld(ground.x, ground.y);
             const savedGrab = game.crowd.grabbedPersonIndex;
             game.crowd.grabbedPersonIndex = 0;
-            const outlines = [window.__groundLauncher.getSkeletonOutlinePoints(), game.crowd.getGrabbedPersonOutlinePoints()];
+            const outlines = [window.__groundPortal.getSkeletonOutlinePoints(), game.crowd.getGrabbedPersonOutlinePoints()];
             game.crowd.grabbedPersonIndex = savedGrab;
             const objectBounds = outlines.map(points => {
                 const screen = points.map(point => r.worldToScreen(point.x, point.y));

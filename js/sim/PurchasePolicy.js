@@ -12,9 +12,9 @@ import Building from '../buildings/Building.js';
  * affordable right now, buys it.
  */
 export default class PurchasePolicy {
-    constructor({ clicksPerSec = 0, maxLaunchers = 100, maxPurchasesPerTick = 1 } = {}) {
+    constructor({ clicksPerSec = 0, maxPortals = 100, maxPurchasesPerTick = 1 } = {}) {
         this.clicksPerSec = clicksPerSec;
-        this.maxLaunchers = maxLaunchers;
+        this.maxPortals = maxPortals;
         this.maxPurchasesPerTick = maxPurchasesPerTick;
     }
 
@@ -40,7 +40,7 @@ export default class PurchasePolicy {
             if (!game.isBuildingTypeUnlocked(type)) continue;
             const count = game.buildingManager.getBuildingsByType(type).length;
             if (type === 'CATAPULT' && count >= (game.catapultStats?.maxCatapults ?? 1)) continue;
-            if (type === 'AUTO_LAUNCHER' && count >= this.maxLaunchers) continue;
+            if (type === 'PORTAL' && count >= this.maxPortals) continue;
 
             const cfg = BUILDING_TYPES[type];
             out.push({

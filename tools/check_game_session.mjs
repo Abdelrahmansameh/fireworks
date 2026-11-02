@@ -27,14 +27,14 @@ try {
     await page.evaluate(() => {
         game.pause();
         localStorage.clear();
-        localStorage.setItem('saveVersion', '5');
+        localStorage.setItem('saveVersion', '6');
         localStorage.setItem('resources', JSON.stringify({ sparkles: { amount: 12345 }, gold: { amount: 6789 } }));
         localStorage.setItem('progressionState', JSON.stringify({ schemaVersion: 3, upgrades: {
-            auto_launcher: 1, crowd_spark_1: 1, flyer_unlock: 1,
+            portal_unlock: 1, crowd_spark_1: 1, flyer_unlock: 1,
             flyer_reach: 1, flyer_speed: 1, flyer_team: 2,
         }, unlocked: ['buildings_tab', 'crowds_tab', 'flyer_unlock'] }));
         localStorage.setItem('buildingManagerData', JSON.stringify({ buildings: [
-            { id: 'saved-launcher', type: 'AUTO_LAUNCHER', x: 600, y: -435, assignedRecipeIndex: 0 },
+            { id: 'saved-portal', type: 'PORTAL', x: 600, y: -435, assignedRecipeIndex: 0 },
         ] }));
         localStorage.setItem('flyerCount', '3');
         localStorage.setItem('hasSeenFirstCrowdCinematic', 'true');
@@ -44,12 +44,12 @@ try {
     const restored = await page.evaluate(() => {
         game.pause();
         return { sparkles: game.getSparkles(), gold: game.resourceManager.resources.gold.amount,
-            launchers: game.buildingManager.getBuildingsByType('AUTO_LAUNCHER').length,
+            portals: game.buildingManager.getBuildingsByType('PORTAL').length,
             flyerCount: game.flyerCount, renderedFlyers: game.crowd.people.filter(p => p.isFlyer).length,
             unlocked: game.progression.isUnlocked('flyer_unlock'), stats: game.flyerStats };
     });
-    assert(restored.sparkles >= 12345 && restored.gold >= 6789 && restored.launchers === 1,
-        'The saved resources or launcher were not restored.');
+    assert(restored.sparkles >= 12345 && restored.gold >= 6789 && restored.portals === 1,
+        'The saved resources or portal were not restored.');
     assert(restored.flyerCount === 3 && restored.renderedFlyers === 3 && restored.unlocked,
         'Flyers or their unlock were not restored.');
     assert(Math.abs(restored.stats.speedMultiplier - 1.35) < 1e-9 && Math.abs(restored.stats.collectionRadiusMultiplier - 1.25) < 1e-9,
@@ -64,23 +64,22 @@ try {
     await page.evaluate(() => {
         game.pause();
         localStorage.clear();
-        localStorage.setItem('saveVersion', '4');
+        localStorage.setItem('saveVersion', '5');
         localStorage.setItem('resources', JSON.stringify({ sparkles: { amount: 12345 }, gold: { amount: 6789 } }));
-        localStorage.setItem('progressionState', JSON.stringify({ schemaVersion: 2,
-            upgrades: { crowd_spark_1: 1 }, purchaseCosts: { crowd_spark_1: [{ sparkles: 220 }] },
-            unlocked: ['crowd', 'crowds_tab'] }));
+        localStorage.setItem('progressionState', JSON.stringify({ schemaVersion: 3,
+            upgrades: { crowd_spark_1: 1 }, unlocked: ['crowd', 'crowds_tab'] }));
         localStorage.setItem('hasSeenFirstCrowdCinematic', 'true');
     });
     await page.reload({ waitUntil: 'domcontentloaded' });
     await page.waitForFunction(() => window.game?.particleSystem);
-    const crowdOnly = await page.evaluate(() => {
+    const wiped = await page.evaluate(() => {
         game.pause();
-        return { crowd: game.crowdUnlocked, recipes: game.progression.isUnlocked('recipes_tab'),
-            patterns: game.unlockedPatternKeys, stored: localStorage.getItem('resources'),
-            recipeLevel: game.progression.getUpgradeLevel('unlock_recipes_tab') };
+        return { sparkles: game.getSparkles(), gold: game.resourceManager.resources.gold.amount,
+            crowd: game.crowdUnlocked, crowdLevel: game.progression.getUpgradeLevel('crowd_spark_1'),
+            version: localStorage.getItem('saveVersion'), stored: localStorage.getItem('resources') };
     });
-    assert(crowdOnly.crowd && !crowdOnly.recipes && crowdOnly.recipeLevel === 0
-        && !crowdOnly.patterns.includes('brokenHeart'), 'A new crowd-only save restored the old bundled recipes/patterns.');
+    assert(wiped.sparkles === 0 && wiped.gold === 0 && !wiped.crowd && wiped.crowdLevel === 0 && wiped.version === '6',
+        `A save from an older version was not wiped: ${JSON.stringify(wiped)}`);
 
     const botPage = await context.newPage();
     url.searchParams.set('bot', '1');
@@ -91,7 +90,7 @@ try {
         return { sparkles: game.getSparkles(), gold: game.resourceManager.resources.gold.amount,
             buildings: game.buildingManager.buildings.length, stored: localStorage.getItem('resources') };
     });
-    assert(isolated.sparkles === 0 && isolated.gold === 0 && isolated.buildings === 0 && isolated.stored === crowdOnly.stored,
+    assert(isolated.sparkles === 0 && isolated.gold === 0 && isolated.buildings === 0 && isolated.stored === wiped.stored,
         'Bot mode read or overwrote the normal save.');
     await botPage.close();
 
@@ -122,7 +121,7 @@ try {
         `The studio did not show a live firework preview: ${JSON.stringify(creator)}`);
     const finale = await page.evaluate(() => {
         game.hasSeenFirstCrowdCinematic = true;
-        while (game.buildingManager.getBuildingsByType('AUTO_LAUNCHER').length < 32) game.grantMilestoneBuilding('AUTO_LAUNCHER');
+        while (game.buildingManager.getBuildingsByType('PORTAL').length < 32) game.grantMilestoneBuilding('PORTAL');
         if (!game.triggerGrandFinale()) throw new Error('Finale replay did not start.');
         for (let i = 0; i < 900; i++) game.update(1 / 60);
         game.render();
@@ -136,6 +135,6 @@ try {
     await mkdir(directory, { recursive: true });
     await page.screenshot({ path: join(directory, 'finale-visual-verified.png') });
     assert(errors.length === 0, errors.join('\n'));
-    console.log(JSON.stringify({ passed: true, savedGame: restored, reload, crowdOnly,
+    console.log(JSON.stringify({ passed: true, savedGame: restored, reload, wiped,
         botIsolated: true, completion, creator, finale }, null, 2));
 } finally { await browser.close(); }

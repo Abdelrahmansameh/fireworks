@@ -126,7 +126,7 @@ export default class GameBot {
         const count = Math.floor(this._clickAccumulator);
         this._clickAccumulator -= count;
         for (let i = 0; i < count; i++) {
-            const x = GAME_BOUNDS.LAUNCHER_MIN_X + Math.random() * (GAME_BOUNDS.LAUNCHER_MAX_X - GAME_BOUNDS.LAUNCHER_MIN_X);
+            const x = GAME_BOUNDS.PORTAL_MIN_X + Math.random() * (GAME_BOUNDS.PORTAL_MAX_X - GAME_BOUNDS.PORTAL_MIN_X);
             const y = GAME_BOUNDS.WORLD_MIN_EXPLOSION_Y + Math.random() * (GAME_BOUNDS.WORLD_MAX_EXPLOSION_Y - GAME_BOUNDS.WORLD_MIN_EXPLOSION_Y);
             this.game.launchCursorCyclingFireworkAt(x, y);
             this.manualClicks++;
@@ -160,7 +160,7 @@ export default class GameBot {
         this._throwTimer += dt;
         if (this._throwTimer < interval) return;
         this._throwTimer %= interval;
-        const x = GAME_BOUNDS.LAUNCHER_MIN_X;
+        const x = GAME_BOUNDS.PORTAL_MIN_X;
         const y = (GAME_BOUNDS.WORLD_MIN_EXPLOSION_Y + GAME_BOUNDS.WORLD_MAX_EXPLOSION_Y) / 2;
         if (this.game.crowd.throwNearestToward(x, y)) this.manualThrows++;
     }
@@ -169,8 +169,8 @@ export default class GameBot {
         const game = this.game;
         const states = {
             firstUpgrade: game.progression.getUpgradeLevel('base_mult_1') > 0,
-            autoLaunchersUnlocked: game.isBuildingTypeUnlocked('AUTO_LAUNCHER'),
-            firstAutoLauncher: this._count('AUTO_LAUNCHER') > 0,
+            portalsUnlocked: game.isBuildingTypeUnlocked('PORTAL'),
+            firstPortal: this._count('PORTAL') > 0,
             crowd: (game.crowd?.people.length ?? 0) > 0,
             crowdCatching: !!game.crowdStats?.catchingEnabled,
             catapultsUnlocked: game.isBuildingTypeUnlocked('CATAPULT'),
@@ -243,12 +243,12 @@ export default class GameBot {
         const previous = this._rateHistory[0];
         const elapsed = previous ? this.gameTime - previous.time : 0;
         const totals = this._totals();
-        if (elapsed <= 0) return { sps: 0, gps: 0, fps: 0, launcherFPS: 0, bySource: {} };
+        if (elapsed <= 0) return { sps: 0, gps: 0, fps: 0, portalFPS: 0, bySource: {} };
         return {
             sps: (totals.sparkles - previous.sparkles) / elapsed,
             gps: (totals.gold - previous.gold) / elapsed,
             fps: (totals.fireworks - previous.fireworks) / elapsed,
-            launcherFPS: ((totals.fireworksBySource.auto_launcher || 0) - (previous.fireworksBySource.auto_launcher || 0)) / elapsed,
+            portalFPS: ((totals.fireworksBySource.portal || 0) - (previous.fireworksBySource.portal || 0)) / elapsed,
             bySource: Object.fromEntries(Object.entries(difference(totals.sparklesBySource, previous.sparklesBySource)).map(([source, value]) => [source, value / elapsed])),
         };
     }
@@ -266,7 +266,7 @@ export default class GameBot {
             intervalSPS: duration > 0 ? (totals.sparkles - previous.sparkles) / duration : 0,
             intervalGPS: duration > 0 ? (totals.gold - previous.gold) / duration : 0,
             intervalFPS: duration > 0 ? (totals.fireworks - previous.fireworks) / duration : 0,
-            intervalLauncherFPS: duration > 0 ? ((totals.fireworksBySource.auto_launcher || 0) - (previous.fireworksBySource.auto_launcher || 0)) / duration : 0,
+            intervalPortalFPS: duration > 0 ? ((totals.fireworksBySource.portal || 0) - (previous.fireworksBySource.portal || 0)) / duration : 0,
             upgradeLevels: { ...this.game.progression.getState().upgrades },
             spending: { ...this.spending },
             goal: this.policy.goal,
@@ -284,8 +284,8 @@ export default class GameBot {
             sps: rates.sps,
             gps: rates.gps,
             fps: rates.fps,
-            launcherFPS: rates.launcherFPS,
-            launcherCapacityFPS: this.game.buildingManager.getTheoreticalAutoLauncherFPS(),
+            portalFPS: rates.portalFPS,
+            portalCapacityFPS: this.game.buildingManager.getTheoreticalPortalFPS(),
             crowd: this.game.crowd?.people.length ?? 0,
             naturalCrowd: Math.max(0, (this.game.crowd?.naturalCount ?? this.game.crowd?.people.length ?? 0) - (this.game.crowdStats?.countBonus ?? 0)),
             crowdStartFireworks: this.game.crowdStartFireworks,
@@ -325,7 +325,7 @@ export default class GameBot {
             preset: this.preset,
             ...this._snapshot(),
             productionBreakdown: {
-                sparkles: { clicks: sparkleSources.manual || 0, launchers: sparkleSources.auto_launcher || 0, cultists: sparkleSources.cultist || 0, flyers: sparkleSources.flyer || 0, crowdCatching: sparkleSources.crowd_catch || 0, grandFinale: sparkleSources.grand_finale || 0 },
+                sparkles: { clicks: sparkleSources.manual || 0, portals: sparkleSources.portal || 0, cultists: sparkleSources.cultist || 0, flyers: sparkleSources.flyer || 0, crowdCatching: sparkleSources.crowd_catch || 0, grandFinale: sparkleSources.grand_finale || 0 },
                 gold: { crowd: goldSources.crowd || 0 },
             },
             earned: { sparkles: totals.sparkles - baseline.sparkles, gold: totals.gold - baseline.gold },

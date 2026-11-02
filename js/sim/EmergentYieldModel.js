@@ -1,6 +1,6 @@
 import { FLYER_CONFIG, CROWD_CATCHER_CONFIG } from '../config/config.js';
 import { SIMULATION_CONFIG } from '../config/SimulationConfig.js';
-import { launcherFPS } from '../systems/ProductionRates.js';
+import { portalFPS } from '../systems/ProductionRates.js';
 
 /**
  * EmergentYieldModel — coarse, data-driven estimate of the two income sources
@@ -29,7 +29,7 @@ export default class EmergentYieldModel {
      */
     rates(game, clicksPerSec = 0) {
         const cfg = this.config;
-        const fireworksPerSec = launcherFPS(game) + clicksPerSec;
+        const fireworksPerSec = portalFPS(game) + clicksPerSec;
         const particlesPerSec = fireworksPerSec * cfg.avgParticlesPerFirework;
 
         // ── Flyers ──────────────────────────────────────────────────────────

@@ -95,13 +95,13 @@ export default class GrandFinaleManager {
         for (let i = 0; i < n; i++) this._launchOne();
     }
 
-    /** Launch a single finale firework at a random spot across the launcher zone. */
+    /** Launch a single finale firework at a random spot across the portal zone. */
     _launchOne() {
         const game = this.game;
-        const minX = GAME_BOUNDS.LAUNCHER_MIN_X;
+        const minX = GAME_BOUNDS.PORTAL_MIN_X;
         const maxX = Math.max(minX, getVenueStage(game).right - 100);
         const x = minX + Math.random() * (maxX - minX);
-        const y = GAME_BOUNDS.WORLD_LAUNCHER_Y;
+        const y = GAME_BOUNDS.WORLD_LAUNCH_Y;
 
         // Explode high in the sky, spread across the vertical band.
         const lo = GAME_BOUNDS.WORLD_MIN_EXPLOSION_Y + 120;
@@ -121,7 +121,7 @@ export default class GrandFinaleManager {
         // fireworks, which would slam the crowd to its cap instantly. The finale is
         // a spectacle + income burst, not progression toward a bigger crowd.
 
-        const yieldMulti = game.launcherStats?.sparkleYieldMultiplier ?? 1;
+        const yieldMulti = game.portalStats?.sparkleYieldMultiplier ?? 1;
         const sparkles = game.baseSparkleMultiplier * yieldMulti * this.config.sparkleYieldFraction;
         game.addSparkles(sparkles, this.config.sparkleSource);
         game.statsTracker.recordFirework(this.config.sparkleSource);

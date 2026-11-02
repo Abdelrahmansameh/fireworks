@@ -25,13 +25,13 @@ try {
         game.hasSeenFirstCrowdCinematic = true;
         const assert = (condition, message) => { if (!condition) throw new Error(message); };
         const rewards = {
-            auto_launcher: ['unlocks'],
+            portal_unlock: ['unlocks'],
             base_mult_1: ['baseSparkleMultiplier'],
-            launcher_spawn_rate: ['launcherStats.spawnIntervalMultiplier'],
+            portal_spawn_rate: ['portalStats.spawnIntervalMultiplier'],
             crowd_spark_1: ['crowdUnlocked', 'unlocks'],
             unlock_recipes_tab: ['advancedCreatorUnlocked', 'patterns', 'unlocks', 'recipes', 'recipeGrants'],
             crowd_gold_1: ['crowdStats.goldRateMultiplier'],
-            crowd_fireworks: ['launcherStats.sparkleYieldMultiplier'],
+            crowd_fireworks: ['portalStats.sparkleYieldMultiplier'],
             crowd_invite_1: ['crowdStats.countBonus'],
             crowd_catcher_unlock: ['crowdStats.catchingEnabled'],
             cultist_unlock: ['unlocks'],
@@ -43,7 +43,7 @@ try {
             crowd_catcher_radius: ['crowdStats.collectionRadiusMultiplier'],
             catapult_range_1: ['catapultStats.launchVxMultiplier'],
             spark_core_2: ['baseSparkleMultiplier'],
-            launcher_sparkle_1: ['launcherStats.sparkleYieldMultiplier'],
+            portal_sparkle_1: ['portalStats.sparkleYieldMultiplier'],
             crowd_gold_2: ['crowdStats.goldRateMultiplier'],
             crowd_invite_2: ['crowdStats.countBonus'],
             flyer_unlock: ['flyerCount', 'unlocks'],
@@ -53,13 +53,13 @@ try {
             flyer_sparkle_yield: ['flyerStats.sparklesPerParticleMultiplier'],
             flyer_radius: ['flyerStats.collectionRadiusMultiplier'],
             flyer_efficiency: ['flyerStats.speedMultiplier'],
-            launcher_overclock: ['launcherStats.spawnIntervalMultiplier'],
+            portal_overclock: ['portalStats.spawnIntervalMultiplier'],
             spark_core_3: ['baseSparkleMultiplier'],
-            launcher_sparkle_2: ['launcherStats.spawnIntervalMultiplier'],
+            portal_sparkle_2: ['portalStats.spawnIntervalMultiplier'],
             grand_finale: ['grandFinaleUnlocked'],
         };
         const unlockRewards = {
-            auto_launcher: ['buildings_tab'],
+            portal_unlock: ['buildings_tab'],
             crowd_spark_1: ['crowd', 'crowds_tab'],
             unlock_recipes_tab: ['recipes_tab', 'advanced_creator', 'pattern_burst'],
             cultist_unlock: ['cultist_unlock'],
@@ -76,13 +76,13 @@ try {
         const snapshot = () => {
             const result = {};
             flatten({ baseSparkleMultiplier: game.baseSparkleMultiplier,
-                launcherStats: game.launcherStats, crowdStats: game.crowdStats,
+                portalStats: game.portalStats, crowdStats: game.crowdStats,
                 catapultStats: game.catapultStats, flyerStats: game.flyerStats,
                 cultistStats: game.cultistStats, cultistCount: game.cultistCount, flyerCount: game.flyerCount,
                 crowdUnlocked: game.crowdUnlocked,
                 advancedCreatorUnlocked: game.advancedCreatorUnlocked,
                 grandFinaleUnlocked: game.grandFinaleUnlocked,
-                buildings: Object.fromEntries(['AUTO_LAUNCHER', 'CATAPULT']
+                buildings: Object.fromEntries(['PORTAL', 'CATAPULT']
                     .map(type => [type, game.buildingManager.getBuildingsByType(type).length])),
                 patterns: [...game.unlockedPatternKeys].sort(),
                 recipes: game.recipes.map(recipe => ({ name: recipe.name,

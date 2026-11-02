@@ -1,4 +1,4 @@
-import AutoLauncher from './AutoLauncher.js';
+import Portal from './Portal.js';
 import Catapult from './Catapult.js';
 import Building from './Building.js';
 import { BUILDING_TYPES, GAME_BOUNDS } from '../config/config.js';
@@ -11,7 +11,7 @@ class BuildingManager {
         this.selectedBuildingId = null;
 
         this.buildingClasses = {
-            'AUTO_LAUNCHER': AutoLauncher,
+            'PORTAL': Portal,
             'CATAPULT': Catapult,
         };
     }
@@ -23,8 +23,10 @@ class BuildingManager {
             return null;
         }
 
-        if (buildingType === 'AUTO_LAUNCHER') {
-            x = this.getLauncherSlotX(this.getBuildingsByType('AUTO_LAUNCHER').length);
+        if (buildingType === 'PORTAL') {
+            x = this.getPortalSlotX(this.getBuildingsByType('PORTAL').length);
+            // Portal height is never saved; it always comes from config.
+            y = BUILDING_TYPES.PORTAL.y;
         }
         const building = new BuildingClass(this.game, x, y, data);
         this.buildings.push(building);
@@ -84,28 +86,27 @@ class BuildingManager {
         const count = this.getBuildingsByType(buildingType).length;
         let x;
 
-        // Catapults share the crowd area, with the first closest to launchers.
+        // Catapults share the crowd area, with the first closest to portals.
         if (buildingType === 'CATAPULT') {
             x = GAME_BOUNDS.CATAPULT_MAX_X + count * GAME_BOUNDS.CATAPULT_X_STEP;
             const minX = GAME_BOUNDS.CATAPULT_MIN_X;
             const maxX = GAME_BOUNDS.CATAPULT_MAX_X;
             x = Math.max(minX, Math.min(x, maxX));
         } else {
-            x = this.getLauncherSlotX(count);
+            x = this.getPortalSlotX(count);
         }
 
         return x;
     }
 
-    getLauncherSlotX(index) {
-        return GAME_BOUNDS.LAUNCHER_START_X + index * GAME_BOUNDS.LAUNCHER_SPACING;
+    getPortalSlotX(index) {
+        return GAME_BOUNDS.PORTAL_START_X + index * GAME_BOUNDS.PORTAL_SPACING;
     }
 
-    /** Launchers always occupy the first N slots, in purchase order. */
-    layoutLaunchers() {
-        this.getBuildingsByType('AUTO_LAUNCHER').forEach((launcher, index) => {
-            launcher.x = this.getLauncherSlotX(index);
-            if (launcher.mesh) launcher.mesh.position.x = launcher.x;
+    /** Portals always occupy the first N slots, in purchase order. */
+    layoutPortals() {
+        this.getBuildingsByType('PORTAL').forEach((portal, index) => {
+            portal.x = this.getPortalSlotX(index);
         });
     }
 
@@ -125,7 +126,7 @@ class BuildingManager {
             if (this.selectedBuildingId === building.id) {
                 this.selectedBuildingId = null;
             }
-            if (building.type === 'AUTO_LAUNCHER') this.layoutLaunchers();
+            if (building.type === 'PORTAL') this.layoutPortals();
         }
     }
 
@@ -135,13 +136,13 @@ class BuildingManager {
         }
     }
 
-    getTheoreticalAutoLauncherFPS() {
+    getTheoreticalPortalFPS() {
         if (!this.game.recipes.some(recipe => recipe?.components?.length)) return 0;
-        const launchers = this.getBuildingsByType('AUTO_LAUNCHER');
+        const portals = this.getBuildingsByType('PORTAL');
 
         let totalFPS = 0;
-        for (const launcher of launchers) {
-            totalFPS += 1 / launcher.spawnInterval;
+        for (const portal of portals) {
+            totalFPS += 1 / portal.spawnInterval;
         }
         return totalFPS;
     }

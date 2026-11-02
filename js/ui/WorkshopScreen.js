@@ -6,7 +6,7 @@ import { miniature, sparkMiniature } from './WorkshopMiniatures.js';
 import { doodleIcon } from './doodleIcons.js';
 const sparkNames = { sphere: 'Dot', star: 'Star', ring: 'Ring', triangle: 'Triangle', glow: 'Glow' };
 
-/** The workshop edits the same recipe that launchers and saved fireworks use. */
+/** The workshop edits the same recipe that portals and saved fireworks use. */
 export class WorkshopScreen {
     constructor(game) {
         this.game = game;

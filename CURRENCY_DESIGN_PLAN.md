@@ -22,7 +22,7 @@ Lostgarden's term for this is *undifferentiated inputs*: two currencies feed the
 ### 1b. The two currencies cross over arbitrarily
 
 - **Sparkles buy people:** Extra Tickets (+4 fans) and Sky Catchers.
-- **Gold buys machine power:** Sparkle Powder (+25% *launcher* sparkles).
+- **Gold buys machine power:** Sparkle Powder (+25% *portal* sparkles).
 
 No rule like "sparkles = X, gold = Y" survives contact with the tree.
 
@@ -68,7 +68,7 @@ Over the final 11 minutes sparkle income grows ×9, while gold stays flat becaus
 
 ```
                    ┌────────────── SPARKLES ✦ ──────────────┐
-   taps, launchers │  "BUILD THE SHOW" — machines & sky      │ launchers, fire rate,
+   taps, portals │  "BUILD THE SHOW" — machines & sky      │ portals, fire rate,
    bursts ────────►│  spent only on hardware / shapes        │ payload, shapes, finale
                    └──────┬──────────────────────▲───────────┘
           the show itself │ (buff)               │ caught / conjured sparkles
@@ -94,7 +94,7 @@ Over the final 11 minutes sparkle income grows ×9, while gold stays flat becaus
 
 | Currency | Verb | Where it lives on screen | Earned by | Spent on (only) | Clock |
 |---|---|---|---|---|---|
-| **Sparkles ✦** | Build the show | sky and launchers | bursts (tap, launcher), catches, cult tithe | launchers, launcher stats, base sparkle multipliers, shapes, finale | per second |
+| **Sparkles ✦** | Build the show | sky and portals | bursts (tap, portal), catches, cult tithe | portals, portal stats, base sparkle multipliers, shapes, finale | per second |
 | **Tips ● (gold)** | Hire the people | crowd and coin tosses | fan tosses × Hype | fans/tickets, catapults, cultists, flyers, crew training | per second, slower |
 | **Hype ♪** | The mood (a multiplier, never spent) | crowd cheer bar; fans cheer harder | burst intensity, shape variety, manual taps, catches; decays | multiplies tips (and speeds fan arrivals) | ~10 s swings |
 | **Stars ★** (phase 3) | Legacy | constellation in the sky | Grand Finale / "go on tour" reset | never spent: +10% to all income each | per run |
@@ -105,7 +105,7 @@ Over the final 11 minutes sparkle income grows ×9, while gold stays flat becaus
 
 ### The four bridges
 
-1. **Core engine (✦ → ✦).** Sparkles buy launchers, launchers make sparkles. Already in place.
+1. **Core engine (✦ → ✦).** Sparkles buy portals, portals make sparkles. Already in place.
 2. **Show → Hype → Tips (buff bridge).** A better show earns better tips. Sparkles never convert *directly* into gold, so gold stays its own scarcer currency, yet it now grows with the show. This fixes 1c and gives shapes and taps a job, fixing 1d.
 3. **Tips → crew → Sparkles (worker bridge).** Keep catapults and flyers as "people who harvest the sky." Their output scales with the sky, so they stay relevant.
 4. **Cult tithe (converter, plus a sink that never runs out).** Cultists take a visible share of incoming tips and turn it into sparkles at a stated rate ("1 ● → 3 ✦"). Upgrades improve the rate. Gold now has a scaling late-game use instead of idling.
@@ -190,7 +190,7 @@ bonus = +10% all income per star (Egg-Inc style, never spent)
 
 | Node / system | Today | Change |
 |---|---|---|
-| Sparkle Powder (`crowd_fireworks`) | gold → +25% launcher sparkles | Move to the LAUNCHER branch, costing ✦. Or replace with **Encore Chant** (● → +Hype decay time). |
+| Sparkle Powder (`crowd_fireworks`) | gold → +25% portal sparkles | Move to the PORTAL branch, costing ✦. Or replace with **Encore Chant** (● → +Hype decay time). |
 | Extra Tickets (`crowd_invite_1`) | ✦ → +4 fans | Cost ● |
 | Sky Catchers (`crowd_catcher_unlock`) | ✦ | Fold into the Catapult keystone (catapult already enables catching), or cost ● |
 | Catapult, Flyers, Grand Finale | single currency | Add `secondaryCost` in the other currency (keystones) |

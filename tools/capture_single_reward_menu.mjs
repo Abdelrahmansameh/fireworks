@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Preview the real early-game menu after Creator, launchers, and the first crowd.
+// Preview the real early-game menu after Creator, portals, and the first crowd.
 import { createRequire } from 'node:module';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
@@ -25,11 +25,11 @@ try {
         game.checkUnlockConditions();
         game.resourceManager.resources.sparkles.amount = 2000;
         game.resourceManager.resources.gold.amount = 1000;
-        for (const id of ['base_mult_1', 'unlock_recipes_tab', 'auto_launcher', 'launcher_spawn_rate']) {
+        for (const id of ['base_mult_1', 'unlock_recipes_tab', 'portal_unlock', 'portal_spawn_rate']) {
             if (!game.buyUpgrade(id)) throw new Error(`Preview could not buy ${id}`);
         }
         for (let i = 0; i < 3; i++) {
-            if (!game.buildingManager.buyBuilding('AUTO_LAUNCHER')) throw new Error('Preview could not buy a launcher');
+            if (!game.buildingManager.buyBuilding('PORTAL')) throw new Error('Preview could not buy a portal');
         }
         for (const id of ['crowd_spark_1', 'crowd_fireworks']) {
             if (!game.buyUpgrade(id)) throw new Error(`Preview could not buy ${id}`);
@@ -45,7 +45,7 @@ try {
         game.ui.toggleTab('upgrades');
         if (!document.getElementById('upgrades-content').classList.contains('active')) throw new Error('The upgrade menu did not open');
         game.ui.updateUI(game.getSparkles(), game.calculateTotalSparklesPerSecond(), game.fireworkSystem.fireworkCount,
-            game.buildingManager.getBuildingsByType('AUTO_LAUNCHER').length, game.calculateAutoLauncherCost(3));
+            game.buildingManager.getBuildingsByType('PORTAL').length, game.calculatePortalCost(3));
         game.render();
     });
     const directory = join('traces', 'live-balance');

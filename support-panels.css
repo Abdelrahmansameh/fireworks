@@ -21,7 +21,7 @@
 .building-buy-button { grid-column: 1 / -1; display: flex; align-items: center; justify-content: center; gap: 6px; min-height: 44px; padding: 0 8px; background: var(--coral); font: 400 20px/1 'Chewy', cursive; box-shadow: 2px 2px 0 var(--ink); }
 .building-buy-button:hover:not(:disabled) { background: #ff9a7e; }
 .building-buy-button > .doodle-icon { width: 18px; height: 18px; }
-.building-launcher-section { display: flex; flex-direction: column; gap: 8px; }
+.building-portal-section { display: flex; flex-direction: column; gap: 8px; }
 .building-list-tools { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
 .building-list-tools button { display: flex; align-items: center; justify-content: center; gap: 6px; padding: 0 4px; background: #2a2e5e; color: var(--cream); border: 2px solid rgba(244,234,213,.5); border-radius: 10px 8px 11px 7px; font-size: 13px; box-shadow: none; }
 .building-list-tools button:nth-child(2) { border-radius: 8px 11px 7px 10px; }
@@ -96,7 +96,7 @@
 .stats-production-unit { font-size: 13px; font-weight: 700; }
 .stats-production-bar { display: flex; height: 20px; box-sizing: border-box; border: 2px solid var(--ink); border-radius: 8px 6px 8px 7px; overflow: hidden; background: #efe2c8; }
 .stats-segment { display: block; width: 0; flex-shrink: 0; box-shadow: inset -2px 0 var(--ink); transition: width 250ms ease-out; }
-.source-launchers { background: var(--coral); }
+.source-portals { background: var(--coral); }
 .source-cultists { background: var(--teal); }
 .source-fans { background: var(--green); }
 .source-clicks { background: var(--gold); }

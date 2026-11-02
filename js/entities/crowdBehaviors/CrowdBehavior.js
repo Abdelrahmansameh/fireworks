@@ -40,13 +40,13 @@ export class FlyerBehavior extends CrowdBehavior {
         const band = bounds.WORLD_MAX_EXPLOSION_Y - bounds.WORLD_MIN_EXPLOSION_Y;
         const [low, high] = cfg.entryHeight;
         // The view can be unsized while a save loads, so fall back to the show edge.
-        const left = Number.isFinite(view?.left) ? view.left - cfg.entryMargin : bounds.LAUNCHER_MIN_X;
-        person.x = Math.min(left, bounds.LAUNCHER_MIN_X);
+        const left = Number.isFinite(view?.left) ? view.left - cfg.entryMargin : bounds.PORTAL_MIN_X;
+        person.x = Math.min(left, bounds.PORTAL_MIN_X);
         person.y = bounds.WORLD_MIN_EXPLOSION_Y + band * (low + Math.random() * (high - low));
         person.vx = cfg.wanderSpeed; person.vy = 0;
         person.flipX = 1;
         this.entering = true;
-        this.tx = bounds.LAUNCHER_MIN_X + Math.random() * (bounds.LAUNCHER_MAX_X - bounds.LAUNCHER_MIN_X) * 0.5;
+        this.tx = bounds.PORTAL_MIN_X + Math.random() * (bounds.PORTAL_MAX_X - bounds.PORTAL_MIN_X) * 0.5;
         this.ty = person.y;
         this.timer = Infinity;
     }
@@ -56,10 +56,10 @@ export class FlyerBehavior extends CrowdBehavior {
         const p = this.person;
         this.timer -= dt;
         // Until it reaches the show, an entering fan heads for its first target
-        // and may be left of the launcher area.
-        if (this.entering && p.x >= bounds.LAUNCHER_MIN_X) { this.entering = false; this.timer = cfg.wanderTargetChangeTime; }
+        // and may be left of the portal area.
+        if (this.entering && p.x >= bounds.PORTAL_MIN_X) { this.entering = false; this.timer = cfg.wanderTargetChangeTime; }
         if (!this.entering && (this.timer <= 0 || Math.hypot(this.tx - p.x, this.ty - p.y) < 80)) {
-            this.tx = bounds.LAUNCHER_MIN_X + Math.random() * (bounds.LAUNCHER_MAX_X - bounds.LAUNCHER_MIN_X);
+            this.tx = bounds.PORTAL_MIN_X + Math.random() * (bounds.PORTAL_MAX_X - bounds.PORTAL_MIN_X);
             this.ty = bounds.WORLD_MIN_EXPLOSION_Y + Math.random() * Math.max(0, this.crowd.flyerCeilingY - bounds.WORLD_MIN_EXPLOSION_Y);
             this.timer = cfg.wanderTargetChangeTime + (Math.random() - 0.5) * 1.5;
         }
@@ -103,12 +103,12 @@ export class FlyerBehavior extends CrowdBehavior {
         const speed = Math.hypot(p.vx, p.vy);
         if (speed > maxSpeed) { p.vx *= maxSpeed / speed; p.vy *= maxSpeed / speed; }
 
-        const minX = this.entering ? -Infinity : bounds.LAUNCHER_MIN_X;
-        p.x = Math.max(minX, Math.min(bounds.LAUNCHER_MAX_X, p.x + p.vx * dt));
-        const ceiling = Math.max(bounds.WORLD_LAUNCHER_Y, this.crowd.flyerCeilingY);
-        p.y = Math.max(bounds.WORLD_LAUNCHER_Y, Math.min(ceiling, p.y + p.vy * dt));
-        if ((p.x === bounds.LAUNCHER_MIN_X && p.vx < 0) || (p.x === bounds.LAUNCHER_MAX_X && p.vx > 0)) p.vx = 0;
-        if ((p.y === bounds.WORLD_LAUNCHER_Y && p.vy < 0) || (p.y === ceiling && p.vy > 0)) p.vy = 0;
+        const minX = this.entering ? -Infinity : bounds.PORTAL_MIN_X;
+        p.x = Math.max(minX, Math.min(bounds.PORTAL_MAX_X, p.x + p.vx * dt));
+        const ceiling = Math.max(bounds.WORLD_LAUNCH_Y, this.crowd.flyerCeilingY);
+        p.y = Math.max(bounds.WORLD_LAUNCH_Y, Math.min(ceiling, p.y + p.vy * dt));
+        if ((p.x === bounds.PORTAL_MIN_X && p.vx < 0) || (p.x === bounds.PORTAL_MAX_X && p.vx > 0)) p.vx = 0;
+        if ((p.y === bounds.WORLD_LAUNCH_Y && p.vy < 0) || (p.y === ceiling && p.vy > 0)) p.vy = 0;
 
         // Lean into the push while firing, into the drift otherwise.
         const lean = firing ? Math.cos(this.aimAngle) * 0.35 : -p.vx * 0.0008;

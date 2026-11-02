@@ -3,7 +3,7 @@ import { createRng } from '../utils/random.js';
 const rgb = (r, g, b) => ({ r: r / 255, g: g / 255, b: b / 255, a: 1 });
 
 // Sparse, hand-built silhouettes: broad timber and hide shapes follow the same
-// chunky visual language as the crowd and launchers. Their gaps stay open sky.
+// chunky visual language as the crowd and portals. Their gaps stay open sky.
 export function buildPrimitiveLandmarks(scenery) {
     const { landmarks, world, water, zIndex } = scenery.config;
     if (!landmarks?.enabled) return;

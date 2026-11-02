@@ -121,8 +121,8 @@ class Building {
 
     setPosition(x, y) {
         this.x = Math.max(
-            GAME_BOUNDS.LAUNCHER_MIN_X, 
-            Math.min(x, GAME_BOUNDS.LAUNCHER_MAX_X)
+            GAME_BOUNDS.PORTAL_MIN_X, 
+            Math.min(x, GAME_BOUNDS.PORTAL_MAX_X)
         );
         this.y = y;
         

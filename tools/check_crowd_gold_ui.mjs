@@ -28,11 +28,11 @@ try {
         game.checkUnlockConditions();
         game.resourceManager.resources.sparkles.amount = 2000;
         game.resourceManager.resources.gold.amount = 0;
-        for (const id of ['base_mult_1', 'unlock_recipes_tab', 'auto_launcher', 'launcher_spawn_rate']) {
+        for (const id of ['base_mult_1', 'unlock_recipes_tab', 'portal_unlock', 'portal_spawn_rate']) {
             if (!game.buyUpgrade(id)) throw new Error(`Could not buy ${id}`);
         }
         for (let i = 0; i < 3; i++) {
-            if (!game.buildingManager.buyBuilding('AUTO_LAUNCHER')) throw new Error('Could not buy a launcher');
+            if (!game.buildingManager.buyBuilding('PORTAL')) throw new Error('Could not buy a portal');
         }
         game.ui.showTab('upgrades');
         if (!game.buyUpgrade('crowd_spark_1')) throw new Error('Could not invite the crowd');
@@ -68,7 +68,7 @@ try {
     assert(introduction.gold === introduction.earnedGold && introduction.recipes,
         'The introduction added a free gold reward or lost Creator access.');
     assert(introduction.crowdLabel === 'fan', 'The first crowd member did not use the singular label.');
-    assert(introduction.card.toLowerCase().includes('80 gold') && introduction.card.includes('+25% launcher sparkles.'),
+    assert(introduction.card.toLowerCase().includes('80 gold') && introduction.card.includes('+25% portal sparkles.'),
         `The first gold card did not show its price and effect: ${introduction.card}`);
     const directory = join('traces', 'live-balance');
     await mkdir(directory, { recursive: true });
@@ -77,7 +77,7 @@ try {
 
     const before = await page.evaluate(() => {
         const snapshot = () => ({ base: game.baseSparkleMultiplier, crowd: { ...game.crowdStats },
-            launcher: { ...game.launcherStats }, catapult: { ...game.catapultStats }, flyer: { ...game.flyerStats },
+            portal: { ...game.portalStats }, catapult: { ...game.catapultStats }, flyer: { ...game.flyerStats },
             cultists: { ...game.cultistStats },
             recipes: game.progression.isUnlocked('recipes_tab'), studio: game.advancedCreatorUnlocked,
             patterns: [...game.unlockedPatternKeys], buildings: game.buildingManager.buildings.map(building => building.id),
@@ -102,16 +102,16 @@ try {
         button: document.getElementById('crowd-gold-upgrade-buy').innerText,
         disabled: document.getElementById('crowd-gold-upgrade-buy').disabled }));
     const expectedFirst = JSON.parse(JSON.stringify(before.state));
-    expectedFirst.launcher.sparkleYieldMultiplier = 1.25;
+    expectedFirst.portal.sparkleYieldMultiplier = 1.25;
     assert(first.gold === 0 && first.level === 1 && JSON.stringify(first.state) === JSON.stringify(expectedFirst),
-        `The Crowd button changed more than launcher sparkles: ${JSON.stringify(first)}`);
+        `The Crowd button changed more than portal sparkles: ${JSON.stringify(first)}`);
     assert(!first.visible, 'The purchased Sparkle Powder card stayed visible.');
     await page.evaluate(() => game.saveProgress());
     await page.reload({ waitUntil: 'domcontentloaded' });
     await page.waitForFunction(() => window.game?.particleSystem && !window.game._isRestoring);
     const reload = await page.evaluate(() => {
         game.pause();
-        return { level: game.progression.getUpgradeLevel('crowd_fireworks'), multiplier: game.launcherStats.sparkleYieldMultiplier,
+        return { level: game.progression.getUpgradeLevel('crowd_fireworks'), multiplier: game.portalStats.sparkleYieldMultiplier,
             hidden: document.getElementById('crowd-gold-upgrade').hidden,
             cinematic: game.cinematicManager.isPlaying, recipes: game.progression.isUnlocked('recipes_tab') };
     });
@@ -121,12 +121,12 @@ try {
         const refund = game.resetUpgrades();
         const hiddenAfterReset = document.getElementById('crowd-gold-upgrade').hidden;
         const gold = game.resourceManager.resources.gold.amount;
-        for (const id of ['base_mult_1', 'unlock_recipes_tab', 'auto_launcher', 'launcher_spawn_rate', 'crowd_spark_1']) {
+        for (const id of ['base_mult_1', 'unlock_recipes_tab', 'portal_unlock', 'portal_spawn_rate', 'crowd_spark_1']) {
             if (!game.buyUpgrade(id)) throw new Error(`Reset could not rebuy ${id}`);
         }
         return { refund, hiddenAfterReset, goldBeforeCrowd: gold, goldAfterCrowd: game.resourceManager.resources.gold.amount,
             visibleAfterCrowd: !document.getElementById('crowd-gold-upgrade').hidden,
-            level: game.progression.getUpgradeLevel('crowd_fireworks'), multiplier: game.launcherStats.sparkleYieldMultiplier,
+            level: game.progression.getUpgradeLevel('crowd_fireworks'), multiplier: game.portalStats.sparkleYieldMultiplier,
             price: document.getElementById('crowd-gold-upgrade-buy').innerText,
             firstUpgrade: document.querySelector('#upgrades-available .upgrade-buy-button[data-upgrade-id="crowd_fireworks"]')?.dataset.upgradeId };
     });

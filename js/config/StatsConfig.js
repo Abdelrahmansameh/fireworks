@@ -33,7 +33,7 @@ export const STATS_SCHEMA = [
             {
                 type: 'group', label: ICONS.SPARKLE_SVG + ' Sparkles / sec', id: 'stat-sps-total', defaultValue: '0.00',
                 children: [
-                    { label: '› Auto-Launchers',     id: 'stat-sps-auto',        defaultValue: '0.00' },
+                    { label: '› Portals',           id: 'stat-sps-portal',        defaultValue: '0.00' },
                     { label: '› Cultists', id: 'stat-sps-cultist',       defaultValue: '0.00' },
                     { label: '› Flying Cultists',              id: 'stat-sps-flyer',       defaultValue: '0.00' },
                     { label: '› Crowd Catchers',      id: 'stat-sps-crowd-catch', defaultValue: '0.00' },
@@ -53,7 +53,7 @@ export const STATS_SCHEMA = [
             {
                 type: 'group', label: ICONS.FIREWORK_SVG + ' Fireworks / sec', id: 'stat-fps-total', defaultValue: '0.00',
                 children: [
-                    { label: '› Auto-Launchers', id: 'stat-fps-auto',   defaultValue: '0.00' },
+                    { label: '› Portals',       id: 'stat-fps-portal',   defaultValue: '0.00' },
                     { label: '› Manual',         id: 'stat-fps-manual', defaultValue: '0.00' },
                 ],
             },
@@ -66,7 +66,7 @@ export const STATS_SCHEMA = [
             { type: 'group', label: 'Sparkles Balance', id: 'stat-bal-sparkles', defaultValue: '0' },
             { type: 'group', label: 'Gold Balance',     id: 'stat-bal-gold',     defaultValue: '0' },
             { type: 'group', label: 'Crowd Size',       id: 'stat-crowd-size',   defaultValue: '0' },
-            { type: 'group', label: 'Auto-Launchers',       id: 'stat-bld-auto',  defaultValue: '0' },
+            { type: 'group', label: 'Portals',              id: 'stat-bld-portal',  defaultValue: '0' },
             { type: 'group', label: 'Cultists',  id: 'stat-bld-cultist', defaultValue: '0' },
             { type: 'group', label: 'Flying Cultists',           id: 'stat-bld-flyer', defaultValue: '0' },
             { type: 'group', label: 'Miners',                    id: 'stat-bld-miner', defaultValue: '0' },
@@ -80,7 +80,7 @@ export const STATS_SCHEMA = [
             {
                 type: 'group', label: 'Sparkles Earned', id: 'stat-sess-sparkles', defaultValue: '0',
                 children: [
-                    { label: '› Auto-Launchers',      id: 'stat-sess-sp-auto',       defaultValue: '0' },
+                    { label: '› Portals',            id: 'stat-sess-sp-portal',       defaultValue: '0' },
                     { label: '› Cultists', id: 'stat-sess-sp-cultist',   defaultValue: '0' },
                     { label: '› Flying Cultists',              id: 'stat-sess-sp-flyer',      defaultValue: '0' },
                     { label: '› Crowd Catchers',      id: 'stat-sess-sp-crowd-catch',defaultValue: '0' },
@@ -97,7 +97,7 @@ export const STATS_SCHEMA = [
                 type: 'group', label: 'Fireworks Launched', id: 'stat-sess-fw', defaultValue: '0',
                 children: [
                     { label: '› Manual',         id: 'stat-sess-fw-manual', defaultValue: '0' },
-                    { label: '› Auto-Launchers', id: 'stat-sess-fw-auto',   defaultValue: '0' },
+                    { label: '› Portals',       id: 'stat-sess-fw-portal',   defaultValue: '0' },
                 ],
             },
             { type: 'group', label: 'Flying Cultist Particles Collected', id: 'stat-sess-flyer-parts', defaultValue: '0' },
@@ -112,7 +112,7 @@ export const STATS_SCHEMA = [
             {
                 type: 'group', label: 'All-time Sparkles Earned', id: 'stat-life-sparkles', defaultValue: '0',
                 children: [
-                    { label: '› Auto-Launchers',      id: 'stat-life-sp-auto',       defaultValue: '0' },
+                    { label: '› Portals',            id: 'stat-life-sp-portal',       defaultValue: '0' },
                     { label: '› Cultists', id: 'stat-life-sp-cultist',   defaultValue: '0' },
                     { label: '› Flying Cultists',              id: 'stat-life-sp-flyer',      defaultValue: '0' },
                     { label: '› Crowd Catchers',      id: 'stat-life-sp-crowd-catch',defaultValue: '0' },

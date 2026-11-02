@@ -4,7 +4,7 @@ import PurchasePolicy from './PurchasePolicy.js';
 /**
  * HeadlessSimulator — runs the real game economy with no rendering or audio.
  *
- * Instead of re-deriving launcher FPS / costs / crowd scaling (as the old
+ * Instead of re-deriving portal FPS / costs / crowd scaling (as the old
  * ProgressionSimulator did), it constructs a headless {@link GameCore} and
  * steps it, so the simulated economy IS the game's economy. The only modelled
  * pieces are flyer collection and crowd catching, which are emergent from
@@ -73,7 +73,7 @@ export class HeadlessSimulator {
                 const s = d.sparkles;
                 const sparklesParts = [
                     `clicks ${Math.round(s.manual || 0)}`,
-                    `launchers ${Math.round(s.auto_launcher || 0)}`,
+                    `portals ${Math.round(s.portal || 0)}`,
                     `cultists ${Math.round(s.cultist || 0)}`,
                     `flyers ${Math.round(s.flyer || 0)}`,
                     `crowdCatch ${Math.round(s.crowd_catch || 0)}`,
@@ -125,7 +125,7 @@ export class HeadlessSimulator {
         const productionBreakdown = {
             sparkles: {
                 clicks: bs.manual || 0,
-                launchers: bs.auto_launcher || 0,
+                portals: bs.portal || 0,
                 cultists: bs.cultist || 0,
                 flyers: bs.flyer || 0,
                 crowdCatching: bs.crowd_catch || 0,

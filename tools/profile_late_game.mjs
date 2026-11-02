@@ -65,15 +65,15 @@ try {
             g.crowdStartedAt = 0;
             g.fireworkSystem.fireworkCount = 100000;
             g.setCultistCount(Infinity);
-            for (const type of ['AUTO_LAUNCHER', 'CATAPULT']) {
+            for (const type of ['PORTAL', 'CATAPULT']) {
                 const limit = g.buildingManager.getBuildingLimit(type);
                 if (!Number.isFinite(limit)) throw new Error(`Missing building limit for ${type}`);
                 while (g.buildingManager.getBuildingsByType(type).length < limit) g.grantMilestoneBuilding(type);
             }
-            const launchers = g.buildingManager.getBuildingsByType('AUTO_LAUNCHER');
-            launchers.forEach((building, index) => {
+            const portals = g.buildingManager.getBuildingsByType('PORTAL');
+            portals.forEach((building, index) => {
                 building.assignedRecipeIndex = index % g.recipes.length;
-                building.accumulator = building.spawnInterval * index / launchers.length;
+                building.accumulator = building.spawnInterval * index / portals.length;
             });
             g.crowd.setCount(g._calculateTargetCrowdCount(g.fireworkSystem.fireworkCount));
             g.syncCrowdStats();
@@ -111,7 +111,7 @@ try {
         });
         const gl = g.renderer2D.gl;
         const debug = gl.getExtension('WEBGL_debug_renderer_info');
-        return { ...window.__profileSnapshot(), launcherStats: g.launcherStats,
+        return { ...window.__profileSnapshot(), portalStats: g.portalStats,
             flyerStats: g.flyerStats, catapultStats: g.catapultStats,
             gpu: debug ? gl.getParameter(debug.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.RENDERER),
             viewport: { width: innerWidth, height: innerHeight, dpr: devicePixelRatio },
@@ -119,7 +119,7 @@ try {
             localStorage: g.storage === localStorage,
         };
     }, { scenario });
-    await page.waitForFunction(() => game.buildingManager.buildings.every(b => b._instancedGroup)
+    await page.waitForFunction(() => game.buildingManager.buildings.every(b => b.type === 'PORTAL' || b._instancedGroup)
         && game.crowd.instancedGroup && game.crowd.flyerInstancedGroup);
     await page.evaluate(() => game.resume());
     console.log(JSON.stringify({ stage: 'warmup', scenario, mode, variant, warmup, setup }));

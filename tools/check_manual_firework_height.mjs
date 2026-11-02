@@ -1,4 +1,4 @@
-// Verify low manual clicks use the same current random height range as launchers.
+// Verify low manual clicks use the same current random height range as portals.
 // Run against a local server, e.g. node tools/check_manual_firework_height.mjs http://127.0.0.1:8765/.
 import { createRequire } from 'node:module';
 import { homedir } from 'node:os';
@@ -31,28 +31,28 @@ try {
         };
         const launch = (manual, targetY, random) => withRandom(random, () => {
             if (manual) game.launchCursorCyclingFireworkAt(220, targetY);
-            else fs.launch(220, GAME_BOUNDS.WORLD_LAUNCHER_Y, game.currentRecipeComponents, null);
+            else fs.launch(220, GAME_BOUNDS.WORLD_LAUNCH_Y, game.currentRecipeComponents, null);
             return fs.fireworks.at(-1).targetY;
         });
         const samples = [];
         for (const count of [0, 1, 3, 7, 14, 32]) {
-            while (bm.getBuildingsByType('AUTO_LAUNCHER').length < count) {
-                bm.createBuilding('AUTO_LAUNCHER', bm.getNewBuildingX('AUTO_LAUNCHER'), GAME_BOUNDS.BUILDING_Y);
+            while (bm.getBuildingsByType('PORTAL').length < count) {
+                bm.createBuilding('PORTAL', bm.getNewBuildingX('PORTAL'), GAME_BOUNDS.BUILDING_Y);
             }
             const stage = getVenueStage(game);
             const expectedMax = stage.maxAutomaticExplosionY ?? stage.maxExplosionY;
             const low = GAME_BOUNDS.WORLD_MIN_EXPLOSION_Y;
             samples.push({ count, index: stage.index, expectedMax, low,
-                manualBottom: launch(true, GAME_BOUNDS.WORLD_LAUNCHER_Y, 0),
+                manualBottom: launch(true, GAME_BOUNDS.WORLD_LAUNCH_Y, 0),
                 autoBottom: launch(false, null, 0),
-                manualTop: launch(true, GAME_BOUNDS.WORLD_LAUNCHER_Y, .999999),
+                manualTop: launch(true, GAME_BOUNDS.WORLD_LAUNCH_Y, .999999),
                 autoTop: launch(false, null, .999999),
                 justBelow: launch(true, -1, .75),
                 boundary: launch(true, 0, .75),
                 justAbove: launch(true, 1, .75),
                 aimed: launch(true, 42, .75),
                 directZero: withRandom(.75, () => {
-                    fs.launch(220, GAME_BOUNDS.WORLD_LAUNCHER_Y, game.currentRecipeComponents, 0);
+                    fs.launch(220, GAME_BOUNDS.WORLD_LAUNCH_Y, game.currentRecipeComponents, 0);
                     return fs.fireworks.at(-1).targetY;
                 }),
                 high: launch(true, 1e9, .75), maxManual: stage.maxExplosionY });
@@ -60,12 +60,12 @@ try {
         return samples;
     });
     for (const s of results) {
-        const context = `stage ${s.index} (${s.count} launchers)`;
+        const context = `stage ${s.index} (${s.count} portals)`;
         assert(s.manualBottom === s.autoBottom && Math.abs(s.manualBottom - s.low) < .001,
-            `${context}: low manual click and launcher have different lower bounds: ${JSON.stringify(s)}`);
+            `${context}: low manual click and portal have different lower bounds: ${JSON.stringify(s)}`);
         const expectedTop = s.low + .999999 * (s.expectedMax - s.low);
         assert(Math.abs(s.manualTop - s.autoTop) < .001 && Math.abs(s.manualTop - expectedTop) < .001,
-            `${context}: low manual click and launcher have different upper bounds: ${JSON.stringify(s)}`);
+            `${context}: low manual click and portal have different upper bounds: ${JSON.stringify(s)}`);
         const expectedMiddle = s.low + .75 * (s.expectedMax - s.low);
         assert(Math.abs(s.justBelow - expectedMiddle) < .001 && Math.abs(s.boundary - expectedMiddle) < .001 && s.justAbove === 1,
             `${context}: random/aimed height threshold is wrong: ${JSON.stringify(s)}`);

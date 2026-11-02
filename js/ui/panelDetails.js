@@ -162,7 +162,7 @@ export function initializePanelDetails(game) {
             if (empty) empty.hidden = count > 0;
             const description = document.querySelector(`[data-building-description="${key}"]`);
             if (!description) continue;
-            if (key === 'AUTO_LAUNCHER') description.textContent = `Fires every ${(type.baseSpawnInterval * (game.launcherStats?.spawnIntervalMultiplier ?? 1)).toFixed(1)}s`;
+            if (key === 'PORTAL') description.textContent = `Fires every ${(type.baseSpawnInterval * (game.portalStats?.spawnIntervalMultiplier ?? 1)).toFixed(1)}s`;
             if (key === 'CATAPULT') description.textContent = `Throws a fan every ${((type.baseFireInterval ?? type.fireInterval) * (game.catapultStats?.fireIntervalMultiplier ?? 1)).toFixed(1)}s`;
         }
 
@@ -210,7 +210,7 @@ export function initializePanelDetails(game) {
         const tracker = game.statsTracker;
         if (!tracker) return;
         const total = tracker.getRollingRate('sparkles');
-        const sources = ['auto_launcher', 'cultist', 'crowd_catch', 'manual', 'flyer'];
+        const sources = ['portal', 'cultist', 'crowd_catch', 'manual', 'flyer'];
         const rates = Object.fromEntries(sources.map(source => [source, tracker.getRollingRate('sparkles', source)]));
         rates.other = Math.max(0, total - Object.values(rates).reduce((sum, rate) => sum + rate, 0));
         setText('stats-sparkles-hero', compact(total));

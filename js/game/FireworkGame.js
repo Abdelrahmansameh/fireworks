@@ -1,6 +1,6 @@
 import { gameStorage } from '../platform/GameStorage.js';
 import { fireworksForCrowd } from '../systems/ProductionRates.js';
-import { FIREWORK_CONFIG, GAME_BOUNDS, PROCEDURAL_BACKGROUND_CONFIG, DEFAULT_RECIPE_COMPONENTS, GENERIC_RECIPE_NAMES, AUTO_LAUNCHER_COST_BASE, CROWD_CONFIG, CULTIST_CONFIG, MINER_CONFIG, FLYER_CONFIG } from '../config/config.js';
+import { FIREWORK_CONFIG, GAME_BOUNDS, PROCEDURAL_BACKGROUND_CONFIG, DEFAULT_RECIPE_COMPONENTS, GENERIC_RECIPE_NAMES, PORTAL_COST_BASE, CROWD_CONFIG, CULTIST_CONFIG, MINER_CONFIG, FLYER_CONFIG } from '../config/config.js';
 import GameCore from './GameCore.js';
 import InstancedParticleSystem from '../particles/InstancedParticleSystem.js';
 import Crowd from '../entities/Crowd.js';
@@ -52,7 +52,7 @@ class FireworkGame extends GameCore {
     init() {
         const savedCount = parseInt(gameStorage.getItem('fireworkCount')) || 0;
         this.fireworkSystem.init(savedCount);
-        this.autoLauncherCost = parseInt(gameStorage.getItem('autoLauncherCost')) || AUTO_LAUNCHER_COST_BASE;
+        this.portalCost = parseInt(gameStorage.getItem('portalCost')) || PORTAL_COST_BASE;
 
         const savedResources = gameStorage.getItem('resources');
         if (savedResources) {
@@ -66,8 +66,6 @@ class FireworkGame extends GameCore {
 
         this.statsTracker.load();
 
-        const savedGameState = JSON.parse(gameStorage.getItem('gameState'));
-
         this.initRenderer2D();
         this.initBackgroundColor();
 
@@ -79,28 +77,7 @@ class FireworkGame extends GameCore {
             } catch (e) {
                 console.error('Failed to load building data:', e);
             }
-        } else if (savedGameState && savedGameState.autoLaunchers) {
-            console.log('Migrating old autoLaunchers to new building system...');
-            savedGameState.autoLaunchers.forEach(launcherData => {
-                if (!launcherData.accumulator) {
-                    launcherData.accumulator = Math.random() * 5;
-                }
-
-                launcherData.x = this.clampToLauncherBounds(launcherData.x);
-                launcherData.y = launcherData.y || GAME_BOUNDS.WORLD_LAUNCHER_Y;
-
-                this.buildingManager.createBuilding(
-                    'AUTO_LAUNCHER',
-                    launcherData.x,
-                    launcherData.y,
-                    launcherData
-                );
-            });
-
-            this.gameState.autoLaunchers = [];
         }
-
-        this.gameState.autoLaunchers = [];
 
         this.particleSystem = new InstancedParticleSystem(this.renderer2D, this.profiler);
         this.crowd = new Crowd(this.renderer2D);
@@ -134,7 +111,7 @@ class FireworkGame extends GameCore {
         this.loadCurrentRecipe();
         this.updateComponentsList();
         this.updateRecipeList();
-        this.updateLauncherList();
+        this.updatePortalList();
 
         const gameContainer = document.getElementById('game-container');
         gameContainer.style.touchAction = 'none';
@@ -193,18 +170,6 @@ class FireworkGame extends GameCore {
         TextureManager.init(this.renderer2D);
 
         this.cursorParticles = new CursorParticles(this.renderer2D);
-    }
-
-
-    _applyAutoLauncherTexture() {
-        const tex = this.renderer2D.getTexture('auto_launcher_texture');
-        if (!tex) return;
-
-        const launchers = this.buildingManager.getBuildingsByType('AUTO_LAUNCHER');
-        for (const launcher of launchers) {
-            launcher.destroy();
-            launcher.createMesh();
-        }
     }
 
     onWindowResize() {
@@ -283,7 +248,7 @@ class FireworkGame extends GameCore {
 
     updateUI() {
         const totalSparklesPerSec = this.calculateTotalSparklesPerSecond();
-        const launcherCount = this.buildingManager.getBuildingsByType('AUTO_LAUNCHER').length;
+        const portalCount = this.buildingManager.getBuildingsByType('PORTAL').length;
 
         this.resourceManager.resources.sparkles.updateFromLevel(this.calculateCultistSparklesPerSecond());
 
@@ -291,8 +256,8 @@ class FireworkGame extends GameCore {
             Math.floor(this.getSparkles()),
             totalSparklesPerSec.toFixed(2),
             this.fireworkSystem.fireworkCount,
-            launcherCount,
-            this.calculateAutoLauncherCost(launcherCount)
+            portalCount,
+            this.calculatePortalCost(portalCount)
         );
 
         this.updateCrowdDisplay();
@@ -400,8 +365,8 @@ class FireworkGame extends GameCore {
             let outline = null;
             if (this.crowd?.isGrabbing) {
                 outline = this.crowd.getGrabbedPersonOutlinePoints();
-            } else if (this.ui?.isDragging && this.ui.draggingLauncher?.getSkeletonOutlinePoints) {
-                outline = this.ui.draggingLauncher.getSkeletonOutlinePoints();
+            } else if (this.ui?.isDragging && this.ui.draggingPortal?.getSkeletonOutlinePoints) {
+                outline = this.ui.draggingPortal.getSkeletonOutlinePoints();
             }
             this.cursorParticles.setGrabOutline(outline);
         }
@@ -420,14 +385,14 @@ class FireworkGame extends GameCore {
         this.cursorParticles?.render();
     }
 
-    getLauncherAt(x, y) {
+    getPortalAt(x, y) {
         return this.buildingManager.getBuildingAt(x, y);
     }
 
-    resetAutoLaunchers() {
-        const refundAmount = this.buildingManager.resetBuildingsOfType('AUTO_LAUNCHER');
-        this.autoLauncherCost = AUTO_LAUNCHER_COST_BASE;
-        this.updateLauncherList();
+    resetPortals() {
+        const refundAmount = this.buildingManager.resetBuildingsOfType('PORTAL');
+        this.portalCost = PORTAL_COST_BASE;
+        this.updatePortalList();
         return refundAmount;
     }
 
@@ -463,7 +428,7 @@ class FireworkGame extends GameCore {
             goldRateMultiplier: 1,
             countBonus: 0,
         };
-        this.launcherStats = { spawnIntervalMultiplier: 1, sparkleYieldMultiplier: 1 };
+        this.portalStats = { spawnIntervalMultiplier: 1, sparkleYieldMultiplier: 1 };
         this.catapultStats = { maxCatapults: 1 };
 
         this.resourceManager.reset();
@@ -528,7 +493,7 @@ class FireworkGame extends GameCore {
 
         this.procduralBackground?.resetLighting();
 
-        this.autoLauncherCost = AUTO_LAUNCHER_COST_BASE;
+        this.portalCost = PORTAL_COST_BASE;
 
         gameStorage.clear();
         this.loadRecipes();
@@ -548,13 +513,13 @@ class FireworkGame extends GameCore {
     eraseAllRecipes() {
         this.recipes = [];
         this.selectedRecipeIndex = null;
-        for (const launcher of this.buildingManager.getBuildingsByType('AUTO_LAUNCHER')) {
-            launcher.assignedRecipeIndex = null;
+        for (const portal of this.buildingManager.getBuildingsByType('PORTAL')) {
+            portal.assignedRecipeIndex = null;
         }
         this.persistRecipes();
         this.saveCurrentRecipeComponents();
         this.updateRecipeList();
-        this.updateLauncherList();
+        this.updatePortalList();
         this.saveProgress();
         this.showNotification("Recipes erased.");
     }
@@ -562,9 +527,9 @@ class FireworkGame extends GameCore {
     deleteRecipe(index) {
         if (!Number.isInteger(index) || !this.recipes[index]) return false;
         this.recipes.splice(index, 1);
-        for (const launcher of this.buildingManager.getBuildingsByType('AUTO_LAUNCHER')) {
-            if (launcher.assignedRecipeIndex === index) launcher.assignedRecipeIndex = null;
-            else if (launcher.assignedRecipeIndex > index) launcher.assignedRecipeIndex--;
+        for (const portal of this.buildingManager.getBuildingsByType('PORTAL')) {
+            if (portal.assignedRecipeIndex === index) portal.assignedRecipeIndex = null;
+            else if (portal.assignedRecipeIndex > index) portal.assignedRecipeIndex--;
         }
         if (this.selectedRecipeIndex === index) this.selectedRecipeIndex = null;
         else if (this.selectedRecipeIndex > index) this.selectedRecipeIndex--;
@@ -572,7 +537,7 @@ class FireworkGame extends GameCore {
         this.persistRecipes();
         this.saveCurrentRecipeComponents();
         this.updateRecipeList();
-        this.updateLauncherList();
+        this.updatePortalList();
         this.saveProgress();
         this.showNotification('Recipe deleted.');
         return true;
@@ -664,7 +629,7 @@ class FireworkGame extends GameCore {
         this.saveCurrentRecipeComponents();
         gameStorage.setItem('currentRecipeName', recipeName);
         this.updateRecipeList();
-        this.updateLauncherList();
+        this.updatePortalList();
         this.saveProgress();
         return true;
     }
@@ -672,7 +637,7 @@ class FireworkGame extends GameCore {
     loadRecipes() {
         this.restoreRecipes();
         this.updateRecipeList();
-        this.updateLauncherList();
+        this.updatePortalList();
     }
 
     updateRecipeList() {
@@ -713,21 +678,21 @@ class FireworkGame extends GameCore {
         this.showNotification(`Loaded "${this.recipes[index].name}"`);
     }
 
-    updateLauncherList() {
-        const launchers = this.buildingManager.getBuildingsByType('AUTO_LAUNCHER');
-        this.ui.updateLauncherList(
-            launchers,
+    updatePortalList() {
+        const portals = this.buildingManager.getBuildingsByType('PORTAL');
+        this.ui.updatePortalList(
+            portals,
             this.buildingManager.selectedBuildingId,
-            (buildingId) => this.selectLauncher(buildingId)
+            (buildingId) => this.selectPortal(buildingId)
         );
     }
 
-    selectLauncher(buildingId) {
+    selectPortal(buildingId) {
         const building = this.buildingManager.getBuildingById(buildingId);
         this.buildingManager.selectBuilding(building);
 
-        const launcherCards = document.querySelectorAll('.launcher-card');
-        launcherCards.forEach((card) => {
+        const portalCards = document.querySelectorAll('.portal-card');
+        portalCards.forEach((card) => {
             card.setAttribute('aria-pressed', String(card.dataset.buildingId === buildingId));
             if (card.dataset.buildingId === buildingId) {
                 card.classList.add('selected');
@@ -744,7 +709,7 @@ class FireworkGame extends GameCore {
             crowdStartFireworks: this.crowdStartFireworks,
             crowdStartedAt: this.crowdStartedAt,
             gameCompleted: this.gameCompleted,
-            autoLauncherCost: this.autoLauncherCost,
+            portalCost: this.portalCost,
             sparkles: this.getSparkles(),
             recipes: this.recipes,
             grantedRecipePatterns: [...this.grantedRecipePatterns],
@@ -753,7 +718,7 @@ class FireworkGame extends GameCore {
             buildingManagerData: this.buildingManager.serialize(),
             venueStage: getVenueStage(this).index,
             venueExtentLeft: gameStorage.getItem('venueExtentLeft'),
-            venueLauncherRight: gameStorage.getItem('venueLauncherRight'),
+            venuePortalRight: gameStorage.getItem('venuePortalRight'),
             flyerCount: this.flyerCount,
             cultistCount: this.cultistCount,
             minerCount: this.minerCount,
@@ -779,7 +744,7 @@ class FireworkGame extends GameCore {
         if (Number.isFinite(Number(data.venueStage))) {
             gameStorage.setItem('venueStage', String(Math.max(0, Math.floor(Number(data.venueStage)))));
         }
-        for (const key of ['venueExtentLeft', 'venueLauncherRight']) {
+        for (const key of ['venueExtentLeft', 'venuePortalRight']) {
             if (data[key] != null && Number.isFinite(Number(data[key]))) gameStorage.setItem(key, String(Number(data[key])));
         }
 
@@ -793,7 +758,7 @@ class FireworkGame extends GameCore {
         this.elapsedGameTime = Math.max(0, Number(data.elapsedGameTime) || 0);
         this.restoreCrowdArrival(data.crowdStartFireworks, data.crowdStartedAt);
         this.gameCompleted = !!data.gameCompleted;
-        this.autoLauncherCost = data.autoLauncherCost || AUTO_LAUNCHER_COST_BASE;
+        this.portalCost = data.portalCost || PORTAL_COST_BASE;
         this.recipes = data.recipes || [];
         this.selectedRecipeIndex = Number.isInteger(data.selectedRecipeIndex) && this.recipes[data.selectedRecipeIndex]
             ? data.selectedRecipeIndex : null;
@@ -813,28 +778,18 @@ class FireworkGame extends GameCore {
         if (data.buildingManagerData) {
             const buildingData = data.buildingManagerData;
             this.buildingManager.deserialize(buildingData);
-        } else if (data.gameState && data.gameState.autoLaunchers) {
-            console.log('Migrating old save format to building system...');
-            data.gameState.autoLaunchers.forEach(launcherData => {
-                this.buildingManager.createBuilding(
-                    'AUTO_LAUNCHER',
-                    launcherData.x,
-                    launcherData.y || GAME_BOUNDS.WORLD_LAUNCHER_Y,
-                    launcherData
-                );
-            });
         }
 
         this.updateComponentsList();
         this.updateRecipeList();
-        this.updateLauncherList();
+        this.updatePortalList();
 
         this.updateCrowdDisplay();
 
         this.baseSparkleMultiplier = (typeof data.baseSparkleMultiplier === 'number' && !isNaN(data.baseSparkleMultiplier)) ? data.baseSparkleMultiplier : 1;
 
         if (data.progression && typeof data.progression === 'object') {
-            this.progression.loadState(data.progression, data.unlockedPatternKeys);
+            this.progression.loadState(data.progression);
             if (data.progression.firstClicks) {
                 this.firstClickStates = { ...this.firstClickStates, ...data.progression.firstClicks };
             }
@@ -940,16 +895,16 @@ class FireworkGame extends GameCore {
         }
     }
 
-    randomizeLauncherRecipes() {
-        const launchers = this.buildingManager.getBuildingsByType('AUTO_LAUNCHER');
+    randomizePortalRecipes() {
+        const portals = this.buildingManager.getBuildingsByType('PORTAL');
 
-        launchers.forEach(launcher => {
-            launcher.assignedRecipeIndex = null;
+        portals.forEach(portal => {
+            portal.assignedRecipeIndex = null;
         });
 
-        this.updateLauncherList();
+        this.updatePortalList();
         this.saveProgress();
-        this.showNotification('All launchers set to Random.');
+        this.showNotification('All portals set to Random.');
     }
 
     openAdvancedCreator() {
@@ -1050,7 +1005,7 @@ class FireworkGame extends GameCore {
         this.ui.updateBuildingCounts();
         this.ui.updateBuildingCosts();
         this.updateRecipeList();
-        this.updateLauncherList();
+        this.updatePortalList();
         this.ui.initializeUnlockStates(); // Refresh UI tab visibility
 
         // Ensure all tabs are properly initialized
@@ -1108,7 +1063,8 @@ class FireworkGame extends GameCore {
             } else {
                 await cm.panCameraTo(GAME_BOUNDS.SCROLL_MIN_X, 3000);
                 const zoomTargetY = GAME_BOUNDS.CROWD_Y + CINEMATIC_CONFIG.ZOOM_Y_OFFSET;
-                await cm.zoomCamera(CINEMATIC_CONFIG.ZOOM_IN_LEVEL, CINEMATIC_CONFIG.ZOOM_IN_DURATION_MS, null, zoomTargetY);
+                // The pan resolves just short of its target; finish it inside the zoom.
+                await cm.zoomCamera(CINEMATIC_CONFIG.ZOOM_IN_LEVEL, CINEMATIC_CONFIG.ZOOM_IN_DURATION_MS, GAME_BOUNDS.SCROLL_MIN_X, zoomTargetY);
             }
 
             // Hold on the empty shot
@@ -1153,7 +1109,7 @@ class FireworkGame extends GameCore {
                 await cm.wait(CINEMATIC_CONFIG.FIREWORK_SPAWN_DELAY_MS);
                 const fwX = person.x + (mobile ? CINEMATIC_CONFIG.MOBILE.FIREWORK_OFFSET_X : CINEMATIC_CONFIG.FIREWORK_OFFSET_X);
                 const fwTargetY = person.y + (mobile ? CINEMATIC_CONFIG.MOBILE.FIREWORK_HEIGHT : -CINEMATIC_CONFIG.FIREWORK_OFFSET_Y);
-                game.fireworkSystem.launch(fwX, GAME_BOUNDS.WORLD_LAUNCHER_Y, game.currentRecipeComponents, fwTargetY, mobile ? 0 : null);
+                game.fireworkSystem.launch(fwX, GAME_BOUNDS.WORLD_LAUNCH_Y, game.currentRecipeComponents, fwTargetY, mobile ? 0 : null);
                 const firework = game.fireworkSystem.fireworks[game.fireworkSystem.fireworks.length - 1];
 
                 // Steer his pupils toward the rocket as it climbs; once it bursts,

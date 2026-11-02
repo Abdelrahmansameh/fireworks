@@ -2,7 +2,7 @@ import { BUILDING_TYPES, CULTIST_CONFIG, MINER_CONFIG } from '../config/config.j
 import Building from '../buildings/Building.js';
 
 const UNLOCK_UPGRADE = {
-    AUTO_LAUNCHER: 'auto_launcher',
+    PORTAL: 'portal_unlock',
     CATAPULT: 'catapult',
 };
 
@@ -52,7 +52,7 @@ export default class LivePurchasePolicy {
             for (const [required, minimum] of Object.entries(definition.requires?.upgrades || {})) upgrade(required, minimum);
             for (const type of definition.requires?.buildings || []) upgrade(UNLOCK_UPGRADE[type], 1);
             for (const [type, minimum] of Object.entries(definition.requires?.buildingCounts || {})) building(type, minimum);
-            if (definition.requires?.stats?.launcherCount) building('AUTO_LAUNCHER', definition.requires.stats.launcherCount);
+            if (definition.requires?.stats?.portalCount) building('PORTAL', definition.requires.stats.portalCount);
             visiting.delete(id);
         };
         if (beat.building) building(beat.building, beat.count);
@@ -89,8 +89,8 @@ export default class LivePurchasePolicy {
 
     _hasUsefulSource(game, definition) {
         const id = definition.id;
-        if (id === 'grand_finale' || id === 'auto_launcher' || id === 'cultist_unlock' || id === 'catapult' || id === 'flyer_unlock' || id === 'miner_unlock') return true;
-        if (id.startsWith('launcher_') && this._count(game, 'AUTO_LAUNCHER') === 0) return false;
+        if (id === 'grand_finale' || id === 'portal_unlock' || id === 'cultist_unlock' || id === 'catapult' || id === 'flyer_unlock' || id === 'miner_unlock') return true;
+        if (id.startsWith('portal_') && this._count(game, 'PORTAL') === 0) return false;
         if (id.startsWith('cultist_') && (game.cultistCount ?? 0) === 0) return false;
         if (id.startsWith('flyer_') && (game.flyerCount ?? 0) === 0) return false;
         if (id.startsWith('miner_') && (game.minerCount ?? 0) === 0) return false;
@@ -102,7 +102,7 @@ export default class LivePurchasePolicy {
     _investmentWeight(game, candidate) {
         const id = candidate.id;
         if (candidate.kind === 'building') {
-            if (id === 'AUTO_LAUNCHER') return 1.5;
+            if (id === 'PORTAL') return 1.5;
             if (id === 'CATAPULT') return 1.1;
         }
         if (candidate.kind === 'cultist') return 1.0;
@@ -115,8 +115,8 @@ export default class LivePurchasePolicy {
         if (candidate.definition.botOptional || id.startsWith('unlock_')) return 0.15;
         if (id.startsWith('crowd_gold')) return 2.0;
         if (id.startsWith('base_mult') || id.startsWith('spark_core') || id.startsWith('crowd_spark')) return 1.7;
-        if (id.startsWith('launcher_spawn') || id.startsWith('launcher_overclock')) return 1.5;
-        if (id.startsWith('launcher_sparkle')) return 1.3;
+        if (id.startsWith('portal_spawn') || id.startsWith('portal_overclock')) return 1.5;
+        if (id.startsWith('portal_sparkle')) return 1.3;
         if (id.startsWith('crowd_invite')) return 1.25;
         return 1;
     }

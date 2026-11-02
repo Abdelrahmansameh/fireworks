@@ -14,7 +14,7 @@ export const DEFAULT_BASE_CATCH_YIELD_PER_SEC = 1;
 
 // Map building type -> the upgrade id that unlocks it.
 const BUILDING_UNLOCK_UPGRADE = {
-    AUTO_LAUNCHER: 'auto_launcher',
+    PORTAL: 'portal',
     CATAPULT: 'catapult',
 };
 
@@ -22,14 +22,14 @@ function countBuildings(state, type) {
     return state.buildingManager?.getBuildingsByType(type).length ?? 0;
 }
 
-/** Total fireworks-per-second from all auto launchers. Mirrors BuildingManager.getTheoreticalAutoLauncherFPS. */
-export function launcherFPS(state) {
+/** Total fireworks-per-second from all portals. Mirrors BuildingManager.getTheoreticalPortalFPS. */
+export function portalFPS(state) {
     if (Array.isArray(state.recipes) && !state.recipes.some(recipe => recipe?.components?.length)) return 0;
-    const launchers = countBuildings(state, 'AUTO_LAUNCHER');
-    if (launchers === 0) return 0;
-    const baseInterval = BUILDING_TYPES.AUTO_LAUNCHER.baseSpawnInterval;
-    const mult = state.launcherStats?.spawnIntervalMultiplier ?? 1;
-    return launchers / (baseInterval * mult);
+    const portals = countBuildings(state, 'PORTAL');
+    if (portals === 0) return 0;
+    const baseInterval = BUILDING_TYPES.PORTAL.baseSpawnInterval;
+    const mult = state.portalStats?.spawnIntervalMultiplier ?? 1;
+    return portals / (baseInterval * mult);
 }
 
 /** Both anchors must exist; absent anchors identify an already-open legacy venue. */
@@ -123,7 +123,7 @@ export function buildingTypeUnlocked(type, progression) {
  *
  * `rates` supplies the emergent (random-driven) inputs the game can't compute
  * deterministically: player click rate and per-flyer / per-catcher base yield.
- * Owned sources (launchers, cultists) are derived from state.
+ * Owned sources (portals, cultists) are derived from state.
  */
 export function expectedSPS(state, rates = {}) {
     const clicksPerSec = rates.clicksPerSec ?? 0;
@@ -134,8 +134,8 @@ export function expectedSPS(state, rates = {}) {
 
     const clicks = clicksPerSec * baseSparkleMult;
 
-    const launcherYieldMult = state.launcherStats?.sparkleYieldMultiplier ?? 1;
-    const launchers = launcherFPS(state) * baseSparkleMult * launcherYieldMult;
+    const portalYieldMult = state.portalStats?.sparkleYieldMultiplier ?? 1;
+    const portals = portalFPS(state) * baseSparkleMult * portalYieldMult;
 
     const cultists = (state.cultistCount ?? 0) * cultistSparklesPerSecond(state.cultistStats, baseSparkleMult);
 
@@ -154,8 +154,8 @@ export function expectedSPS(state, rates = {}) {
             * (state.crowdStats?.collectionRadiusMultiplier ?? 1);
     }
 
-    const total = clicks + launchers + cultists + flyers + crowdCatching;
-    return { clicks, launchers, cultists, flyers, crowdCatching, total };
+    const total = clicks + portals + cultists + flyers + crowdCatching;
+    return { clicks, portals, cultists, flyers, crowdCatching, total };
 }
 
 /** Per-source gold-per-second breakdown. */

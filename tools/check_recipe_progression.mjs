@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Exercise recipe ownership and launcher behavior in an isolated real browser game.
+// Exercise recipe ownership and portal behavior in an isolated real browser game.
 import { createRequire } from 'node:module';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
@@ -44,10 +44,10 @@ try {
             && game.recipes[0].components[0].pattern === 'spherical', 'Fresh game did not start with only Spherical');
         ensure(JSON.stringify(game.unlockedPatternKeys) === JSON.stringify(['spherical']), 'Fresh game unlocked extra patterns');
         ensure(!game.buyUpgrade('unlock_recipes_tab'), 'Creator could be bought before Brighter Sparks');
-        ensure(!game.buyUpgrade('auto_launcher'), 'Auto Launcher could be bought before Creator');
+        ensure(!game.buyUpgrade('portal_unlock'), 'Portal could be bought before Creator');
         ensure(game.buyUpgrade('base_mult_1'), 'Could not buy Brighter Sparks');
         ensure(!game.progression.isUnlocked('recipes_tab'), 'Brighter Sparks prematurely unlocked Creator');
-        ensure(!game.progression.isVisible('auto_launcher', game).visible, 'Auto Launcher appeared before Creator');
+        ensure(!game.progression.isVisible('portal_unlock', game).visible, 'Portal appeared before Creator');
         ensure(game.progression.getUpgradeCost('unlock_recipes_tab') === 40, 'Creator price is not 40 sparkles');
         const beforeCreator = game.getSparkles();
         ensure(game.buyUpgrade('unlock_recipes_tab'), 'Could not buy Creator as second upgrade');
@@ -60,16 +60,16 @@ try {
         const availableShapes = [...document.querySelectorAll('.workshop-tile[data-pattern]')]
             .filter(button => !button.hidden).map(button => button.dataset.pattern);
         ensure(JSON.stringify(availableShapes) === JSON.stringify(['spherical', 'burst']), 'Workshop offered locked patterns');
-        const beforeLauncherUnlock = JSON.stringify({ recipes: game.recipes, patterns: game.unlockedPatternKeys });
-        ensure(game.buyUpgrade('auto_launcher'), 'Could not buy Auto Launcher after Creator');
-        ensure(JSON.stringify({ recipes: game.recipes, patterns: game.unlockedPatternKeys }) === beforeLauncherUnlock,
-            'Auto Launcher unlock granted a recipe or pattern');
-        ensure(game.buildingManager.getBuildingsByType('AUTO_LAUNCHER').length === 0, 'Auto Launcher unlock granted an unbought launcher');
-        const launcher = game.buildingManager.buyBuilding('AUTO_LAUNCHER');
-        ensure(launcher && launcher.assignedRecipeIndex === null, 'Purchased launcher did not default to Random');
-        ensure(JSON.stringify({ recipes: game.recipes, patterns: game.unlockedPatternKeys }) === beforeLauncherUnlock,
-            'Buying a launcher granted a recipe or pattern');
-        return { purchases: ['Brighter Sparks', 'Firework Creator', 'Auto Launcher'], creatorCost: 40, availableShapes };
+        const beforePortalUnlock = JSON.stringify({ recipes: game.recipes, patterns: game.unlockedPatternKeys });
+        ensure(game.buyUpgrade('portal_unlock'), 'Could not buy Portal after Creator');
+        ensure(JSON.stringify({ recipes: game.recipes, patterns: game.unlockedPatternKeys }) === beforePortalUnlock,
+            'Portal unlock granted a recipe or pattern');
+        ensure(game.buildingManager.getBuildingsByType('PORTAL').length === 0, 'Portal unlock granted an unbought portal');
+        const portal = game.buildingManager.buyBuilding('PORTAL');
+        ensure(portal && portal.assignedRecipeIndex === null, 'Purchased portal did not default to Random');
+        ensure(JSON.stringify({ recipes: game.recipes, patterns: game.unlockedPatternKeys }) === beforePortalUnlock,
+            'Buying a portal granted a recipe or pattern');
+        return { purchases: ['Brighter Sparks', 'Firework Creator', 'Portal'], creatorCost: 40, availableShapes };
     });
 
     const progression = await page.evaluate(async () => {
@@ -88,7 +88,7 @@ try {
         const observedPatterns = [...game.unlockedPatternKeys];
         const buyBuildings = () => {
             let bought = false;
-            for (const [type, desired] of Object.entries({ AUTO_LAUNCHER: 32, CATAPULT: 3 })) {
+            for (const [type, desired] of Object.entries({ PORTAL: 32, CATAPULT: 3 })) {
                 if (!game.isBuildingTypeUnlocked(type)) continue;
                 while (game.buildingManager.getBuildingsByType(type).length < desired) {
                     fund();
@@ -96,10 +96,10 @@ try {
                     const building = game.buildingManager.buyBuilding(type);
                     if (!building) break;
                     bought = true;
-                    if (type === 'AUTO_LAUNCHER') {
-                        ensure(building.assignedRecipeIndex === null, 'A later launcher was not Random');
+                    if (type === 'PORTAL') {
+                        ensure(building.assignedRecipeIndex === null, 'A later portal was not Random');
                         ensure(JSON.stringify({ recipes: game.recipes, patterns: game.unlockedPatternKeys }) === before,
-                            'A later launcher purchase granted or changed a recipe/pattern');
+                            'A later portal purchase granted or changed a recipe/pattern');
                     }
                 }
             }
@@ -143,26 +143,26 @@ try {
                 .map(def => `${def.id}: ${game.progression.canPurchase(def.id, game).reason}`).join('; ')}`);
         game.saveProgress();
         return { order: observedPatterns, giftedRecipes: game.recipes.map(recipe => recipe.name), purchases: purchases.length,
-            launchers: game.buildingManager.getBuildingsByType('AUTO_LAUNCHER').length };
+            portals: game.buildingManager.getBuildingsByType('PORTAL').length };
     });
 
     const ownership = await page.evaluate(async () => {
         const game = window.game;
         const { PATTERN_RECIPE_COMPONENTS } = await import('/js/config/RecipeConfig.js');
         const ensure = (condition, message) => { if (!condition) throw new Error(message); };
-        const launchers = game.buildingManager.getBuildingsByType('AUTO_LAUNCHER');
-        const [randomLauncher, pinnedLauncher, shiftedLauncher] = launchers;
-        pinnedLauncher.assignedRecipeIndex = game.recipes.findIndex(recipe => recipe.name === 'Palm');
-        shiftedLauncher.assignedRecipeIndex = game.recipes.findIndex(recipe => recipe.name === 'Burst');
+        const portals = game.buildingManager.getBuildingsByType('PORTAL');
+        const [randomPortal, pinnedPortal, shiftedPortal] = portals;
+        pinnedPortal.assignedRecipeIndex = game.recipes.findIndex(recipe => recipe.name === 'Palm');
+        shiftedPortal.assignedRecipeIndex = game.recipes.findIndex(recipe => recipe.name === 'Burst');
         const first = game.recipes[0];
         ensure(first.name === 'Spherical', 'Unexpected first recipe before deletion');
         game.deleteRecipe(0);
-        ensure(shiftedLauncher.assignedRecipeIndex === 0 && game.recipes[0].name === 'Burst',
+        ensure(shiftedPortal.assignedRecipeIndex === 0 && game.recipes[0].name === 'Burst',
             'Deleting an earlier recipe did not preserve a shifted assignment');
         const palmIndex = game.recipes.findIndex(recipe => recipe.name === 'Palm');
         game.deleteRecipe(palmIndex);
-        ensure(pinnedLauncher.assignedRecipeIndex === null, 'Deleting an assigned recipe did not return its launcher to Random');
-        ensure(shiftedLauncher.assignedRecipeIndex === 0, 'Deleting a later recipe changed an earlier assignment');
+        ensure(pinnedPortal.assignedRecipeIndex === null, 'Deleting an assigned recipe did not return its portal to Random');
+        ensure(shiftedPortal.assignedRecipeIndex === 0, 'Deleting a later recipe changed an earlier assignment');
         const burst = game.recipes[0];
         const templateColor = PATTERN_RECIPE_COMPONENTS.burst[0].color;
         game.selectRecipe(0);
@@ -183,23 +183,23 @@ try {
         const originalRng = game.rng;
         game.fireworkSystem.launch = (_x, _y, components) => { shots.push(components); };
         try {
-            randomLauncher.assignedRecipeIndex = null;
+            randomPortal.assignedRecipeIndex = null;
             game.rng = () => 0;
-            randomLauncher.spawnFirework();
+            randomPortal.spawnFirework();
             game.rng = () => 0.999999;
-            randomLauncher.spawnFirework();
+            randomPortal.spawnFirework();
             ensure(shots[0][0].pattern === game.recipes[0].components[0].pattern
                 && shots[1][0].pattern === game.recipes.at(-1).components[0].pattern,
             'Random did not independently choose from saved recipes on each shot');
-            ensure(randomLauncher.assignedRecipeIndex === null, 'Random shooting assigned a permanent recipe');
+            ensure(randomPortal.assignedRecipeIndex === null, 'Random shooting assigned a permanent recipe');
             shots[0][0].color = '#abcdef';
             ensure(game.recipes[0].components[0].color === '#123456', 'Launching shared a saved recipe component');
-            shiftedLauncher.spawnFirework();
+            shiftedPortal.spawnFirework();
             ensure(shots[2][0].pattern === game.recipes[0].components[0].pattern,
-                'Assigned launcher fired a different recipe');
-            pinnedLauncher.assignedRecipeIndex = 999999;
-            pinnedLauncher.spawnFirework();
-            ensure(pinnedLauncher.assignedRecipeIndex === null
+                'Assigned portal fired a different recipe');
+            pinnedPortal.assignedRecipeIndex = 999999;
+            pinnedPortal.spawnFirework();
+            ensure(pinnedPortal.assignedRecipeIndex === null
                 && shots[3][0].pattern === game.recipes.at(-1).components[0].pattern,
             'Invalid assignment did not safely fall back to Random');
         } finally {
@@ -213,7 +213,7 @@ try {
         game.loadRecipes();
         ensure(JSON.stringify(game.recipes) === library, 'Reloading recipes restored deleted gifts or lost edits');
         return { library: game.recipes, patterns: game.unlockedPatternKeys,
-            assignments: launchers.map(launcher => launcher.assignedRecipeIndex),
+            assignments: portals.map(portal => portal.assignedRecipeIndex),
             randomShots: [shots[0][0].pattern, shots[1][0].pattern], renamedRecipe: game.recipes[0].name };
     });
 
@@ -225,7 +225,7 @@ try {
         const verify = label => {
             ensure(JSON.stringify(game.recipes) === JSON.stringify(expected.library), `${label} changed owned recipes or restored deleted gifts`);
             ensure(JSON.stringify(game.unlockedPatternKeys) === JSON.stringify(expected.patterns), `${label} changed unlocked patterns`);
-            ensure(JSON.stringify(game.buildingManager.getBuildingsByType('AUTO_LAUNCHER').map(launcher => launcher.assignedRecipeIndex))
+            ensure(JSON.stringify(game.buildingManager.getBuildingsByType('PORTAL').map(portal => portal.assignedRecipeIndex))
                 === JSON.stringify(expected.assignments), `${label} changed Random or fixed assignments`);
         };
         verify('Browser reload');
@@ -240,23 +240,23 @@ try {
 
     const emptyLibrary = await page.evaluate(async () => {
         const game = window.game;
-        const { launcherFPS, expectedSPS } = await import('/js/systems/ProductionRates.js');
+        const { portalFPS, expectedSPS } = await import('/js/systems/ProductionRates.js');
         const ensure = (condition, message) => { if (!condition) throw new Error(message); };
         game.eraseAllRecipes();
         ensure(game.recipes.length === 0, 'Erase did not empty the recipe library');
-        const launchers = game.buildingManager.getBuildingsByType('AUTO_LAUNCHER');
+        const portals = game.buildingManager.getBuildingsByType('PORTAL');
         const before = { fireworks: game.fireworkSystem.fireworkCount, sparkles: game.getSparkles(),
             metrics: game.statsTracker.lifetimeFireworks };
-        for (const launcher of launchers) {
-            launcher.accumulator = 0;
-            launcher.update(launcher.spawnInterval * 2);
-            launcher.spawnFirework();
-            ensure(launcher.getSparklesPerSecond() === 0, 'Empty library reports launcher sparkle production');
+        for (const portal of portals) {
+            portal.accumulator = 0;
+            portal.update(portal.spawnInterval * 2);
+            portal.spawnFirework();
+            ensure(portal.getSparklesPerSecond() === 0, 'Empty library reports portal sparkle production');
         }
         ensure(game.fireworkSystem.fireworkCount === before.fireworks && game.getSparkles() === before.sparkles
             && game.statsTracker.lifetimeFireworks === before.metrics,
         'Empty library launched the draft or awarded fireworks/sparkles/metrics');
-        ensure(launcherFPS(game) === 0 && expectedSPS(game).launchers === 0, 'Production estimates ignore the empty library');
+        ensure(portalFPS(game) === 0 && expectedSPS(game).portals === 0, 'Production estimates ignore the empty library');
         game.progression.applyAll(game);
         game.loadRecipes();
         ensure(game.recipes.length === 0, 'Recompute or recipe reload restored erased gifts');
@@ -264,14 +264,14 @@ try {
         ensure(game.recipes.length === 0, 'Import restored erased gifts');
         game.saveProgress();
         return { fireworksAdded: game.fireworkSystem.fireworkCount - before.fireworks,
-            launcherFPS: launcherFPS(game), estimatedLauncherSPS: expectedSPS(game).launchers };
+            portalFPS: portalFPS(game), estimatedPortalSPS: expectedSPS(game).portals };
     });
     await page.reload({ waitUntil: 'domcontentloaded' });
     await ready();
     const remainsEmpty = await page.evaluate(() => {
         game.progression.applyAll(game);
-        return game.recipes.length === 0 && game.buildingManager.getBuildingsByType('AUTO_LAUNCHER')
-            .every(launcher => launcher.assignedRecipeIndex === null);
+        return game.recipes.length === 0 && game.buildingManager.getBuildingsByType('PORTAL')
+            .every(portal => portal.assignedRecipeIndex === null);
     });
     assert(remainsEmpty, 'Browser reload regenerated erased gifts or invalid assignments');
     if (errors.length) throw new Error(errors.join('\n'));

@@ -19,27 +19,27 @@ console.log(`\n=== SIM: ${minutes} min @ ${clicksPerSec} clicks/s ===\n`);
 
 // ── Per-minute share table ───────────────────────────────────────────────────
 // Parse the per-minute MINUTE events into source deltas.
-const SRC = ['clicks', 'launchers', 'cultists', 'flyers', 'crowdCatch', 'finale'];
+const SRC = ['clicks', 'portals', 'cultists', 'flyers', 'crowdCatch', 'finale'];
 const rows = [];
 for (const e of result.events) {
     if (e.type !== 'minute') continue;
-    const m = /clicks (\d+), launchers (\d+), cultists (\d+), flyers (\d+), crowdCatch (\d+), finale (\d+); Gold — crowd (\d+)/.exec(e.label);
+    const m = /clicks (\d+), portals (\d+), cultists (\d+), flyers (\d+), crowdCatch (\d+), finale (\d+); Gold — crowd (\d+)/.exec(e.label);
     if (!m) continue;
-    const vals = { clicks: +m[1], launchers: +m[2], cultists: +m[3], flyers: +m[4], crowdCatch: +m[5], finale: +m[6] };
+    const vals = { clicks: +m[1], portals: +m[2], cultists: +m[3], flyers: +m[4], crowdCatch: +m[5], finale: +m[6] };
     const gold = +m[7];
     const tot = SRC.reduce((a, k) => a + vals[k], 0) || 1;
     rows.push({ min: Math.round(e.time / 60), vals, tot, gold });
 }
 
-console.log('min |  clicks  launch   cult   flyer  catch finale | reign       | spk/s      | gold/s');
+console.log('min |  clicks  portal   cult   flyer  catch finale | reign       | spk/s      | gold/s');
 console.log('----+------------------------------------------------+-------------+------------+-------');
 for (const r of rows) {
     const pct = (k) => `${String(Math.round(r.vals[k] / r.tot * 100)).padStart(5)}%`;
     let reign = SRC[0], rv = -1;
     for (const k of SRC) if (r.vals[k] > rv) { rv = r.vals[k]; reign = k; }
-    const reignName = { clicks: 'CLICKS', launchers: 'LAUNCHERS', cultists: 'CULTISTS', flyers: 'FLYERS', crowdCatch: 'CROWD-CATCH', finale: 'FINALE' }[reign];
+    const reignName = { clicks: 'CLICKS', portals: 'PORTALS', cultists: 'CULTISTS', flyers: 'FLYERS', crowdCatch: 'CROWD-CATCH', finale: 'FINALE' }[reign];
     console.log(
-        `${String(r.min).padStart(3)} |${pct('clicks')}${pct('launchers')}${pct('cultists')}${pct('flyers')}${pct('crowdCatch')}${pct('finale')} | ${reignName.padEnd(11)} | ${n(r.tot / 60).padStart(10)} | ${n(r.gold / 60).padStart(5)}`
+        `${String(r.min).padStart(3)} |${pct('clicks')}${pct('portals')}${pct('cultists')}${pct('flyers')}${pct('crowdCatch')}${pct('finale')} | ${reignName.padEnd(11)} | ${n(r.tot / 60).padStart(10)} | ${n(r.gold / 60).padStart(5)}`
     );
 }
 

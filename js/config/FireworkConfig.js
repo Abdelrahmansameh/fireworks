@@ -11,10 +11,6 @@ export const FIREWORK_CONFIG = {
     rocketSize: 1.0,
     minExplosionHeightPercent: 0.4,
     maxExplosionHeightPercent: 0.8,
-    autoLauncherMeshWidth: 30,
-    autoLauncherMeshHeight: 80,
-    autoLauncherMeshColor: { r: 136 / 255, g: 136 / 255, b: 136 / 255, a: 1 },
-    autoLauncherTexture: 'assets/launcher.png',
     patternGravities: {
         default: 200,
         helix: 40,
