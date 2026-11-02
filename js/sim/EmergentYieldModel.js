@@ -1,10 +1,10 @@
-import { JETPACK_CONFIG, CROWD_CATCHER_CONFIG } from '../config/config.js';
+import { FLYER_CONFIG, CROWD_CATCHER_CONFIG } from '../config/config.js';
 import { SIMULATION_CONFIG } from '../config/SimulationConfig.js';
 import { launcherFPS } from '../systems/ProductionRates.js';
 
 /**
  * EmergentYieldModel — coarse, data-driven estimate of the two income sources
- * that are emergent (particle-physics-driven) in the live game: jetpack
+ * that are emergent (particle-physics-driven) in the live game: flyer
  * collection and crowd catching.
  *
  * Used ONLY in headless mode. The live game keeps its real particle physics
@@ -18,32 +18,32 @@ export default class EmergentYieldModel {
         this.config = config;
     }
 
-    /** Owned jetpacks each provide one permanent collector. */
-    static estimateActiveJetpackFans(game) {
-        return game.crowd?.jetpackCount ?? game.jetpackCount ?? 0;
+    /** Owned flyers each provide one permanent collector. */
+    static estimateActiveFlyers(game) {
+        return game.crowd?.flyerCount ?? game.flyerCount ?? 0;
     }
 
     /**
-     * Sparkles/sec from jetpacks and crowd catching, given the current state.
-     * @returns {{ jetpacks: number, crowdCatching: number, particlesPerSec: number }}
+     * Sparkles/sec from flyers and crowd catching, given the current state.
+     * @returns {{ flyers: number, crowdCatching: number, particlesPerSec: number }}
      */
     rates(game, clicksPerSec = 0) {
         const cfg = this.config;
         const fireworksPerSec = launcherFPS(game) + clicksPerSec;
         const particlesPerSec = fireworksPerSec * cfg.avgParticlesPerFirework;
 
-        // ── Jetpack fans ──────────────────────────────────────────────────────────
-        let jetpacks = 0;
-        const activeJetpackFans = EmergentYieldModel.estimateActiveJetpackFans(game);
-        if (activeJetpackFans > 0 && particlesPerSec > 0) {
+        // ── Flyers ──────────────────────────────────────────────────────────
+        let flyers = 0;
+        const activeFlyers = EmergentYieldModel.estimateActiveFlyers(game);
+        if (activeFlyers > 0 && particlesPerSec > 0) {
             const frac = Math.min(
-                cfg.jetpack.maxCatchFractionTotal,
-                activeJetpackFans * cfg.jetpack.catchFractionPerFan
+                cfg.flyer.maxCatchFractionTotal,
+                activeFlyers * cfg.flyer.catchFractionPerFan
             );
             const caught = particlesPerSec * frac;
-            jetpacks = caught
-                * JETPACK_CONFIG.sparklesPerParticle
-                * (game.jetpackStats?.sparklesPerParticleMultiplier ?? 1);
+            flyers = caught
+                * FLYER_CONFIG.sparklesPerParticle
+                * (game.flyerStats?.sparklesPerParticleMultiplier ?? 1);
         }
 
         // ── Crowd catching ──────────────────────────────────────────────────
@@ -65,7 +65,7 @@ export default class EmergentYieldModel {
             }
         }
 
-        return { jetpacks, crowdCatching, particlesPerSec };
+        return { flyers, crowdCatching, particlesPerSec };
     }
 
     /**
@@ -73,10 +73,10 @@ export default class EmergentYieldModel {
      * addSparkles sinks (and metric sources) the live game uses.
      */
     applyTick(game, dt, clicksPerSec = 0) {
-        const { jetpacks, crowdCatching } = this.rates(game, clicksPerSec);
-        if (jetpacks > 0) {
-            game.addSparkles(jetpacks * dt, 'jetpack');
-            game.statsTracker.recordJetpackParticle();
+        const { flyers, crowdCatching } = this.rates(game, clicksPerSec);
+        if (flyers > 0) {
+            game.addSparkles(flyers * dt, 'flyer');
+            game.statsTracker.recordFlyerParticle();
         }
         if (crowdCatching > 0) {
             game.addSparkles(crowdCatching * dt, 'crowd_catch');

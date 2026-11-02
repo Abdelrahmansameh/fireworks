@@ -12,10 +12,10 @@ Data: live-bot run `traces/live-balance/currency-audit-active.json` (active pres
 
 | Gold spent on upgrades | Cost (all levels) | Share |
 |---|---|---|
-| → sparkle income (Sparkle Powder, Louder Chants, Quick Reload, Catapult Team, Confetti Catchers, both "Helping Hands", Long Toss, all jetpack nodes) | 207,080 | **94%** |
+| → sparkle income (Sparkle Powder, Louder Chants, Quick Reload, Catapult Team, Confetti Catchers, both "Helping Hands", Long Toss, all flyer nodes) | 207,080 | **94%** |
 | → gold income (Better Tips, Festival Sponsors, Full House) | 12,600 | 6% |
 
-Gold's buildings and recruits (catapults, cultists, jetpacks) also only make sparkles. So almost every gold choice resolves to "more sparkles".
+Gold's buildings and recruits (catapults, cultists, flyers) also only make sparkles. So almost every gold choice resolves to "more sparkles".
 
 Lostgarden's term for this is *undifferentiated inputs*: two currencies feed the same outcome, so the player can't name what either one is *for*.
 
@@ -45,7 +45,7 @@ Over the final 11 minutes sparkle income grows ×9, while gold stays flat becaus
 ### 1e. What already works (keep it)
 
 - **Purchase cadence:** median gap is 38 s for sparkles and 76 s for gold, and the longest is 75 s. That fits the research targets: early seconds, mid-game 30 s–2 min.
-- **The worker bridge:** gold buys performers who catch or conjure sparkles. They produce 35% of all sparkles: catching 18%, jetpacks 9%, cultists 8%. This is a good intertwining. It just shouldn't be the *only* thing gold does.
+- **The worker bridge:** gold buys performers who catch or conjure sparkles. They produce 35% of all sparkles: catching 18%, flyers 9%, cultists 8%. This is a good intertwining. It just shouldn't be the *only* thing gold does.
 
 ---
 
@@ -81,12 +81,12 @@ Over the final 11 minutes sparkle income grows ×9, while gold stays flat becaus
                           ▼                      │
                    ┌──────────────── TIPS ● (gold) ───────────┐
    fans toss coins │  "HIRE THE PEOPLE" — audience & crew     │ tickets, catapults,
-   ───────────────►│  spent only on people & their training   │ cultists, jetpacks,
+   ───────────────►│  spent only on people & their training   │ cultists, flyers,
                    └────────────────────┬─────────────────────┘ crew training
                                         │ cult tithe (converter)
                                         └──────► sparkles at a visible rate
 
-   Keystones (Catapult, Jetpack Fans, Grand Finale) cost BOTH ✦ + ●.
+   Keystones (Catapult, Flyers, Grand Finale) cost BOTH ✦ + ●.
    After the finale (phase 3): lifetime ✦ → STARS ★ (never spent, +10% each).
 ```
 
@@ -95,7 +95,7 @@ Over the final 11 minutes sparkle income grows ×9, while gold stays flat becaus
 | Currency | Verb | Where it lives on screen | Earned by | Spent on (only) | Clock |
 |---|---|---|---|---|---|
 | **Sparkles ✦** | Build the show | sky and launchers | bursts (tap, launcher), catches, cult tithe | launchers, launcher stats, base sparkle multipliers, shapes, finale | per second |
-| **Tips ● (gold)** | Hire the people | crowd and coin tosses | fan tosses × Hype | fans/tickets, catapults, cultists, jetpack fans, crew training | per second, slower |
+| **Tips ● (gold)** | Hire the people | crowd and coin tosses | fan tosses × Hype | fans/tickets, catapults, cultists, flyers, crew training | per second, slower |
 | **Hype ♪** | The mood (a multiplier, never spent) | crowd cheer bar; fans cheer harder | burst intensity, shape variety, manual taps, catches; decays | multiplies tips (and speeds fan arrivals) | ~10 s swings |
 | **Stars ★** (phase 3) | Legacy | constellation in the sky | Grand Finale / "go on tour" reset | never spent: +10% to all income each | per run |
 
@@ -107,10 +107,10 @@ Over the final 11 minutes sparkle income grows ×9, while gold stays flat becaus
 
 1. **Core engine (✦ → ✦).** Sparkles buy launchers, launchers make sparkles. Already in place.
 2. **Show → Hype → Tips (buff bridge).** A better show earns better tips. Sparkles never convert *directly* into gold, so gold stays its own scarcer currency, yet it now grows with the show. This fixes 1c and gives shapes and taps a job, fixing 1d.
-3. **Tips → crew → Sparkles (worker bridge).** Keep catapults and jetpacks as "people who harvest the sky." Their output scales with the sky, so they stay relevant.
+3. **Tips → crew → Sparkles (worker bridge).** Keep catapults and flyers as "people who harvest the sky." Their output scales with the sky, so they stay relevant.
 4. **Cult tithe (converter, plus a sink that never runs out).** Cultists take a visible share of incoming tips and turn it into sparkles at a stated rate ("1 ● → 3 ✦"). Upgrades improve the rate. Gold now has a scaling late-game use instead of idling.
 
-**Keystones need both currencies.** Catapult, Jetpack Fans and Grand Finale get a `secondaryCost`, which `LivePurchasePolicy` already supports. That is the "classic intertwining" moment: neither economy can be ignored. Limit it to about 3–5 keystones so it stays special.
+**Keystones need both currencies.** Catapult, Flyers and Grand Finale get a `secondaryCost`, which `LivePurchasePolicy` already supports. That is the "classic intertwining" moment: neither economy can be ignored. Limit it to about 3–5 keystones so it stays special.
 
 ---
 
@@ -193,11 +193,11 @@ bonus = +10% all income per star (Egg-Inc style, never spent)
 | Sparkle Powder (`crowd_fireworks`) | gold → +25% launcher sparkles | Move to the LAUNCHER branch, costing ✦. Or replace with **Encore Chant** (● → +Hype decay time). |
 | Extra Tickets (`crowd_invite_1`) | ✦ → +4 fans | Cost ● |
 | Sky Catchers (`crowd_catcher_unlock`) | ✦ | Fold into the Catapult keystone (catapult already enables catching), or cost ● |
-| Catapult, Jetpack Fans, Grand Finale | single currency | Add `secondaryCost` in the other currency (keystones) |
+| Catapult, Flyers, Grand Finale | single currency | Add `secondaryCost` in the other currency (keystones) |
 | Louder Chants | +75% cultist sparkles | +75% **tithe rate** |
 | Cultists | make sparkles from nothing | Convert a share of tips into sparkles (converter). Ritual VFX already reads as "bowl → sparkles"; add coin motes flowing in. |
 | Shapes (15 nodes) | cosmetic, 2% of spend | Feed Hype variety. Re-price. Tooltip: "+variety". |
-| Jetpack "Helping Hands" (`jetpack_reach`) | same name as the crowd node | Rename it (e.g. "Long Arms") |
+| Flyer "Helping Hands" (`flyer_reach`) | same name as the crowd node | Rename it (e.g. "Long Arms") |
 | Milestones | currency goals already roughly match roles | Add one **Hype** goal right after Opening Night ("Get the crowd Roaring") to teach the meter. Keep gold goals before people unlocks and sparkle goals before machine unlocks. |
 | Crowd cap | gold rate hits a hard ceiling at 43 fans | Keep the cap. Hype is the late growth axis, not fan count. |
 

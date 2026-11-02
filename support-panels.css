@@ -100,7 +100,7 @@
 .source-cultists { background: var(--teal); }
 .source-fans { background: var(--green); }
 .source-clicks { background: var(--gold); }
-.source-jetpacks { background: #b9a3ff; }
+.source-flyers { background: #b9a3ff; }
 .source-other { background: #ff9cc8; }
 .stats-production-legend { display: flex; flex-direction: column; gap: 4px; }
 .stats-legend-row { display: flex; justify-content: space-between; align-items: center; gap: 8px; min-height: 20px; font-size: 13px; font-weight: 700; }
@@ -127,7 +127,6 @@
 
 @media (max-width: 700px) {
     .buildings-panel, .settings-panel, .stats-panel { padding-right: 3px; }
-    .crowd-panel { flex: 0 0 auto; }
 }
 @media (prefers-reduced-motion: reduce) {
     .stats-segment, .crowd-panel .progress-bar, .settings-switch-track, .settings-switch-track::after { transition: none; }

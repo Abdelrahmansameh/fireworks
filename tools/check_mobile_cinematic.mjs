@@ -48,7 +48,9 @@ try {
             game.resourceManager.resources.sparkles.amount = 2000;
             game.resourceManager.resources.gold.amount = 0;
             for (const id of ['base_mult_1', 'unlock_recipes_tab', 'auto_launcher', 'launcher_spawn_rate']) {
-                if (!game.buyUpgrade(id)) throw new Error(`Could not buy ${id}`);
+                const success = ['unlock_recipes_tab', 'auto_launcher'].includes(id)
+                    ? game.progression.grantUpgrade(id, game, 'test-fixture') : game.buyUpgrade(id);
+                if (!success) throw new Error(`Could not obtain ${id}`);
             }
             for (let i = 0; i < 3; i++) {
                 if (!game.buildingManager.buyBuilding('AUTO_LAUNCHER')) throw new Error('Could not buy a launcher');
@@ -223,7 +225,7 @@ try {
                     playing: game.cinematicManager.isPlaying, person: game.crowd.people[0]?.state,
                     launches: check.launches.length, failures: check.failures })}`);
             };
-            if (!game.buyUpgrade('crowd_spark_1')) throw new Error('Could not invite the crowd');
+            if (!game.progression.grantUpgrade('crowd_spark_1', game, 'test-fixture')) throw new Error('Could not invite the crowd');
             game.ui.dismissNotification();
             return { gold: game.resourceManager.resources.gold.amount,
                 crowdUnlocked: game.crowdUnlocked, recipes: game.progression.isUnlocked('recipes_tab'),

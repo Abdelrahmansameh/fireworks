@@ -1,5 +1,5 @@
 export * from './ParticleConfig.js';
-export * from './JetpackConfig.js';
+export * from './FlyerConfig.js';
 export * from './CultistConfig.js';
 export * from './FireworkConfig.js';
 export * from './BuildingConfig.js';

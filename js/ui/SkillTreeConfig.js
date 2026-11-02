@@ -5,7 +5,7 @@ const unlock = (game, id) => {
 };
 const node = (id, parent, branch, name, desc, cost, currency, extra = {}) => ({
     id, treeParent: parent, group: branch, branch,
-    icon: branch === 'JETPACK' ? 'crowd' : branch === 'CROWD' ? 'crowd' : branch === 'LAUNCHER' ? 'launcher' : 'base',
+    icon: branch === 'FLYER' ? 'crowd' : branch === 'CROWD' ? 'crowd' : branch === 'LAUNCHER' ? 'launcher' : 'base',
     offset: { x: branch === 'CROWD' ? 200 : branch === 'LAUNCHER' ? -200 : 0, y: -180 },
     name, desc, baseCost: cost, currency, costRatio: 1, maxLevel: 1, ...extra,
 });
@@ -26,7 +26,7 @@ export const SKILL_TREE_CONFIG = {
         LAUNCHER: { color: '#FF7043', label: 'Launchers' },
         CROWD: { color: '#F06292', label: 'Crowd & catapults' },
         CULTIST: { color: '#66BB6A', label: 'Cult' },
-        JETPACK: { color: '#29B6F6', label: 'Jetpacks' },
+        FLYER: { color: '#29B6F6', label: 'Flyers' },
     },
     nodes: {
         base_mult_1: node('base_mult_1', 'ROOT', 'BASE', 'Brighter Sparks',
@@ -86,10 +86,10 @@ export const SKILL_TREE_CONFIG = {
         unlock_saturn: pattern('saturn', 'unlock_pistil', 'Saturn',
             2400, 'crowd_gold_2'),
         unlock_brokenHeart: pattern('brokenHeart', 'unlock_saturn', 'Broken Heart',
-            120, 'jetpack_unlock'),
+            120, 'flyer_unlock'),
         // Christmas Tree and Helix are temporarily disabled.
         unlock_spinner: pattern('spinner', 'unlock_brokenHeart', 'Spinner',
-            240, 'jetpack_speed'),
+            240, 'flyer_speed'),
         unlock_snowflake: pattern('snowflake', 'unlock_spinner', 'Snowflake',
             900, 'launcher_overclock'),
         unlock_dragonsBreath: pattern('dragonsBreath', 'unlock_snowflake', "Dragon's Breath",
@@ -159,40 +159,40 @@ export const SKILL_TREE_CONFIG = {
             '+6 fans.', 4500, 'gold', {
                 action: 'Invite', apply: game => { game.crowdStats.countBonus += 6; },
             }),
-        jetpack_unlock: node('jetpack_unlock', 'crowd_invite_2', 'JETPACK', 'Jetpack Fans',
-            'Give a fan a jetpack to catch sparkles.', 21000, 'gold', {
-                milestoneReward: true, action: 'Equip', unlockId: 'jetpack_unlock',
-                apply: game => unlock(game, 'jetpack_unlock'), onPurchase: game => game.grantJetpack(),
+        flyer_unlock: node('flyer_unlock', 'crowd_invite_2', 'FLYER', 'Flying Cultists',
+            'Teach a fan to fly on palm sparkles and catch bursts.', 21000, 'gold', {
+                milestoneReward: true, action: 'Equip', unlockId: 'flyer_unlock',
+                apply: game => unlock(game, 'flyer_unlock'), onPurchase: game => game.grantFlyer(),
             }),
-        jetpack_reach: node('jetpack_reach', 'jetpack_unlock', 'JETPACK', 'Helping Hands',
-            '+25% jetpack fan reach.', 6750, 'gold', {
-                apply: game => { game.jetpackStats.collectionRadiusMultiplier *= 1.25; },
+        flyer_reach: node('flyer_reach', 'flyer_unlock', 'FLYER', 'Helping Hands',
+            '+25% flying cultist reach.', 6750, 'gold', {
+                apply: game => { game.flyerStats.collectionRadiusMultiplier *= 1.25; },
             }),
-        jetpack_speed: node('jetpack_speed', 'jetpack_reach', 'JETPACK', 'Fast Flyers',
-            '+35% jetpack fan speed.', 3000, 'gold', {
-                apply: game => { game.jetpackStats.speedMultiplier *= 1.35; },
+        flyer_speed: node('flyer_speed', 'flyer_reach', 'FLYER', 'Fast Flyers',
+            '+35% flying cultist speed.', 3000, 'gold', {
+                apply: game => { game.flyerStats.speedMultiplier *= 1.35; },
             }),
-        jetpack_team: node('jetpack_team', 'jetpack_speed', 'JETPACK', 'Jetpack Team',
-            '+1 jetpack fan.', 15000, 'gold', {
+        flyer_team: node('flyer_team', 'flyer_speed', 'FLYER', 'Sky Coven',
+            '+1 flying cultist.', 15000, 'gold', {
                 maxLevel: 2, costRatio: 3,
-                onPurchase: game => game.grantJetpack(),
+                onPurchase: game => game.grantFlyer(),
             }),
-        jetpack_sparkle_yield: node('jetpack_sparkle_yield', 'jetpack_reach', 'JETPACK', 'Particle Magnets',
-            '+75% jetpack fan sparkles.', 9750, 'gold', {
+        flyer_sparkle_yield: node('flyer_sparkle_yield', 'flyer_reach', 'FLYER', 'Particle Magnets',
+            '+75% flying cultist sparkles.', 9750, 'gold', {
                 maxLevel: 2, costRatio: 3.5, offset: { x: -200, y: 0 },
-                apply: game => { game.jetpackStats.sparklesPerParticleMultiplier *= 1.75; },
+                apply: game => { game.flyerStats.sparklesPerParticleMultiplier *= 1.75; },
             }),
-        jetpack_radius: node('jetpack_radius', 'jetpack_sparkle_yield', 'JETPACK', 'Wide Sweep',
-            '+25% jetpack fan reach.', 3000, 'gold', {
+        flyer_radius: node('flyer_radius', 'flyer_sparkle_yield', 'FLYER', 'Wide Sweep',
+            '+25% flying cultist reach.', 3000, 'gold', {
                 maxLevel: 2, costRatio: 3.5,
-                apply: game => { game.jetpackStats.collectionRadiusMultiplier *= 1.25; },
+                apply: game => { game.flyerStats.collectionRadiusMultiplier *= 1.25; },
             }),
-        jetpack_efficiency: node('jetpack_efficiency', 'jetpack_team', 'JETPACK', 'Air Show',
-            '+35% jetpack fan speed.', 22500, 'gold', {
-                requires: { upgrades: { jetpack_team: 1, jetpack_sparkle_yield: 1, jetpack_radius: 1, jetpack_speed: 1 } },
-                apply: game => { game.jetpackStats.speedMultiplier *= 1.35; },
+        flyer_efficiency: node('flyer_efficiency', 'flyer_team', 'FLYER', 'Air Show',
+            '+35% flying cultist speed.', 22500, 'gold', {
+                requires: { upgrades: { flyer_team: 1, flyer_sparkle_yield: 1, flyer_radius: 1, flyer_speed: 1 } },
+                apply: game => { game.flyerStats.speedMultiplier *= 1.35; },
             }),
-        launcher_overclock: node('launcher_overclock', 'jetpack_efficiency', 'LAUNCHER', 'Full Salvo',
+        launcher_overclock: node('launcher_overclock', 'flyer_efficiency', 'LAUNCHER', 'Full Salvo',
             '+54% launcher fire rate.', 25000, 'sparkles', {
                 apply: game => { game.launcherStats.spawnIntervalMultiplier *= 0.65; },
             }),

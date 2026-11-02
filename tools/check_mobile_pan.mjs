@@ -95,7 +95,7 @@ try {
                 await page.evaluate(which => game.chrome.setPlayerZoom(game.getVenueCameraBounds()[which]), which);
                 await settle();
                 let before = await state();
-                for (let i = 0; i < 24; i++) await swipe('right');
+                for (let i = 0; i < 64; i++) await swipe('right');
                 let atRight = await state();
                 const viewWidth = atRight.visible.right - atRight.visible.left;
                 const worldWidth = atRight.bounds.right - atRight.bounds.left;
@@ -104,7 +104,7 @@ try {
                 assert(Math.abs(atRight.x - expectedRightX) < 1,
                     `${JSON.stringify(viewport)}: ${count} launchers ${which} right edge is wrong: ${JSON.stringify(atRight)}`);
                 assert(atRight.fireworks === before.fireworks, `${JSON.stringify(viewport)}: swiping fired a rocket`);
-                for (let i = 0; i < 24; i++) await swipe('left');
+                for (let i = 0; i < 64; i++) await swipe('left');
                 let atLeft = await state();
                 const expectedLeftX = worldWidth <= viewWidth ? (atLeft.bounds.left + atLeft.bounds.right) / 2
                     : atLeft.bounds.left + viewWidth / 2;
@@ -141,7 +141,7 @@ try {
         // A live orientation change must use the new view width and remain inside the same world.
         await page.setViewportSize({ width: viewport.height, height: viewport.width });
         await settle();
-        for (let i = 0; i < 24; i++) await swipe('right');
+        for (let i = 0; i < 64; i++) await swipe('right');
         const rotated = await state();
         const visibleWidth = rotated.visible.right - rotated.visible.left;
         const worldWidth = rotated.bounds.right - rotated.bounds.left;

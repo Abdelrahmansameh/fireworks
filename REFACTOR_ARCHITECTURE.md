@@ -80,7 +80,7 @@ js/
                                  InputSystem, CameraSystem, AudioSystem,
                                  StatsSystem, SaveSystem(wired), RecipeSystem
     components/                ← SkeletonSprite, StaticSprite, RecipeLauncher,
-                                 ResourceProduction, JetpackBehavior, CatapultBehaviour,
+                                 ResourceProduction, FlyerBehavior, CatapultBehaviour,
                                  Draggable, Highlightable, …
   ui/                          ← panels keep their current data-driven structure,
                                  but mount(api, view, events) — never see the game
@@ -191,7 +191,7 @@ world.addSystem(new EconomySystem());
 world.addSystem(new ProgressionSystem());
 world.addSystem(new BuildingSystem());
 world.addSystem(new FireworkSystem());
-// JetpackBehavior runs within Crowd, alongside other member behaviors.
+// FlyerBehavior runs within Crowd, alongside other member behaviors.
 world.addSystem(new CrowdSystem());       // presentation-dependent
 world.addSystem(new CinematicSystem());   // "
 world.addSystem(new FinaleSystem());
@@ -266,7 +266,7 @@ class GameAPI {
     saveRecipe(name, components) { … }// takes DATA — no DOM reads in game code
     eraseRecipes() { … }
     launchAt(x, y) { … }
-    cheat = { addSparkles(n) {…}, unlockAll() {…}, grantJetpacks(n) {…}, … };
+    cheat = { addSparkles(n) {…}, unlockAll() {…}, grantFlyers(n) {…}, … };
 }
 ```
 
@@ -392,21 +392,21 @@ events.on(EV.UNLOCK_GRANTED, ({ id }) => {
 ## Extra improvements (recommended, fold into phases below)
 
 1. **Stat/modifier system** replacing the hand-maintained buckets
-   (`jetpackStats`, `crowdStats`, `launcherStats`, …, reset+recomputed by
+   (`flyerStats`, `crowdStats`, `launcherStats`, …, reset+recomputed by
    `progression.applyAll(this)` mutating the game, and re-declared verbatim in
    `resetGame()`):
 
 ```js
-stats.define('jetpack.speedMult', 1);
+stats.define('flyer.speedMult', 1);
 stats.define('crowd.goldRateMult', 1);
 // upgrades contribute modifiers; recompute invalidates a cache + emits nothing
-upgradeDef.effects = [{ stat: 'jetpack.speedMult', op: 'mult', value: 1.15 }];
-const v = stats.get('jetpack.speedMult');   // cached read, hot-path safe
+upgradeDef.effects = [{ stat: 'flyer.speedMult', op: 'mult', value: 1.15 }];
+const v = stats.get('flyer.speedMult');   // cached read, hot-path safe
 ```
 
    Upgrade *effects* become data in `SkillTreeConfig` instead of code in `applyAll`,
    `resetGame`'s duplicate initializers disappear, and systems read stats instead of
-   `this.game.jetpackStats?.x ?? 1` chains.
+   `this.game.flyerStats?.x ?? 1` chains.
 
 2. **One cost module.** `EconomyMath.buildingCost(type, count)` /
    `upgradeCost(def, level)` — delete the duplicated launcher-cost formula in

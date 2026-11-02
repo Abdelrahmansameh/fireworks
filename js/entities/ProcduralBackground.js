@@ -7,6 +7,9 @@ import BackgroundScenery from './BackgroundScenery.js';
 // Inner-radius ratios snap to buckets so each mesh covers many stars.
 const STAR_GROUP_CAPACITY = 1024;
 const STAR_RATIO_BUCKETS = 4;
+// Stars fill square tiles of N×N cells, one star per cell, so the field stays
+// even wherever the camera goes. Tiles are seeded by coordinate and built once.
+const STAR_TILE_CELLS = 8;
 
 class ProcduralBackground {
     constructor(renderer, config = PROCEDURAL_BACKGROUND_CONFIG) {
@@ -18,6 +21,7 @@ class ProcduralBackground {
         this.twinkleStars = [];
         this.twinkleTime = 0;
         this.starMeshes = new Map();
+        this.starTiles = new Set();
         this.scenery = null;
         this.lightSurfaces = [];
     }
@@ -35,8 +39,7 @@ class ProcduralBackground {
         };
 
         this._buildSky();
-        const starBottom = world.horizonY + this.config.stars.minYFromHorizon;
-        this._buildStars(starBottom, this.coverageBounds.top);
+        this._buildStars(this.coverageBounds);
         this.scenery = new BackgroundScenery(this);
         this.scenery.build();
         this.lightSurfaces = this.scenery.lightSurfaces;
@@ -59,6 +62,7 @@ class ProcduralBackground {
             }
         }
         this.starMeshes.clear();
+        this.starTiles.clear();
         this.skyBands.length = 0;
         this.skySafetyShape = null;
         this.groundShape = null;
@@ -85,10 +89,8 @@ class ProcduralBackground {
             return;
         }
 
-        if (top > bounds.top) {
-            this._buildStars(bounds.top, top);
-        }
         Object.assign(bounds, { left, right, top, bottom });
+        this._buildStars(bounds);
         this._setRectBounds(this.skySafetyShape, left, world.skyTopY - 1, right, top);
         for (const shape of this.skyBands) {
             shape.position.x = left;
@@ -175,49 +177,42 @@ class ProcduralBackground {
         return this._lerpColor(sky.midColor, sky.topColor, localT);
     }
 
-    _buildStars(minY, maxY) {
-        const { world, stars, zIndex } = this.config;
-        const rng = createRng((this.config.seed ^ 0xA1B2C3D4 ^ Math.floor(minY)) >>> 0);
-        // Keep the original sky's density as the field grows into the safety zone.
-        const referenceHeight = Math.max(1, world.skyTopY - stars.maxYFromSkyTop
-            - (world.horizonY + stars.minYFromHorizon));
-        const count = Math.ceil(stars.count * (maxY - minY) / referenceHeight);
-        const distributionJitter = stars.distributionJitter ?? 0.9;
+    /** Build every star tile overlapping the bounds that does not exist yet. */
+    _buildStars(bounds) {
+        const { world, stars } = this.config;
+        const starBottom = world.horizonY + stars.minYFromHorizon;
+        // Keep the original sky's average density: `count` stars over its span.
+        const referenceHeight = Math.max(1, world.skyTopY - stars.maxYFromSkyTop - starBottom);
+        const cellSize = Math.sqrt((world.xMax - world.xMin) * referenceHeight / stars.count);
+        const tileSize = cellSize * STAR_TILE_CELLS;
+        const firstX = Math.floor(bounds.left / tileSize);
+        const lastX = Math.floor(bounds.right / tileSize);
+        const lastY = Math.floor((bounds.top - starBottom) / tileSize);
+        for (let tx = firstX; tx <= lastX; tx++) {
+            for (let ty = 0; ty <= lastY; ty++) {
+                const key = `${tx},${ty}`;
+                if (this.starTiles.has(key)) continue;
+                this.starTiles.add(key);
+                this._buildStarTile(tx * tileSize, starBottom + ty * tileSize, cellSize,
+                    createRng((this.config.seed ^ 0xA1B2C3D4 ^ Math.imul(tx, 73856093) ^ Math.imul(ty, 19349663)) >>> 0),
+                    starBottom, referenceHeight);
+            }
+        }
+    }
+
+    _buildStarTile(x0, y0, cellSize, rng, starBottom, fadeHeight) {
+        const { stars, zIndex } = this.config;
         const twinkleMinSpeed = stars.twinkleMinSpeed ?? 0.35;
         const twinkleMaxSpeed = stars.twinkleMaxSpeed ?? 1.6;
         const twinkleMinAmount = stars.twinkleMinAmount ?? 0.1;
         const twinkleMaxAmount = stars.twinkleMaxAmount ?? 0.45;
         const twinkleAlphaInfluence = stars.twinkleAlphaInfluence ?? 0.55;
 
-        const xPositions = this._generateJitteredPositions(
-            rng,
-            count,
-            world.xMin,
-            world.xMax,
-            distributionJitter
-        );
-        const yPositions = this._generateJitteredPositions(
-            rng,
-            count,
-            minY,
-            maxY,
-            distributionJitter
-        );
-
-        const yRange = maxY - minY;
-        if (yRange > 0) {
-            for (let i = 0; i < yPositions.length; i++) {
-                const t = (yPositions[i] - minY) / yRange;
-                yPositions[i] = minY + Math.sqrt(t) * yRange;
-            }
-        }
-
-        this._shuffleInPlace(rng, xPositions);
-        this._shuffleInPlace(rng, yPositions);
-
-        for (let i = 0; i < count; i++) {
-            const x = xPositions[i];
-            const y = yPositions[i];
+        for (let cell = 0; cell < STAR_TILE_CELLS * STAR_TILE_CELLS; cell++) {
+            const x = x0 + (cell % STAR_TILE_CELLS + rng()) * cellSize;
+            const y = y0 + (Math.floor(cell / STAR_TILE_CELLS) + rng()) * cellSize;
+            // Thin the field toward the horizon.
+            if (rng() > (y - starBottom) / fadeHeight) continue;
             const size = this._randRange(rng, stars.minSize, stars.maxSize);
             const alpha = this._randRange(rng, stars.minAlpha, stars.maxAlpha);
             const brightness = this._randRange(rng, stars.minBrightness, stars.maxBrightness);

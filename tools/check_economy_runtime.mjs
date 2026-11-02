@@ -72,13 +72,13 @@ try {
                 ps.meshes[shape].instanceCount = 0;
                 ps.particleUpdateFns[shape].fill(null);
             }
-            const jetpackCrowd = new Crowd(window.game.renderer2D);
+            const flyerCrowd = new Crowd(window.game.renderer2D);
             try {
-                await ready(() => jetpackCrowd.instancedGroup);
-                jetpackCrowd.particleSystem = ps;
-                jetpackCrowd.setJetpackCount(1, { speedMultiplier: 1.35, collectionRadiusMultiplier: 1.5625 });
-                const fan = jetpackCrowd.people.find(person => person.isJetpack);
-                assert(fan, 'Purchased jetpack did not create a crowd member');
+                await ready(() => flyerCrowd.instancedGroup);
+                flyerCrowd.particleSystem = ps;
+                flyerCrowd.setFlyerCount(1, { speedMultiplier: 1.35, collectionRadiusMultiplier: 1.5625 });
+                const fan = flyerCrowd.people.find(person => person.isFlyer);
+                assert(fan, 'Purchased flyer did not create a crowd member');
                 fan.x = 1000; fan.y = 100;
                 const crowdPull = () => {};
                 crowdPull._isCrowdPull = true;
@@ -86,19 +86,19 @@ try {
                     new renderer.Color(1, 1, 1, 1), 1, 10, 0, 'sphere', new renderer.Vector2(),
                     0, crowdPull, false, null, 0, 1, config.PARTICLE_TYPES.FIREWORK_EXPLOSION, 2.75);
                 ps.instanceData.sphere[index * ps.strideFloats + ps.lifetimeIdx] = 9;
-                jetpackCrowd._scanFrameCounter = 0;
-                jetpackCrowd.update(0);
-                assert(ps.particleUpdateFns.sphere[index] === crowdPull, 'Jetpack fan stole a crowd capture');
+                flyerCrowd._scanFrameCounter = 0;
+                flyerCrowd.update(0);
+                assert(ps.particleUpdateFns.sphere[index] === crowdPull, 'Flyer stole a crowd capture');
                 ps.particleUpdateFns.sphere[index] = null;
                 let awarded = 0;
-                jetpackCrowd.onJetpackCollect = amount => { awarded += amount; };
-                jetpackCrowd._scanFrameCounter = 0;
-                jetpackCrowd.update(0);
-                assert(ps.particleUpdateFns.sphere[index]?._isJetpackPull, 'Jetpack fan did not claim an available sparkle');
+                flyerCrowd.onFlyerCollect = amount => { awarded += amount; };
+                flyerCrowd._scanFrameCounter = 0;
+                flyerCrowd.update(0);
+                assert(ps.particleUpdateFns.sphere[index]?._isFlyerPull, 'Flyer did not claim an available sparkle');
                 ps.update(1 / 60);
-                assert(awarded === 2.75, `Jetpack award incorrect: ${awarded}`);
-                results.jetpack = { crowdCapturePreserved: true, capturedValue: awarded };
-            } finally { jetpackCrowd.dispose(); }
+                assert(awarded === 2.75, `Flyer award incorrect: ${awarded}`);
+                results.flyer = { crowdCapturePreserved: true, capturedValue: awarded };
+            } finally { flyerCrowd.dispose(); }
 
             const tempGame = {
                 baseSparkleMultiplier: 4, cultistStats: { sparkleMultiplier: 2, ritualSpeedMultiplier: 1 },
@@ -127,9 +127,9 @@ try {
                 crowd.update(1 / 60);
                 assert(crowd.people.length === 48, `Crowd capacity lost people: ${crowd.people.length}`);
                 assert(crowd.instancedGroup.maxInstances >= 48 * crowd.totalPartsPerPerson, 'Crowd part buffer too small');
-                assert(crowd.collectionRadius === 60 && config.JETPACK_CONFIG.collectionRadius === 50,
+                assert(crowd.collectionRadius === 60 && config.FLYER_CONFIG.collectionRadius === 50,
                     'Original catch radii were not restored');
-                assert(config.CROWD_CATCHER_CONFIG.sparklesPerParticle === 1 && config.JETPACK_CONFIG.sparklesPerParticle === 1,
+                assert(config.CROWD_CATCHER_CONFIG.sparklesPerParticle === 1 && config.FLYER_CONFIG.sparklesPerParticle === 1,
                     'Rebalanced payout multipliers were not restored');
                 for (const shape of Object.keys(ps.activeCounts)) {
                     ps.activeCounts[shape] = 0;
@@ -165,7 +165,7 @@ try {
             const wallets = game.resourceManager.resources;
             wallets.sparkles.amount = 10000000;
             wallets.gold.amount = 1000000;
-            const resetIds = ['grand_finale', 'catapult_max', 'jetpack_team'];
+            const resetIds = ['grand_finale', 'catapult_max', 'flyer_team'];
             // These checks concern transactions, so chapter prerequisites are
             // bypassed without changing prices, effects, or purchase handlers.
             for (const id of resetIds) {
@@ -197,8 +197,8 @@ try {
                 purchase('base_mult_1');
                 purchase('catapult_max');
                 purchase('catapult_max');
-                purchase('jetpack_team');
-                purchase('jetpack_team');
+                purchase('flyer_team');
+                purchase('flyer_team');
                 purchase('grand_finale');
                 await ready(() => game.buildingManager.buildings.every(building => building._instancedGroup));
                 const saved = JSON.parse(JSON.stringify(game.buildingManager.serialize()));
@@ -244,13 +244,13 @@ try {
             results.reset.launcherReset = { paidPurchaseRefund: launcherRefund, includedLauncherRefund: 0,
                 starterAndLicenseRefund: licenseRefund.sparkles, currencyGrowth: 0, purchasePricesPreservedAfterDeserialize: true };
 
-            const beforeJetpack = game.jetpackCount;
-            const cost = game.getJetpackCost();
+            const beforeFlyer = game.flyerCount;
+            const cost = game.getFlyerCost();
             const beforeGold = wallets.gold.amount;
-            assert(game.purchaseJetpack(), 'Jetpack purchase failed');
-            assert(game.jetpackCount === beforeJetpack + 1 && wallets.gold.amount === beforeGold - cost,
-                'Jetpack purchase did not grant one fan at the advertised price');
-            results.jetpackPurchase = { cost, count: game.jetpackCount };
+            assert(game.purchaseFlyer(), 'Flyer purchase failed');
+            assert(game.flyerCount === beforeFlyer + 1 && wallets.gold.amount === beforeGold - cost,
+                'Flyer purchase did not grant one fan at the advertised price');
+            results.flyerPurchase = { cost, count: game.flyerCount };
         } finally { ps.dispose(); }
         return results;
     });

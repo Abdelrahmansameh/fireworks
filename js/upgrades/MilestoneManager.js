@@ -231,7 +231,7 @@ export default class MilestoneManager {
             fireworks: this.game.fireworkSystem.fireworkCount,
             sparkles: stats.lifetimeSparkles ?? 0,
             gold: stats.lifetimeGold ?? 0,
-            caught: (bySource.crowd_catch ?? 0) + (bySource.jetpack ?? 0),
+            caught: (bySource.crowd_catch ?? 0) + (bySource.flyer ?? 0),
         };
     }
 

@@ -1,5 +1,5 @@
 // The milestone chain sets the pacing of a show. Each milestone is one goal; its
-// reward opens the next mechanic. Buildings, fans, jetpack fans and the finale
+// reward opens the next mechanic. Buildings, fans, flyers and the finale
 // are only earned here, never bought; the late launcher upgrades open here and
 // are then bought in the shop. Tune pacing with tools/run_live_bot.mjs.
 //
@@ -65,10 +65,10 @@ export const MILESTONES = [
 
     // ── 4. Bigger Sky ───────────────────────────────────────────────────────
     {
-        id: 'jetpacks', chapter: 3,
+        id: 'flyers', chapter: 3,
         goal: { type: 'gold', target: 7000 },
         hint: 'Save the crowd’s tips for something that flies.',
-        reward: { title: 'Jetpack Fans', desc: 'A fan with a jetpack flies through bursts catching sparkles.', icon: 'crowd', upgrades: ['jetpack_unlock'] },
+        reward: { title: 'Flying Cultists', desc: 'A cultist blasts sparkles from their palms to fly through bursts, catching sparkles.', icon: 'crowd', upgrades: ['flyer_unlock'] },
     },
 
     // ── 5. Grand Finale ─────────────────────────────────────────────────────

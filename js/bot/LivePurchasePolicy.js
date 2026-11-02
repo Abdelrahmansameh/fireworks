@@ -86,10 +86,10 @@ export default class LivePurchasePolicy {
 
     _hasUsefulSource(game, definition) {
         const id = definition.id;
-        if (id === 'grand_finale' || id === 'auto_launcher' || id === 'cultist_unlock' || id === 'catapult' || id === 'jetpack_unlock') return true;
+        if (id === 'grand_finale' || id === 'auto_launcher' || id === 'cultist_unlock' || id === 'catapult' || id === 'flyer_unlock') return true;
         if (id.startsWith('launcher_') && this._count(game, 'AUTO_LAUNCHER') === 0) return false;
         if (id.startsWith('cultist_') && (game.cultistCount ?? 0) === 0) return false;
-        if (id.startsWith('jetpack_') && (game.jetpackCount ?? 0) === 0) return false;
+        if (id.startsWith('flyer_') && (game.flyerCount ?? 0) === 0) return false;
         if (id.startsWith('catapult_') && this._count(game, 'CATAPULT') === 0) return false;
         if (id.startsWith('crowd_catcher_') && id !== 'crowd_catcher_unlock' && !game.crowdStats?.catchingEnabled) return false;
         return true;

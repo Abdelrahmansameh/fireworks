@@ -29,7 +29,7 @@ export function getVenueStage(game) {
     if (launchers >= 3) earned = 2;
     if ((game.crowd?.people?.length ?? 0) > 0 || game.hasSeenFirstCrowdCinematic) earned = 3;
     if (launchers >= 7 || count('CATAPULT') || game.cultistCount > 0) earned = Math.max(earned, 4);
-    if (launchers >= 14 || game.jetpackCount > 0) earned = Math.max(earned, 5);
+    if (launchers >= 14 || game.flyerCount > 0) earned = Math.max(earned, 5);
     if (launchers >= 20) earned = Math.max(earned, 6);
     if (launchers >= 25) earned = Math.max(earned, 7);
     if (launchers >= 32) earned = Math.max(earned, 8);

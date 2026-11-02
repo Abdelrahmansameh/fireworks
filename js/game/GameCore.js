@@ -43,11 +43,11 @@ export const SAVE_VERSION = '5';
  * whole thing runs with no canvas, audio, or DOM.
  *
  * The live game (FireworkGame) extends this class and swaps in the real
- * renderer/audio/UI plus the visual systems (particles, jetpack fans, the real
+ * renderer/audio/UI plus the visual systems (particles, flyers, the real
  * Crowd, cinematics, camera, input). The headless simulator constructs a
  * GameCore directly with `{ headless: true }` and steps it via stepHeadless().
  *
- * Jetpack fan collection and crowd-catching income are emergent from particle
+ * Flyer collection and crowd-catching income are emergent from particle
  * physics in the live game; headless mode estimates them via EmergentYieldModel
  * (see SimulationConfig.js).
  */
@@ -119,8 +119,8 @@ class GameCore extends Engine {
 
         // Stat multiplier buckets (recomputed by progression.applyAll).
         this.baseSparkleMultiplier = 1;
-        this.jetpackCount = Math.min(128, Math.max(0, Number(this.storage.getItem('jetpackCount')) || 0));
-        this.jetpackStats = {
+        this.flyerCount = Math.min(128, Math.max(0, Number(this.storage.getItem('flyerCount')) || 0));
+        this.flyerStats = {
             speedMultiplier: 1,
             collectionRadiusMultiplier: 1,
             sparklesPerParticleMultiplier: 1,
@@ -212,8 +212,8 @@ class GameCore extends Engine {
         this.statsTracker.record('gold', amount, source);
     }
 
-    spawnJetpack() {
-        if (this.grantJetpack()) this.saveProgress();
+    spawnFlyer() {
+        if (this.grantFlyer()) this.saveProgress();
     }
 
     // ════════════════════════════════════════════════════════════════════════
@@ -292,15 +292,15 @@ class GameCore extends Engine {
         }
     }
 
-    getJetpackCost() {
-        return roundUpCost(1350 * Math.pow(1.8, Math.max(0, this.jetpackCount - 1)));
+    getFlyerCost() {
+        return roundUpCost(1350 * Math.pow(1.8, Math.max(0, this.flyerCount - 1)));
     }
 
-    grantJetpack() {
-        if (this.jetpackCount >= 128) return false;
-        this.jetpackCount++;
+    grantFlyer() {
+        if (this.flyerCount >= 128) return false;
+        this.flyerCount++;
         getVenueStage(this);
-        this.crowd?.setJetpackCount?.(this.jetpackCount, this.jetpackStats);
+        this.crowd?.setFlyerCount?.(this.flyerCount, this.flyerStats);
         return true;
     }
 
@@ -328,12 +328,12 @@ class GameCore extends Engine {
         return true;
     }
 
-    purchaseJetpack() {
-        const cost = this.getJetpackCost();
+    purchaseFlyer() {
+        const cost = this.getFlyerCost();
         const resource = this.resourceManager.resources.gold;
-        if (this.jetpackCount >= 128 || !resource || resource.amount < cost) return false;
+        if (this.flyerCount >= 128 || !resource || resource.amount < cost) return false;
         resource.subtract(cost);
-        this.grantJetpack();
+        this.grantFlyer();
         this.saveProgress();
         return true;
     }
@@ -399,9 +399,9 @@ class GameCore extends Engine {
         }
 
         const granted = new Set(this.milestones.getGrantedUpgradeIds());
-        const paidJetpack = this.progression.getUpgradeLevel('jetpack_unlock') > 0 && !granted.has('jetpack_unlock') ? 1 : 0;
-        this.jetpackCount = Math.max(0, this.jetpackCount - paidJetpack - this.progression.getUpgradeLevel('jetpack_team'));
-        this.crowd?.setJetpackCount?.(this.jetpackCount, this.jetpackStats);
+        const paidFlyer = this.progression.getUpgradeLevel('flyer_unlock') > 0 && !granted.has('flyer_unlock') ? 1 : 0;
+        this.flyerCount = Math.max(0, this.flyerCount - paidFlyer - this.progression.getUpgradeLevel('flyer_team'));
+        this.crowd?.setFlyerCount?.(this.flyerCount, this.flyerStats);
         this.progression.resetUpgradesState();
         this.milestones.reapplyGrantedUpgrades();
         if (!granted.has('crowd_spark_1')) this.clearCrowdArrival();
@@ -495,8 +495,8 @@ class GameCore extends Engine {
                 this.showNotification('Cultists unlocked!');
                 this.ui.updateBuildingTypeVisibility();
                 break;
-            case 'jetpack_unlock':
-                this.showNotification('Jetpack fans unlocked!');
+            case 'flyer_unlock':
+                this.showNotification('Flying cultists unlocked!');
                 this.ui.updateBuildingTypeVisibility();
                 break;
             case 'catapult':
@@ -619,7 +619,7 @@ class GameCore extends Engine {
         // Headless runs never persist (and must not clobber the player's save).
         if (this.headless || this._isRestoring) return;
 
-        this.storage.setItem('jetpackCount', this.jetpackCount);
+        this.storage.setItem('flyerCount', this.flyerCount);
         this.storage.setItem('cultistCount', this.cultistCount);
         this.storage.setItem('elapsedGameTime', this.elapsedGameTime);
         this.storage.setItem('gameCompleted', this.gameCompleted);
@@ -660,7 +660,7 @@ class GameCore extends Engine {
     /**
      * Advance the economy by `dt` seconds with no presentation. Runs the same
      * building / progression code the live game uses; the only headless-specific
-     * pieces are the emergent (jetpack / crowd-catch) estimate and the crowd-count
+     * pieces are the emergent (flyer / crowd-catch) estimate and the crowd-count
      * / gold model that stand in for the absent visual systems.
      */
     stepHeadless(dt, { clicksPerSec = 0 } = {}) {
@@ -674,7 +674,7 @@ class GameCore extends Engine {
         this.buildingManager.update(dt);
         this.cultistRituals.update(dt);
 
-        // Emergent estimate: jetpack fan collection + crowd catching.
+        // Emergent estimate: flyer collection + crowd catching.
         this.emergentModel.applyTick(this, dt, clicksPerSec);
 
         // Grand Finale income burst (headless model of the live particle flood).
@@ -729,7 +729,7 @@ class GameCore extends Engine {
         let sps = this.calculateTotalSparklesPerSecond();
         sps += clicksPerSec * this.baseSparkleMultiplier;
         const em = this.emergentModel.rates(this, clicksPerSec);
-        sps += em.jetpacks + em.crowdCatching;
+        sps += em.flyers + em.crowdCatching;
         const gps = expectedGPS(this).total;
         return { sps, gps };
     }

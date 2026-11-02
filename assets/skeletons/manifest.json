@@ -31,11 +31,6 @@
       "file": "alien.json"
     },
     {
-      "id": "jetpack",
-      "name": "Jetpack",
-      "file": "jetpack.json"
-    },
-    {
       "id": "cultist_hood",
       "name": "Cultist Hood",
       "file": "cultist_hood.json"

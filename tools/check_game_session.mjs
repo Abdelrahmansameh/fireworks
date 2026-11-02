@@ -30,13 +30,13 @@ try {
         localStorage.setItem('saveVersion', '5');
         localStorage.setItem('resources', JSON.stringify({ sparkles: { amount: 12345 }, gold: { amount: 6789 } }));
         localStorage.setItem('progressionState', JSON.stringify({ schemaVersion: 3, upgrades: {
-            auto_launcher: 1, crowd_spark_1: 1, jetpack_unlock: 1,
-            jetpack_reach: 1, jetpack_speed: 1, jetpack_team: 2,
-        }, unlocked: ['buildings_tab', 'crowds_tab', 'jetpack_unlock'] }));
+            auto_launcher: 1, crowd_spark_1: 1, flyer_unlock: 1,
+            flyer_reach: 1, flyer_speed: 1, flyer_team: 2,
+        }, unlocked: ['buildings_tab', 'crowds_tab', 'flyer_unlock'] }));
         localStorage.setItem('buildingManagerData', JSON.stringify({ buildings: [
             { id: 'saved-launcher', type: 'AUTO_LAUNCHER', x: 600, y: -435, assignedRecipeIndex: 0 },
         ] }));
-        localStorage.setItem('jetpackCount', '3');
+        localStorage.setItem('flyerCount', '3');
         localStorage.setItem('hasSeenFirstCrowdCinematic', 'true');
     });
     await page.reload({ waitUntil: 'domcontentloaded' });
@@ -45,21 +45,21 @@ try {
         game.pause();
         return { sparkles: game.getSparkles(), gold: game.resourceManager.resources.gold.amount,
             launchers: game.buildingManager.getBuildingsByType('AUTO_LAUNCHER').length,
-            jetpackCount: game.jetpackCount, renderedJetpacks: game.crowd.people.filter(p => p.isJetpack).length,
-            unlocked: game.progression.isUnlocked('jetpack_unlock'), stats: game.jetpackStats };
+            flyerCount: game.flyerCount, renderedFlyers: game.crowd.people.filter(p => p.isFlyer).length,
+            unlocked: game.progression.isUnlocked('flyer_unlock'), stats: game.flyerStats };
     });
     assert(restored.sparkles >= 12345 && restored.gold >= 6789 && restored.launchers === 1,
         'The saved resources or launcher were not restored.');
-    assert(restored.jetpackCount === 3 && restored.renderedJetpacks === 3 && restored.unlocked,
-        'Jetpack fans or their unlock were not restored.');
+    assert(restored.flyerCount === 3 && restored.renderedFlyers === 3 && restored.unlocked,
+        'Flyers or their unlock were not restored.');
     assert(Math.abs(restored.stats.speedMultiplier - 1.35) < 1e-9 && Math.abs(restored.stats.collectionRadiusMultiplier - 1.25) < 1e-9,
-        'Saved jetpack upgrades were not restored.');
+        'Saved flyer upgrades were not restored.');
 
     await page.evaluate(() => game.saveProgress());
     await page.reload({ waitUntil: 'domcontentloaded' });
     await page.waitForFunction(() => window.game?.crowd?.instancedGroup);
-    const reload = await page.evaluate(() => ({ count: game.jetpackCount, rendered: game.crowd.people.filter(p => p.isJetpack).length }));
-    assert(reload.count === 3 && reload.rendered === 3, 'Reload lost or duplicated jetpack fans.');
+    const reload = await page.evaluate(() => ({ count: game.flyerCount, rendered: game.crowd.people.filter(p => p.isFlyer).length }));
+    assert(reload.count === 3 && reload.rendered === 3, 'Reload lost or duplicated flyers.');
 
     await page.evaluate(() => {
         game.pause();

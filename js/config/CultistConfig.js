@@ -1,4 +1,4 @@
-// Cultists are crowd members, bought like jetpack fans, who loop a ritual
+// Cultists are crowd members, bought like flyers, who loop a ritual
 // that pays out sparkles at every climax (see CultistRituals).
 export const CULTIST_CONFIG = {
     // Shop: bought with gold from the crowd panel.

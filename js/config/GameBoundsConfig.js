@@ -24,6 +24,8 @@ export const GAME_BOUNDS = {
     IS_ZOOM_LOCKED: true,
     INITIAL_ZOOM: 1.2,
     MOBILE_ZOOM_FACTOR: 0.85,
+    // How far past the starting framing the player may zoom in.
+    PLAYER_ZOOM_IN_FACTOR: 4,
     MAX_ZOOM: 5,
     MIN_ZOOM: 0.4
 };

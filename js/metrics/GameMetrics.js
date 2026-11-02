@@ -31,7 +31,7 @@ export default class GameMetrics {
         this.sessionGoldBySource = {};
         this.sessionFireworks = 0;
         this.sessionFireworksBySource = {};
-        this.sessionJetpackParticles = 0;
+        this.sessionFlyerParticles = 0;
         this.sessionCrowdCatchParticles = 0;
 
         // ── Lifetime totals (persisted to localStorage) ──────────────────────
@@ -41,7 +41,7 @@ export default class GameMetrics {
         this.lifetimeGoldBySource = {};
         this.lifetimeFireworks = 0;
         this.lifetimeFireworksBySource = {};
-        this.lifetimeJetpackParticles = 0;
+        this.lifetimeFlyerParticles = 0;
         this.lifetimeCrowdCatchParticles = 0;
 
         // ── Peak records (persisted) ──────────────────────────────────────────
@@ -59,7 +59,7 @@ export default class GameMetrics {
      * Record a resource gain.
      * @param {'sparkles'|'gold'} resource
      * @param {number} amount
-     * @param {string} source  e.g. 'manual', 'auto_launcher', 'cultist', 'jetpack', 'crowd', 'cheat'
+     * @param {string} source  e.g. 'manual', 'auto_launcher', 'cultist', 'flyer', 'crowd', 'cheat'
      */
     record(resource, amount, source = 'unknown') {
         if (amount <= 0) return;
@@ -102,13 +102,13 @@ export default class GameMetrics {
     }
 
     /**
-     * Record jetpack fan particle collections (already counted through sparkle 'jetpack'
+     * Record flyer particle collections (already counted through sparkle 'flyer'
      * source, but we keep a separate raw count for the metrics panel).
      * @param {number} count  Particles collected (collections may be batched per frame).
      */
-    recordJetpackParticle(count = 1) {
-        this.sessionJetpackParticles += count;
-        this.lifetimeJetpackParticles += count;
+    recordFlyerParticle(count = 1) {
+        this.sessionFlyerParticles += count;
+        this.lifetimeFlyerParticles += count;
     }
 
     /**
@@ -217,7 +217,7 @@ export default class GameMetrics {
             lifetimeGoldBySource: { ...this.lifetimeGoldBySource },
             lifetimeFireworks: this.lifetimeFireworks,
             lifetimeFireworksBySource: { ...this.lifetimeFireworksBySource },
-            lifetimeJetpackParticles: this.lifetimeJetpackParticles,
+            lifetimeFlyerParticles: this.lifetimeFlyerParticles,
             lifetimeCrowdCatchParticles: this.lifetimeCrowdCatchParticles,
             peakSPS: this.peakSPS,
             peakGPS: this.peakGPS,
@@ -239,7 +239,7 @@ export default class GameMetrics {
             this.lifetimeGoldBySource = data.lifetimeGoldBySource ?? {};
             this.lifetimeFireworks = data.lifetimeFireworks ?? 0;
             this.lifetimeFireworksBySource = data.lifetimeFireworksBySource ?? {};
-            this.lifetimeJetpackParticles = data.lifetimeJetpackParticles ?? 0;
+            this.lifetimeFlyerParticles = data.lifetimeFlyerParticles ?? 0;
             this.lifetimeCrowdCatchParticles = data.lifetimeCrowdCatchParticles ?? 0;
             this.peakSPS = data.peakSPS ?? 0;
             this.peakGPS = data.peakGPS ?? 0;
@@ -260,7 +260,7 @@ export default class GameMetrics {
         this.sessionGoldBySource = {};
         this.sessionFireworks = 0;
         this.sessionFireworksBySource = {};
-        this.sessionJetpackParticles = 0;
+        this.sessionFlyerParticles = 0;
         this.sessionCrowdCatchParticles = 0;
 
         this.lifetimeSparkles = 0;
@@ -269,7 +269,7 @@ export default class GameMetrics {
         this.lifetimeGoldBySource = {};
         this.lifetimeFireworks = 0;
         this.lifetimeFireworksBySource = {};
-        this.lifetimeJetpackParticles = 0;
+        this.lifetimeFlyerParticles = 0;
         this.lifetimeCrowdCatchParticles = 0;
         this.peakSPS = 0;
         this.peakGPS = 0;

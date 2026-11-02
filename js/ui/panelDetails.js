@@ -22,7 +22,7 @@ export function initializePanelDetails(game) {
         removers.push(() => element.removeEventListener(name, callback, options));
     };
     const notify = message => game.ui?.showNotification(message);
-    on(document.getElementById('buy-jetpack'), 'click', () => game.purchaseJetpack());
+    on(document.getElementById('buy-flyer'), 'click', () => game.purchaseFlyer());
     on(document.getElementById('buy-cultist'), 'click', () => game.purchaseCultist());
     let lastSavedAt = Date.now();
     const originalSave = game.saveProgress;
@@ -164,16 +164,16 @@ export function initializePanelDetails(game) {
             if (key === 'CATAPULT') description.textContent = `Throws a fan every ${((type.baseFireInterval ?? type.fireInterval) * (game.catapultStats?.fireIntervalMultiplier ?? 1)).toFixed(1)}s`;
         }
 
-        const jetpackShop = document.getElementById('jetpack-shop');
-        if (jetpackShop) {
-            jetpackShop.hidden = !game.progression.isUnlocked('jetpack_unlock');
-            const count = game.jetpackCount ?? 0;
-            const cost = game.getJetpackCost();
-            setText('jetpack-count', count);
-            setText('jetpack-cost', count >= 128 ? 'Max' : compact(cost));
-            const buy = document.getElementById('buy-jetpack');
+        const flyerShop = document.getElementById('flyer-shop');
+        if (flyerShop) {
+            flyerShop.hidden = !game.progression.isUnlocked('flyer_unlock');
+            const count = game.flyerCount ?? 0;
+            const cost = game.getFlyerCost();
+            setText('flyer-count', count);
+            setText('flyer-cost', count >= 128 ? 'Max' : compact(cost));
+            const buy = document.getElementById('buy-flyer');
             buy.disabled = count >= 128 || (game.resourceManager.resources.gold?.amount ?? 0) < cost;
-            buy.setAttribute('aria-label', count >= 128 ? 'Jetpack fans at maximum' : `Buy a jetpack for ${cost} gold`);
+            buy.setAttribute('aria-label', count >= 128 ? 'Flying cultists at maximum' : `Buy a flying cultist for ${cost} gold`);
         }
 
         const cultistShop = document.getElementById('cultist-shop');
@@ -193,7 +193,7 @@ export function initializePanelDetails(game) {
         const tracker = game.statsTracker;
         if (!tracker) return;
         const total = tracker.getRollingRate('sparkles');
-        const sources = ['auto_launcher', 'cultist', 'crowd_catch', 'manual', 'jetpack'];
+        const sources = ['auto_launcher', 'cultist', 'crowd_catch', 'manual', 'flyer'];
         const rates = Object.fromEntries(sources.map(source => [source, tracker.getRollingRate('sparkles', source)]));
         rates.other = Math.max(0, total - Object.values(rates).reduce((sum, rate) => sum + rate, 0));
         setText('stats-sparkles-hero', compact(total));
@@ -206,10 +206,10 @@ export function initializePanelDetails(game) {
             const rate = rates[element.dataset.productionSource];
             element.style.width = `${total > 0 ? (rate / total) * 100 : 0}%`;
         });
-        document.getElementById('stats-jetpacks-row').hidden = rates.jetpack <= 0;
+        document.getElementById('stats-flyers-row').hidden = rates.flyer <= 0;
         document.getElementById('stats-cultists-row').hidden = rates.cultist <= 0;
         document.getElementById('stats-other-row').hidden = rates.other < 0.01;
-        document.querySelector('.stats-production-bar')?.setAttribute('aria-label', `Sparkle production: ${sources.map(source => `${source === 'jetpack' ? 'jetpack fans' : source === 'cultist' ? 'cultists' : source.replaceAll('_', ' ')} ${compact(rates[source])} per second`).join(', ')}`);
+        document.querySelector('.stats-production-bar')?.setAttribute('aria-label', `Sparkle production: ${sources.map(source => `${source === 'flyer' ? 'flying cultists' : source === 'cultist' ? 'cultists' : source.replaceAll('_', ' ')} ${compact(rates[source])} per second`).join(', ')}`);
 
         const count = game.crowd?.naturalCount ?? game.crowd?.people.length ?? 0;
         const next = fireworksForCrowd(count + 1, game);

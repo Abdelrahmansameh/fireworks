@@ -237,9 +237,14 @@ try {
 
     // Cover camera movement and zoom outside the original sky and ground extent.
     await page.setViewportSize({ width: 2560, height: 1080 });
+    // Stop the chrome camera controller from easing away from the test position.
+    await page.evaluate(() => { game.cinematicManager.isPlaying = true; });
     for (const camera of [{ x: -1500, y: 0, zoom: .4 }, { x: 4200, y: 0, zoom: .4 },
         { x: 0, y: 5000, zoom: .75 }, { x: 0, y: -5000, zoom: .75 }]) {
         await page.evaluate(camera => game.renderer2D.setCamera(camera), camera);
+        const actual = await page.evaluate(() => ({ x: game.renderer2D.cameraX, y: game.renderer2D.cameraY, zoom: game.renderer2D.cameraZoom }));
+        assert(Object.keys(camera).every(key => Math.abs(actual[key] - camera[key]) < .001),
+            `Background camera did not reach ${JSON.stringify(camera)}: ${JSON.stringify(actual)}`);
         await inspect(`background ${JSON.stringify(camera)}`, false);
     }
     await page.screenshot({ animations: 'disabled', path: join(screenshots, 'desktop-lower-safe-zone.png') });

@@ -9,7 +9,7 @@ export const BASE_GOLD_DROPS_PER_SEC_PER_PERSON = BASE_GOLD_PER_TOSS / COIN_TOSS
 
 // Fallback default yields for emergent sources the sim needs to estimate.
 // Callers (sim UI) may override per-run via the `rates` argument.
-export const DEFAULT_BASE_JETPACK_YIELD_PER_SEC = 1;
+export const DEFAULT_BASE_FLYER_YIELD_PER_SEC = 1;
 export const DEFAULT_BASE_CATCH_YIELD_PER_SEC = 1;
 
 // Map building type -> the upgrade id that unlocks it.
@@ -122,12 +122,12 @@ export function buildingTypeUnlocked(type, progression) {
  * Per-source sparkles-per-second breakdown.
  *
  * `rates` supplies the emergent (random-driven) inputs the game can't compute
- * deterministically: player click rate and per-jetpack / per-catcher base yield.
+ * deterministically: player click rate and per-flyer / per-catcher base yield.
  * Owned sources (launchers, cultists) are derived from state.
  */
 export function expectedSPS(state, rates = {}) {
     const clicksPerSec = rates.clicksPerSec ?? 0;
-    const baseJetpackYield = rates.baseJetpackYieldPerSec ?? DEFAULT_BASE_JETPACK_YIELD_PER_SEC;
+    const baseFlyerYield = rates.baseFlyerYieldPerSec ?? DEFAULT_BASE_FLYER_YIELD_PER_SEC;
     const baseCatchYield = rates.baseCatchYieldPerSec ?? DEFAULT_BASE_CATCH_YIELD_PER_SEC;
 
     const baseSparkleMult = state.baseSparkleMultiplier ?? 1;
@@ -139,9 +139,9 @@ export function expectedSPS(state, rates = {}) {
 
     const cultists = (state.cultistCount ?? 0) * cultistSparklesPerSecond(state.cultistStats, baseSparkleMult);
 
-    // Each purchased jetpack provides one permanent collector.
-    const jetpacks = (state.jetpackCount ?? 0) * baseJetpackYield
-        * (state.jetpackStats?.sparklesPerParticleMultiplier ?? 1);
+    // Each purchased flyer provides one permanent collector.
+    const flyers = (state.flyerCount ?? 0) * baseFlyerYield
+        * (state.flyerStats?.sparklesPerParticleMultiplier ?? 1);
 
     // Crowd catching: rough estimate — assume each catapult engages ~2 people.
     let crowdCatching = 0;
@@ -154,8 +154,8 @@ export function expectedSPS(state, rates = {}) {
             * (state.crowdStats?.collectionRadiusMultiplier ?? 1);
     }
 
-    const total = clicks + launchers + cultists + jetpacks + crowdCatching;
-    return { clicks, launchers, cultists, jetpacks, crowdCatching, total };
+    const total = clicks + launchers + cultists + flyers + crowdCatching;
+    return { clicks, launchers, cultists, flyers, crowdCatching, total };
 }
 
 /** Per-source gold-per-second breakdown. */

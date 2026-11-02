@@ -24,13 +24,13 @@ try {
         game.hasSeenFirstCrowdCinematic = true;
         game.fireworkSystem.fireworkCount = 50;
         game.checkUnlockConditions();
+        for (const id of ['sparkle_counter', 'tab_menu', 'upgrades_tab']) game._handleUnlock(id);
         game.resourceManager.resources.sparkles.amount = 100000;
         game.resourceManager.resources.gold.amount = 100000;
         for (const id of ['base_mult_1', 'unlock_recipes_tab', 'auto_launcher', 'launcher_spawn_rate', 'crowd_spark_1', 'crowd_fireworks']) {
-            if (id === 'crowd_spark_1') {
-                while (game.buildingManager.getBuildingsByType('AUTO_LAUNCHER').length < 3) game.buyBuilding('AUTO_LAUNCHER');
-            }
-            if (game.progression.canPurchase(id, game).ok) game.buyUpgrade(id);
+            if (['unlock_recipes_tab', 'auto_launcher', 'crowd_spark_1'].includes(id)) {
+                if (!game.progression.grantUpgrade(id, game, 'test-fixture')) throw new Error(`Could not grant ${id}`);
+            } else if (!game.buyUpgrade(id)) throw new Error(`Could not buy ${id}`);
         }
         game.ui.expandAllTabs();
         game.ui.showTab('upgrades');
@@ -85,6 +85,7 @@ try {
     await page.locator('#stats-tab').click();
     await page.screenshot({ animations: 'disabled', path: join(screenshots, 'desktop-stats.png') });
 
+    await page.evaluate(() => game.ui.dismissNotification());
     await page.setViewportSize({ width: 390, height: 844 });
     await page.locator('#upgrades-tab').click();
     await page.waitForFunction(() => document.getElementById('upgrades-content').classList.contains('active'));
@@ -93,6 +94,8 @@ try {
     await page.locator('#upgrades-content .sheet-handle').click();
     await page.waitForFunction(() => document.getElementById('upgrades-content').classList.contains('sheet-full'));
     await page.screenshot({ animations: 'disabled', path: join(screenshots, 'mobile-upgrades.png') });
+    // Wait for the sheet transition to finish before targeting its moving handle.
+    await page.waitForTimeout(350);
     const handle = await page.locator('#upgrades-content .sheet-handle').boundingBox();
     await page.mouse.move(handle.x + handle.width / 2, handle.y + handle.height / 2);
     await page.mouse.down();

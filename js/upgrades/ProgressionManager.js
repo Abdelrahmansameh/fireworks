@@ -32,13 +32,13 @@ const LEGACY_BASE_COSTS = {
     launcher_sparkle_1: 8000,
     crowd_gold_2: 5000,
     crowd_invite_2: 3000,
-    jetpack_unlock: 14000,
-    jetpack_reach: 4500,
-    jetpack_speed: 2000,
-    jetpack_team: 10000,
-    jetpack_sparkle_yield: 6500,
-    jetpack_radius: 2000,
-    jetpack_efficiency: 15000,
+    flyer_unlock: 14000,
+    flyer_reach: 4500,
+    flyer_speed: 2000,
+    flyer_team: 10000,
+    flyer_sparkle_yield: 6500,
+    flyer_radius: 2000,
+    flyer_efficiency: 15000,
     unlock_advanced_creator: 3000,
     launcher_overclock: 55000,
     spark_core_3: 80000,
@@ -50,15 +50,15 @@ const LEGACY_BASE_COSTS = {
 const LEGACY_BUNDLES = [
     { id: 'crowd_catcher_yield', baseCost: 2800, costRatio: 4, targets: ['crowd_catcher_yield', 'crowd_catcher_radius', 'catapult_range_1'] },
     { id: 'crowd_gold_2', baseCost: 8000, costRatio: 1, targets: ['crowd_gold_2', 'crowd_invite_2'] },
-    { id: 'jetpack_reach', baseCost: 6500, costRatio: 1, targets: ['jetpack_reach', 'jetpack_speed'] },
-    { id: 'jetpack_sparkle_yield', baseCost: 8500, costRatio: 3.5, targets: ['jetpack_sparkle_yield', 'jetpack_radius'] },
-    { id: 'jetpack_efficiency', baseCost: 18000, costRatio: 1, targets: ['jetpack_efficiency', 'unlock_advanced_creator'] },
+    { id: 'flyer_reach', baseCost: 6500, costRatio: 1, targets: ['flyer_reach', 'flyer_speed'] },
+    { id: 'flyer_sparkle_yield', baseCost: 8500, costRatio: 3.5, targets: ['flyer_sparkle_yield', 'flyer_radius'] },
+    { id: 'flyer_efficiency', baseCost: 18000, costRatio: 1, targets: ['flyer_efficiency', 'unlock_advanced_creator'] },
 ];
 
 const LEGACY_UNLOCKS = [
     ['crowd_spark_1', ['unlock_recipes_tab', 'unlock_brokenHeart', 'unlock_christmasTree']],
     ['catapult', ['unlock_spinner', 'unlock_helix']],
-    ['jetpack_unlock', ['unlock_snowflake', 'unlock_dragonsBreath']],
+    ['flyer_unlock', ['unlock_snowflake', 'unlock_dragonsBreath']],
 ];
 
 /**
@@ -189,7 +189,7 @@ class ProgressionManager {
         // The late Studio purchase is now part of the early Creator. Retain
         // its original charge so resetting upgrades refunds the actual spend.
         if (schemaVersion < 3 && savedUpgrades.unlock_advanced_creator > 0
-            && (!legacy || !(savedUpgrades.jetpack_efficiency > 0))) {
+            && (!legacy || !(savedUpgrades.flyer_efficiency > 0))) {
             const charge = !legacy && savedCosts?.unlock_advanced_creator?.[0];
             const costs = charge && typeof charge === 'object' ? this._cleanCosts(charge) : { gold: 3000 };
             const creatorCosts = this._purchaseCosts.unlock_recipes_tab?.[0];
@@ -449,7 +449,7 @@ class ProgressionManager {
      */
     applyAll(game) {
         game.baseSparkleMultiplier = 1;
-        game.jetpackStats = {
+        game.flyerStats = {
             speedMultiplier: 1,
             collectionRadiusMultiplier: 1,
             sparklesPerParticleMultiplier: 1,
@@ -476,7 +476,7 @@ class ProgressionManager {
             for (let i = 1; i <= level; i++) def.apply?.(game, i);
         }
 
-        game.crowd?.setJetpackCount?.(game.jetpackCount, game.jetpackStats);
+        game.crowd?.setFlyerCount?.(game.flyerCount, game.flyerStats);
         game.syncCrowdStats();
     }
 

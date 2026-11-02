@@ -2,7 +2,7 @@ import { doodleIcon } from '../doodleIcons.js';
 
 export function render(container) {
     const panel = document.createElement('div');
-    panel.className = 'panel crowd-panel';
+    panel.className = 'panel scrollable-panel crowd-panel';
     panel.innerHTML = `
       <div class="crowd-overview-card">
         <div class="crowd-summary">
@@ -17,11 +17,11 @@ export function render(container) {
             </div>
         </div>
       </div>
-        <div id="jetpack-shop" class="building-buy-card" hidden>
+        <div id="flyer-shop" class="building-buy-card" hidden>
             <span class="building-badge">${doodleIcon('crowd')}</span>
-            <div class="building-buy-copy"><h3>Jetpack fans</h3><p>Fans fly around catching sparkles.</p></div>
-            <span class="building-owned">Owned: <span id="jetpack-count">0</span></span>
-            <button type="button" id="buy-jetpack" class="building-buy-button" aria-label="Buy a jetpack">${doodleIcon('gold')}<span id="jetpack-cost">0</span></button>
+            <div class="building-buy-copy"><h3>Flying cultists</h3><p>They blast sparkles from their palms to fly, catching bursts.</p></div>
+            <span class="building-owned">Owned: <span id="flyer-count">0</span></span>
+            <button type="button" id="buy-flyer" class="building-buy-button" aria-label="Buy a flying cultist">${doodleIcon('gold')}<span id="flyer-cost">0</span></button>
         </div>
         <div id="cultist-shop" class="building-buy-card" hidden>
             <span class="building-badge">${doodleIcon('cultist')}</span>

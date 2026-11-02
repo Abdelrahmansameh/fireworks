@@ -1,5 +1,5 @@
-import { JetpackBehavior, CultistBehavior } from './crowdBehaviors/CrowdBehavior.js';
-import { GAME_BOUNDS, CROWD_CONFIG, CROWD_CATCHER_CONFIG, CULTIST_CONFIG, JETPACK_CONFIG, PARTICLE_TYPES } from '../config/config.js';
+import { FlyerBehavior, CultistBehavior } from './crowdBehaviors/CrowdBehavior.js';
+import { GAME_BOUNDS, CROWD_CONFIG, CROWD_CATCHER_CONFIG, CULTIST_CONFIG, FLYER_CONFIG, PARTICLE_TYPES } from '../config/config.js';
 
 import * as Renderer2D from '../rendering/Renderer.js';
 import InstancedParticleSystem from '../particles/InstancedParticleSystem.js';
@@ -14,17 +14,17 @@ class Crowd {
         this.people = [];
         this._disposed = false;
         this.naturalCount = 0;
-        this.jetpackCount = 0;
-        this.jetpackStats = {};
-        this.onJetpackCollect = null;
-        this.getJetpackCeiling = null;
-        this.jetpackCeilingY = GAME_BOUNDS.WORLD_MAX_EXPLOSION_Y;
+        this.flyerCount = 0;
+        this.flyerStats = {};
+        this.onFlyerCollect = null;
+        this.getFlyerCeiling = null;
+        this.flyerCeilingY = GAME_BOUNDS.WORLD_MAX_EXPLOSION_Y;
         this.cultistCount = 0;
         this.cultistRituals = null;
         this.missingCrowdsToInit = 0;
 
         this.instancedGroup = null;
-        this.jetpackInstancedGroup = null;
+        this.flyerInstancedGroup = null;
 
         // Generic animation system
         /** @type {SkeletonData|null} */
@@ -134,7 +134,7 @@ class Crowd {
             });
 
             // Flyers stay in the crowd, but draw before firework particles.
-            this.jetpackInstancedGroup = this.renderer.createInstancedGroup({
+            this.flyerInstancedGroup = this.renderer.createInstancedGroup({
                 vertices: geometry.vertices,
                 indices: geometry.indices,
                 texCoords: geometry.texCoords,
@@ -160,11 +160,11 @@ class Crowd {
         this._syncMemberBehaviors();
     }
 
-    setJetpackCount(count, stats = {}) {
+    setFlyerCount(count, stats = {}) {
         const next = Math.max(0, Math.min(128, Math.floor(Number(count) || 0)));
-        this.jetpackStats = stats || {};
-        if (next === this.jetpackCount) return;
-        this.jetpackCount = next;
+        this.flyerStats = stats || {};
+        if (next === this.flyerCount) return;
+        this.flyerCount = next;
         this._syncMemberBehaviors();
     }
 
@@ -179,16 +179,16 @@ class Crowd {
 
     _syncMemberBehaviors() {
         if (!this.instancedGroup) return;
-        const kindOf = person => person.isCultist ? 'cultist' : person.isJetpack ? 'jetpack' : 'natural';
-        for (const [kind, target] of [['natural', this.naturalCount], ['jetpack', this.jetpackCount], ['cultist', this.cultistCount]]) {
+        const kindOf = person => person.isCultist ? 'cultist' : person.isFlyer ? 'flyer' : 'natural';
+        for (const [kind, target] of [['natural', this.naturalCount], ['flyer', this.flyerCount], ['cultist', this.cultistCount]]) {
             let members = this.people.filter(person => kindOf(person) === kind);
             while (members.length < target) {
-                this._addPerson(kind === 'jetpack', kind === 'cultist' ? this._cultistSpot(members) : null);
+                this._addPerson(kind === 'flyer', kind === 'cultist' ? this._cultistSpot(members) : null);
                 const person = this.people[this.people.length - 1];
                 if (!person || members.includes(person)) break;
-                person.isJetpack = kind === 'jetpack';
+                person.isFlyer = kind === 'flyer';
                 person.isCultist = kind === 'cultist';
-                if (kind === 'jetpack') person.behavior = new JetpackBehavior(this, person);
+                if (kind === 'flyer') person.behavior = new FlyerBehavior(this, person);
                 // Cultists keep their clock index, so the newest one leaves first.
                 if (kind === 'cultist') person.behavior = new CultistBehavior(this, person, members.length);
                 members.push(person);
@@ -231,7 +231,7 @@ class Crowd {
         }
     }
 
-    _addPerson(isJetpack = false, spawnAt = null) {
+    _addPerson(isFlyer = false, spawnAt = null) {
         if (!this.instancedGroup) {
             this.missingCrowdsToInit++;
             return;
@@ -313,13 +313,13 @@ class Crowd {
 
         const scale = CROWD_CONFIG.baseScale + rng() * CROWD_CONFIG.scaleVariance;
 
-        const group = isJetpack ? this.jetpackInstancedGroup : this.instancedGroup;
+        const group = isFlyer ? this.flyerInstancedGroup : this.instancedGroup;
 
         // Start off-screen on the left so new people walk in from left side
         const personStartX = GAME_BOUNDS.SCROLL_MIN_X - 800;
 
         const person = {
-            isJetpack,
+            isFlyer,
             x: personStartX,
             y: y,
             scale: scale,
@@ -376,13 +376,13 @@ class Crowd {
         const FRICTION = CROWD_CONFIG.friction;
         const WALK_SPEED = CROWD_CONFIG.walkSpeed;
 
-        if (this.jetpackCount) {
-            this.jetpackCeilingY = Math.min(GAME_BOUNDS.WORLD_GROUND_Y + JETPACK_CONFIG.maxHeight,
-                this.getJetpackCeiling?.() ?? Infinity);
+        if (this.flyerCount) {
+            this.flyerCeilingY = Math.min(GAME_BOUNDS.WORLD_GROUND_Y + FLYER_CONFIG.maxHeight,
+                this.getFlyerCeiling?.() ?? Infinity);
         }
 
-        if (this.jetpackCount && this.particleSystem && this._scanFrameCounter % 4 === 0) {
-            this._jetpackGrid = new Map();
+        if (this.flyerCount && this.particleSystem && this._scanFrameCounter % 4 === 0) {
+            this._flyerGrid = new Map();
             const ps = this.particleSystem, size = 100;
             for (const shape of Object.keys(ps.activeCounts)) {
                 const data = ps.instanceData[shape];
@@ -392,8 +392,8 @@ class Crowd {
                     if (data[b + ps.particleTypeIdx] !== PARTICLE_TYPES.FIREWORK_EXPLOSION) continue;
                     const x = data[b + ps.positionIdx], y = data[b + ps.positionIdx + 1];
                     const key = `${Math.floor(x / size)},${Math.floor(y / size)}`;
-                    if (!this._jetpackGrid.has(key)) this._jetpackGrid.set(key, []);
-                    this._jetpackGrid.get(key).push([shape, i]);
+                    if (!this._flyerGrid.has(key)) this._flyerGrid.set(key, []);
+                    this._flyerGrid.get(key).push([shape, i]);
                 }
             }
         }
@@ -874,13 +874,16 @@ class Crowd {
         const maxSize = scalingCfg.maxSize;
         const ySizeFactor = minSize + (maxSize - minSize) * t;
 
-        const finalScale = scale * ySizeFactor * (person.isJetpack ? 0.75 : 1);
+        const finalScale = scale * ySizeFactor * (person.isFlyer ? 0.75 : 1);
         person.renderScale = finalScale;
 
         // Cinematic pupil tracking: steer the eyes toward a world target.
-        const lookOverrides = (person.cinematicIdle && person.cinematicLookFn)
+        let lookOverrides = (person.cinematicIdle && person.cinematicLookFn)
             ? this._computePupilLookOverrides(person, clip, time, flipX, finalScale)
             : null;
+        // Flyers aim their arms procedurally.
+        const armOverrides = person.behavior?.poseOverrides?.(this._skeleton);
+        if (armOverrides) lookOverrides = lookOverrides ? new Map([...lookOverrides, ...armOverrides]) : armOverrides;
 
         // Use the generic pose solver with optional overlay / pupil overrides
         let pose = computePose(this._skeleton, clip, time, lookOverrides, overlay);
@@ -910,8 +913,8 @@ class Crowd {
             }]));
         }
 
-        if (person.isCultist) {
-            // Hand tips and the direction each forearm points, for the climax spray.
+        if (person.isCultist || person.isFlyer) {
+            // Hand tips and the direction each forearm points, for sparkle sprays.
             person.hands = ['arm_3_l', 'arm_3_r'].map(id => {
                 const tf = pose.get(id);
                 const length = this._skeleton.getPart(id).height;
@@ -938,7 +941,7 @@ class Crowd {
             overlay.clip.props, overlay.time, 'o', pose, person, finalScale, flipX, propInstanceOffset, true
         );
         applyPoseToInstances(
-            this._skeleton, pose, person.isJetpack ? this.jetpackInstancedGroup : this.instancedGroup,
+            this._skeleton, pose, person.isFlyer ? this.flyerInstancedGroup : this.instancedGroup,
             person.instanceBaseIndex + propInstanceOffset,
             person.x, person.y, finalScale, flipX
         );
@@ -955,7 +958,7 @@ class Crowd {
 
         // Hide unused preallocated instances
         for (let i = propInstanceOffset; i < this.totalPartsPerPerson; i++) {
-            (person.isJetpack ? this.jetpackInstancedGroup : this.instancedGroup).updateInstanceScale(person.instanceBaseIndex + i, 0, 0);
+            (person.isFlyer ? this.flyerInstancedGroup : this.instancedGroup).updateInstanceScale(person.instanceBaseIndex + i, 0, 0);
         }
     }
 
@@ -1039,7 +1042,7 @@ class Crowd {
             }
 
             applyPoseToInstances(
-                cached.skeleton, finalPropPose, person.isJetpack ? this.jetpackInstancedGroup : this.instancedGroup,
+                cached.skeleton, finalPropPose, person.isFlyer ? this.flyerInstancedGroup : this.instancedGroup,
                 person.instanceBaseIndex + propInstanceOffset,
                 person.x, person.y,
                 finalScale, flipX
@@ -1057,14 +1060,14 @@ class Crowd {
     }
 
     _reorderInstancesByY() {
-        if (!this.instancedGroup || !this.jetpackInstancedGroup) return;
+        if (!this.instancedGroup || !this.flyerInstancedGroup) return;
         const partCount = this.totalPartsPerPerson;
-        for (const [group, jetpack] of [[this.instancedGroup, false], [this.jetpackInstancedGroup, true]]) {
+        for (const [group, flyer] of [[this.instancedGroup, false], [this.flyerInstancedGroup, true]]) {
             const stride = group.instanceStrideFloats;
             const oldData = group.instanceData;
             const newData = new Float32Array(group.maxInstances * stride);
             let next = 0;
-            const members = this.people.filter(person => !!person.isJetpack === jetpack)
+            const members = this.people.filter(person => !!person.isFlyer === flyer)
                 .sort((a, b) => b.spawnY - a.spawnY);
             for (const person of members) {
                 const oldBase = person.instanceBaseIndex;
@@ -1112,7 +1115,7 @@ class Crowd {
                 if (pdy > radius || pdy < -radius) continue;
 
                 const existingFn = updateFns[pi];
-                if (existingFn && (existingFn._isJetpackPull || existingFn._isCrowdPull)) continue;
+                if (existingFn && (existingFn._isFlyerPull || existingFn._isCrowdPull)) continue;
 
                 const sparkleValue = sd[pBase + ps.sparkleValueIdx] || 0;
                 let pullElapsed = 0;
@@ -1300,13 +1303,13 @@ class Crowd {
         if (this.instancedGroup) {
             this.renderer.removeInstancedGroup(this.instancedGroup);
         }
-        if (this.jetpackInstancedGroup) {
-            this.renderer.removeInstancedGroup(this.jetpackInstancedGroup);
+        if (this.flyerInstancedGroup) {
+            this.renderer.removeInstancedGroup(this.flyerInstancedGroup);
         }
         this.cultistParticles?.dispose();
         this.cultistParticles = null;
         this.instancedGroup = null;
-        this.jetpackInstancedGroup = null;
+        this.flyerInstancedGroup = null;
         this.people = [];
     }
 }

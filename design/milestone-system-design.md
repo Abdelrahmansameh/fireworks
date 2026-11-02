@@ -5,7 +5,7 @@
 The show used to pace itself through the skill tree: big unlocks were expensive cards hidden behind launcher counts and upgrade chains. The live bot (active preset) showed three problems:
 
 - **Minutes 2–6 were a dead zone.** With three launchers and about 2 sparkles/s, Opening Night (330 sparkles) took 172 s and nothing else happened.
-- **The mid-game had no beats.** Fans arrived at 5.7 min, then nothing new until the Workshop at 14.5 and the Catapult at 15.9, and then nothing until Jetpack Fans at 29.0.
+- **The mid-game had no beats.** Fans arrived at 5.7 min, then nothing new until the Workshop at 14.5 and the Catapult at 15.9, and then nothing until Flyers at 29.0.
 - **The ending crawled.** The last purchases were 112–194 s apart while the player saved for Sky Curtain II and the Grand Finale.
 
 Milestones replace that with one visible goal at a time. Each goal is short, says exactly what to do, shows its progress, and pays out something new.
@@ -14,7 +14,7 @@ Milestones replace that with one visible goal at a time. Each goal is short, say
 
 - **One goal, always visible.** A minimal widget at the top centre shows only the current goal, its count and a progress bar.
 - **Milestones are for major unlocks only.** No currency rewards, no filler. Fewer, longer goals are fine.
-- **Milestones unlock; the shop sells.** Fans, jetpack fans, Sky Catchers, the Firework Creator and the Grand Finale are **only** earned through milestones. Building milestones (Auto Launcher, Sparkle Workshop, Catapult) unlock that building for purchase and never build one for free; Catapult Team likewise only raises the catapult limit. Big launcher upgrades (Full Salvo, Sky Curtain, Festival Sponsors) are *opened* by a milestone and then bought with currency.
+- **Milestones unlock; the shop sells.** Fans, flyers, Sky Catchers, the Firework Creator and the Grand Finale are **only** earned through milestones. Building milestones (Auto Launcher, Sparkle Workshop, Catapult) unlock that building for purchase and never build one for free; Catapult Team likewise only raises the catapult limit. Big launcher upgrades (Full Salvo, Sky Curtain, Festival Sponsors) are *opened* by a milestone and then bought with currency.
 - **Goals never go backwards.** Earn, collect and catch goals count from the moment the goal starts, so spending never undoes progress. Ownership goals (launchers, catapults, fans, upgrades) read what the player owns now.
 - **No shopping goals.** Goals never say "buy this upgrade"; they count sparkles, gold, catches, fans or buildings. Late launcher-count goals were also dropped: while a player saves for launchers they skip the multipliers, and income stalled for over 10 minutes.
 - **Rewards are claimed, not given.** A met goal turns the widget into a paper sticker that names what the tap gives. The reward arrives only when the player taps it; a notification names it. The next goal starts counting at the claim.
@@ -38,7 +38,7 @@ Times are game minutes from the live browser bot at 50× (`tools/run_live_bot.mj
 | 7 | Collect 1,800 gold | **Catapult** | 8.8 | 11.6 |
 | 8 | Own 2 Catapults | Opens **Festival Sponsors** | 12.5 | 15.4 |
 | | **4 · Bigger Sky** | | | |
-| 9 | Collect 7,000 gold | **Jetpack Fans** | 15.3 | 18.2 |
+| 9 | Collect 7,000 gold | **Flyers** | 15.3 | 18.2 |
 | 10 | Earn 18K sparkles | Opens **Full Salvo** | 20.9 | 24.0 |
 | | **5 · Sky Curtain** | | | |
 | 11 | Earn 70K sparkles | Opens **Sky Curtain** | 28.2 | 31.5 |
@@ -60,7 +60,7 @@ Total length stays close to the old 45 minutes, but there is never a long stretc
 
 ## Pricing changes that came with the chain
 
-- Opening Night, Sky Catchers, Workshop, Catapult, Jetpack Fans and the Grand Finale are milestone rewards. Their old upgrade prices and launcher-count gates are gone; the Workshop and Catapult unlock their building for purchase instead of building one.
+- Opening Night, Sky Catchers, Workshop, Catapult, Flyers and the Grand Finale are milestone rewards. Their old upgrade prices and launcher-count gates are gone; the Workshop and Catapult unlock their building for purchase instead of building one.
 - Catapult Team (+1 catapult limit) no longer builds the extra catapult; you buy it.
 - Full Salvo now costs 25,000 (was 55,000) and Sky Curtain costs 60,000 / 150,000 (was 120,000 / 300,000). They open about 15 minutes earlier than before, when income is roughly a third of what it was at their old unlock time.
 - Full Salvo, Sky Curtain and Festival Sponsors are gated by `requires.milestone` instead of their tree parent, so a "New upgrade" reward always produces a buyable card.

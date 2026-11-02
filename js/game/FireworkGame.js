@@ -1,6 +1,6 @@
 import { gameStorage } from '../platform/GameStorage.js';
 import { fireworksForCrowd } from '../systems/ProductionRates.js';
-import { FIREWORK_CONFIG, GAME_BOUNDS, PROCEDURAL_BACKGROUND_CONFIG, DEFAULT_RECIPE_COMPONENTS, GENERIC_RECIPE_NAMES, AUTO_LAUNCHER_COST_BASE, CROWD_CONFIG, CULTIST_CONFIG, JETPACK_CONFIG } from '../config/config.js';
+import { FIREWORK_CONFIG, GAME_BOUNDS, PROCEDURAL_BACKGROUND_CONFIG, DEFAULT_RECIPE_COMPONENTS, GENERIC_RECIPE_NAMES, AUTO_LAUNCHER_COST_BASE, CROWD_CONFIG, CULTIST_CONFIG, FLYER_CONFIG } from '../config/config.js';
 import GameCore from './GameCore.js';
 import InstancedParticleSystem from '../particles/InstancedParticleSystem.js';
 import Crowd from '../entities/Crowd.js';
@@ -105,12 +105,12 @@ class FireworkGame extends GameCore {
         this.particleSystem = new InstancedParticleSystem(this.renderer2D, this.profiler);
         this.crowd = new Crowd(this.renderer2D);
         this.crowd.onCoinDrop = (amount, source) => this.addGold(amount, source);
-        this.crowd.onJetpackCollect = (sparkles, particleCount = 1) => {
-            this.addSparkles(sparkles * (this.jetpackStats.sparklesPerParticleMultiplier ?? 1), 'jetpack');
-            this.statsTracker.recordJetpackParticle(particleCount);
+        this.crowd.onFlyerCollect = (sparkles, particleCount = 1) => {
+            this.addSparkles(sparkles * (this.flyerStats.sparklesPerParticleMultiplier ?? 1), 'flyer');
+            this.statsTracker.recordFlyerParticle(particleCount);
         };
-        this.crowd.getJetpackCeiling = () => this.getJetpackCeilingY();
-        this.crowd.setJetpackCount(this.jetpackCount, this.jetpackStats);
+        this.crowd.getFlyerCeiling = () => this.getFlyerCeilingY();
+        this.crowd.setFlyerCount(this.flyerCount, this.flyerStats);
         this.crowd.setCultistCount(this.cultistCount, this.cultistRituals);
         this.crowd.particleSystem = this.particleSystem;
         this.crowd.onCatchSparkles = (amount) => {
@@ -231,12 +231,12 @@ class FireworkGame extends GameCore {
         return { ...GAME_BOUNDS };
     }
 
-    /** Top of the widest view the player can zoom out to, less a margin for jetpack fans. */
-    getJetpackCeilingY() {
+    /** Top of the widest view the player can zoom out to, less a margin for flyers. */
+    getFlyerCeilingY() {
         const r = this.renderer2D;
         const zoom = this.getVenueCameraBounds().wideZoom;
         const y = this.chrome?.getCameraFraming(zoom).y ?? r.cameraY;
-        return y + r.virtualHeight / 2 / zoom - JETPACK_CONFIG.ceilingMargin;
+        return y + r.virtualHeight / 2 / zoom - FLYER_CONFIG.ceilingMargin;
     }
 
     /** Full unlocked interval, plus the zoom range that fits it in this viewport. */
@@ -253,7 +253,8 @@ class FireworkGame extends GameCore {
         // illegible. Keep a readable scale and permit panning at the widest view.
         const fitZoom = closeZoom * initialWidth / (right - left);
         const wideZoom = mobile ? Math.min(closeZoom, Math.max(0.4, fitZoom)) : fitZoom;
-        return { ...stage, left, right, closeZoom, wideZoom };
+        const maxZoom = closeZoom * GAME_BOUNDS.PLAYER_ZOOM_IN_FACTOR;
+        return { ...stage, left, right, closeZoom, wideZoom, maxZoom };
     }
 
     clampCameraX(x, zoom = this.renderer2D.cameraZoom) {
@@ -308,7 +309,7 @@ class FireworkGame extends GameCore {
 
         const targetCrowdSize = this._calculateTargetCrowdCount(this.fireworkSystem.fireworkCount);
 
-        if (targetCrowdSize > 0 && !this.crowd.people.some(person => !person.isJetpack && !person.isCultist) && !this.hasSeenFirstCrowdCinematic && !this.cinematicManager.isPlaying) {
+        if (targetCrowdSize > 0 && !this.crowd.people.some(person => !person.isFlyer && !person.isCultist) && !this.hasSeenFirstCrowdCinematic && !this.cinematicManager.isPlaying) {
             this.hasSeenFirstCrowdCinematic = true;
             getVenueStage(this);
             this.saveProgress();
@@ -438,11 +439,11 @@ class FireworkGame extends GameCore {
         this.gameCompleted = false;
         this.grandFinaleUnlocked = false;
         this.grandFinaleManager.reset();
-        this.jetpackCount = 0;
+        this.flyerCount = 0;
         this.cultistCount = 0;
         this.cultistRituals.setCount(0);
         this.cultistStats = { sparkleMultiplier: 1, ritualSpeedMultiplier: 1 };
-        this.jetpackStats = {
+        this.flyerStats = {
             speedMultiplier: 1,
             collectionRadiusMultiplier: 1,
             sparklesPerParticleMultiplier: 1,
@@ -485,12 +486,12 @@ class FireworkGame extends GameCore {
             this.crowd.dispose();
             this.crowd = new Crowd(this.renderer2D);
             this.crowd.onCoinDrop = (amount, source) => this.addGold(amount, source);
-            this.crowd.onJetpackCollect = (sparkles, particleCount = 1) => {
-                this.addSparkles(sparkles * (this.jetpackStats.sparklesPerParticleMultiplier ?? 1), 'jetpack');
-                this.statsTracker.recordJetpackParticle(particleCount);
+            this.crowd.onFlyerCollect = (sparkles, particleCount = 1) => {
+                this.addSparkles(sparkles * (this.flyerStats.sparklesPerParticleMultiplier ?? 1), 'flyer');
+                this.statsTracker.recordFlyerParticle(particleCount);
             };
-            this.crowd.getJetpackCeiling = () => this.getJetpackCeilingY();
-            this.crowd.setJetpackCount(this.jetpackCount, this.jetpackStats);
+            this.crowd.getFlyerCeiling = () => this.getFlyerCeilingY();
+            this.crowd.setFlyerCount(this.flyerCount, this.flyerStats);
             this.crowd.setCultistCount(this.cultistCount, this.cultistRituals);
             this.crowd.particleSystem = this.particleSystem;
             this.crowd.onCatchSparkles = (amount) => {
@@ -744,7 +745,7 @@ class FireworkGame extends GameCore {
             venueStage: getVenueStage(this).index,
             venueExtentLeft: gameStorage.getItem('venueExtentLeft'),
             venueLauncherRight: gameStorage.getItem('venueLauncherRight'),
-            jetpackCount: this.jetpackCount,
+            flyerCount: this.flyerCount,
             cultistCount: this.cultistCount,
             currentRecipeComponents: this.currentRecipeComponents,
             backgroundColor: '#f13b3b',
@@ -793,7 +794,7 @@ class FireworkGame extends GameCore {
         this.initBackgroundColor();
         gameStorage.setItem('backgroundColor', PROCEDURAL_BACKGROUND_CONFIG.bodyBackgroundColor);
 
-        this.jetpackCount = Math.min(128, Math.max(0, Number(data.jetpackCount) || 0));
+        this.flyerCount = Math.min(128, Math.max(0, Number(data.flyerCount) || 0));
         this.cultistCount = Math.min(CULTIST_CONFIG.maxCount, Math.max(0, Number(data.cultistCount) || 0));
         this.cultistRituals.setCount(this.cultistCount);
 
@@ -839,7 +840,7 @@ class FireworkGame extends GameCore {
 
         this.ui.initializeUnlockStates();
         this.progression.applyAll(this);
-        this.crowd?.setJetpackCount?.(this.jetpackCount, this.jetpackStats);
+        this.crowd?.setFlyerCount?.(this.flyerCount, this.flyerStats);
         this.crowd?.setCultistCount?.(this.cultistCount, this.cultistRituals);
         this.crowd.setCount(this._calculateTargetCrowdCount(this.fireworkSystem.fireworkCount));
         this.updateCrowdDisplay();
@@ -886,7 +887,7 @@ class FireworkGame extends GameCore {
         const fireworksLabel = document.getElementById('crowd-firework-progress');
 
         const currentCrowd = this.crowd ? this.crowd.people.length : 0;
-        const naturalCrowd = this.crowd ? this.crowd.people.filter(person => !person.isJetpack && !person.isCultist).length : 0;
+        const naturalCrowd = this.crowd ? this.crowd.people.filter(person => !person.isFlyer && !person.isCultist).length : 0;
         if (crowdCountElement) {
             crowdCountElement.textContent = currentCrowd;
         }

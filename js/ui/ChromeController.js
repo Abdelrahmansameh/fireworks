@@ -15,6 +15,8 @@ export class ChromeController {
         this.rail = document.querySelector('.tab-bar');
         this.cameraBaselineY = game.renderer2D.cameraY;
         this.cameraBaselineZoom = game.renderer2D.cameraZoom;
+        // World units the player has panned up from the ground-anchored framing.
+        this.cameraPanY = 0;
         this.panels.forEach(panel => {
             panel.querySelector('.panel-close').addEventListener('click', () => game.ui.hideActiveTab());
             panel.querySelector('.sheet-handle').addEventListener('click', () => {
@@ -162,6 +164,25 @@ export class ChromeController {
 
     /** Desired resting camera for the current viewport and mobile sheet. */
     getCameraFraming(zoomOverride = null) {
+        const framing = this.getGroundedCameraFraming(zoomOverride);
+        const pan = Math.min(this.cameraPanY, this.getMaxCameraPanY(framing));
+        return { ...framing, y: framing.y + pan, dockTargetY: framing.dockTargetY + pan };
+    }
+
+    /** A zoomed-in view may pan up as far as the top of the widest view. */
+    getMaxCameraPanY({ y, zoom }) {
+        const wide = this.getGroundedCameraFraming(this.game.getVenueCameraBounds().wideZoom);
+        const halfHeight = this.game.renderer2D.virtualHeight / 2;
+        return Math.max(0, wide.y + halfHeight / wide.zoom - (y + halfHeight / zoom));
+    }
+
+    /** Drag input moves the view vertically while zoomed in. */
+    panCameraY(deltaY) {
+        const framing = this.getGroundedCameraFraming();
+        this.cameraPanY = Math.max(0, Math.min(this.getMaxCameraPanY(framing), this.cameraPanY + deltaY));
+    }
+
+    getGroundedCameraFraming(zoomOverride = null) {
         const renderer = this.game.renderer2D;
         const baselineZoom = this.cameraBaselineZoom;
         const zoom = zoomOverride ?? this.cameraDesiredZoom ?? (this.mobile.matches ? baselineZoom * GAME_BOUNDS.MOBILE_ZOOM_FACTOR : baselineZoom);
@@ -191,7 +212,8 @@ export class ChromeController {
     setPlayerZoom(zoom, anchorClientX = null) {
         const bounds = this.game.getVenueCameraBounds();
         this.cameraAutoZoom = null;
-        this.cameraDesiredZoom = Math.max(bounds.wideZoom, Math.min(bounds.closeZoom, zoom));
+        this.cameraDesiredZoom = Math.max(bounds.wideZoom, Math.min(bounds.maxZoom, zoom));
+        this.panCameraY(0);
         this.game.cameraTargetX = null;
         // Keep the world point under the cursor fixed on screen while zooming.
         this.cameraZoomAnchor = null;
@@ -221,12 +243,13 @@ export class ChromeController {
                         && (bounds.left < this.cameraVenueLeft - .5 || bounds.right > this.cameraVenueRight + .5);
                     if (venueWidened || this.cameraDesiredZoom == null) {
                         this.cameraDesiredZoom = bounds.wideZoom;
+                        this.cameraPanY = 0;
                         this.cameraAutoZoom = venueWidened && bounds.wideZoom < renderer.cameraZoom
                             ? { from: renderer.cameraZoom, to: bounds.wideZoom, elapsed: 0, duration: VENUE_ZOOM_OUT_DURATION_MS / 1000 }
                             : null;
                         this.game.cameraTargetX = null;
                     } else if (viewportChanged) {
-                        this.cameraDesiredZoom = Math.max(bounds.wideZoom, Math.min(bounds.closeZoom, this.cameraDesiredZoom));
+                        this.cameraDesiredZoom = Math.max(bounds.wideZoom, Math.min(bounds.maxZoom, this.cameraDesiredZoom));
                         if (this.cameraAutoZoom) {
                             this.cameraAutoZoom = { from: renderer.cameraZoom, to: this.cameraDesiredZoom, elapsed: 0, duration: VENUE_ZOOM_OUT_DURATION_MS / 1000 };
                         }

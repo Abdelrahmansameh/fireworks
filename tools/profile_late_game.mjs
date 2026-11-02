@@ -77,8 +77,8 @@ try {
             });
             g.crowd.setCount(g._calculateTargetCrowdCount(g.fireworkSystem.fireworkCount));
             g.syncCrowdStats();
-            g.jetpackCount = 6;
-            g.crowd.setJetpackCount(g.jetpackCount, g.jetpackStats);
+            g.flyerCount = 6;
+            g.crowd.setFlyerCount(g.flyerCount, g.flyerStats);
             if (scenario === 'stress') {
                 const { FIREWORK_CONFIG } = await import('/js/config/config.js');
                 const originalRecipes = structuredClone(g.recipes);
@@ -99,7 +99,7 @@ try {
             rockets: g.fireworkSystem.fireworks.length,
             crowd: g.crowd.people.length,
             crowdStates: g.crowd.people.reduce((all, person) => { all[person.state] = (all[person.state] ?? 0) + 1; return all; }, {}),
-            jetpacks: g.crowd.jetpackCount,
+            flyers: g.crowd.flyerCount,
             buildings: g.buildingManager.buildings.reduce((all, building) => { all[building.type] = (all[building.type] ?? 0) + 1; return all; }, {}),
             recipes: g.recipes.length,
             patterns: g.unlockedPatternKeys.length,
@@ -112,7 +112,7 @@ try {
         const gl = g.renderer2D.gl;
         const debug = gl.getExtension('WEBGL_debug_renderer_info');
         return { ...window.__profileSnapshot(), launcherStats: g.launcherStats,
-            jetpackStats: g.jetpackStats, catapultStats: g.catapultStats,
+            flyerStats: g.flyerStats, catapultStats: g.catapultStats,
             gpu: debug ? gl.getParameter(debug.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.RENDERER),
             viewport: { width: innerWidth, height: innerHeight, dpr: devicePixelRatio },
             browser: navigator.userAgent,
@@ -120,7 +120,7 @@ try {
         };
     }, { scenario });
     await page.waitForFunction(() => game.buildingManager.buildings.every(b => b._instancedGroup)
-        && game.crowd.instancedGroup && game.crowd.jetpackInstancedGroup);
+        && game.crowd.instancedGroup && game.crowd.flyerInstancedGroup);
     await page.evaluate(() => game.resume());
     console.log(JSON.stringify({ stage: 'warmup', scenario, mode, variant, warmup, setup }));
     await sleep(warmup * 1000);

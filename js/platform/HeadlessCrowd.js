@@ -11,7 +11,7 @@ export default class HeadlessCrowd {
     constructor() {
         this.people = [];
         this.naturalCount = 0;
-        this.jetpackCount = 0;
+        this.flyerCount = 0;
         this.cultistCount = 0;
         this.catchingEnabled = false;
         this.collectionRadius = 0;
@@ -21,17 +21,17 @@ export default class HeadlessCrowd {
     /** Resize the crowd to `count`. We only ever read `people.length`. */
     setCount(count) {
         this.naturalCount = Math.max(0, Math.floor(count));
-        this.people.length = this.naturalCount + this.jetpackCount + this.cultistCount;
+        this.people.length = this.naturalCount + this.flyerCount + this.cultistCount;
     }
 
-    setJetpackCount(count) {
-        this.jetpackCount = Math.max(0, Math.floor(count));
-        this.people.length = this.naturalCount + this.jetpackCount + this.cultistCount;
+    setFlyerCount(count) {
+        this.flyerCount = Math.max(0, Math.floor(count));
+        this.people.length = this.naturalCount + this.flyerCount + this.cultistCount;
     }
 
     setCultistCount(count) {
         this.cultistCount = Math.max(0, Math.floor(count));
-        this.people.length = this.naturalCount + this.jetpackCount + this.cultistCount;
+        this.people.length = this.naturalCount + this.flyerCount + this.cultistCount;
     }
 
     // ── Catapult interaction stubs ──────────────────────────────────────────

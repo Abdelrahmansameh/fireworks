@@ -242,16 +242,16 @@ class UIManager {
             });
         }
 
-        // Cheat: spawn jetpacks
-        const cheatSpawnJetpackBtn = document.getElementById('cheat-spawn-jetpack');
-        if (cheatSpawnJetpackBtn) {
-            cheatSpawnJetpackBtn.addEventListener('click', () => {
-                const countInput = document.getElementById('cheat-jetpack-count');
+        // Cheat: spawn flyers
+        const cheatSpawnFlyerBtn = document.getElementById('cheat-spawn-flyer');
+        if (cheatSpawnFlyerBtn) {
+            cheatSpawnFlyerBtn.addEventListener('click', () => {
+                const countInput = document.getElementById('cheat-flyer-count');
                 const count = Math.max(1, parseInt(countInput?.value) || 1);
                 for (let i = 0; i < count; i++) {
-                    this.game.spawnJetpack();
+                    this.game.spawnFlyer();
                 }
-                this.showNotification(`Spawned ${count} jetpack fan${count !== 1 ? 's' : ''}!`);
+                this.showNotification(`Spawned ${count} flying cultist${count !== 1 ? 's' : ''}!`);
             });
         }
 
@@ -484,6 +484,7 @@ class UIManager {
             this.game.cameraTargetX = null;
             if (this.game.chrome) this.game.chrome.cameraZoomAnchor = null;
             this.lastPointerX = event.clientX;
+            this.lastPointerY = event.clientY;
             this.currentPointerX = event.clientX;
             this.currentPointerY = event.clientY;
             this.scrollDragStartX = event.clientX;
@@ -497,18 +498,12 @@ class UIManager {
                 this.isScrollDragReady = true;
 
                 const deltaX = this.currentPointerX - this.lastPointerX;
-                if (Math.abs(deltaX) > 0) {
+                const deltaY = this.currentPointerY - this.lastPointerY;
+                if (Math.abs(deltaX) > 0 || Math.abs(deltaY) > 0) {
                     this.hasScrolledDuringDrag = true;
-                    const r = this.game.renderer2D;
-                    this.game.renderer2D.cameraX = this.game.clampCameraX(r.cameraX - deltaX * r.virtualHeight / r.canvas.clientHeight / r.cameraZoom);
-
-                    this.game.renderer2D.setCamera({
-                        x: this.game.renderer2D.cameraX,
-                        y: this.game.renderer2D.cameraY,
-                        zoom: this.game.renderer2D.cameraZoom
-                    });
-
+                    this.scrollCameraBy(deltaX, deltaY);
                     this.lastPointerX = this.currentPointerX;
+                    this.lastPointerY = this.currentPointerY;
                 }
 
                 const currentWorldPos = this.game.screenToWorld(this.currentPointerX, this.currentPointerY);
@@ -613,22 +608,30 @@ class UIManager {
             }
 
             const deltaX = e.clientX - this.lastPointerX;
+            const deltaY = e.clientY - this.lastPointerY;
 
-            if (Math.abs(deltaX) > 0) {
+            if (Math.abs(deltaX) > 0 || Math.abs(deltaY) > 0) {
                 this.hasScrolledDuringDrag = true;
             }
 
-            const r = this.game.renderer2D;
-            this.game.renderer2D.cameraX = this.game.clampCameraX(r.cameraX - deltaX * r.virtualHeight / r.canvas.clientHeight / r.cameraZoom);
-
-            this.game.renderer2D.setCamera({
-                x: this.game.renderer2D.cameraX,
-                y: this.game.renderer2D.cameraY,
-                zoom: this.game.renderer2D.cameraZoom
-            });
+            this.scrollCameraBy(deltaX, deltaY);
 
             this.lastPointerX = e.clientX;
+            this.lastPointerY = e.clientY;
         }
+    }
+
+    /** Drag the view by a screen-pixel delta; vertical only applies while zoomed in. */
+    scrollCameraBy(deltaX, deltaY) {
+        const r = this.game.renderer2D;
+        const unitsPerPixel = r.virtualHeight / r.canvas.clientHeight / r.cameraZoom;
+        const chrome = this.game.chrome;
+        let y = r.cameraY;
+        if (chrome && deltaY) {
+            chrome.panCameraY(deltaY * unitsPerPixel);
+            y = chrome.getCameraFraming(r.cameraZoom).y;
+        }
+        r.setCamera({ x: this.game.clampCameraX(r.cameraX - deltaX * unitsPerPixel), y, zoom: r.cameraZoom });
     }
 
     pointerUpHandler(e) {
@@ -1037,7 +1040,7 @@ class UIManager {
         const spsTot = st.getRollingRate('sparkles');
         const spsAuto = st.getRollingRate('sparkles', 'auto_launcher');
         const spsCultist = st.getRollingRate('sparkles', 'cultist');
-        const spsJetpack = st.getRollingRate('sparkles', 'jetpack');
+        const spsFlyer = st.getRollingRate('sparkles', 'flyer');
         const spsCrowdCatch = st.getRollingRate('sparkles', 'crowd_catch');
         const spsMnl = st.getRollingRate('sparkles', 'manual');
         const spsCheat = st.getRollingRate('sparkles', 'cheat');
@@ -1053,7 +1056,7 @@ class UIManager {
         set('stat-sps-total', fmtRate(spsTot) + ' /s');
         set('stat-sps-auto', fmtRate(spsAuto) + ' /s');
         set('stat-sps-cultist', fmtRate(spsCultist) + ' /s');
-        set('stat-sps-jetpack', fmtRate(spsJetpack) + ' /s');
+        set('stat-sps-flyer', fmtRate(spsFlyer) + ' /s');
         set('stat-sps-crowd-catch', fmtRate(spsCrowdCatch) + ' /s');
         set('stat-sps-manual', fmtRate(spsMnl) + ' /s');
         set('stat-sps-cheat', fmtRate(spsCheat) + ' /s');
@@ -1085,7 +1088,7 @@ class UIManager {
         const getBldCount = (type) => g.buildingManager.getBuildingsByType(type).length;
         set('stat-bld-auto', getBldCount('AUTO_LAUNCHER'));
         set('stat-bld-cultist', g.cultistCount ?? 0);
-        set('stat-bld-jetpack', g.jetpackCount ?? 0);
+        set('stat-bld-flyer', g.flyerCount ?? 0);
 
         // ── Session totals ──────────────────────────────────────────────────
         set('stat-session-time', GameMetrics.formatDuration(st.getSessionDurationSeconds()));
@@ -1093,7 +1096,7 @@ class UIManager {
         set('stat-sess-sparkles', fmt(st.sessionSparkles));
         set('stat-sess-sp-auto', fmt(st.sessionSparklesBySource['auto_launcher'] ?? 0));
         set('stat-sess-sp-cultist', fmt(st.sessionSparklesBySource['cultist'] ?? 0));
-        set('stat-sess-sp-jetpack', fmt(st.sessionSparklesBySource['jetpack'] ?? 0));
+        set('stat-sess-sp-flyer', fmt(st.sessionSparklesBySource['flyer'] ?? 0));
         set('stat-sess-sp-crowd-catch', fmt(st.sessionSparklesBySource['crowd_catch'] ?? 0));
         set('stat-sess-sp-manual', fmt(st.sessionSparklesBySource['manual'] ?? 0));
 
@@ -1104,7 +1107,7 @@ class UIManager {
         set('stat-sess-fw-manual', fmt(st.sessionFireworksBySource['manual'] ?? 0));
         set('stat-sess-fw-auto', fmt(st.sessionFireworksBySource['auto_launcher'] ?? 0));
 
-        set('stat-sess-jetpack-parts', fmt(st.sessionJetpackParticles));
+        set('stat-sess-flyer-parts', fmt(st.sessionFlyerParticles));
         set('stat-sess-crowd-parts', fmt(st.sessionCrowdCatchParticles));
 
         // ── Lifetime records ────────────────────────────────────────────────
@@ -1112,12 +1115,12 @@ class UIManager {
         set('stat-life-sparkles', fmt(st.lifetimeSparkles));
         set('stat-life-sp-auto', fmt(st.lifetimeSparklesBySource['auto_launcher'] ?? 0));
         set('stat-life-sp-cultist', fmt(st.lifetimeSparklesBySource['cultist'] ?? 0));
-        set('stat-life-sp-jetpack', fmt(st.lifetimeSparklesBySource['jetpack'] ?? 0));
+        set('stat-life-sp-flyer', fmt(st.lifetimeSparklesBySource['flyer'] ?? 0));
         set('stat-life-sp-crowd-catch', fmt(st.lifetimeSparklesBySource['crowd_catch'] ?? 0));
         set('stat-life-sp-manual', fmt(st.lifetimeSparklesBySource['manual'] ?? 0));
 
         set('stat-life-gold', fmt(st.lifetimeGold));
-        set('stat-life-jetpack-parts', fmt(st.lifetimeJetpackParticles));
+        set('stat-life-flyer-parts', fmt(st.lifetimeFlyerParticles));
         set('stat-life-crowd-parts', fmt(st.lifetimeCrowdCatchParticles));
 
         set('stat-peak-sps', fmtRate(st.peakSPS) + ' /s');

@@ -1,8 +1,8 @@
 /**
  * SimulationConfig — tunable parameters for the headless economy simulation.
  *
- * Jetpack fan collection and crowd-catching income are *emergent* in the live game:
- * jetpack fans and crowd members physically vacuum up firework-explosion particles,
+ * Flyer collection and crowd-catching income are *emergent* in the live game:
+ * flyers and crowd members physically vacuum up firework-explosion particles,
  * so there is no closed-form yield. For the headless simulator we replace that
  * physics with a coarse, fully data-driven flow estimate (no particle
  * positions — just "how many particles are emitted, and what fraction gets
@@ -10,7 +10,7 @@
  *
  * Flow model (per second):
  *   particlesEmitted = (launcherFPS + clicksPerSec) * avgParticlesPerFirework
- *   jetpackFansCaught     = particlesEmitted * jetpackCatchFraction(activeFans)
+ *   flyerFansCaught     = particlesEmitted * flyerCatchFraction(activeFans)
  *   crowdCaught      = particlesEmitted * crowdCatchFraction(activeCatchers)
  *
  * The fraction functions saturate (you can't catch more than what's emitted),
@@ -22,14 +22,14 @@ export const SIMULATION_CONFIG = {
     // actually lingers long enough to be catchable.)
     avgParticlesPerFirework: 120,
 
-    jetpack: {
+    flyer: {
         // Fraction of emitted particles a single airborne fan collects
         // per second. With the intermittent 30s/60s hubs a realistic late fleet is
-        // only a handful of airborne jetpack fans, so this is tuned so
+        // only a handful of airborne flyers, so this is tuned so
         // income scales roughly linearly with that fleet (each hub you add is felt)
         // rather than slamming into the cap after the first couple of fans.
         catchFractionPerFan: 0.11,
-        // Hard cap on the combined fraction all jetpack fans can catch.
+        // Hard cap on the combined fraction all flyers can catch.
         maxCatchFractionTotal: 0.6,
     },
 
