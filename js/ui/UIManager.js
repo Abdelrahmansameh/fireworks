@@ -1089,6 +1089,7 @@ class UIManager {
         set('stat-bld-auto', getBldCount('AUTO_LAUNCHER'));
         set('stat-bld-cultist', g.cultistCount ?? 0);
         set('stat-bld-flyer', g.flyerCount ?? 0);
+        set('stat-bld-miner', g.minerCount ?? 0);
 
         // ── Session totals ──────────────────────────────────────────────────
         set('stat-session-time', GameMetrics.formatDuration(st.getSessionDurationSeconds()));

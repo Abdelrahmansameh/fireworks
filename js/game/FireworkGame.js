@@ -1,6 +1,6 @@
 import { gameStorage } from '../platform/GameStorage.js';
 import { fireworksForCrowd } from '../systems/ProductionRates.js';
-import { FIREWORK_CONFIG, GAME_BOUNDS, PROCEDURAL_BACKGROUND_CONFIG, DEFAULT_RECIPE_COMPONENTS, GENERIC_RECIPE_NAMES, AUTO_LAUNCHER_COST_BASE, CROWD_CONFIG, CULTIST_CONFIG, FLYER_CONFIG } from '../config/config.js';
+import { FIREWORK_CONFIG, GAME_BOUNDS, PROCEDURAL_BACKGROUND_CONFIG, DEFAULT_RECIPE_COMPONENTS, GENERIC_RECIPE_NAMES, AUTO_LAUNCHER_COST_BASE, CROWD_CONFIG, CULTIST_CONFIG, MINER_CONFIG, FLYER_CONFIG } from '../config/config.js';
 import GameCore from './GameCore.js';
 import InstancedParticleSystem from '../particles/InstancedParticleSystem.js';
 import Crowd from '../entities/Crowd.js';
@@ -112,6 +112,7 @@ class FireworkGame extends GameCore {
         this.crowd.getFlyerCeiling = () => this.getFlyerCeilingY();
         this.crowd.setFlyerCount(this.flyerCount, this.flyerStats);
         this.crowd.setCultistCount(this.cultistCount, this.cultistRituals);
+        this.crowd.setMinerCount(this.minerCount, this.minerShifts);
         this.crowd.particleSystem = this.particleSystem;
         this.crowd.onCatchSparkles = (amount) => {
             const multiplied = amount * (this.crowdStats.sparklesPerParticleMultiplier ?? 1);
@@ -249,12 +250,14 @@ class FireworkGame extends GameCore {
         const initialWidth = r.virtualHeight * aspect / closeZoom;
         const left = stage.index ? Math.min(-initialWidth / 2, stage.left) : -initialWidth / 2;
         const right = stage.index ? Math.max(initialWidth / 2, stage.right) : initialWidth / 2;
+        // Zoom fits only up to the capped extent; anything further right is panned to.
+        const zoomRight = stage.index ? Math.max(initialWidth / 2, stage.zoomRight) : initialWidth / 2;
         // On portrait screens a full-venue overview would make characters
         // illegible. Keep a readable scale and permit panning at the widest view.
-        const fitZoom = closeZoom * initialWidth / (right - left);
+        const fitZoom = closeZoom * initialWidth / (zoomRight - left);
         const wideZoom = mobile ? Math.min(closeZoom, Math.max(0.4, fitZoom)) : fitZoom;
         const maxZoom = closeZoom * GAME_BOUNDS.PLAYER_ZOOM_IN_FACTOR;
-        return { ...stage, left, right, closeZoom, wideZoom, maxZoom };
+        return { ...stage, left, right, zoomRight, closeZoom, wideZoom, maxZoom };
     }
 
     clampCameraX(x, zoom = this.renderer2D.cameraZoom) {
@@ -305,11 +308,12 @@ class FireworkGame extends GameCore {
         this.buildingManager.update(deltaTime);
         this.profiler.endFunction('buildingsUpdate');
         this.cultistRituals.update(deltaTime);
+        this.minerShifts.update(deltaTime);
 
 
         const targetCrowdSize = this._calculateTargetCrowdCount(this.fireworkSystem.fireworkCount);
 
-        if (targetCrowdSize > 0 && !this.crowd.people.some(person => !person.isFlyer && !person.isCultist) && !this.hasSeenFirstCrowdCinematic && !this.cinematicManager.isPlaying) {
+        if (targetCrowdSize > 0 && !this.crowd.people.some(person => !person.isFlyer && !person.isCultist && !person.isMiner) && !this.hasSeenFirstCrowdCinematic && !this.cinematicManager.isPlaying) {
             this.hasSeenFirstCrowdCinematic = true;
             getVenueStage(this);
             this.saveProgress();
@@ -387,6 +391,7 @@ class FireworkGame extends GameCore {
             if (botRunning && !this.bot.enabled) break;
         }
         // Scenery follows rendered time, including during bot fast-forward.
+        this.procduralBackground?.scenery?.syncMineHoles(this.minerCount);
         this.procduralBackground?.update(frameDelta, this.particleSystem, this.fireworkSystem.fireworks);
         if (this.previewActive) this.updateCreator(frameDelta);
 
@@ -443,6 +448,9 @@ class FireworkGame extends GameCore {
         this.cultistCount = 0;
         this.cultistRituals.setCount(0);
         this.cultistStats = { sparkleMultiplier: 1, ritualSpeedMultiplier: 1 };
+        this.minerCount = 0;
+        this.minerShifts.setCount(0);
+        this.minerStats = { goldMultiplier: 1, speedMultiplier: 1 };
         this.flyerStats = {
             speedMultiplier: 1,
             collectionRadiusMultiplier: 1,
@@ -493,6 +501,7 @@ class FireworkGame extends GameCore {
             this.crowd.getFlyerCeiling = () => this.getFlyerCeilingY();
             this.crowd.setFlyerCount(this.flyerCount, this.flyerStats);
             this.crowd.setCultistCount(this.cultistCount, this.cultistRituals);
+            this.crowd.setMinerCount(this.minerCount, this.minerShifts);
             this.crowd.particleSystem = this.particleSystem;
             this.crowd.onCatchSparkles = (amount) => {
                 const multiplied = amount * (this.crowdStats.sparklesPerParticleMultiplier ?? 1);
@@ -747,6 +756,7 @@ class FireworkGame extends GameCore {
             venueLauncherRight: gameStorage.getItem('venueLauncherRight'),
             flyerCount: this.flyerCount,
             cultistCount: this.cultistCount,
+            minerCount: this.minerCount,
             currentRecipeComponents: this.currentRecipeComponents,
             backgroundColor: '#f13b3b',
             resources: this.resourceManager.save(),
@@ -797,6 +807,8 @@ class FireworkGame extends GameCore {
         this.flyerCount = Math.min(128, Math.max(0, Number(data.flyerCount) || 0));
         this.cultistCount = Math.min(CULTIST_CONFIG.maxCount, Math.max(0, Number(data.cultistCount) || 0));
         this.cultistRituals.setCount(this.cultistCount);
+        this.minerCount = Math.min(MINER_CONFIG.maxCount, Math.max(0, Number(data.minerCount) || 0));
+        this.minerShifts.setCount(this.minerCount);
 
         if (data.buildingManagerData) {
             const buildingData = data.buildingManagerData;
@@ -842,6 +854,7 @@ class FireworkGame extends GameCore {
         this.progression.applyAll(this);
         this.crowd?.setFlyerCount?.(this.flyerCount, this.flyerStats);
         this.crowd?.setCultistCount?.(this.cultistCount, this.cultistRituals);
+        this.crowd?.setMinerCount?.(this.minerCount, this.minerShifts);
         this.crowd.setCount(this._calculateTargetCrowdCount(this.fireworkSystem.fireworkCount));
         this.updateCrowdDisplay();
         this.milestones.tick();
@@ -887,7 +900,7 @@ class FireworkGame extends GameCore {
         const fireworksLabel = document.getElementById('crowd-firework-progress');
 
         const currentCrowd = this.crowd ? this.crowd.people.length : 0;
-        const naturalCrowd = this.crowd ? this.crowd.people.filter(person => !person.isFlyer && !person.isCultist).length : 0;
+        const naturalCrowd = this.crowd ? this.crowd.people.filter(person => !person.isFlyer && !person.isCultist && !person.isMiner).length : 0;
         if (crowdCountElement) {
             crowdCountElement.textContent = currentCrowd;
         }

@@ -44,6 +44,16 @@
       "id": "cultist_bowl",
       "name": "Cultist Ritual Bowl",
       "file": "cultist_bowl.json"
+    },
+    {
+      "id": "miner_pickaxe",
+      "name": "Miner Pickaxe",
+      "file": "miner_pickaxe.json"
+    },
+    {
+      "id": "miner_helmet",
+      "name": "Miner Helmet",
+      "file": "miner_helmet.json"
     }
   ]
 }

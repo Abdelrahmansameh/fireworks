@@ -2,6 +2,10 @@ import { GAME_BOUNDS } from './GameBoundsConfig.js';
 import { BUILDING_TYPES } from './BuildingConfig.js';
 
 export const VENUE_ZOOM_OUT_DURATION_MS = 4000;
+// The automatic zoom-out frames at most this far right; launchers past it are
+// reached by panning. Burst height grows with the framed width up to the cap.
+export const VENUE_MAX_ZOOM_RIGHT = 7200;
+export const VENUE_MAX_EXPLOSION_Y = 2700;
 
 // Content extents are unioned with the starting viewport by the camera; they
 // do not replace it. The right edge comes from the launcher slots alone, so the
@@ -61,5 +65,12 @@ export function getVenueStage(game) {
         if (left < stage.left && left < storedLeft) game.storage?.setItem('venueExtentLeft', String(left));
         if (right > storedRight) game.storage?.setItem('venueLauncherRight', String(right));
     }
-    return { ...stage, left, right, index };
+    const zoomRight = Math.min(right, VENUE_MAX_ZOOM_RIGHT);
+    // Scale with the framed span so bursts keep the same screen height as the
+    // view widens, reaching the cap exactly at the widest zoom.
+    const groundY = GAME_BOUNDS.WORLD_GROUND_Y;
+    const spanRatio = Math.max(0, (zoomRight - left) / (VENUE_MAX_ZOOM_RIGHT - left));
+    const maxExplosionY = Math.min(VENUE_MAX_EXPLOSION_Y,
+        Math.max(stage.maxExplosionY, groundY + (VENUE_MAX_EXPLOSION_Y - groundY) * spanRatio));
+    return { ...stage, left, right, zoomRight, maxExplosionY, index };
 }

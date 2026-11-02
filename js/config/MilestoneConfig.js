@@ -1,6 +1,6 @@
 // The milestone chain sets the pacing of a show. Each milestone is one goal; its
-// reward opens the next mechanic. Buildings, fans, flyers and the finale
-// are only earned here, never bought; the late launcher upgrades open here and
+// reward opens the next mechanic. Buildings, fans, flyers, miners and the
+// finale are only earned here, never bought; the late launcher upgrades open here and
 // are then bought in the shop. Tune pacing with tools/run_live_bot.mjs.
 //
 // Goal types:
@@ -69,6 +69,12 @@ export const MILESTONES = [
         goal: { type: 'gold', target: 7000 },
         hint: 'Save the crowd’s tips for something that flies.',
         reward: { title: 'Flying Cultists', desc: 'A cultist blasts sparkles from their palms to fly through bursts, catching sparkles.', icon: 'crowd', upgrades: ['flyer_unlock'] },
+    },
+    {
+        id: 'gold_mine', chapter: 3,
+        goal: { type: 'gold', target: 12000 },
+        hint: 'Stockpile gold to open the mine in the mountains.',
+        reward: { title: 'Gold Mine', desc: 'Hire miners who dig gold out of the mountains, far more than any fan tosses.', icon: 'miner', upgrades: ['miner_unlock'] },
     },
 
     // ── 5. Grand Finale ─────────────────────────────────────────────────────

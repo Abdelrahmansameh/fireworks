@@ -1,0 +1,79 @@
+{
+  "parts": [
+    {
+      "id": "hat_root",
+      "parentId": null,
+      "width": 1,
+      "height": 1,
+      "anchorX": 0,
+      "anchorY": 0,
+      "relX": 0,
+      "relY": 0,
+      "color": "ffffff",
+      "z": 0,
+      "alpha": 0
+    },
+    {
+      "id": "dome",
+      "parentId": "hat_root",
+      "width": 3.3,
+      "height": 0.95,
+      "anchorX": 0,
+      "anchorY": -0.5,
+      "relX": 0,
+      "relY": 0,
+      "color": "8a6440",
+      "z": 5
+    },
+    {
+      "id": "dome_outline",
+      "parentId": "hat_root",
+      "width": 3.6999999999999997,
+      "height": 1.35,
+      "anchorX": 0,
+      "anchorY": -0.5,
+      "relX": 0,
+      "relY": 0,
+      "color": "000000",
+      "z": -5
+    },
+    {
+      "id": "rim",
+      "parentId": "hat_root",
+      "width": 3.9,
+      "height": 0.4,
+      "anchorX": 0,
+      "anchorY": 0,
+      "relX": 0,
+      "relY": 0,
+      "color": "6b4a2c",
+      "z": 6
+    },
+    {
+      "id": "rim_outline",
+      "parentId": "hat_root",
+      "width": 4.26,
+      "height": 0.76,
+      "anchorX": 0,
+      "anchorY": 0,
+      "relX": 0,
+      "relY": 0,
+      "color": "000000",
+      "z": -4
+    },
+    {
+      "id": "patch",
+      "parentId": "dome",
+      "width": 0.8,
+      "height": 0.5,
+      "anchorX": 0,
+      "anchorY": 0,
+      "relX": -0.2,
+      "relY": 0.55,
+      "color": "a07a4e",
+      "z": 7,
+      "baseRotation": 0.12
+    }
+  ],
+  "animations": {}
+}

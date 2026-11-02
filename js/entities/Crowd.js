@@ -1,5 +1,5 @@
-import { FlyerBehavior, CultistBehavior } from './crowdBehaviors/CrowdBehavior.js';
-import { GAME_BOUNDS, CROWD_CONFIG, CROWD_CATCHER_CONFIG, CULTIST_CONFIG, FLYER_CONFIG, PARTICLE_TYPES } from '../config/config.js';
+import { FlyerBehavior, CultistBehavior, MinerBehavior } from './crowdBehaviors/CrowdBehavior.js';
+import { GAME_BOUNDS, CROWD_CONFIG, CROWD_CATCHER_CONFIG, CULTIST_CONFIG, MINER_CONFIG, FLYER_CONFIG, PARTICLE_TYPES } from '../config/config.js';
 
 import * as Renderer2D from '../rendering/Renderer.js';
 import InstancedParticleSystem from '../particles/InstancedParticleSystem.js';
@@ -21,10 +21,13 @@ class Crowd {
         this.flyerCeilingY = GAME_BOUNDS.WORLD_MAX_EXPLOSION_Y;
         this.cultistCount = 0;
         this.cultistRituals = null;
+        this.minerCount = 0;
+        this.minerShifts = null;
         this.missingCrowdsToInit = 0;
 
         this.instancedGroup = null;
         this.flyerInstancedGroup = null;
+        this.minerInstancedGroup = null;
 
         // Generic animation system
         /** @type {SkeletonData|null} */
@@ -76,7 +79,7 @@ class Crowd {
         }
 
         // Initialize props
-        const uniquePropUrls = new Set(CULTIST_CONFIG.props.map(prop => prop.skeletonUrl));
+        const uniquePropUrls = new Set([...CULTIST_CONFIG.props, ...MINER_CONFIG.props].map(prop => prop.skeletonUrl));
         for (const clip of this._animData.clips.values()) {
             if (clip.props) {
                 for (const prop of clip.props) {
@@ -107,10 +110,11 @@ class Crowd {
             }
             this.maxPropParts = Math.max(this.maxPropParts, sum);
         }
-        // Cultists wear their hood on top of whatever their clip adds.
-        for (const prop of CULTIST_CONFIG.props) {
-            this.maxPropParts += this._propCache.get(prop.skeletonUrl)?.skeleton.partCount ?? 0;
-        }
+        // Cultists wear their hood, and miners their pick and hat, on top of
+        // whatever their clip adds.
+        const wornParts = props => props.reduce((sum, prop) =>
+            sum + (this._propCache.get(prop.skeletonUrl)?.skeleton.partCount ?? 0), 0);
+        this.maxPropParts += Math.max(wornParts(CULTIST_CONFIG.props), wornParts(MINER_CONFIG.props));
 
         if (this._disposed) return;
         this.totalPartsPerPerson = this._skeleton.partCount + this.maxPropParts;
@@ -143,6 +147,19 @@ class Crowd {
                 zIndex: -21,
                 blendMode: Renderer2D.BlendMode.NORMAL,
             });
+            // Miners work the mountain behind the river, so they draw with the scenery.
+            this.minerInstancedGroup = this.renderer.createInstancedGroup({
+                vertices: geometry.vertices,
+                indices: geometry.indices,
+                texCoords: geometry.texCoords,
+                texture: null,
+                maxInstances: MINER_CONFIG.maxCount * Math.max(1, this.totalPartsPerPerson),
+                zIndex: MINER_CONFIG.zIndex,
+                blendMode: Renderer2D.BlendMode.NORMAL,
+            });
+            // Additive, so crumbs fade out as glints instead of darkening.
+            this.minerParticles ??= new InstancedParticleSystem(this.renderer, null,
+                { maxParticles: 1500, zIndex: MINER_CONFIG.zIndex + 1, reflects: false, blendMode: Renderer2D.BlendMode.ADDITIVE });
             // Cultist ritual motes draw over the crowd so bodies never hide them.
             this.cultistParticles ??= new InstancedParticleSystem(this.renderer, null,
                 { maxParticles: 4000, zIndex: CROWD_CONFIG.zIndex + 1, reflects: false, blendMode: Renderer2D.BlendMode.NORMAL });
@@ -177,25 +194,42 @@ class Crowd {
         this._syncMemberBehaviors();
     }
 
+    /** Miners climb out of the mine and work their ledge, one clock each in `shifts`. */
+    setMinerCount(count, shifts) {
+        this.minerShifts = shifts;
+        const next = Math.max(0, Math.min(MINER_CONFIG.maxCount, Math.floor(Number(count) || 0)));
+        if (next === this.minerCount) return;
+        this.minerCount = next;
+        this._syncMemberBehaviors();
+    }
+
+    _groupFor(person) {
+        return person.isMiner ? this.minerInstancedGroup : person.isFlyer ? this.flyerInstancedGroup : this.instancedGroup;
+    }
+
     _syncMemberBehaviors() {
         if (!this.instancedGroup) return;
-        const kindOf = person => person.isCultist ? 'cultist' : person.isFlyer ? 'flyer' : 'natural';
-        for (const [kind, target] of [['natural', this.naturalCount], ['flyer', this.flyerCount], ['cultist', this.cultistCount]]) {
+        const kindOf = person => person.isMiner ? 'miner' : person.isCultist ? 'cultist' : person.isFlyer ? 'flyer' : 'natural';
+        for (const [kind, target] of [['natural', this.naturalCount], ['flyer', this.flyerCount], ['cultist', this.cultistCount], ['miner', this.minerCount]]) {
             let members = this.people.filter(person => kindOf(person) === kind);
             while (members.length < target) {
-                this._addPerson(kind === 'flyer', kind === 'cultist' ? this._cultistSpot(members) : null);
+                const spot = kind === 'cultist' ? this._cultistSpot(members)
+                    : kind === 'miner' ? MINER_CONFIG.spots[members.length % MINER_CONFIG.spots.length] : null;
+                this._addPerson(kind, spot);
                 const person = this.people[this.people.length - 1];
                 if (!person || members.includes(person)) break;
                 person.isFlyer = kind === 'flyer';
                 person.isCultist = kind === 'cultist';
+                person.isMiner = kind === 'miner';
                 if (kind === 'flyer') person.behavior = new FlyerBehavior(this, person);
-                // Cultists keep their clock index, so the newest one leaves first.
+                // Cultists and miners keep their clock index, so the newest one leaves first.
                 if (kind === 'cultist') person.behavior = new CultistBehavior(this, person, members.length);
+                if (kind === 'miner') person.behavior = new MinerBehavior(this, person, members.length, spot);
                 members.push(person);
             }
             while (members.length > target) {
                 // Leave an occupied catapult and grabbed person in place when possible.
-                const person = kind === 'cultist'
+                const person = kind === 'cultist' || kind === 'miner'
                     ? members.reduce((newest, p) => (p.behavior.index > newest.behavior.index ? p : newest))
                     : [...members].reverse().find(p => !p.catapultData && this.people.indexOf(p) !== this.grabbedPersonIndex) || members[members.length - 1];
                 this._removePerson(this.people.indexOf(person));
@@ -231,7 +265,8 @@ class Crowd {
         }
     }
 
-    _addPerson(isFlyer = false, spawnAt = null) {
+    _addPerson(kind = 'natural', spawnAt = null) {
+        const isFlyer = kind === 'flyer';
         if (!this.instancedGroup) {
             this.missingCrowdsToInit++;
             return;
@@ -313,15 +348,18 @@ class Crowd {
 
         const scale = CROWD_CONFIG.baseScale + rng() * CROWD_CONFIG.scaleVariance;
 
-        const group = isFlyer ? this.flyerInstancedGroup : this.instancedGroup;
+        const group = kind === 'miner' ? this.minerInstancedGroup : isFlyer ? this.flyerInstancedGroup : this.instancedGroup;
 
-        // Start off-screen on the left so new people walk in from left side
-        const personStartX = GAME_BOUNDS.SCROLL_MIN_X - 800;
+        // Start off-screen on the left so new people walk in from left side;
+        // miners climb up from the foot of the mine mountain instead.
+        const mine = MINER_CONFIG.mine;
+        const personStartX = kind === 'miner' ? mine.left + 40 : GAME_BOUNDS.SCROLL_MIN_X - 800;
 
         const person = {
             isFlyer,
+            isMiner: kind === 'miner',
             x: personStartX,
-            y: y,
+            y: kind === 'miner' ? mine.baseY : y,
             scale: scale,
             animTimer: rng() * Math.PI * 2,
             animSpeed: 0.85 + rng() * 0.3,
@@ -370,6 +408,7 @@ class Crowd {
 
     update(deltaTime) {
         this.cultistParticles?.update(deltaTime);
+        this.minerParticles?.update(deltaTime);
         if (!this.instancedGroup || this.people.length === 0) return;
 
         const GRAVITY = CROWD_CONFIG.gravity;
@@ -874,7 +913,8 @@ class Crowd {
         const maxSize = scalingCfg.maxSize;
         const ySizeFactor = minSize + (maxSize - minSize) * t;
 
-        const finalScale = scale * ySizeFactor * (person.isFlyer ? 0.75 : 1);
+        const finalScale = person.isMiner ? scale * MINER_CONFIG.scale
+            : scale * ySizeFactor * (person.isFlyer ? 0.75 : 1);
         person.renderScale = finalScale;
 
         // Cinematic pupil tracking: steer the eyes toward a world target.
@@ -941,9 +981,9 @@ class Crowd {
             overlay.clip.props, overlay.time, 'o', pose, person, finalScale, flipX, propInstanceOffset, true
         );
         applyPoseToInstances(
-            this._skeleton, pose, person.isFlyer ? this.flyerInstancedGroup : this.instancedGroup,
+            this._skeleton, pose, this._groupFor(person),
             person.instanceBaseIndex + propInstanceOffset,
-            person.x, person.y, finalScale, flipX
+            person.x, person.y, finalScale, flipX, person.behavior?.tint
         );
         propInstanceOffset += this._skeleton.partCount;
         if (behaviorProps) propInstanceOffset = this._renderClipProps(
@@ -958,7 +998,7 @@ class Crowd {
 
         // Hide unused preallocated instances
         for (let i = propInstanceOffset; i < this.totalPartsPerPerson; i++) {
-            (person.isFlyer ? this.flyerInstancedGroup : this.instancedGroup).updateInstanceScale(person.instanceBaseIndex + i, 0, 0);
+            this._groupFor(person).updateInstanceScale(person.instanceBaseIndex + i, 0, 0);
         }
     }
 
@@ -1042,10 +1082,10 @@ class Crowd {
             }
 
             applyPoseToInstances(
-                cached.skeleton, finalPropPose, person.isFlyer ? this.flyerInstancedGroup : this.instancedGroup,
+                cached.skeleton, finalPropPose, this._groupFor(person),
                 person.instanceBaseIndex + propInstanceOffset,
                 person.x, person.y,
-                finalScale, flipX
+                finalScale, flipX, person.behavior?.tint
             );
             // Props with an 'emitter' bone tell behaviors where to spawn particles.
             const emitter = finalPropPose.get('emitter');
@@ -1060,14 +1100,14 @@ class Crowd {
     }
 
     _reorderInstancesByY() {
-        if (!this.instancedGroup || !this.flyerInstancedGroup) return;
+        if (!this.instancedGroup || !this.flyerInstancedGroup || !this.minerInstancedGroup) return;
         const partCount = this.totalPartsPerPerson;
-        for (const [group, flyer] of [[this.instancedGroup, false], [this.flyerInstancedGroup, true]]) {
+        for (const group of [this.instancedGroup, this.flyerInstancedGroup, this.minerInstancedGroup]) {
             const stride = group.instanceStrideFloats;
             const oldData = group.instanceData;
             const newData = new Float32Array(group.maxInstances * stride);
             let next = 0;
-            const members = this.people.filter(person => !!person.isFlyer === flyer)
+            const members = this.people.filter(person => this._groupFor(person) === group)
                 .sort((a, b) => b.spawnY - a.spawnY);
             for (const person of members) {
                 const oldBase = person.instanceBaseIndex;
@@ -1306,10 +1346,16 @@ class Crowd {
         if (this.flyerInstancedGroup) {
             this.renderer.removeInstancedGroup(this.flyerInstancedGroup);
         }
+        if (this.minerInstancedGroup) {
+            this.renderer.removeInstancedGroup(this.minerInstancedGroup);
+        }
         this.cultistParticles?.dispose();
         this.cultistParticles = null;
+        this.minerParticles?.dispose();
+        this.minerParticles = null;
         this.instancedGroup = null;
         this.flyerInstancedGroup = null;
+        this.minerInstancedGroup = null;
         this.people = [];
     }
 }

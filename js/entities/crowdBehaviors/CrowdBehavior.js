@@ -1,5 +1,5 @@
 import { Vector2, Color } from '../../rendering/Renderer.js';
-import { FLYER_CONFIG as cfg, CULTIST_CONFIG, CROWD_CONFIG, GAME_BOUNDS as bounds, PARTICLE_TYPES } from '../../config/config.js';
+import { FLYER_CONFIG as cfg, CULTIST_CONFIG, MINER_CONFIG, CROWD_CONFIG, GAME_BOUNDS as bounds, PARTICLE_TYPES } from '../../config/config.js';
 import { MAX_SPARKLES_PER_RITUAL } from '../../config/CultistRitual.js';
 
 // Behaviors own optional per-person state and can replace the ordinary crowd update.
@@ -344,6 +344,70 @@ export class CultistBehavior extends CrowdBehavior {
             };
             this.spawn(sx, y, 0, 0, pick(c.gatherColors), rand(c.gatherSize) * s, lifetime, 0,
                 Math.random() < 0.3 ? 'star' : 'sphere', homeFn, ps);
+        }
+    }
+    scale() {
+        return (this.person.renderScale ?? this.person.scale) / CROWD_CONFIG.baseScale;
+    }
+}
+
+const MINER_PROPS = MINER_CONFIG.props.map(prop => ({ ...prop, animation: null, startTime: 0, endTime: Infinity }));
+const randInt = ([min, max]) => min + Math.floor(Math.random() * (max - min + 1));
+
+// Miners climb the mountain to their ledge, then swing at the rock face on
+// their own clock in MinerShifts. The 'mine' clip starts on the strike, so
+// every wrap of the clock knocks a spray of gold out of the rock.
+export class MinerBehavior extends CrowdBehavior {
+    constructor(crowd, person, index, spot) {
+        super(crowd, person);
+        this.index = index;
+        this.spot = spot;
+        this.lastPhase = null;
+        this.tint = MINER_CONFIG.haze;
+        person.y = MINER_CONFIG.mine.baseY + this.footLift();
+    }
+    get phase() {
+        return this.crowd.minerShifts?.phase(this.index) ?? 0;
+    }
+    get clipTime() { return this.person.state === 'mine' ? this.phase : null; }
+    get props() { return MINER_PROPS; }
+    footLift() {
+        return MINER_CONFIG.footOffset * (this.person.renderScale ?? this.person.scale * MINER_CONFIG.scale);
+    }
+    update(dt) {
+        const p = this.person, spot = this.spot;
+        if (p.state === 'walking') {
+            // Straight up the slope from the mountain's foot to the ledge.
+            const tx = spot.x, ty = spot.y + this.footLift();
+            const dx = tx - p.x, dy = ty - p.y, dist = Math.hypot(dx, dy);
+            const step = MINER_CONFIG.walkSpeed * dt;
+            if (dist > step) { p.x += dx / dist * step; p.y += dy / dist * step; return; }
+            p.x = tx; p.y = ty;
+            p.flipX = spot.facing;
+            this.crowd._switchToState(this.crowd.people.indexOf(p), 'mine', MINER_CONFIG.walkInBlend);
+        }
+        if (p.state !== 'mine') return;
+        p.y = spot.y + this.footLift();
+        const phase = this.phase;
+        if (this.lastPhase !== null && phase < this.lastPhase - 0.5) this.strike();
+        this.lastPhase = phase;
+    }
+    strike() {
+        const ps = this.crowd.minerParticles, tip = this.person.propEmitter;
+        if (!ps || !tip) return;
+        const c = MINER_CONFIG, s = this.scale(), facing = this.spot.facing;
+        // Straight back off the face, leaning up.
+        const back = facing > 0 ? Math.PI : 0;
+        const aim = back + (Math.PI / 2 - back) * c.crumbUpwardBias;
+        for (let i = 0, count = randInt(c.crumbCount); i < count; i++) {
+            const angle = aim + (Math.random() * 2 - 1) * c.crumbSpread;
+            const v = rand(c.crumbSpeed) * s;
+            ps.addParticle(
+                new Vector2(tip.x, tip.y), new Vector2(Math.cos(angle) * v, Math.sin(angle) * v),
+                new Color(...pick(c.crumbColors), 1), rand(c.crumbSize) * s, rand(c.crumbLifetime),
+                c.crumbGravity * s, 'sphere', new Vector2(0, 0), 0, null, false, null, 0, 1,
+                PARTICLE_TYPES.MINER, 0
+            );
         }
     }
     scale() {

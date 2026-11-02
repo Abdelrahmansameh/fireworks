@@ -26,6 +26,9 @@ class CursorParticles {
         // Click pulse state (visual feedback on pointerdown)
         this._clickPulseTimer = 0; // seconds remaining for the click pulse
 
+        // Touch layouts have no cursor to follow, so the sparkles stay off there.
+        this._mobile = matchMedia('(max-width: 700px)');
+
         document.documentElement.classList.add('cursor-hidden');
 
         window.addEventListener('pointermove', (e) => {
@@ -46,8 +49,8 @@ class CursorParticles {
         // Pointer down: create a small burst and trigger a pulse
         window.addEventListener('pointerdown', (e) => {
             const overUI = !!e.target.closest(UI_SELECTOR);
-            if (overUI) return;
-            const wp = this._toWorld(e.clientX, e.clientY);
+            if (overUI || this._mobile.matches) return;
+            const wp =this._toWorld(e.clientX, e.clientY);
             this._spawnClick(wp.x, wp.y);
             this._clickPulseTimer = cfg.CLICK_PULSE_DURATION;
         });
@@ -272,6 +275,12 @@ class CursorParticles {
 
     update(dt) {
         if (!this._group) return;
+        if (this._mobile.matches) {
+            this._particles.length = 0;
+            this._clickPulseTimer = 0;
+            this._group.clear();
+            return;
+        }
 
         const mx = this.mouseX;
         const my = this.mouseY;

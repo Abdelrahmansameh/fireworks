@@ -5,4 +5,5 @@ export const PARTICLE_TYPES = {
     ROCKET_TRAIL: 3,
     UI_EFFECT: 4,
     CULTIST: 5,
+    MINER: 6,
 };

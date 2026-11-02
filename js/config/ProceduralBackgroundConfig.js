@@ -19,6 +19,7 @@ export const PROCEDURAL_BACKGROUND_CONFIG = {
         stars: -1995,
         mountainsFar: -1994,
         mountainsNear: -1992,
+        mine: -1989,
         landmarks: -1979,
         water: -1978,
         waterReflections: -1976,
@@ -99,6 +100,14 @@ export const PROCEDURAL_BACKGROUND_CONFIG = {
         nearHeightMax: 265,
         farColor: { r: 17 / 255, g: 23 / 255, b: 36 / 255, a: 1 },
         nearColor: { r: 22 / 255, g: 30 / 255, b: 42 / 255, a: 1 },
+    },
+    // The gold mine mountain; its shape and ledges come from MINER_CONFIG.
+    mine: {
+        enabled: true,
+        rock: { r: 28 / 255, g: 33 / 255, b: 45 / 255, a: 1 },
+        cut: { r: 16 / 255, g: 19 / 255, b: 28 / 255, a: 1 },
+        face: { r: 46 / 255, g: 48 / 255, b: 60 / 255, a: 1 },
+        ledge: { r: 52 / 255, g: 50 / 255, b: 56 / 255, a: 1 },
     },
     landmarks: {
         enabled: true,

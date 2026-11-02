@@ -6,6 +6,7 @@ const BRANCH_STYLES = {
     CROWD: { icon: 'crowd', color: '#ffd04a' },
     CULTIST: { icon: 'cultist', color: '#86e38f' },
     FLYER: { icon: 'crowd', color: '#5fe0e0' },
+    MINER: { icon: 'miner', color: '#ffc44d' },
 };
 
 const formatAmount = amount => Math.floor(Math.max(0, amount)).toLocaleString();

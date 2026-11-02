@@ -1,4 +1,4 @@
-import { BUILDING_TYPES, CULTIST_CONFIG } from '../config/config.js';
+import { BUILDING_TYPES, CULTIST_CONFIG, MINER_CONFIG } from '../config/config.js';
 import Building from '../buildings/Building.js';
 
 /**
@@ -55,6 +55,9 @@ export default class PurchasePolicy {
         if (game.progression.isUnlocked('cultist_unlock') && game.cultistCount < CULTIST_CONFIG.maxCount) {
             out.push({ kind: 'cultist', id: 'cultist', name: 'Cultist', currency: 'gold', cost: game.getCultistCost() });
         }
+        if (game.progression.isUnlocked('miner_unlock') && game.minerCount < MINER_CONFIG.maxCount) {
+            out.push({ kind: 'miner', id: 'miner', name: 'Miner', currency: 'gold', cost: game.getMinerCost() });
+        }
 
         return out;
     }
@@ -105,6 +108,9 @@ export default class PurchasePolicy {
         }
         if (opt.kind === 'cultist') {
             return game.purchaseCultist() ? { type: 'cultist', id: opt.id, name: opt.name, count: game.cultistCount } : null;
+        }
+        if (opt.kind === 'miner') {
+            return game.purchaseMiner() ? { type: 'miner', id: opt.id, name: opt.name, count: game.minerCount } : null;
         }
         const before = game.buildingManager.getBuildingsByType(opt.id).length;
         game.buyBuilding(opt.id);

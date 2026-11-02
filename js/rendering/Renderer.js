@@ -1085,7 +1085,11 @@ export default class Renderer2D {
         this.u_gradientRight_Normal = gl.getUniformLocation(this.normalProgram, 'u_gradientRight');
         this.u_useGradient_Normal = gl.getUniformLocation(this.normalProgram, 'u_useGradient');
         this.u_texture_Normal = gl.getUniformLocation(this.normalProgram, 'u_texture');
-        this.u_useTexture_Normal = gl.getUniformLocation(this.normalProgram, 'u_useTexture'); this.instancedProgram = this._initProgram(this._instancedVS(), this._instancedFS());
+        this.u_useTexture_Normal = gl.getUniformLocation(this.normalProgram, 'u_useTexture');
+        this.u_useCrumble_Normal = gl.getUniformLocation(this.normalProgram, 'u_useCrumble');
+        this.u_crumbleRect_Normal = gl.getUniformLocation(this.normalProgram, 'u_crumbleRect');
+        this.u_crumbleParams_Normal = gl.getUniformLocation(this.normalProgram, 'u_crumbleParams');
+        this.u_crumbleCell_Normal = gl.getUniformLocation(this.normalProgram, 'u_crumbleCell'); this.instancedProgram = this._initProgram(this._instancedVS(), this._instancedFS());
         this.u_model_Normal = gl.getUniformLocation(this.normalProgram, 'u_model');
         this.u_proj_Normal = gl.getUniformLocation(this.normalProgram, 'u_proj');
         this._waterUniformsNormal = this._getWaterUniforms(this.normalProgram);
@@ -1552,6 +1556,7 @@ export default class Renderer2D {
     }
 
     _drawNormalShape(shape, reflecting = false) {
+        if (shape.hidden) return;
         const gl = this.gl;
         if (shape.blendMode !== this._lastBlendMode) {
             switch (shape.blendMode) {
@@ -1581,9 +1586,17 @@ export default class Renderer2D {
 
         gl.uniformMatrix4fv(this.u_matrix_Normal, false, mvp);
         this._setWaterUniforms(this._waterUniformsNormal, reflecting, shape.reflectionOpacity ?? 1, shape.isWaterSurface, shape.waterReflectionRises);
-        if (reflecting || shape.isWaterSurface) {
+        const crumble = shape.crumble;
+        if (reflecting || shape.isWaterSurface || crumble) {
             gl.uniformMatrix4fv(this.u_model_Normal, false, model);
             gl.uniformMatrix4fv(this.u_proj_Normal, false, this._projectionMatrix);
+        }
+        gl.uniform1i(this.u_useCrumble_Normal, crumble ? 1 : 0);
+        if (crumble) {
+            const { rect, origin } = crumble;
+            gl.uniform4f(this.u_crumbleRect_Normal, rect.left, rect.bottom, rect.right, rect.top);
+            gl.uniform4f(this.u_crumbleParams_Normal, crumble.time, crumble.seed, origin.x, origin.y);
+            gl.uniform1f(this.u_crumbleCell_Normal, crumble.cell);
         }
         this._colorScratch[0] = shape.color.r;
         this._colorScratch[1] = shape.color.g;
@@ -1741,6 +1754,93 @@ export default class Renderer2D {
         `;
     }
 
+    /**
+     * A slab of rock over a rectangle that cracks into Voronoi chunks and falls
+     * away, leaving a dust puff. Cracks spread out from u_crumbleParams.zw and
+     * the chunks nearest it shake loose first. All timing is in seconds since
+     * the crumble started (u_crumbleParams.x); about 2.6s end to end.
+     */
+    _crumbleFragmentFunctions() {
+        return `
+        const float CRUMBLE_GRAVITY = 260.0;
+        const float CRUMBLE_CRACK_SPEED = 120.0;   // world units per second
+        const float CRUMBLE_RELEASE_SPEED = 90.0;
+        const float CRUMBLE_SHAKE = 0.25;          // seconds of rattling before a chunk drops
+        vec2 crumbleHash(vec2 c) {
+            vec2 p = vec2(dot(c, vec2(127.1, 311.7)), dot(c, vec2(269.5, 183.3))) + u_crumbleParams.y;
+            return fract(sin(p) * 43758.5453);
+        }
+        vec2 crumbleSite(vec2 id) { return id + 0.15 + 0.7 * crumbleHash(id); }
+        // The chunk whose site is nearest p (in cells), and p's distance to its border.
+        vec3 crumbleVoronoi(vec2 p) {
+            vec2 n = floor(p);
+            vec2 nearest = vec2(0.0), toNearest = vec2(0.0);
+            float best = 8.0;
+            for (int j = -1; j <= 1; j++) for (int i = -1; i <= 1; i++) {
+                vec2 g = n + vec2(float(i), float(j));
+                vec2 r = crumbleSite(g) - p;
+                float d = dot(r, r);
+                if (d < best) { best = d; nearest = g; toNearest = r; }
+            }
+            float edge = 8.0;
+            for (int j = -1; j <= 1; j++) for (int i = -1; i <= 1; i++) {
+                vec2 g = nearest + vec2(float(i), float(j));
+                vec2 r = crumbleSite(g) - p;
+                vec2 between = r - toNearest;
+                if (dot(between, between) > 0.0001) edge = min(edge, dot(0.5 * (toNearest + r), normalize(between)));
+            }
+            return vec3(nearest, edge);
+        }
+        float crumbleNoise(vec2 p) {
+            vec2 i = floor(p), f = fract(p);
+            f = f * f * (3.0 - 2.0 * f);
+            return mix(mix(crumbleHash(i).x, crumbleHash(i + vec2(1.0, 0.0)).x, f.x),
+                       mix(crumbleHash(i + vec2(0.0, 1.0)).x, crumbleHash(i + vec2(1.0, 1.0)).x, f.x), f.y);
+        }
+        vec4 shadeCrumble(vec4 rock, vec2 p) {
+            float cell = u_crumbleCell, t = u_crumbleParams.x;
+            vec2 origin = u_crumbleParams.zw;
+            vec2 home = floor(p / cell);
+            // A chunk only ever falls, so the one covering p started level with
+            // it or somewhere above.
+            for (int j = -1; j <= 7; j++) for (int i = -1; i <= 1; i++) {
+                vec2 id = home + vec2(float(i), float(j));
+                vec2 center = crumbleSite(id) * cell;
+                if (any(lessThan(center, u_crumbleRect.xy - 0.5 * cell))
+                    || any(greaterThan(center, u_crumbleRect.zw + 0.5 * cell))) continue;
+                vec2 rnd = crumbleHash(id + 17.0);
+                float reach = length(center - origin);
+                float crack = reach / CRUMBLE_CRACK_SPEED + rnd.x * 0.1;
+                float release = 0.35 + reach / CRUMBLE_RELEASE_SPEED + rnd.y * 0.35;
+                float fallTime = max(0.0, t - release);
+                float rattle = step(release - CRUMBLE_SHAKE, t) * (1.0 - step(release, t));
+                vec2 fall = vec2((rnd.x - 0.5) * 26.0 * fallTime + sin(t * 70.0 + rnd.y * 6.28) * 0.5 * rattle,
+                                 rnd.y * 18.0 * fallTime - 0.5 * CRUMBLE_GRAVITY * fallTime * fallTime);
+                vec3 v = crumbleVoronoi((p - fall) / cell);
+                if (any(greaterThan(abs(v.xy - id), vec2(0.5)))) continue;
+                float alpha = 1.0 - smoothstep(25.0, 55.0, -fall.y);
+                if (alpha <= 0.0) continue;
+                float edge = v.z * cell;
+                float cracked = smoothstep(crack, crack + 0.15, t);
+                float loose = step(release, t);
+                vec3 color = rock.rgb * mix(1.0, 0.82 + 0.3 * rnd.y, cracked);
+                // Loose chunks catch a little light inside their rims.
+                color *= 1.0 + loose * 0.25 * (1.0 - smoothstep(0.0, 2.0, edge));
+                // Cracks first, then the same black outline the rest of the art has.
+                float line = max(cracked * (1.0 - smoothstep(0.3, 0.7, edge)), loose * (1.0 - smoothstep(0.6, 1.1, edge)));
+                return vec4(mix(color, vec3(0.02, 0.02, 0.03), line), alpha);
+            }
+            // A puff of dust rolls out under the falling rock.
+            vec2 foot = vec2(0.5 * (u_crumbleRect.x + u_crumbleRect.z), u_crumbleRect.y);
+            vec2 spread = vec2(0.45 * (u_crumbleRect.z - u_crumbleRect.x) + 10.0 * t, 22.0 + 18.0 * t);
+            float cloud = 1.0 - smoothstep(0.35, 1.0, length((p - foot) / spread));
+            float swell = smoothstep(0.4, 0.9, t) * (1.0 - smoothstep(1.4, 2.6, t));
+            float billow = 0.45 + 0.55 * crumbleNoise(p * 0.07 + vec2(t * 0.4, -t * 0.7));
+            return vec4(rock.rgb * 1.7 + 0.04, cloud * swell * billow * 0.4);
+        }
+        `;
+    }
+
     _waterFragmentFunctions() {
         return `
         vec4 shadeWaterReflection(vec4 base, vec2 world) {
@@ -1785,6 +1885,7 @@ export default class Renderer2D {
         uniform bool u_waterReflectionRises;
         uniform vec4 u_waterBounds;
         uniform vec3 u_waterParams;
+        uniform bool u_useCrumble;
         varying vec2 v_texCoord;
         varying vec2 v_worldPosition;
         varying float v_sourceY;
@@ -1798,7 +1899,7 @@ export default class Renderer2D {
                 v_worldPosition = world;
                 gl_Position = u_proj * vec4(world, 0.0, 1.0);
             } else {
-                v_worldPosition = u_waterSurface ? (u_model * vec4(a_position, 0.0, 1.0)).xy : vec2(0.0);
+                v_worldPosition = u_waterSurface || u_useCrumble ? (u_model * vec4(a_position, 0.0, 1.0)).xy : vec2(0.0);
                 v_sourceY = 0.0;
                 gl_Position = u_matrix * vec4(a_position, 0.0, 1.0);
             }
@@ -1821,11 +1922,16 @@ export default class Renderer2D {
         uniform bool u_waterSurface;
         uniform vec4 u_waterBounds;
         uniform vec3 u_waterParams;
+        uniform bool u_useCrumble;
+        uniform vec4 u_crumbleRect;
+        uniform vec4 u_crumbleParams;
+        uniform float u_crumbleCell;
         varying vec2 v_texCoord;
         varying vec2 v_worldPosition;
         varying float v_sourceY;
         varying float v_gradientX;
         ${this._waterFragmentFunctions()}
+        ${this._crumbleFragmentFunctions()}
         void main(){
             vec4 color = u_useGradient ? mix(u_gradientLeft, u_gradientRight,
                 clamp((v_gradientX - u_gradientBounds.x) / (u_gradientBounds.y - u_gradientBounds.x), 0.0, 1.0)) : u_color;
@@ -1842,6 +1948,10 @@ export default class Renderer2D {
                     || v_worldPosition.y > u_waterBounds.w) discard;
                 base = shadeWaterReflection(base, v_worldPosition);
             } else if (u_waterSurface) base = shadeWaterSurface(base, v_worldPosition);
+            if (u_useCrumble) {
+                base = shadeCrumble(base, v_worldPosition);
+                if (base.a <= 0.0) discard;
+            }
             // Dark gradients can change by less than one 8-bit color step
             // over dozens of pixels. Dither only lit gradients so those steps
             // do not appear as broad vertical bands on the mountains.

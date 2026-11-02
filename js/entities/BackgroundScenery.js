@@ -1,5 +1,6 @@
 import { Color } from '../rendering/Renderer.js';
 import { PARTICLE_TYPES } from '../config/ParticleConfig.js';
+import { MINER_CONFIG } from '../config/MinerConfig.js';
 import { createRng } from '../utils/random.js';
 import { buildPrimitiveLandmarks } from './PrimitiveLandmarks.js';
 import BackgroundWater from './BackgroundWater.js';
@@ -16,10 +17,13 @@ export default class BackgroundScenery {
         this.emitters = [];
         this.time = 0;
         this.waterMotion = null;
+        this.mineHoles = [];
+        this.mineHolesOpen = null;     // unknown until the first sync, which opens without crumbling
     }
 
     build() {
         this._buildMountains();
+        this._buildMine();
         this._buildLandmarks();
         this._buildWater();
         this._buildShore();
@@ -77,6 +81,7 @@ export default class BackgroundScenery {
             const piece = clip(clip(points, x0, true), x1, false);
             if (piece.length < 3) continue;
             const shape = this._polygon(piece.flat(), color, z, reflectivity, normalX);
+            shape.outline = piece;
             shape.lightGradient = { left: x0, right: x1, previous, next: null };
             if (previous) previous.lightGradient.next = shape;
             previous = shape;
@@ -119,6 +124,103 @@ export default class BackgroundScenery {
                     [x + width * .62, baseY + height * .25]], x, width,
                     this._shade(color, .88), z, far ? .2 : .34, .5);
             }
+        }
+    }
+
+    // The gold mine: one taller mountain in front of the ridges, with a ledge
+    // cut for every miner, each ending in the rock face where the pick lands.
+    // Each cut stays hidden until its miner is hired (see syncMineHoles).
+    _buildMine() {
+        const { mine: colors, zIndex } = this.config;
+        if (!colors?.enabled) return;
+        const { mine, spots } = MINER_CONFIG;
+        const rng = createRng(this.config.seed ^ 0x5A17E0);
+        const z = zIndex.mine;
+        const { left, right, peakX, peakY, baseY } = mine;
+        const width = right - left;
+        const heightAt = x => {
+            const t = x < peakX ? (x - left) / (peakX - left) : (right - x) / (right - peakX);
+            return baseY + (peakY - baseY) * Math.sin(Math.max(0, t) * Math.PI / 2) ** 1.3;
+        };
+        const firstSurface = this.lightSurfaces.length;
+        const ridge = [[left, baseY]];
+        for (let i = 1; i < 14; i++) {
+            const x = left + width * i / 14;
+            ridge.push([x, heightAt(x) + (rng() - .5) * 26]);
+        }
+        ridge.push([right, baseY]);
+        this._mountainPieces(ridge, left, width, colors.rock, z, .45, -.25);
+        // Lit western flank and shaded eastern flank, as on the other ridges.
+        const flank = (from, to, shade, normalX) => {
+            const piece = ridge.filter(([x]) => x >= from && x <= to);
+            const x0 = piece[0][0], x1 = piece.at(-1)[0];
+            const inset = (x1 - x0) * .35;
+            this._mountainPieces([...piece, [x1 - inset * .2, baseY + (heightAt(x1) - baseY) * .4],
+                [x0 + inset, baseY + (heightAt(x0 + inset) - baseY) * .3]], x0, x1 - x0,
+                this._shade(colors.rock, shade), z, .5, normalX);
+        };
+        flank(left + width * .14, peakX, 1.12, -.5);
+        flank(peakX, right - width * .1, .84, .5);
+
+        const quad = (points, color, response = .5) => this._polygon(points.flat(), color, z, response);
+        const mountain = this.lightSurfaces.slice(firstSurface).map(surface => surface.shape);
+        const contains = (outline, px, py) => {
+            let inside = false;
+            for (let i = 0, j = outline.length - 1; i < outline.length; j = i++) {
+                const [xi, yi] = outline[i], [xj, yj] = outline[j];
+                if ((yi > py) !== (yj > py) && px < (xj - xi) * (py - yi) / (yj - yi) + xi) inside = !inside;
+            }
+            return inside;
+        };
+
+        spots.forEach(({ x, y, facing }, index) => {
+            // A quarry cut behind the miner, a slab ledge underfoot and the face
+            // they strike, a pick's reach away.
+            const back = x - facing * mine.ledgeWidth * .55;
+            const wall = x + facing * mine.faceWidth;
+            const top = y + mine.faceHeight;
+            const shapes = [
+                quad([[back, y], [back - facing * 6, top - 12], [x, top + 4], [wall, top - 4], [wall, y]], colors.cut, .35),
+                quad([[wall, y - 2], [wall, top - 4], [wall + facing * 12, top - 14], [wall + facing * 14, y - 6]], colors.face, .6),
+                quad([[back - facing * 8, y], [wall + facing * 16, y], [wall + facing * 10, y - 8], [back, y - 10]], colors.ledge, .55),
+            ];
+            for (const shape of shapes) shape.hidden = true;
+            // A slab of the mountain over the cut, which the shader cracks and
+            // drops away. It reaches below the ledge so falling chunks and dust
+            // stay inside it, and takes the colour of the rock it sits on.
+            const rect = { left: Math.min(back, wall) - 10, right: Math.max(back, wall) + 16, bottom: y - 10, top: top + 4 };
+            const origin = { x: wall, y: y + 8 };
+            const cover = this.background._addPolygon([rect.left - 20, rect.bottom - 60, rect.right + 20, rect.bottom - 60,
+                rect.right + 20, rect.top + 8, rect.left - 20, rect.top + 8],
+                new Color(colors.rock.r, colors.rock.g, colors.rock.b, 1), z + .5);
+            cover.hidden = true;
+            const rock = mountain.findLast(shape => contains(shape.outline, origin.x, origin.y)) ?? null;
+            this.mineHoles.push({ shapes, cover, rock, crumble: { rect, origin, seed: index * 7.31, cell: 10, time: 0 } });
+        });
+    }
+
+    /** Open one cut per miner. Cuts opened after the first sync crumble open. */
+    syncMineHoles(count) {
+        const animate = this.mineHolesOpen !== null;
+        this.mineHoles.forEach((hole, index) => {
+            const open = index < count;
+            if (open === !hole.shapes[0].hidden) return;
+            for (const shape of hole.shapes) shape.hidden = !open;
+            hole.crumble.time = 0;
+            hole.cover.crumble = open && animate ? hole.crumble : null;
+            hole.cover.hidden = !hole.cover.crumble;
+        });
+        this.mineHolesOpen = count;
+    }
+
+    _updateMineHoles(deltaTime) {
+        for (const hole of this.mineHoles) {
+            if (!hole.cover.crumble) continue;
+            hole.crumble.time += deltaTime;
+            if (hole.rock) hole.cover.color.copy(hole.rock.color);
+            if (hole.crumble.time < MINER_CONFIG.mine.crumbleDuration) continue;
+            hole.cover.crumble = null;
+            hole.cover.hidden = true;
         }
     }
 
@@ -248,6 +350,7 @@ export default class BackgroundScenery {
 
     update(deltaTime, particleSystem, fireworks = []) {
         this.time += Math.max(0, deltaTime);
+        this._updateMineHoles(Math.max(0, deltaTime));
         if (this.reflection) {
             this.reflection.time = this.time;
             this.renderer.setWaterReflection?.(this.reflection);
@@ -318,5 +421,6 @@ export default class BackgroundScenery {
         this.lightSurfaces.length = 0;
         this.waterBands.length = 0;
         this.emitters.length = 0;
+        this.mineHoles.length = 0;
     }
 }

@@ -27,6 +27,7 @@ export const SKILL_TREE_CONFIG = {
         CROWD: { color: '#F06292', label: 'Crowd & catapults' },
         CULTIST: { color: '#66BB6A', label: 'Cult' },
         FLYER: { color: '#29B6F6', label: 'Flyers' },
+        MINER: { color: '#FFB300', label: 'Mine' },
     },
     nodes: {
         base_mult_1: node('base_mult_1', 'ROOT', 'BASE', 'Brighter Sparks',
@@ -163,6 +164,16 @@ export const SKILL_TREE_CONFIG = {
             'Teach a fan to fly on palm sparkles and catch bursts.', 21000, 'gold', {
                 milestoneReward: true, action: 'Equip', unlockId: 'flyer_unlock',
                 apply: game => unlock(game, 'flyer_unlock'), onPurchase: game => game.grantFlyer(),
+            }),
+        miner_unlock: node('miner_unlock', 'flyer_unlock', 'MINER', 'Gold Mine',
+            'Hire miners who dig gold out of the mountains.', 12000, 'gold', {
+                offset: { x: 400, y: 0 }, milestoneReward: true, action: 'Hire', unlockId: 'miner_unlock',
+                apply: game => unlock(game, 'miner_unlock'),
+            }),
+        miner_picks: node('miner_picks', 'miner_unlock', 'MINER', 'Golden Picks',
+            '×2 miner gold.', 30000, 'gold', {
+                maxLevel: 2, costRatio: 4,
+                apply: game => { game.minerStats.goldMultiplier *= 2; },
             }),
         flyer_reach: node('flyer_reach', 'flyer_unlock', 'FLYER', 'Helping Hands',
             '+25% flying cultist reach.', 6750, 'gold', {

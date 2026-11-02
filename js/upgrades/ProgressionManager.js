@@ -463,6 +463,7 @@ class ProgressionManager {
         };
         game.launcherStats = { spawnIntervalMultiplier: 1, sparkleYieldMultiplier: 1 };
         game.cultistStats = { sparkleMultiplier: 1, ritualSpeedMultiplier: 1 };
+        game.minerStats = { goldMultiplier: 1, speedMultiplier: 1 };
         game.catapultStats = { maxCatapults: 1, fireIntervalMultiplier: 1, launchVxMultiplier: 1 };
         game.crowdUnlocked = false;
         game.grandFinaleUnlocked = false;

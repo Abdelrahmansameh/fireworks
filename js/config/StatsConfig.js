@@ -69,6 +69,7 @@ export const STATS_SCHEMA = [
             { type: 'group', label: 'Auto-Launchers',       id: 'stat-bld-auto',  defaultValue: '0' },
             { type: 'group', label: 'Cultists',  id: 'stat-bld-cultist', defaultValue: '0' },
             { type: 'group', label: 'Flying Cultists',           id: 'stat-bld-flyer', defaultValue: '0' },
+            { type: 'group', label: 'Miners',                    id: 'stat-bld-miner', defaultValue: '0' },
         ],
     },
     {

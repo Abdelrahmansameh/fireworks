@@ -1,5 +1,6 @@
 import { BUILDING_TYPES } from '../config/BuildingConfig.js';
 import { CULTIST_CONFIG } from '../config/CultistConfig.js';
+import { MINER_CONFIG } from '../config/MinerConfig.js';
 import { fireworksForCrowd } from '../systems/ProductionRates.js';
 import { cultistSparklesPerSecond } from '../config/CultistRitual.js';
 
@@ -24,6 +25,7 @@ export function initializePanelDetails(game) {
     const notify = message => game.ui?.showNotification(message);
     on(document.getElementById('buy-flyer'), 'click', () => game.purchaseFlyer());
     on(document.getElementById('buy-cultist'), 'click', () => game.purchaseCultist());
+    on(document.getElementById('buy-miner'), 'click', () => game.purchaseMiner());
     let lastSavedAt = Date.now();
     const originalSave = game.saveProgress;
     const observedSave = function (...args) {
@@ -188,6 +190,21 @@ export function initializePanelDetails(game) {
             const buy = document.getElementById('buy-cultist');
             buy.disabled = full || (game.resourceManager.resources.gold?.amount ?? 0) < cost;
             buy.setAttribute('aria-label', full ? 'Cultists at maximum' : `Recruit a cultist for ${cost} gold`);
+        }
+
+        const minerShop = document.getElementById('miner-shop');
+        if (minerShop) {
+            minerShop.hidden = !game.progression.isUnlocked('miner_unlock');
+            const count = game.minerCount ?? 0;
+            const full = count >= MINER_CONFIG.maxCount;
+            const cost = game.getMinerCost();
+            const shifts = game.minerShifts;
+            setText('miner-count', `${count}/${MINER_CONFIG.maxCount}`);
+            setText('miner-cost', full ? 'Max' : compact(cost));
+            setText('miner-description', `Each digs ${compact(shifts.payout / shifts.interval)} gold/s.`);
+            const buy = document.getElementById('buy-miner');
+            buy.disabled = full || (game.resourceManager.resources.gold?.amount ?? 0) < cost;
+            buy.setAttribute('aria-label', full ? 'Miners at maximum' : `Hire a miner for ${cost} gold`);
         }
 
         const tracker = game.statsTracker;

@@ -1,0 +1,131 @@
+{
+  "parts": [
+    {
+      "id": "pick_root",
+      "parentId": null,
+      "width": 1,
+      "height": 1,
+      "anchorX": 0,
+      "anchorY": 0,
+      "relX": 0,
+      "relY": 0,
+      "color": "ffffff",
+      "z": 0,
+      "alpha": 0
+    },
+    {
+      "id": "handle",
+      "parentId": "pick_root",
+      "width": 0.38,
+      "height": 3.1,
+      "anchorX": 0,
+      "anchorY": 0.5,
+      "relX": 0,
+      "relY": 0,
+      "color": "7a5230",
+      "z": 5
+    },
+    {
+      "id": "handle_outline",
+      "parentId": "pick_root",
+      "width": 0.74,
+      "height": 3.46,
+      "anchorX": 0,
+      "anchorY": 0.5,
+      "relX": 0,
+      "relY": 0,
+      "color": "000000",
+      "z": -5
+    },
+    {
+      "id": "head",
+      "parentId": "handle",
+      "width": 1.7,
+      "height": 0.62,
+      "anchorX": 0,
+      "anchorY": 0,
+      "relX": -1.2,
+      "relY": -1,
+      "color": "7d776e",
+      "z": 6,
+      "baseRotation": 0.06
+    },
+    {
+      "id": "head_outline",
+      "parentId": "handle",
+      "width": 2.1,
+      "height": 1.02,
+      "anchorX": 0,
+      "anchorY": 0,
+      "relX": -1.2,
+      "relY": -1,
+      "color": "000000",
+      "z": -4,
+      "baseRotation": 0.06
+    },
+    {
+      "id": "point",
+      "parentId": "head",
+      "width": 0.9,
+      "height": 0.42,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "relX": -0.5,
+      "relY": -0.1,
+      "color": "6c665e",
+      "z": 6,
+      "baseRotation": -0.25
+    },
+    {
+      "id": "point_outline",
+      "parentId": "head",
+      "width": 1.26,
+      "height": 0.78,
+      "anchorX": 0.5,
+      "anchorY": 0,
+      "relX": -0.5,
+      "relY": -0.1,
+      "color": "000000",
+      "z": -4,
+      "baseRotation": -0.25
+    },
+    {
+      "id": "lashing",
+      "parentId": "handle",
+      "width": 0.56,
+      "height": 0.8,
+      "anchorX": 0,
+      "anchorY": 0,
+      "relX": 0,
+      "relY": -0.93,
+      "color": "a08c5e",
+      "z": 7
+    },
+    {
+      "id": "lashing_outline",
+      "parentId": "handle",
+      "width": 0.8600000000000001,
+      "height": 1.1,
+      "anchorX": 0,
+      "anchorY": 0,
+      "relX": 0,
+      "relY": -0.93,
+      "color": "000000",
+      "z": -3
+    },
+    {
+      "id": "emitter",
+      "parentId": "point",
+      "width": 0.1,
+      "height": 0.1,
+      "anchorX": 0,
+      "anchorY": 0,
+      "relX": -1,
+      "relY": 0,
+      "color": "ffffff",
+      "z": 0,
+      "alpha": 0
+    }
+  ],
+  "animations": {}
+}

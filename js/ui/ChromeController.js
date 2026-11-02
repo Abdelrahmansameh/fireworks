@@ -2,6 +2,9 @@ import { TABS } from './uiSchema.js';
 import { GAME_BOUNDS } from '../config/GameBoundsConfig.js';
 import { VENUE_ZOOM_OUT_DURATION_MS } from '../config/VenueProgression.js';
 
+// Per-second decay of the camera's vertical offset from its framing (~.12 per frame at 60fps).
+const CAMERA_Y_EASE_RATE = 8;
+
 /** Coordinates navigation and mobile sheets without owning game state. */
 export class ChromeController {
     constructor(game) {
@@ -240,7 +243,7 @@ export class ChromeController {
                     // Zoom out only when the venue grew, e.g. a new launcher slot
                     // landed outside it; a resize alone is handled below.
                     const venueWidened = !viewportChanged && !modeChanged && this.cameraVenueLeft != null
-                        && (bounds.left < this.cameraVenueLeft - .5 || bounds.right > this.cameraVenueRight + .5);
+                        && (bounds.left < this.cameraVenueLeft - .5 || bounds.zoomRight > this.cameraVenueRight + .5);
                     if (venueWidened || this.cameraDesiredZoom == null) {
                         this.cameraDesiredZoom = bounds.wideZoom;
                         this.cameraPanY = 0;
@@ -257,7 +260,7 @@ export class ChromeController {
                     this.cameraViewportWidth = renderer.canvas.clientWidth;
                     this.cameraViewportHeight = renderer.canvas.clientHeight;
                     this.cameraVenueLeft = bounds.left;
-                    this.cameraVenueRight = bounds.right;
+                    this.cameraVenueRight = bounds.zoomRight;
                     // A readable portrait view cannot always show the whole venue.
                     // Reveal a new building after the current gesture/cinematic.
                     const focusX = this.game.pendingVenueFocusX;
@@ -291,9 +294,11 @@ export class ChromeController {
                     if (Math.abs(nextZoom - zoom) < .0001) nextZoom = zoom;
                     // Recalculate Y for the intermediate zoom too: interpolating Y
                     // independently makes the floor drift while zooming.
+                    // Ease the offset from that framing rather than Y itself, so a
+                    // zoom never cuts short a vertical glide and timing is frame-rate independent.
                     const currentZoomTarget = this.getCameraFraming(nextZoom).y;
-                    let next = modeChanged ? currentZoomTarget : renderer.cameraY + (currentZoomTarget - renderer.cameraY) * .12;
-                    if (nextZoom !== renderer.cameraZoom) next = currentZoomTarget;
+                    const offset = renderer.cameraY - this.getCameraFraming(renderer.cameraZoom).y;
+                    let next = modeChanged ? currentZoomTarget : currentZoomTarget + offset * Math.exp(-CAMERA_Y_EASE_RATE * elapsed);
                     // The closed tab bar must never cover the ground while the camera eases.
                     if (this.mobile.matches) {
                         const groundY = Math.min(GAME_BOUNDS.WORLD_GROUND_Y, GAME_BOUNDS.WORLD_LAUNCHER_Y, GAME_BOUNDS.CROWD_Y);

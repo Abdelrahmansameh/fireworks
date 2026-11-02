@@ -29,6 +29,8 @@ import { roundUpCost } from '../utils/costRounding.js';
 import CultistRituals from '../systems/CultistRituals.js';
 import { cultistSparklesPerSecond } from '../config/CultistRitual.js';
 import { CULTIST_CONFIG } from '../config/CultistConfig.js';
+import { MINER_CONFIG } from '../config/MinerConfig.js';
+import MinerShifts from '../systems/MinerShifts.js';
 import { getVenueStage } from '../config/VenueProgression.js';
 
 export const SAVE_VERSION = '5';
@@ -129,6 +131,10 @@ class GameCore extends Engine {
         this.cultistStats = { sparkleMultiplier: 1, ritualSpeedMultiplier: 1 };
         this.cultistRituals = new CultistRituals(this);
         this.cultistRituals.setCount(this.cultistCount);
+        this.minerCount = Math.min(MINER_CONFIG.maxCount, Math.max(0, Number(this.storage.getItem('minerCount')) || 0));
+        this.minerStats = { goldMultiplier: 1, speedMultiplier: 1 };
+        this.minerShifts = new MinerShifts(this);
+        this.minerShifts.setCount(this.minerCount);
         this.crowdStats = {
             catchingEnabled: false,
             collectionRadiusMultiplier: 1,
@@ -143,6 +149,7 @@ class GameCore extends Engine {
         this.emergentModel = this.headless ? new EmergentYieldModel() : null;
         this.crowd = this.headless ? new HeadlessCrowd() : null;
         this.crowd?.setCultistCount(this.cultistCount, this.cultistRituals);
+        this.crowd?.setMinerCount?.(this.minerCount, this.minerShifts);
 
         // Restore persisted progression state (no-op in a fresh headless run).
         const savedPatterns = JSON.parse(this.storage.getItem('unlockedPatternKeys') || 'null');
@@ -328,6 +335,29 @@ class GameCore extends Engine {
         return true;
     }
 
+    getMinerCost() {
+        return roundUpCost(MINER_CONFIG.baseCost * Math.pow(MINER_CONFIG.costRatio, this.minerCount));
+    }
+
+    setMinerCount(count) {
+        this.minerCount = Math.min(MINER_CONFIG.maxCount, Math.max(0, Math.floor(Number(count) || 0)));
+        this.minerShifts.setCount(this.minerCount);
+        this.crowd?.setMinerCount?.(this.minerCount, this.minerShifts);
+    }
+
+    purchaseMiner() {
+        const cost = this.getMinerCost();
+        const resource = this.resourceManager.resources.gold;
+        if (!this.progression.isUnlocked('miner_unlock') || this.minerCount >= MINER_CONFIG.maxCount
+            || !resource || resource.amount < cost) return false;
+        resource.subtract(cost);
+        this.setMinerCount(this.minerCount + 1);
+        // New miners climb out onto the mountain, so pan the venue there.
+        if (!this.headless) this.pendingVenueFocusX = MINER_CONFIG.mine.peakX;
+        this.saveProgress();
+        return true;
+    }
+
     purchaseFlyer() {
         const cost = this.getFlyerCost();
         const resource = this.resourceManager.resources.gold;
@@ -499,6 +529,10 @@ class GameCore extends Engine {
                 this.showNotification('Flying cultists unlocked!');
                 this.ui.updateBuildingTypeVisibility();
                 break;
+            case 'miner_unlock':
+                this.showNotification('Gold miners unlocked!');
+                this.ui.updateBuildingTypeVisibility();
+                break;
             case 'catapult':
                 this.showNotification('Catapult unlocked!');
                 this.ui.updateBuildingTypeVisibility();
@@ -621,6 +655,7 @@ class GameCore extends Engine {
 
         this.storage.setItem('flyerCount', this.flyerCount);
         this.storage.setItem('cultistCount', this.cultistCount);
+        this.storage.setItem('minerCount', this.minerCount);
         this.storage.setItem('elapsedGameTime', this.elapsedGameTime);
         this.storage.setItem('gameCompleted', this.gameCompleted);
         this.storage.setItem('crowdStartFireworks', JSON.stringify(this.crowdStartFireworks));
@@ -673,6 +708,7 @@ class GameCore extends Engine {
         // Real building economy (launchers fire + count) and cultist rituals.
         this.buildingManager.update(dt);
         this.cultistRituals.update(dt);
+        this.minerShifts.update(dt);
 
         // Emergent estimate: flyer collection + crowd catching.
         this.emergentModel.applyTick(this, dt, clicksPerSec);

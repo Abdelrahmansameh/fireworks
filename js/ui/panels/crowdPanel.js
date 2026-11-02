@@ -29,6 +29,12 @@ export function render(container) {
             <span class="building-owned">Owned: <span id="cultist-count">0</span></span>
             <button type="button" id="buy-cultist" class="building-buy-button" aria-label="Recruit a cultist">${doodleIcon('gold')}<span id="cultist-cost">0</span></button>
         </div>
+        <div id="miner-shop" class="building-buy-card" hidden>
+            <span class="building-badge">${doodleIcon('miner')}</span>
+            <div class="building-buy-copy"><h3>Gold miners</h3><p id="miner-description">They dig gold out of the mountains.</p></div>
+            <span class="building-owned">Owned: <span id="miner-count">0</span></span>
+            <button type="button" id="buy-miner" class="building-buy-button" aria-label="Hire a miner">${doodleIcon('gold')}<span id="miner-cost">0</span></button>
+        </div>
     `;
     container.appendChild(panel);
 }
