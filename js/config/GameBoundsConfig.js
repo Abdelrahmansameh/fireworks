@@ -9,7 +9,7 @@ export const GAME_BOUNDS = {
     SCROLL_MIN_X: -1500,
     SCROLL_MAX_X: 4200,
     CROWD_RIGHT_X: -1280,
-    CROWD_LEFT_X: -180,          // leaves room for the cultists before the portals
+    CROWD_LEFT_X: -290,          // leaves room for the cultist choir before the portals
     CROWD_Y: -490,
     WORLD_GROUND_Y: -540,
     WORLD_MIN_EXPLOSION_Y: -105,

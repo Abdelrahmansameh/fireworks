@@ -29,6 +29,7 @@ import { roundUpCost } from '../utils/costRounding.js';
 import CultistRituals from '../systems/CultistRituals.js';
 import { cultistSparklesPerSecond } from '../config/CultistRitual.js';
 import { CULTIST_CONFIG } from '../config/CultistConfig.js';
+import { PORTAL_BASE_YIELD } from '../config/BuildingConfig.js';
 import { MINER_CONFIG } from '../config/MinerConfig.js';
 import MinerShifts from '../systems/MinerShifts.js';
 import { getVenueStage } from '../config/VenueProgression.js';
@@ -115,6 +116,7 @@ class GameCore extends Engine {
         this._finaleSim = { active: false, elapsed: 0, cooldown: 0 };
 
         this.progression = new ProgressionManager(PROGRESSION_CONFIG);
+        this.progression.game = this;
         this.resourceManager = new ResourceManager(this);
         this.buildingManager = new BuildingManager(this);
         this.statsTracker = new GameMetrics({ storage: this.storage, now: () => this.elapsedGameTime * 1000 });
@@ -128,8 +130,9 @@ class GameCore extends Engine {
             sparklesPerParticleMultiplier: 1,
         };
         this.cultistCount = Math.min(CULTIST_CONFIG.maxCount, Math.max(0, Number(this.storage.getItem('cultistCount')) || 0));
-        this.cultistStats = { sparkleMultiplier: 1, ritualSpeedMultiplier: 1 };
+        this.cultistStats = { sparkleMultiplier: 1, ritualSpeedMultiplier: 1, offeringMultiplier: 1 };
         this.cultistRituals = new CultistRituals(this);
+        this.cultOfferingsPaused = this.storage.getItem('cultOfferingsPaused') === 'true';
         this.cultistRituals.setCount(this.cultistCount);
         this.minerCount = Math.min(MINER_CONFIG.maxCount, Math.max(0, Number(this.storage.getItem('minerCount')) || 0));
         this.minerStats = { goldMultiplier: 1, speedMultiplier: 1 };
@@ -142,7 +145,7 @@ class GameCore extends Engine {
             goldRateMultiplier: 1,
             countBonus: 0,
         };
-        this.portalStats = { spawnIntervalMultiplier: 1, sparkleYieldMultiplier: 1 };
+        this.portalStats = { spawnIntervalMultiplier: 1, sparkleYieldMultiplier: PORTAL_BASE_YIELD };
         this.catapultStats = { maxCatapults: 1 };
 
         // Headless-only collaborators.
@@ -241,6 +244,7 @@ class GameCore extends Engine {
     }
 
     calculateCultistSparklesPerSecond() {
+        if (!this.cultistRituals.active) return 0;
         return this.cultistCount * cultistSparklesPerSecond(this.cultistStats, this.baseSparkleMultiplier);
     }
 
@@ -312,7 +316,8 @@ class GameCore extends Engine {
     }
 
     getCultistCost() {
-        return roundUpCost(CULTIST_CONFIG.baseCost * Math.pow(CULTIST_CONFIG.costRatio, this.cultistCount));
+        const listed = CULTIST_CONFIG.baseCost * Math.pow(CULTIST_CONFIG.costRatio, this.cultistCount);
+        return roundUpCost(Math.max(listed, this.cultistRituals?.upkeepCost(this.cultistCount + 1) ?? 0));
     }
 
     setCultistCount(count) {
@@ -333,6 +338,12 @@ class GameCore extends Engine {
         if (!this.headless) this.pendingVenueFocusX = GAME_BOUNDS.CROWD_LEFT_X;
         this.saveProgress();
         return true;
+    }
+
+    /** Pause offerings to save gold; cultists keep chanting but pay nothing. */
+    setCultOfferingsPaused(paused) {
+        this.cultOfferingsPaused = !!paused;
+        this.saveProgress();
     }
 
     getMinerCost() {
@@ -655,6 +666,7 @@ class GameCore extends Engine {
 
         this.storage.setItem('flyerCount', this.flyerCount);
         this.storage.setItem('cultistCount', this.cultistCount);
+        this.storage.setItem('cultOfferingsPaused', this.cultOfferingsPaused);
         this.storage.setItem('minerCount', this.minerCount);
         this.storage.setItem('elapsedGameTime', this.elapsedGameTime);
         this.storage.setItem('gameCompleted', this.gameCompleted);

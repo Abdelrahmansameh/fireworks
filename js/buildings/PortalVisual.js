@@ -1,16 +1,22 @@
 import * as Renderer2D from '../rendering/Renderer.js';
 import { hexToRgb } from '../animation/SkeletonData.js';
 
-const { BlendMode, buildCircle, buildRing, buildPolygon } = Renderer2D;
+const { BlendMode, buildCircle, buildPolygon } = Renderer2D;
 
 // A ground portal drawn from instanced shapes.
 // The ground is seen at a slight angle, so every circle is squashed by PERSPECTIVE.
 const PERSPECTIVE = 0.3;
-const RADIUS = 28;
+const RADIUS = 36;
 const DEEP = hexToRgb('0b0d18');
 const DEFAULT_COLOR = hexToRgb('8a8fe0');
 const FIRE_FLASH_DURATION = 0.6;
-const RIPPLE_COUNT = 3;
+// Fake depth: nested rings that shrink, darken and slide down to the near rim.
+// The near rim hides the near wall, so only the far wall shows, as wide bands.
+const DEPTH_RINGS = 6;
+const DEPTH_SHRINK = 0.72;  // the bottom is 28% of the rim's size
+const NEAR_LIP = 1.5;       // thin sliver of rim left in front of the rings
+const HOLE_FLOOR = 0.25;    // how much portal colour is left at the very bottom
+const SINK_SPEED = 0.3;     // rings per second drifting down the tunnel
 // Shot squish: a damped wobble that starts wide and flat, then springs back.
 const SQUISH_AMOUNT = 0.26;
 const SQUISH_DAMPING = 3.5;
@@ -38,9 +44,8 @@ class PortalVisual {
             this._groups.push(group);
             return group;
         };
-        // Fractional z keeps the layers ordered: base, ripples, then the inner swirl.
+        // Fractional z keeps the layers ordered: rim and tunnel rings, then the bottom.
         this._ellipses = create(buildCircle(1, 16), zIndex);
-        this._ripples = create(buildRing(1, 0.8, 16), zIndex + 0.3);
         this._inner = create(buildCircle(1, 16), zIndex + 0.6);
         this._sparkShapes = create(buildPolygon([[0, 1], [0.55, 0], [0, -1], [-0.55, 0]]), zIndex + 1, BlendMode.ADDITIVE);
     }
@@ -104,34 +109,28 @@ class PortalVisual {
         const sy = (1 + 0.04 * Math.sin(t * 2.1 + 1)) * (1 - squish * 1.4);
         const ry = PERSPECTIVE * sy;
 
-        // A soft edge, then the dark void.
+        // depth 0 is the rim, 1 the bottom of the hole.
+        const addRing = (group, depth) => {
+            const radius = RADIUS * (1 - DEPTH_SHRINK * depth);
+            // Every ring's near edge sits on the rim's, less the lip once it has sunk in.
+            const shift = (RADIUS - radius) * ry - NEAR_LIP * Math.min(1, depth * DEPTH_RINGS);
+            const glow = HOLE_FLOOR + (0.85 - HOLE_FLOOR) * Math.pow(1 - depth, 1.2);
+            const tone = mix(DEEP, color, glow + lift * (1 - depth) + pulse * 0.04);
+            group.addInstanceRaw(cx, cy - shift, 0, radius * sx, radius * ry, tone.r, tone.g, tone.b, 1);
+        };
+
+        // The rim, then rings sinking from it toward the bottom, drawn outermost first.
+        // Each ring's depth wraps from 1 back to 0, which reads as an endless fall.
         const e = this._ellipses;
         e.clear();
-        const edge = mix(DEEP, color, 0.7 + lift);
-        e.addInstanceRaw(cx, cy, 0, RADIUS * sx, RADIUS * ry, edge.r, edge.g, edge.b, 1);
-        const deep = mix(DEEP, color, 0.3 + lift);
-        e.addInstanceRaw(cx, cy - 0.8, 0, (RADIUS - 4) * sx, (RADIUS - 4) * ry - 0.6, deep.r, deep.g, deep.b, 1);
+        addRing(e, 0);
+        const sink = (t * SINK_SPEED) % 1;
+        for (let i = 0; i < DEPTH_RINGS; i++) addRing(e, (i + sink) / DEPTH_RINGS);
 
-        // Ripples sink from the edge toward the centre, brightest midway.
-        const ripples = this._ripples;
-        ripples.clear();
-        for (let i = 0; i < RIPPLE_COUNT; i++) {
-            const phase = (t * 0.45 + i / RIPPLE_COUNT) % 1;
-            const radius = (RADIUS - 5) * (1 - phase * 0.75);
-            const tone = mix(deep, color, 0.35 * Math.sin(phase * Math.PI) + lift);
-            ripples.addInstanceRaw(cx, cy - 0.8 - phase * 0.6, 0, radius * sx, radius * ry, tone.r, tone.g, tone.b, 1);
-        }
-
-        // The swirl and core drift around the centre in opposite directions.
+        // The bottom covers each ring as it finishes sinking.
         const inner = this._inner;
         inner.clear();
-        const swirl = mix(DEEP, color, 0.48 + pulse * 0.06 + lift);
-        const swirlRadius = (RADIUS - 11) * (0.95 + pulse * 0.05);
-        inner.addInstanceRaw(cx + Math.cos(t * 1.1) * 1.5, cy - 1.2 + Math.sin(t * 1.1) * 0.4, 0,
-            swirlRadius * sx, swirlRadius * ry, swirl.r, swirl.g, swirl.b, 1);
-        const core = mix(DEEP, color, 0.62 + lift);
-        inner.addInstanceRaw(cx - Math.cos(t * 1.7) * 1.2, cy - 1.4 - Math.sin(t * 1.7) * 0.3, 0,
-            swirlRadius * 0.45 * sx, swirlRadius * 0.45 * ry, core.r, core.g, core.b, 1);
+        addRing(inner, 1);
 
         // Sparks rise briefly after each shot.
         const sparkShapes = this._sparkShapes;

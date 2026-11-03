@@ -1,18 +1,41 @@
-// Cultists are crowd members, bought like flyers, who loop a ritual
-// that pays out sparkles at every climax (see CultistRituals).
+// Cultists are crowd members, bought like flyers, who loop a ritual that
+// turns gold into sparkles: every climax takes an offering from the gold bank
+// and pays it out as sparkles (see CultistRituals). No gold, no sparkles.
 export const CULTIST_CONFIG = {
     // Shop: bought with gold from the crowd panel.
-    baseCost: 375,
-    costRatio: 1.8,
-    maxCount: 3,
-    sparklesPerRitual: 1,        // the ritual clip in crowd.json sets how often
+    baseCost: 300,
+    costRatio: 1.3,
+    maxCount: 15,
+    // Gate on the sink: a recruit, or a Bigger Bowls level, costs at least this
+    // many seconds of the whole cult's gold drain once it's bought. Saving that
+    // much past the current drain means income can almost feed the bigger cult.
+    upkeepSeconds: 60,
+    // The ritual clip in crowd.json sets how often each cultist offers.
+    goldPerRitual: 4,            // offering taken from the bank per ritual; Bigger Bowls multiply it
+    sparklesPerGold: 0.25,        // exchange rate, times the base sparkle multiplier and Louder Chants
+    // The ritual clip's bowl; each Bigger Bowls level draws it this much bigger.
+    bowlSkeletonUrl: 'assets/skeletons/cultist_bowl.json',
+    bowlGrowthPerLevel: 0.2,
 
     // Ritual spots in the gap between the crowd (CROWD_LEFT_X) and the
-    // portals (PORTAL_MIN_X), one per cultist in buy order.
+    // portals (PORTAL_MIN_X), one per cultist in buy order: a staggered choir
+    // that fills front to back, centre out.
     spots: [
         { x: 0, y: -460 },
         { x: -50, y: -440 },
         { x: 50, y: -440 },
+        { x: -100, y: -460 },
+        { x: 100, y: -460 },
+        { x: -150, y: -440 },
+        { x: 0, y: -420 },
+        { x: -100, y: -420 },
+        { x: 100, y: -420 },
+        { x: -50, y: -400 },
+        { x: 50, y: -400 },
+        { x: -150, y: -400 },
+        { x: 0, y: -380 },
+        { x: -100, y: -380 },
+        { x: 100, y: -380 },
     ],
 
     // Worn in every state; the ritual clip adds the bowl on top.

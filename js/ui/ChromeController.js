@@ -244,7 +244,10 @@ export class ChromeController {
                     // landed outside it; a resize alone is handled below.
                     const venueWidened = !viewportChanged && !modeChanged && this.cameraVenueLeft != null
                         && (bounds.left < this.cameraVenueLeft - .5 || bounds.zoomRight > this.cameraVenueRight + .5);
-                    if (venueWidened || this.cameraDesiredZoom == null) {
+                    // Follow the wider venue only from the widest view; a closer view stays put.
+                    const atWidestZoom = this.cameraWideZoom != null && this.cameraDesiredZoom != null
+                        && this.cameraDesiredZoom <= this.cameraWideZoom * 1.001;
+                    if ((venueWidened && atWidestZoom) || this.cameraDesiredZoom == null) {
                         this.cameraDesiredZoom = bounds.wideZoom;
                         this.cameraPanY = 0;
                         this.cameraAutoZoom = venueWidened && bounds.wideZoom < renderer.cameraZoom
@@ -261,6 +264,7 @@ export class ChromeController {
                     this.cameraViewportHeight = renderer.canvas.clientHeight;
                     this.cameraVenueLeft = bounds.left;
                     this.cameraVenueRight = bounds.zoomRight;
+                    this.cameraWideZoom = bounds.wideZoom;
                     // A readable portrait view cannot always show the whole venue.
                     // Reveal a new building after the current gesture/cinematic.
                     const focusX = this.game.pendingVenueFocusX;

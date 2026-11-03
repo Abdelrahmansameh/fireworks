@@ -2,7 +2,6 @@ import { BUILDING_TYPES } from '../config/BuildingConfig.js';
 import { CULTIST_CONFIG } from '../config/CultistConfig.js';
 import { MINER_CONFIG } from '../config/MinerConfig.js';
 import { fireworksForCrowd } from '../systems/ProductionRates.js';
-import { cultistSparklesPerSecond } from '../config/CultistRitual.js';
 
 const compact = value => new Intl.NumberFormat('en', {
     notation: value >= 10000 ? 'compact' : 'standard', maximumFractionDigits: value < 100 ? 1 : 0,
@@ -25,6 +24,7 @@ export function initializePanelDetails(game) {
     const notify = message => game.ui?.showNotification(message);
     on(document.getElementById('buy-flyer'), 'click', () => game.purchaseFlyer());
     on(document.getElementById('buy-cultist'), 'click', () => game.purchaseCultist());
+    on(document.getElementById('toggle-offerings'), 'click', () => game.setCultOfferingsPaused(!game.cultOfferingsPaused));
     on(document.getElementById('buy-miner'), 'click', () => game.purchaseMiner());
     let lastSavedAt = Date.now();
     const originalSave = game.saveProgress;
@@ -186,7 +186,19 @@ export function initializePanelDetails(game) {
             const cost = game.getCultistCost();
             setText('cultist-count', `${count}/${CULTIST_CONFIG.maxCount}`);
             setText('cultist-cost', full ? 'Max' : compact(cost));
-            setText('cultist-description', `Each makes ${compact(cultistSparklesPerSecond(game.cultistStats, game.baseSparkleMultiplier ?? 1))} sparkles/s.`);
+            const rituals = game.cultistRituals;
+            setText('cultist-description', `Each ritual offers ${compact(rituals.offering)} gold for ${compact(rituals.payout)} sparkles.`);
+            // The live exchange: what the cult is taking from the bank and paying back.
+            const offering = document.getElementById('cult-offering');
+            offering.hidden = count === 0;
+            offering.classList.toggle('paused', !!game.cultOfferingsPaused);
+            const sparkleRate = game.statsTracker?.getRollingRate('sparkles', 'cultist') ?? 0;
+            setText('cult-gold-rate', `-${compact(sparkleRate / Math.max(1e-9, rituals.rate))}/s`);
+            setText('cult-sparkle-rate', `+${compact(sparkleRate)}/s`);
+            const toggle = document.getElementById('toggle-offerings');
+            toggle.textContent = game.cultOfferingsPaused ? 'Resume' : 'Pause';
+            toggle.setAttribute('aria-pressed', String(!!game.cultOfferingsPaused));
+            toggle.setAttribute('aria-label', game.cultOfferingsPaused ? 'Resume offerings: let the cult spend gold' : 'Pause offerings: save gold');
             const buy = document.getElementById('buy-cultist');
             buy.disabled = full || (game.resourceManager.resources.gold?.amount ?? 0) < cost;
             buy.setAttribute('aria-label', full ? 'Cultists at maximum' : `Recruit a cultist for ${cost} gold`);

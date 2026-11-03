@@ -47,6 +47,35 @@ Over the final 11 minutes sparkle income grows ×9, while gold stays flat becaus
 - **Purchase cadence:** median gap is 38 s for sparkles and 76 s for gold, and the longest is 75 s. That fits the research targets: early seconds, mid-game 30 s–2 min.
 - **The worker bridge:** gold buys performers who catch or conjure sparkles. They produce 35% of all sparkles: catching 18%, flyers 9%, cultists 8%. This is a good intertwining. It just shouldn't be the *only* thing gold does.
 
+### 1f. Gold miners (added after the first audit)
+
+Re-audit: `traces/live-balance/miner-audit-active.json` (active, seed 1, 44.8 game-min to finale).
+
+**The role is right.** Miners give gold its own engine: gold buys people who make gold. Before this, only 6% of gold spending grew gold. Miners are people, live on a visible host (the mountain) and pay on their own clock (one strike every 1.3 s). They fit "tips hire the people" well.
+
+**The numbers don't work yet:**
+
+| Miner | Bought at | Cost | Gold returned by finale | Net |
+|---|---|---|---|---|
+| 1 | 20.6 m | 6,000 | ~16.8k | +10.8k |
+| 2 | 32.5 m | 12,500 | ~8.6k | −3.9k |
+| 3 | 40.6 m | 17,500 | ~2.9k | −14.6k |
+| 4–5, Golden Picks | never bought | | | |
+
+- **They lose gold overall:** 36k spent for ~28k back. Miners made 14% of all gold.
+- **Each one is 11.5 gold/s**, the same as ~23 tipping fans. The payback times are 9 min, 18 min and 25 min. The 26 minutes between the `gold_mine` milestone and the finale only cover the first.
+- **Late-game gold still flatlines, and idle gold got worse.** Gold/s goes 133 → 160 over the last 15 min (×1.2). The bank ends at ~16k, up from 14k, and the last gold purchase is at 43 m. A new faucet without a new sink just inflates the bank.
+- **Pacing:** the longest milestone gap is now 26 min (`gold_mine` → `grand_finale`). The max purchase gap is 146 s, above the 90 s guardrail.
+
+**Risk if miners are just buffed.** The unlock text says miners dig "far more than any fan tosses". If the mine out-earns the crowd, gold stops depending on the show, and fans become decoration. This is Cook's *undifferentiated inputs* again: two sources for one currency, so players optimise one away.
+
+**Recommendation:**
+- **Keep the two gold sources on different axes.** Tips scale with the show: variable, Hype-driven, the bridge from sparkles. The mine is steady and grows only with gold invested in it, independent of the show.
+- **Cap the mine at about a quarter of late gold.** At max, 5 miners with Picks make ~115 g/s. Late tips with Hype reach ~120–360 g/s, so tips stay the majority (~75%).
+- **Make payback fit the run.** Every miner should pay back within half the time left after unlock. Try `baseCost 3000, costRatio 1.45` (3.0k / 4.35k / 6.3k / 9.1k / 13.3k). Without Picks, paybacks are 4.3 / 6.3 / 9.1 / 13.2 / 19.2 min. All five pay off if bought by ~25 m, and Picks (×2) halves those times.
+- **More gold now makes the cult tithe (bridge 4) necessary, not optional.** Without a sink that scales, the mine only inflates the stranded balance.
+- **Change the unlock text** to "steady gold that doesn't depend on the show". Avoid "more than any fan".
+
 ---
 
 ## 2. What the research says (condensed)
@@ -95,7 +124,7 @@ Over the final 11 minutes sparkle income grows ×9, while gold stays flat becaus
 | Currency | Verb | Where it lives on screen | Earned by | Spent on (only) | Clock |
 |---|---|---|---|---|---|
 | **Sparkles ✦** | Build the show | sky and portals | bursts (tap, portal), catches, cult tithe | portals, portal stats, base sparkle multipliers, shapes, finale | per second |
-| **Tips ● (gold)** | Hire the people | crowd and coin tosses | fan tosses × Hype | fans/tickets, catapults, cultists, flyers, crew training | per second, slower |
+| **Tips ● (gold)** | Hire the people | crowd, coin tosses, the mine | fan tosses × Hype (show-driven); miners (steady, capped ~¼ of late gold) | fans/tickets, catapults, cultists, flyers, miners, crew training | per second, slower |
 | **Hype ♪** | The mood (a multiplier, never spent) | crowd cheer bar; fans cheer harder | burst intensity, shape variety, manual taps, catches; decays | multiplies tips (and speeds fan arrivals) | ~10 s swings |
 | **Stars ★** (phase 3) | Legacy | constellation in the sky | Grand Finale / "go on tour" reset | never spent: +10% to all income each | per run |
 
@@ -103,9 +132,10 @@ Over the final 11 minutes sparkle income grows ×9, while gold stays flat becaus
 - The player can finish "Sparkles build the ___, tips hire the ___."
 - Every cost chip in the Buildings panel is ✦. Every cost chip in the Crowd panel is ●.
 
-### The four bridges
+### The two engines and four bridges
 
 1. **Core engine (✦ → ✦).** Sparkles buy portals, portals make sparkles. Already in place.
+1b. **Gold engine (● → ●).** Gold hires miners, miners dig gold. It is steady and capped, so the show-driven tips stay the majority (see 1f).
 2. **Show → Hype → Tips (buff bridge).** A better show earns better tips. Sparkles never convert *directly* into gold, so gold stays its own scarcer currency, yet it now grows with the show. This fixes 1c and gives shapes and taps a job, fixing 1d.
 3. **Tips → crew → Sparkles (worker bridge).** Keep catapults and flyers as "people who harvest the sky." Their output scales with the sky, so they stay relevant.
 4. **Cult tithe (converter, plus a sink that never runs out).** Cultists take a visible share of incoming tips and turn it into sparkles at a stated rate ("1 ● → 3 ✦"). Upgrades improve the rate. Gold now has a scaling late-game use instead of idling.
@@ -200,6 +230,7 @@ bonus = +10% all income per star (Egg-Inc style, never spent)
 | Flyer "Helping Hands" (`flyer_reach`) | same name as the crowd node | Rename it (e.g. "Long Arms") |
 | Milestones | currency goals already roughly match roles | Add one **Hype** goal right after Opening Night ("Get the crowd Roaring") to teach the meter. Keep gold goals before people unlocks and sparkle goals before machine unlocks. |
 | Crowd cap | gold rate hits a hard ceiling at 43 fans | Keep the cap. Hype is the late growth axis, not fan count. |
+| Miners (`MinerConfig.js`) | 6000 × 1.7ⁿ, 15 g per strike; 3 of 5 bought, net −8k gold | `baseCost 3000`, `costRatio 1.45`. Keep the 5-miner cap and Golden Picks. Unlock text: "steady gold", not "more than any fan". |
 
 ### UI legibility
 
@@ -231,3 +262,64 @@ bonus = +10% all income per star (Egg-Inc style, never spent)
 1. Is the game meant to end at the Grand Finale? That decides whether Phase 3 exists.
 2. Should Hype also speed fan *arrivals*, or only tips? Arrivals are currently time-gated by `CROWD_CONFIG.arrivals`.
 3. Should the tithe be automatic (simple) or a slider (more agency, more UI)?
+
+---
+
+## 7. Built: the cult converter (Nov 2026)
+
+This replaces the "tithe" design in sections 3–4 and the miner numbers suggested in 1f. Hype, keystone dual costs and Stars are not built yet.
+
+### How it works
+
+- **Cultists convert gold into sparkles.** Every ritual (1.1 s), each cultist takes an offering from the gold bank and pays it out as sparkles. If the bank is empty or offerings are paused, the ritual pays nothing: no gathering motes and no climax burst. The cap is 15 cultists, standing in a staggered choir between the crowd and the portals.
+  - The cult card shows a live `-gold/s → +sparkles/s` flow and a Pause/Resume toggle.
+  - The wallet's gold rate is net of offerings and turns red while the bank drains.
+  - Code: `CultistRituals.js`, `CultistRitual.js`.
+- **Offering size per ritual:** `goldPerRitual (4) × Bigger Bowls`. Bigger Bowls is ×2 per level, 3 levels. It opens with the Gold Mine, and each level draws the bowl 20% bigger.
+- **Exchange rate:** `sparklesPerGold (0.25) × baseSparkleMultiplier × Louder Chants`. It rises with every sparkle multiplier, so gold buys more sparkles as the show grows.
+- **Miners and crowd:**
+  - Miners dig 40 gold every 1.3 s each, cost 2,500 × 1.75ⁿ, and are capped at 5.
+  - Golden Picks (×2, 2 levels from 20k) and Deeper Shafts (+50% swing speed, 40k) scale them.
+  - A new crowd card, Encore Tips (+50% ×2), keeps fans within reach of the mine.
+
+### The tension
+
+Gold comes in from tips and miners and goes out as offerings and purchases. Saving gold for something costs you the sparkles the cult would have made from it, so a player pauses the cult to save for big buys like miners or Golden Picks. The live bot does the same: it pauses only for a gold step toward the next mechanic, or for more gold income (a miner up to 5 minutes of income away, a tip or mine upgrade up to 75 s away).
+
+### Validated numbers
+
+Live bot, seed 1, traces `traces/live-balance/cult-v13-*.json`:
+
+| | Active | Relaxed |
+|---|---|---|
+| Grand Finale | 36.0 min | 40.8 min |
+| Sparkles from cult / portals | 49% / 40% | 50% / 40% |
+| Gold from miners, whole run | 55% | 55% |
+| Gold from miners, last 5 min | 63% | 63% |
+| Cult running vs paused to save | 68% / 32% | 73% / 27% |
+| Gold converted by the cult | 60k of 385k | 61k of 386k |
+| Gold left at finale | 24k | 24k |
+| Upgrade levels bought | 62 / 71 | 62 / 71 |
+| Max purchase gap | 115 s | 137 s |
+
+Watch-outs:
+- The max purchase gap is above the 90 s guardrail in section 4. It comes from the bot saving for miners around 20–28 min.
+- Rerun with `--preset idle` before shipping. Only active and relaxed were checked.
+
+### Milestones
+
+Every milestone opens a mechanic, never just an upgrade:
+
+`first_light` → `creator` → `first_machine` → `small_show` → `tip_jar` → `first_catapult` → `flyers` → `gold_mine` → `grand_finale` (450K sparkles)
+
+### Related changes made alongside
+
+- **Crowd edge:** the crowd's near edge moved from x −180 to −290 to give the choir room.
+- **Catapults:**
+  - Long Toss is now 4 levels of ×1.455 speed and ×1.1 height. A max throw lands about 6,000 units out and peaks near y 990.
+  - The fan wall moved to x 6,600 so throws and their bounces never hit it.
+  - Cooldowns jitter ±25% so catapults drift out of phase.
+- **Flying cultists:**
+  - Their ceiling is now the venue's current max firework height. The old `maxHeight` and `ceilingMargin` are gone.
+  - Each flyer takes its own vertical lane across that span.
+  - They stop pulsing to drop when above their lane.

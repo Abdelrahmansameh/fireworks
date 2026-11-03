@@ -1,12 +1,13 @@
 // Miners are crowd members, bought with gold like cultists, who work the gold
 // mine in the background mountains. Every pickaxe strike pays out gold (see
-// MinerShifts), far more per head than a fan's coin tosses.
+// MinerShifts), far more per head than a fan's coin tosses, though the whole
+// tipping crowd should stay within reach of the mine (about 40/60 late on).
 export const MINER_CONFIG = {
     // Shop: bought with gold from the crowd panel.
-    baseCost: 6000,
-    costRatio: 1.7,
+    baseCost: 2500,
+    costRatio: 1.5,
     maxCount: 5,
-    goldPerStrike: 15,           // a fan tosses 2.5 gold every 5s; a miner pays this every strike
+    goldPerStrike: 40,           // a fan tosses 2.5 gold every 5s; a miner pays this every strike
     strikeInterval: 1.3,         // seconds per swing; the 'mine' clip stretches to fit
 
     // The mine mountain sits behind the river, above the crowd. Its peak and

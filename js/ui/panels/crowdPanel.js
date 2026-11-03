@@ -25,8 +25,12 @@ export function render(container) {
         </div>
         <div id="cultist-shop" class="building-buy-card" hidden>
             <span class="building-badge">${doodleIcon('cultist')}</span>
-            <div class="building-buy-copy"><h3>Cultists</h3><p id="cultist-description">Rituals conjure sparkles.</p></div>
+            <div class="building-buy-copy"><h3>Cultists</h3><p id="cultist-description">Rituals turn gold into sparkles.</p></div>
             <span class="building-owned">Owned: <span id="cultist-count">0</span></span>
+            <div class="cult-offering" id="cult-offering" hidden>
+                <span class="cult-flow"><span class="cult-flow-gold">${doodleIcon('gold')}<span id="cult-gold-rate">-0/s</span></span><span aria-hidden="true">→</span><span class="cult-flow-sparkles">${doodleIcon('sparkle')}<span id="cult-sparkle-rate">+0/s</span></span></span>
+                <button type="button" id="toggle-offerings" class="cult-offering-toggle" aria-pressed="false">Pause</button>
+            </div>
             <button type="button" id="buy-cultist" class="building-buy-button" aria-label="Recruit a cultist">${doodleIcon('gold')}<span id="cultist-cost">0</span></button>
         </div>
         <div id="miner-shop" class="building-buy-card" hidden>

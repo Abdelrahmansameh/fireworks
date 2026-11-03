@@ -42,23 +42,23 @@ export const MILESTONES = [
     },
     {
         id: 'small_show', chapter: 0,
-        goal: { type: 'building', building: 'PORTAL', target: 3 },
-        hint: 'Buy portals in Buildings.',
+        goal: { type: 'sparkles', target: 400 },
+        hint: 'Buy portals in Buildings; every burst pays sparkles.',
         reward: { title: 'Opening Night', action: '', desc: 'Fans arrive and toss gold.', icon: 'crowd', upgrades: ['crowd_spark_1'] },
     },
 
     // ── 2. Opening Night ────────────────────────────────────────────────────
     {
         id: 'tip_jar', chapter: 1,
-        goal: { type: 'gold', target: 1750 },
+        goal: { type: 'gold', target: 200 },
         hint: 'Spend gold on crowd upgrades to grow tips.',
-        reward: { title: 'Sparkle Cult', desc: 'Recruit cultists whose rituals conjure sparkles.', icon: 'cultist', upgrades: ['cultist_unlock'] },
+        reward: { title: 'Sparkle Cult', desc: 'Recruit cultists whose rituals turn gold into sparkles.', icon: 'cultist', upgrades: ['cultist_unlock'] },
     },
 
     // ── 3. Festival Ground ──────────────────────────────────────────────────
     {
         id: 'first_catapult', chapter: 2,
-        goal: { type: 'gold', target: 2000 },
+        goal: { type: 'gold', target: 2200 },
         hint: 'Bigger crowds toss more gold.',
         reward: { title: 'Catapult', desc: 'Build catapults that fling fans into fireworks.', icon: 'catapult', upgrades: ['catapult'] },
     },
@@ -66,21 +66,34 @@ export const MILESTONES = [
     // ── 4. Bigger Sky ───────────────────────────────────────────────────────
     {
         id: 'flyers', chapter: 3,
-        goal: { type: 'gold', target: 7000 },
+        goal: { type: 'gold', target: 8000 },
         hint: 'Save the crowd’s tips for something that flies.',
         reward: { title: 'Flying Cultists', desc: 'A cultist blasts sparkles from their palms to fly through bursts, catching sparkles.', icon: 'crowd', upgrades: ['flyer_unlock'] },
     },
     {
         id: 'gold_mine', chapter: 3,
-        goal: { type: 'gold', target: 12000 },
+        goal: { type: 'gold', target: 10500 },
         hint: 'Stockpile gold to open the mine in the mountains.',
-        reward: { title: 'Gold Mine', desc: 'Hire miners who dig gold out of the mountains, far more than any fan tosses.', icon: 'miner', upgrades: ['miner_unlock'] },
+        reward: { title: 'Gold Mine', desc: 'Hire miners who dig steady gold out of the mountains, to feed the cult.', icon: 'miner', upgrades: ['miner_unlock'] },
+    },
+
+    {
+        id: 'headliner', chapter: 3,
+        goal: { type: 'sparkles', target: 70000 },
+        hint: 'Feed the cult and keep every portal firing.',
+        reward: { title: 'Full Salvo', desc: 'New portal and sparkle upgrades in the shop.', icon: 'portal' },
     },
 
     // ── 5. Grand Finale ─────────────────────────────────────────────────────
     {
+        id: 'encore', chapter: 4,
+        goal: { type: 'sparkles', target: 300000 },
+        hint: 'The sky is filling up. Keep it growing.',
+        reward: { title: 'Sky Curtain', desc: 'The last portal upgrade opens in the shop.', icon: 'portal' },
+    },
+    {
         id: 'grand_finale', chapter: 4,
-        goal: { type: 'sparkles', target: 500000 },
+        goal: { type: 'sparkles', target: 1700000 },
         hint: 'One last push to light up the whole sky.',
         reward: { title: 'Grand Finale', desc: 'Fill the sky for 30 seconds.', icon: 'fireworks', upgrades: ['grand_finale'] },
     },

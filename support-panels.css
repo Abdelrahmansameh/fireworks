@@ -21,6 +21,13 @@
 .building-buy-button { grid-column: 1 / -1; display: flex; align-items: center; justify-content: center; gap: 6px; min-height: 44px; padding: 0 8px; background: var(--coral); font: 400 20px/1 'Chewy', cursive; box-shadow: 2px 2px 0 var(--ink); }
 .building-buy-button:hover:not(:disabled) { background: #ff9a7e; }
 .building-buy-button > .doodle-icon { width: 18px; height: 18px; }
+.cult-offering { grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 6px 8px; background: rgba(42, 46, 94, .08); border: 2px dashed rgba(42, 46, 94, .35); border-radius: 10px 8px 11px 7px; }
+.cult-offering.paused .cult-flow { opacity: .45; }
+.cult-flow { display: flex; align-items: center; gap: 6px; min-width: 0; font: 400 16px/1 'Chewy', cursive; white-space: nowrap; }
+.cult-flow > span { display: inline-flex; align-items: center; gap: 3px; }
+.cult-flow .doodle-icon { width: 16px; height: 16px; }
+.cult-offering-toggle { min-height: 32px; padding: 0 10px; background: var(--paper); font: 400 15px/1 'Chewy', cursive; box-shadow: 2px 2px 0 var(--ink); }
+.cult-offering-toggle[aria-pressed="true"] { background: #86e38f; }
 .building-portal-section { display: flex; flex-direction: column; gap: 8px; }
 .building-list-tools { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
 .building-list-tools button { display: flex; align-items: center; justify-content: center; gap: 6px; padding: 0 4px; background: #2a2e5e; color: var(--cream); border: 2px solid rgba(244,234,213,.5); border-radius: 10px 8px 11px 7px; font-size: 13px; box-shadow: none; }

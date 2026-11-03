@@ -1,6 +1,6 @@
 import { gameStorage } from '../platform/GameStorage.js';
 import { fireworksForCrowd } from '../systems/ProductionRates.js';
-import { FIREWORK_CONFIG, GAME_BOUNDS, PROCEDURAL_BACKGROUND_CONFIG, DEFAULT_RECIPE_COMPONENTS, GENERIC_RECIPE_NAMES, PORTAL_COST_BASE, CROWD_CONFIG, CULTIST_CONFIG, MINER_CONFIG, FLYER_CONFIG } from '../config/config.js';
+import { FIREWORK_CONFIG, GAME_BOUNDS, PROCEDURAL_BACKGROUND_CONFIG, DEFAULT_RECIPE_COMPONENTS, GENERIC_RECIPE_NAMES, PORTAL_COST_BASE, PORTAL_BASE_YIELD, CROWD_CONFIG, CULTIST_CONFIG, MINER_CONFIG } from '../config/config.js';
 import GameCore from './GameCore.js';
 import InstancedParticleSystem from '../particles/InstancedParticleSystem.js';
 import Crowd from '../entities/Crowd.js';
@@ -197,12 +197,9 @@ class FireworkGame extends GameCore {
         return { ...GAME_BOUNDS };
     }
 
-    /** Top of the widest view the player can zoom out to, less a margin for flyers. */
+    /** Flyers range up to the highest burst the venue has unlocked. */
     getFlyerCeilingY() {
-        const r = this.renderer2D;
-        const zoom = this.getVenueCameraBounds().wideZoom;
-        const y = this.chrome?.getCameraFraming(zoom).y ?? r.cameraY;
-        return y + r.virtualHeight / 2 / zoom - FLYER_CONFIG.ceilingMargin;
+        return getVenueStage(this).maxExplosionY;
     }
 
     /** Full unlocked interval, plus the zoom range that fits it in this viewport. */
@@ -412,7 +409,8 @@ class FireworkGame extends GameCore {
         this.flyerCount = 0;
         this.cultistCount = 0;
         this.cultistRituals.setCount(0);
-        this.cultistStats = { sparkleMultiplier: 1, ritualSpeedMultiplier: 1 };
+        this.cultOfferingsPaused = false;
+        this.cultistStats = { sparkleMultiplier: 1, ritualSpeedMultiplier: 1, offeringMultiplier: 1 };
         this.minerCount = 0;
         this.minerShifts.setCount(0);
         this.minerStats = { goldMultiplier: 1, speedMultiplier: 1 };
@@ -428,7 +426,7 @@ class FireworkGame extends GameCore {
             goldRateMultiplier: 1,
             countBonus: 0,
         };
-        this.portalStats = { spawnIntervalMultiplier: 1, sparkleYieldMultiplier: 1 };
+        this.portalStats = { spawnIntervalMultiplier: 1, sparkleYieldMultiplier: PORTAL_BASE_YIELD };
         this.catapultStats = { maxCatapults: 1 };
 
         this.resourceManager.reset();
@@ -721,6 +719,7 @@ class FireworkGame extends GameCore {
             venuePortalRight: gameStorage.getItem('venuePortalRight'),
             flyerCount: this.flyerCount,
             cultistCount: this.cultistCount,
+            cultOfferingsPaused: this.cultOfferingsPaused,
             minerCount: this.minerCount,
             currentRecipeComponents: this.currentRecipeComponents,
             backgroundColor: '#f13b3b',
@@ -772,6 +771,7 @@ class FireworkGame extends GameCore {
         this.flyerCount = Math.min(128, Math.max(0, Number(data.flyerCount) || 0));
         this.cultistCount = Math.min(CULTIST_CONFIG.maxCount, Math.max(0, Number(data.cultistCount) || 0));
         this.cultistRituals.setCount(this.cultistCount);
+        this.cultOfferingsPaused = data.cultOfferingsPaused === true;
         this.minerCount = Math.min(MINER_CONFIG.maxCount, Math.max(0, Number(data.minerCount) || 0));
         this.minerShifts.setCount(this.minerCount);
 

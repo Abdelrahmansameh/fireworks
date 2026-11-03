@@ -53,7 +53,7 @@ export const CROWD_CONFIG = {
     minDtForVelocity: 0.005,       // seconds — ignore tiny dt to avoid div-by-zero
     maxThrowSpeedSquared: 2500 * 2500, // world-units²/s² — cap launch speed to prevent extreme throws
     wallBounce: 0.5,                // velocity retention when bouncing off world edges
-    wallBounceBuffer: 1000,          // world-units — invisible buffer beyond scroll bounds for wall bounces
+    wallBounceBuffer: 2400,          // world-units — invisible buffer beyond scroll bounds; a max catapult throw and its ground bounces end near x 6,100
 
     // Ground bouncing
     groundBounceCount: 3,           // number of bounces before the person lands on the next ground contact
@@ -108,6 +108,6 @@ export const CROWD_CATCHER_CONFIG = {
     maxCaptureTime: 3.5,      // s — force-collect after this long
     minParticleAge: 0.15,      // s — ignore freshly-spawned particles
     // Multiplier on the particle's share of its firework recovery budget.
-    sparklesPerParticle: 1,
+    sparklesPerParticle: 3,
     scanInterval: 4,          // throttle: scan every N frames
 };

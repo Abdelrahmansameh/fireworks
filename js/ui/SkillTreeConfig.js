@@ -104,14 +104,26 @@ export const SKILL_TREE_CONFIG = {
                 apply: game => { game.crowdStats.catchingEnabled = true; },
             }),
         cultist_unlock: node('cultist_unlock', 'crowd_invite_1', 'CULTIST', 'Sparkle Cult',
-            'Recruit cultists whose rituals conjure sparkles.', 900, 'gold', {
+            'Recruit cultists whose rituals turn gold into sparkles.', 900, 'gold', {
                 offset: { x: -600, y: 0 }, milestoneReward: true, action: 'Recruit', unlockId: 'cultist_unlock',
                 apply: game => unlock(game, 'cultist_unlock'),
             }),
         cultist_chants: node('cultist_chants', 'cultist_unlock', 'CULTIST', 'Louder Chants',
-            '+75% cultist sparkles.', 2400, 'gold', {
-                maxLevel: 2, costRatio: 5, botOptional: true, requires: { upgrades: { catapult: 1 } },
+            '+75% sparkles for every gold offered.', 2400, 'gold', {
+                maxLevel: 2, costRatio: 5, requires: { upgrades: { catapult: 1 } },
                 apply: game => { game.cultistStats.sparkleMultiplier *= 1.75; },
+            }),
+        cultist_bowls: node('cultist_bowls', 'cultist_chants', 'CULTIST', 'Bigger Bowls',
+            '×2 gold offered per ritual, in a bigger bowl.', 3000, 'gold', {
+                maxLevel: 3, costRatio: 3, requires: { milestone: 'gold_mine' },
+                minCost: game => game.cultistRituals?.upkeepCost(undefined, 2) ?? 0,
+                apply: game => { game.cultistStats.offeringMultiplier *= 2; },
+            }),
+        // Keeps the cult in step with the late portal upgrades.
+        cultist_rite: node('cultist_rite', 'cultist_bowls', 'CULTIST', 'Grand Rite',
+            '×2.5 sparkles for every gold offered.', 8000, 'gold', {
+                requires: { milestone: 'headliner' },
+                apply: game => { game.cultistStats.sparkleMultiplier *= 2.5; },
             }),
         catapult: node('catapult', 'crowd_catcher_unlock', 'CROWD', 'Catapult',
             'Flings fans into fireworks. Catches sparkles.', 3600, 'gold', {
@@ -139,10 +151,15 @@ export const SKILL_TREE_CONFIG = {
                 apply: game => { game.crowdStats.collectionRadiusMultiplier *= 1.25; },
             }),
         catapult_range_1: node('catapult_range_1', 'crowd_catcher_radius', 'CROWD', 'Long Toss',
-            '+12.5% throw range.', 450, 'gold', {
-                // Both levels take a throw to roughly 1500 world units.
-                maxLevel: 2, costRatio: 4,
-                apply: game => { game.catapultStats.launchVxMultiplier *= 1.125; },
+            'Throw farther and higher.', 450, 'gold', {
+                // A base throw flies about 1,190 world units and peaks ~650 above
+                // the catapult; all four levels take it to about 6,000 and ~1,400,
+                // high enough to reach the top of the late-game sky.
+                maxLevel: 4, costRatio: 4,
+                apply: game => {
+                    game.catapultStats.launchVxMultiplier *= 1.455;
+                    game.catapultStats.launchVyMultiplier *= 1.1;
+                },
             }),
         spark_core_2: node('spark_core_2', 'catapult', 'BASE', 'Festival Sparks',
             '+80% sparkles.', 4000, 'sparkles', {
@@ -160,6 +177,12 @@ export const SKILL_TREE_CONFIG = {
             '+6 fans.', 4500, 'gold', {
                 action: 'Invite', apply: game => { game.crowdStats.countBonus += 6; },
             }),
+        // Keeps the crowd's tips in reach of the mine once miners arrive.
+        crowd_gold_3: node('crowd_gold_3', 'crowd_invite_2', 'CROWD', 'Encore Tips',
+            '+50% crowd gold.', 12000, 'gold', {
+                maxLevel: 2, costRatio: 4, requires: { milestone: 'gold_mine' },
+                apply: game => { game.crowdStats.goldRateMultiplier *= 1.5; },
+            }),
         flyer_unlock: node('flyer_unlock', 'crowd_invite_2', 'FLYER', 'Flying Cultists',
             'Teach a fan to fly on palm sparkles and catch bursts.', 21000, 'gold', {
                 milestoneReward: true, action: 'Equip', unlockId: 'flyer_unlock',
@@ -171,9 +194,13 @@ export const SKILL_TREE_CONFIG = {
                 apply: game => unlock(game, 'miner_unlock'),
             }),
         miner_picks: node('miner_picks', 'miner_unlock', 'MINER', 'Golden Picks',
-            '×2 miner gold.', 30000, 'gold', {
+            '×2 miner gold.', 20000, 'gold', {
                 maxLevel: 2, costRatio: 4,
                 apply: game => { game.minerStats.goldMultiplier *= 2; },
+            }),
+        miner_shafts: node('miner_shafts', 'miner_picks', 'MINER', 'Deeper Shafts',
+            '+50% miner swing speed.', 40000, 'gold', {
+                apply: game => { game.minerStats.speedMultiplier *= 1.5; },
             }),
         flyer_reach: node('flyer_reach', 'flyer_unlock', 'FLYER', 'Helping Hands',
             '+25% flying cultist reach.', 6750, 'gold', {
@@ -205,15 +232,17 @@ export const SKILL_TREE_CONFIG = {
             }),
         portal_overclock: node('portal_overclock', 'flyer_efficiency', 'PORTAL', 'Full Salvo',
             '+54% portal fire rate.', 25000, 'sparkles', {
+                requires: { milestone: 'headliner' },
                 apply: game => { game.portalStats.spawnIntervalMultiplier *= 0.65; },
             }),
         spark_core_3: node('spark_core_3', 'portal_overclock', 'BASE', 'Encore Sparks',
             '×2 sparkles.', 80000, 'sparkles', {
+                requires: { milestone: 'headliner' },
                 apply: game => { game.baseSparkleMultiplier *= 2; },
             }),
         portal_sparkle_2: node('portal_sparkle_2', 'spark_core_3', 'PORTAL', 'Sky Curtain',
             '+54% portal fire rate.', 60000, 'sparkles', {
-                maxLevel: 2, costRatio: 2.5,
+                requires: { milestone: 'encore' },
                 apply: game => { game.portalStats.spawnIntervalMultiplier *= 0.65; },
             }),
         grand_finale: node('grand_finale', 'portal_sparkle_2', 'PORTAL', 'Grand Finale',

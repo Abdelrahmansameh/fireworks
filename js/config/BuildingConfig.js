@@ -2,6 +2,9 @@ export const PORTAL_COST_BASE = 60;
 
 export const PORTAL_COST_RATIO = 1.22;
 
+// A portal firework pays this many times a hand-launched one; upgrades multiply it.
+export const PORTAL_BASE_YIELD = 2;
+
 export const PORTAL_WORLD_HIGHLIGHT_DURATION = 2.5;
 
 export const BUILDING_TYPES = {
@@ -13,7 +16,7 @@ export const BUILDING_TYPES = {
         costRatio: PORTAL_COST_RATIO,
         currency: 'sparkles',
         // Footprint width, used to size the venue around the next portal slot.
-        width: 60,
+        width: 76,
         // Always taken from config; portals never save their height.
         y: -449,
         baseSpawnInterval: 5,
@@ -42,6 +45,7 @@ export const BUILDING_TYPES = {
         skeletonUrl: 'assets/skeletons/catapult.json',
         skeletonScale: 15,
         baseFireInterval: 5,
+        fireJitter: 0.25,  // each cooldown varies ±25% so catapults drift out of phase
         // Share the crowd area so launched members arc toward the fireworks.
         x: -450,
         y: -435,

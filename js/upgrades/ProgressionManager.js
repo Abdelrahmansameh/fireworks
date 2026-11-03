@@ -1,4 +1,4 @@
-import { BUILDING_TYPES } from '../config/config.js';
+import { BUILDING_TYPES, PORTAL_BASE_YIELD } from '../config/config.js';
 import { SKILL_TREE_CONFIG } from '../ui/SkillTreeConfig.js';
 import { roundUpCost } from '../utils/costRounding.js';
 
@@ -128,7 +128,9 @@ class ProgressionManager {
     getUpgradeCost(id) {
         const def = this._upgrades.get(id);
         if (!def) return Infinity;
-        return roundUpCost(def.baseCost * Math.pow(def.costRatio, this.getUpgradeLevel(id)));
+        const listed = def.baseCost * Math.pow(def.costRatio, this.getUpgradeLevel(id));
+        // A `minCost(game)` floor lets a cost track the game state it changes.
+        return roundUpCost(Math.max(listed, (this.game && def.minCost?.(this.game)) || 0));
     }
 
     /** All wallets charged together by the next purchase. */
@@ -349,10 +351,10 @@ class ProgressionManager {
             goldRateMultiplier: 1,   // multiplied into crowd.goldPerCoinToss (base 1 gold per 5s)
             countBonus: 0,            // added to the crowd count formula result
         };
-        game.portalStats = { spawnIntervalMultiplier: 1, sparkleYieldMultiplier: 1 };
-        game.cultistStats = { sparkleMultiplier: 1, ritualSpeedMultiplier: 1 };
+        game.portalStats = { spawnIntervalMultiplier: 1, sparkleYieldMultiplier: PORTAL_BASE_YIELD };
+        game.cultistStats = { sparkleMultiplier: 1, ritualSpeedMultiplier: 1, offeringMultiplier: 1 };
         game.minerStats = { goldMultiplier: 1, speedMultiplier: 1 };
-        game.catapultStats = { maxCatapults: 1, fireIntervalMultiplier: 1, launchVxMultiplier: 1 };
+        game.catapultStats = { maxCatapults: 1, fireIntervalMultiplier: 1, launchVxMultiplier: 1, launchVyMultiplier: 1 };
         game.crowdUnlocked = false;
         game.grandFinaleUnlocked = false;
         game.advancedCreatorUnlocked = false;

@@ -1,6 +1,10 @@
 import { BUILDING_TYPES, CULTIST_CONFIG, MINER_CONFIG } from '../config/config.js';
 import Building from '../buildings/Building.js';
 
+// The bot pauses the cult to save for more gold income this many seconds of income away:
+// a short pause, as a player would, never a long freeze of the cult.
+const OFFERING_SAVE_SECONDS = 90;
+
 const UNLOCK_UPGRADE = {
     PORTAL: 'portal_unlock',
     CATAPULT: 'catapult',
@@ -17,6 +21,7 @@ export default class LivePurchasePolicy {
     constructor() { this.reset(); }
 
     reset() { this.goal = null; }
+
 
     _count(game, type) { return game.buildingManager.getBuildingsByType(type).length; }
 
@@ -148,12 +153,25 @@ export default class LivePurchasePolicy {
             ? { label: beat.label, next: target.name, currency: target.currency, cost: target.cost, secondaryCost: target.secondaryCost, wait: wait(target) }
             : { label: beat.label, next: 'Build income and meet prerequisites' };
 
+        const savingFor = this._manageOfferings(game, required, candidates, costTime);
+
         // Affordable steps toward a mechanic take precedence over side purchases.
         const ready = required.find(candidate => this._canAfford(game, candidate));
         if (ready) return this._buy(game, ready, 'progression');
 
+        // Paused to save for more gold income: buy it the moment it is affordable.
+        if (savingFor && this._canAfford(game, savingFor)) {
+            this._feedCultUntil = (game.elapsedGameTime ?? 0) + OFFERING_SAVE_SECONDS;
+            return this._buy(game, savingFor, 'investment');
+        }
+
+        // A cultist the gold income can't feed only sits by an empty bowl.
+        const cultHunger = (game.cultistCount ?? 0) * (game.cultistRituals?.offering ?? 0) / (game.cultistRituals?.interval ?? 1);
         const investments = candidates.filter(candidate => {
             if (needed.has(candidate.key) || !this._canAfford(game, candidate)) return false;
+            if (candidate.kind === 'cultist' && cultHunger >= rates.gps * 0.6) return false;
+            // Don't spend the savings on anything big while saving for gold income.
+            if (savingFor && (this._costs(candidate).gold ?? 0) > savingFor.cost * 0.15) return false;
             const weight = this._investmentWeight(game, candidate);
             if (weight <= 0) return false;
             // Protect the last few seconds of saving, but allow useful investments
@@ -171,6 +189,28 @@ export default class LivePurchasePolicy {
         });
         investments.sort((a, b) => costTime(a) / this._investmentWeight(game, a) - costTime(b) / this._investmentWeight(game, b));
         return investments[0] ? this._buy(game, investments[0], 'investment') : null;
+    }
+
+    /**
+     * Cultists burn banked gold, so a player pauses them to save: for a gold
+     * step toward the next mechanic, or for more gold income or a stronger
+     * cult up to about
+     * a minute and a half of income away, then feeds the cult as long again
+     * before the next such pause. Everything else is bought from what the
+     * cult leaves.
+     */
+    _manageOfferings(game, required, candidates, costTime) {
+        if (!game.cultistCount) return null;
+        const needsGold = candidate => Object.hasOwn(this._costs(candidate), 'gold');
+        const growsGold = candidate => candidate.kind === 'miner' || /^(miner_|crowd_gold|cultist_)/.test(candidate.id);
+        const feeding = (game.elapsedGameTime ?? 0) < (this._feedCultUntil ?? -Infinity);
+        const target = feeding ? null : candidates
+            .filter(candidate => growsGold(candidate) && !required.includes(candidate)
+                && costTime(candidate) <= OFFERING_SAVE_SECONDS)
+            .sort((a, b) => costTime(a) - costTime(b))[0] ?? null;
+        const saving = required.some(needsGold) || !!target;
+        if (saving !== !!game.cultOfferingsPaused) game.setCultOfferingsPaused(saving);
+        return target;
     }
 
     _buy(game, candidate, reason) {

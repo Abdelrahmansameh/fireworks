@@ -2,13 +2,13 @@
 // of their hands, and the sparkles they collect.
 export const FLYER_CONFIG = {
     collectionRadius: 50,
-    sparklesPerParticle: 1,
+    sparklesPerParticle: 15,
     wanderSpeed: 300,            // max flight speed, scaled by the speed upgrade
     wanderTargetChangeTime: 4.0,
     entryMargin: 60,             // new fans start this far past the left screen edge
+    // Flyers share the firework band up to the venue's current burst ceiling,
+    // where their palms cut out. Each takes its own slice of that height.
     entryHeight: [0.35, 0.75],   // share of the firework band they fly in at
-    maxHeight: 1000,             // highest flight above the ground, capped by the widest view
-    ceilingMargin: 60,           // keep fans this far below the top of that view
     pullForce: 9000,
     arrivalThreshold: 5,
     maxCaptureTime: 1.0,
@@ -23,6 +23,7 @@ export const FLYER_CONFIG = {
     approachGain: 0.7,           // desired velocity per unit of distance to the target
     steerGain: 2.2,              // how hard a pulse corrects toward the desired velocity
     pulseTrigger: 110,           // velocity error that starts a new pulse (going down never does)
+    descendMargin: 80,           // this far above the target they hold their pulses and drop
     minAimBelowHorizontal: 0.25, // radians: palms always fire at least this far below level
     aimTime: 0.1,                // arms snap to the aim before the pulse fires
     aimTolerance: 0.3,           // radians: arms must be this close to the aim to fire
@@ -39,12 +40,12 @@ export const FLYER_CONFIG = {
     glowOutRate: 6,
 
     // Sparkles out of both palms while a pulse is on.
-    sparkRate: 220,              // per second, both hands together
-    sparkSpeed: [220, 380],
-    sparkSpread: 0.22,           // radians either side of the arm
-    sparkLifetime: [0.25, 0.55],
+    sparkRate: 440,              // per second, both hands together
+    sparkSpeed: [160, 300],
+    sparkSpread: 0.6,            // radians either side of the arm
+    sparkLifetime: [0.07, 0.16],
     sparkSize: [0.8, 1.4],
     sparkGravity: 200,
-    flashCount: 14,              // extra burst the moment a pulse fires
+    flashCount: 28,             // extra burst the moment a pulse fires
     sparkColors: [[1, 0.86, 0.38], [1, 0.97, 0.82], [1, 0.72, 0.3], [0.86, 0.55, 1], [0.55, 0.9, 1]],
 };

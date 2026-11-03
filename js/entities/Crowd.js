@@ -1,5 +1,5 @@
 import { FlyerBehavior, CultistBehavior, MinerBehavior } from './crowdBehaviors/CrowdBehavior.js';
-import { GAME_BOUNDS, CROWD_CONFIG, CROWD_CATCHER_CONFIG, CULTIST_CONFIG, MINER_CONFIG, FLYER_CONFIG, PARTICLE_TYPES } from '../config/config.js';
+import { GAME_BOUNDS, CROWD_CONFIG, CROWD_CATCHER_CONFIG, CULTIST_CONFIG, MINER_CONFIG, PARTICLE_TYPES } from '../config/config.js';
 
 import * as Renderer2D from '../rendering/Renderer.js';
 import InstancedParticleSystem from '../particles/InstancedParticleSystem.js';
@@ -416,8 +416,7 @@ class Crowd {
         const WALK_SPEED = CROWD_CONFIG.walkSpeed;
 
         if (this.flyerCount) {
-            this.flyerCeilingY = Math.min(GAME_BOUNDS.WORLD_GROUND_Y + FLYER_CONFIG.maxHeight,
-                this.getFlyerCeiling?.() ?? Infinity);
+            this.flyerCeilingY = this.getFlyerCeiling?.() ?? GAME_BOUNDS.WORLD_MAX_EXPLOSION_Y;
         }
 
         if (this.flyerCount && this.particleSystem && this._scanFrameCounter % 4 === 0) {
@@ -1062,6 +1061,26 @@ class Crowd {
 
             const propPose = computePose(cached.skeleton, propClip, propTime);
 
+            // Behaviors may grow a prop (a cultist's bowl with Bigger Bowls). It
+            // grows around its animated root, so the root's own motion (the bowl
+            // counter-bobbing to stay on the ground) keeps its full size. The root's
+            // motion shows up on its children, so the pivot is a child's pose minus
+            // its rest offset. The pose is stored at 1/s because the instances'
+            // shared scale multiplies it.
+            const s = person.behavior?.propScale?.(prop) ?? 1;
+            if (s !== 1) {
+                const root = cached.skeleton.parts.find(part => !part.parentId);
+                const child = root && cached.skeleton.parts.find(part => part.parentId === root.id);
+                const childPose = child && propPose.get(child.id);
+                if (childPose) {
+                    const pivotX = childPose.x - (child.relX ?? 0);
+                    const pivotY = childPose.y - (child.relY ?? 0);
+                    for (const ptf of propPose.values()) {
+                        ptf.x = pivotX / s + (ptf.x - pivotX);
+                        ptf.y = pivotY / s + (ptf.y - pivotY);
+                    }
+                }
+            }
             const finalPropPose = new Map();
             if (prop.worldMotion) {
                 // The prop's own animation drives it in world axes (up is +Y),
@@ -1070,12 +1089,12 @@ class Crowd {
                 // in world space — so e.g. a tossed coin flies straight up regardless
                 // of arm angle.
                 for (const [pid, ptf] of propPose.entries()) {
-                    finalPropPose.set(pid, { x: propRootX + ptf.x, y: propRootY + ptf.y, rotation: ptf.rotation });
+                    finalPropPose.set(pid, { x: propRootX / s + ptf.x, y: propRootY / s + ptf.y, rotation: ptf.rotation });
                 }
             } else {
                 for (const [pid, ptf] of propPose.entries()) {
-                    const finalX = propRootX + (ptf.x * Math.cos(propRootRot) - ptf.y * Math.sin(propRootRot));
-                    const finalY = propRootY + (ptf.x * Math.sin(propRootRot) + ptf.y * Math.cos(propRootRot));
+                    const finalX = propRootX / s + (ptf.x * Math.cos(propRootRot) - ptf.y * Math.sin(propRootRot));
+                    const finalY = propRootY / s + (ptf.x * Math.sin(propRootRot) + ptf.y * Math.cos(propRootRot));
                     const finalRot = propRootRot + ptf.rotation;
                     finalPropPose.set(pid, { ...ptf, x: finalX, y: finalY, rotation: finalRot });
                 }
@@ -1085,12 +1104,12 @@ class Crowd {
                 cached.skeleton, finalPropPose, this._groupFor(person),
                 person.instanceBaseIndex + propInstanceOffset,
                 person.x, person.y,
-                finalScale, flipX, person.behavior?.tint
+                finalScale * s, flipX, person.behavior?.tint
             );
             // Props with an 'emitter' bone tell behaviors where to spawn particles.
             const emitter = finalPropPose.get('emitter');
             if (emitter) {
-                person.propEmitter = { x: person.x + emitter.x * flipX * finalScale, y: person.y + emitter.y * finalScale };
+                person.propEmitter = { x: person.x + emitter.x * flipX * finalScale * s, y: person.y + emitter.y * finalScale * s };
             }
 
             propInstanceOffset += cached.skeleton.partCount;

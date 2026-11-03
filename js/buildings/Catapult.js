@@ -161,6 +161,12 @@ class Catapult extends Building {
         return this.config.baseFireInterval * (this.game.catapultStats?.fireIntervalMultiplier ?? 1);
     }
 
+    /** One cooldown: the fire interval give or take the jitter, averaging the interval. */
+    _nextCooldown() {
+        const jitter = this.config.fireJitter ?? 0;
+        return this.fireInterval * (1 + (Math.random() * 2 - 1) * jitter);
+    }
+
 
     update(deltaTime) {
         this._animTimer += deltaTime;
@@ -199,7 +205,7 @@ class Catapult extends Building {
 
                 if (this._animTimer >= clipDur) {
                     this._playClip('idle');
-                    this.accumulator = this.fireInterval;
+                    this.accumulator = this._nextCooldown();
                     this._setState('cooldown');
                     this._assignedPersonIndex = -1;
                 }
@@ -234,7 +240,8 @@ class Catapult extends Building {
         if (!crowd || this._assignedPersonIndex < 0) return;
 
         const vxMult = this.game.catapultStats?.launchVxMultiplier ?? 1;
-        crowd.launchPersonFromCatapult(this._assignedPersonIndex, LAUNCH_VX * vxMult, LAUNCH_VY);
+        const vyMult = this.game.catapultStats?.launchVyMultiplier ?? 1;
+        crowd.launchPersonFromCatapult(this._assignedPersonIndex, LAUNCH_VX * vxMult, LAUNCH_VY * vyMult);
         this._assignedPersonIndex = -1;
     }
 

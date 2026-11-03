@@ -883,7 +883,14 @@ class UIManager {
         const sparkleRate = document.getElementById('wallet-sparkles-rate');
         const goldRate = document.getElementById('wallet-gold-rate');
         if (sparkleRate) sparkleRate.textContent = `+${formatRate(totalSparklesRate)}/s`;
-        if (goldRate) goldRate.textContent = `+${formatRate(this.game.statsTracker.getRollingRate('gold'))}/s`;
+        if (goldRate) {
+            // Net of what the cult offers, so a hungry cult shows as the bank draining.
+            const rituals = this.game.cultistRituals;
+            const offered = this.game.statsTracker.getRollingRate('sparkles', 'cultist') / Math.max(1e-9, rituals?.rate ?? 1);
+            const net = this.game.statsTracker.getRollingRate('gold') - offered;
+            goldRate.textContent = `${net < -0.05 ? '-' : '+'}${formatRate(Math.abs(net))}/s`;
+            goldRate.classList.toggle('draining', net < -0.05);
+        }
 
         if (this.skillTree?.isOpen) {
             this.skillTree._updateResourceDisplay();

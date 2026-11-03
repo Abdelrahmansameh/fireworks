@@ -1,6 +1,6 @@
 import { Vector2, Color } from '../../rendering/Renderer.js';
 import { FLYER_CONFIG as cfg, CULTIST_CONFIG, MINER_CONFIG, CROWD_CONFIG, GAME_BOUNDS as bounds, PARTICLE_TYPES } from '../../config/config.js';
-import { MAX_SPARKLES_PER_RITUAL } from '../../config/CultistRitual.js';
+import { BASE_SPARKLES_PER_RITUAL, MAX_SPARKLES_PER_RITUAL } from '../../config/CultistRitual.js';
 
 // Behaviors own optional per-person state and can replace the ordinary crowd update.
 export class CrowdBehavior {
@@ -37,7 +37,7 @@ export class FlyerBehavior extends CrowdBehavior {
         person.state = 'fly';
         // Fly in mid-air from just past the left edge of the screen.
         const view = crowd.renderer?.getVisibleWorldBounds?.();
-        const band = bounds.WORLD_MAX_EXPLOSION_Y - bounds.WORLD_MIN_EXPLOSION_Y;
+        const band = Math.max(0, crowd.flyerCeilingY - bounds.WORLD_MIN_EXPLOSION_Y);
         const [low, high] = cfg.entryHeight;
         // The view can be unsized while a save loads, so fall back to the show edge.
         const left = Number.isFinite(view?.left) ? view.left - cfg.entryMargin : bounds.PORTAL_MIN_X;
@@ -52,6 +52,16 @@ export class FlyerBehavior extends CrowdBehavior {
     }
     get props() { return IDLE_PROPS; }
     get speedMultiplier() { return this.crowd.flyerStats?.speedMultiplier ?? 1; }
+    /**
+     * A height in this flyer's own slice of the firework band, so the flock
+     * spreads from the lowest bursts to the venue's ceiling.
+     */
+    laneTargetY() {
+        const flyers = this.crowd.people.filter(person => person.isFlyer);
+        const lane = Math.max(0, flyers.indexOf(this.person));
+        const span = Math.max(0, this.crowd.flyerCeilingY - bounds.WORLD_MIN_EXPLOSION_Y);
+        return bounds.WORLD_MIN_EXPLOSION_Y + span * (lane + Math.random()) / Math.max(1, flyers.length);
+    }
     update(dt) {
         const p = this.person;
         this.timer -= dt;
@@ -60,7 +70,7 @@ export class FlyerBehavior extends CrowdBehavior {
         if (this.entering && p.x >= bounds.PORTAL_MIN_X) { this.entering = false; this.timer = cfg.wanderTargetChangeTime; }
         if (!this.entering && (this.timer <= 0 || Math.hypot(this.tx - p.x, this.ty - p.y) < 80)) {
             this.tx = bounds.PORTAL_MIN_X + Math.random() * (bounds.PORTAL_MAX_X - bounds.PORTAL_MIN_X);
-            this.ty = bounds.WORLD_MIN_EXPLOSION_Y + Math.random() * Math.max(0, this.crowd.flyerCeilingY - bounds.WORLD_MIN_EXPLOSION_Y);
+            this.ty = this.laneTargetY();
             this.timer = cfg.wanderTargetChangeTime + (Math.random() - 0.5) * 1.5;
         }
 
@@ -76,8 +86,15 @@ export class FlyerBehavior extends CrowdBehavior {
         const desiredAim = Math.max(-Math.PI + minDown, Math.min(-minDown,
             Math.atan2(-Math.max(0, errY * cfg.steerGain + cfg.gravity), -errX * cfg.steerGain)));
 
+        // Past the ceiling the palms cut out and gravity brings them back down.
+        const ceiling = Math.max(bounds.WORLD_LAUNCH_Y, this.crowd.flyerCeilingY);
+        const aboveCeiling = p.y >= ceiling;
         this.phaseTimer -= dt;
-        if (this.phase === 'coast' && this.phaseTimer <= 0 && Math.hypot(errX, Math.max(0, errY)) > cfg.pulseTrigger) {
+        if (aboveCeiling && this.phase !== 'coast') {
+            this.phase = 'coast'; this.phaseTimer = cfg.minCoast;
+        } else if (this.phase === 'coast' && this.phaseTimer <= 0 && Math.hypot(errX, Math.max(0, errY)) > cfg.pulseTrigger
+            // Any pulse also holds them up, so to go down they stop firing and drop.
+            && p.y - this.ty < cfg.descendMargin) {
             this.phase = 'aim'; this.phaseTimer = cfg.aimTime;
         } else if (this.phase === 'aim' && this.phaseTimer <= 0 && (this.armsOn(desiredAim) || this.phaseTimer < -cfg.maxAimTime)) {
             this.phase = 'pulse'; this.phaseTimer = rand(cfg.pulseDuration);
@@ -105,10 +122,9 @@ export class FlyerBehavior extends CrowdBehavior {
 
         const minX = this.entering ? -Infinity : bounds.PORTAL_MIN_X;
         p.x = Math.max(minX, Math.min(bounds.PORTAL_MAX_X, p.x + p.vx * dt));
-        const ceiling = Math.max(bounds.WORLD_LAUNCH_Y, this.crowd.flyerCeilingY);
-        p.y = Math.max(bounds.WORLD_LAUNCH_Y, Math.min(ceiling, p.y + p.vy * dt));
+        p.y = Math.max(bounds.WORLD_LAUNCH_Y, p.y + p.vy * dt);
         if ((p.x === bounds.PORTAL_MIN_X && p.vx < 0) || (p.x === bounds.PORTAL_MAX_X && p.vx > 0)) p.vx = 0;
-        if ((p.y === bounds.WORLD_LAUNCH_Y && p.vy < 0) || (p.y === ceiling && p.vy > 0)) p.vy = 0;
+        if (p.y === bounds.WORLD_LAUNCH_Y && p.vy < 0) p.vy = 0;
 
         // Lean into the push while firing, into the drift otherwise.
         const lean = firing ? Math.cos(this.aimAngle) * 0.35 : -p.vx * 0.0008;
@@ -163,10 +179,11 @@ export class FlyerBehavior extends CrowdBehavior {
         ARMS.forEach(([upper, fore, hand, side], i) => {
             // A part at rotation r points along r - PI/2.
             const base = skeleton.getPart(upper).baseRotation || 0;
-            // Shoulders turn at most 90 degrees past straight down or up, so an
-            // arm never crosses the body: it stops pointing along the body instead.
-            let angle = this.armAngles[i];
-            if (side * Math.cos(angle) < 0) angle = Math.sin(angle) > 0 ? Math.PI / 2 : -Math.PI / 2;
+            // Keep each arm within 80 degrees of pointing outward.
+            const outward = side < 0 ? Math.PI : 0;
+            const limit = 80 * Math.PI / 180;
+            const relative = wrap(this.armAngles[i] - outward);
+            const angle = outward + Math.max(-limit, Math.min(limit, relative));
             overrides.set(upper, { rotation: wrap(angle + Math.PI / 2 - base) });
             overrides.set(fore, { rotation: side * this.bend });
             overrides.set(hand, { rotation: side * this.bend * 0.6 });
@@ -255,6 +272,10 @@ export class CultistBehavior extends CrowdBehavior {
     }
     get clipTime() { return this.person.state === 'ritual' ? this.phase : null; }
     get props() { return this.person.state === 'ritual' ? RITUAL_PROPS : IDLE_PROPS; }
+    /** Bigger Bowls grow the ritual bowl. */
+    propScale(prop) {
+        return prop.skeletonUrl === CULTIST_CONFIG.bowlSkeletonUrl ? this.crowd.cultistRituals?.bowlScale ?? 1 : 1;
+    }
     update(dt) {
         const p = this.person;
         if (p.state === 'walking') {
@@ -274,9 +295,11 @@ export class CultistBehavior extends CrowdBehavior {
     }
     startBurst() {
         const c = CULTIST_CONFIG;
+        // An unpaid ritual (offerings paused or an empty bank) fizzles.
+        const payout = this.crowd.cultistRituals?.lastPayout[this.index] ?? 0;
+        if (payout <= 0) return;
         // Upgrades multiply the payout, so step through the range on a log scale.
-        const payout = this.crowd.cultistRituals?.payout ?? c.sparklesPerRitual;
-        const t = Math.log(payout / c.sparklesPerRitual) / Math.log(MAX_SPARKLES_PER_RITUAL / c.sparklesPerRitual);
+        const t = Math.log(payout / BASE_SPARKLES_PER_RITUAL) / Math.log(MAX_SPARKLES_PER_RITUAL / BASE_SPARKLES_PER_RITUAL);
         const count = Math.round(c.minBurstCount + (c.maxBurstCount - c.minBurstCount) * Math.min(1, Math.max(0, t || 0)));
         this.burstLeft = Math.max(1, count);
         this.burstRate = this.burstLeft / c.burstDuration;
@@ -312,9 +335,14 @@ export class CultistBehavior extends CrowdBehavior {
                 Math.random() < 0.45 ? 'star' : 'sphere');
         }
     }
+    /** Motes only gather while there is gold to offer. */
+    fed() {
+        const rituals = this.crowd.cultistRituals;
+        return !!rituals?.active && rituals.game.resourceManager.resources.gold.amount > 0;
+    }
     emitGather(dt, phase) {
         const c = CULTIST_CONFIG;
-        if (phase < c.gatherStart || phase > c.gatherEnd) { this.gatherAccumulator = 0; return; }
+        if (phase < c.gatherStart || phase > c.gatherEnd || !this.fed()) { this.gatherAccumulator = 0; return; }
         // Intensify toward the release.
         const charge = (phase - c.gatherStart) / (c.gatherEnd - c.gatherStart);
         this.gatherAccumulator += c.gatherRate * (0.5 + charge) * Math.min(dt, 0.1);
