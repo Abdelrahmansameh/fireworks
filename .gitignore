@@ -9,3 +9,23 @@ assets/icons/icon_base.png
 assets/icons/icon_crowd.png
 SKELETON_AGENT_PROMPT.md
 prgoressionpplan.md
+
+# Local tool output and dependencies
+.codex-remote-attachments/
+tools/velocity_plot.png
+__pycache__/
+*.py[cod]
+.venv/
+node_modules/
+.env
+.env.*
+!.env.example
+!.env.*.example
+.agents/
+.claude/
+.codex/
+.vscode/
+CURRENCY_DESIGN_PLAN.md
+REFACTOR_ARCHITECTURE.md
+SKELETON_ANIMATION_PROMPT.md
+design/
